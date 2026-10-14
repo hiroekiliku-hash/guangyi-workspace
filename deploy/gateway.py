@@ -4,7 +4,7 @@ import os, sys, re, json, tarfile, tempfile, hashlib, subprocess, pathlib, fcntl
 BASE = pathlib.Path('/opt/guangyi-workspace')
 SHA = r'[0-9a-f]{40}'
 def run(*args):
-    return subprocess.check_output(args, stderr=subprocess.STDOUT, timeout=120).decode().strip()
+    return subprocess.check_output(args, stderr=subprocess.STDOUT, timeout=120, cwd=BASE).decode().strip()
 def revision():
     return (BASE / 'current/REVISION').read_text().strip()
 def verify(expected):
@@ -79,4 +79,5 @@ def main():
 if __name__=='__main__':
     try: main()
     except Exception as error:
-        print('GUANGYI_DEPLOY_FAILED: '+type(error).__name__,file=sys.stderr); sys.exit(1)
+        print('GUANGYI_DEPLOY_FAILED: '+type(error).__name__,file=sys.stderr)
+        if isinstance(error, subprocess.CalledProcessError): print(error.output.decode()[:4000],file=sys.stderr); sys.exit(1)
