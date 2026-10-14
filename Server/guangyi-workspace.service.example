@@ -1,0 +1,28 @@
+[Unit]
+Description=Guangyi Workspace Native API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=guangyi-workspace
+Group=guangyi-workspace
+WorkingDirectory=/opt/guangyi-workspace/current
+EnvironmentFile=/etc/guangyi-workspace.env
+Environment=NODE_ENV=production
+Environment=HOST=127.0.0.1
+Environment=PORT=8087
+Environment=DATABASE_PATH=/var/lib/guangyi-workspace/workspace.sqlite
+ExecStart=/opt/guangyi-workspace/runtime/bin/node /opt/guangyi-workspace/current/server.mjs
+Restart=on-failure
+RestartSec=5
+StateDirectory=guangyi-workspace
+StateDirectoryMode=0700
+UMask=0077
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

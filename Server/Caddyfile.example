@@ -1,0 +1,4 @@
+# Use only when this server has no existing reverse proxy occupying ports 80/443.
+workspace.example.com {
+    reverse_proxy 127.0.0.1:8087
+}

@@ -1,0 +1,64 @@
+name: Deploy Guangyi backend
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      operation:
+        type: choice
+        options: [deploy, status, rollback]
+        default: deploy
+      revision:
+        description: Full retained SHA for rollback
+        required: false
+permissions:
+  contents: read
+concurrency:
+  group: guangyi-production
+  cancel-in-progress: false
+jobs:
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          ref: ${{ github.sha }}
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.21.0'
+      - run: node --test Server/server.test.mjs
+      - name: Configure dedicated SSH identity
+        env:
+          DEPLOY_KEY: ${{ secrets.GUANGYI_DEPLOY_KEY }}
+          KNOWN_HOSTS: ${{ secrets.GUANGYI_KNOWN_HOSTS }}
+        run: |
+          umask 077
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/guangyi
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+      - name: Deploy or operate gateway
+        env:
+          OPERATION: ${{ inputs.operation || 'deploy' }}
+          ROLLBACK_SHA: ${{ inputs.revision }}
+        run: |
+          set -euo pipefail
+          ssh_args=(-o BatchMode=yes -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -i ~/.ssh/guangyi root@146.56.249.84)
+          if [[ "$OPERATION" == status ]]; then
+            ssh "${ssh_args[@]}" status
+          elif [[ "$OPERATION" == rollback ]]; then
+            [[ "$ROLLBACK_SHA" =~ ^[a-f0-9]{40}$ ]]
+            ssh "${ssh_args[@]}" "rollback $ROLLBACK_SHA"
+          else
+            test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+            printf '%s\n' "$GITHUB_SHA" > Server/REVISION
+            tar -czf release.tar.gz -C Server server.mjs server.test.mjs REVISION
+            digest=$(sha256sum release.tar.gz | cut -d ' ' -f1)
+            size=$(stat -c %s release.tar.gz)
+            ssh "${ssh_args[@]}" "deploy $GITHUB_SHA $digest $size" < release.tar.gz
+            actual=$(curl -fsS --max-time 15 https://workspace.kdfz.com.cn/deploy-revision.json | jq -r .revision)
+            test "$actual" = "$GITHUB_SHA"
+          fi
+      - name: Remove deployment key
+        if: always()
+        run: rm -f ~/.ssh/guangyi

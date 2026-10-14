@@ -1,0 +1,12 @@
+services:
+  workspace-api:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "127.0.0.1:8087:8080"
+    volumes:
+      - workspace-data:/data
+      - ./secrets:/run/secrets:ro
+volumes:
+  workspace-data:

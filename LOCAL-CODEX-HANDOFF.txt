@@ -1,0 +1,790 @@
+广益 WorkSpace：本地 Codex 完整接管说明
+编写日期：2026-10-14，北京时间
+格式：UTF-8 纯文本。可直接作为本地 Codex 的任务输入。
+本文不包含密码、SSH 私钥、GitHub 令牌、APNs 私钥或真实设备令牌。
+
+一、直接给本地 Codex 的任务
+
+请接管“广益 WorkSpace”原生应用配套后端的上线工作。
+优先完成 workspace.kdfz.com.cn 的独立 HTTPS API、验证登录和快照读取、配置证书续期，然后建立广益专用的 GitHub Actions 自动发布通道，让我以后可以在 Cloud Codex 修改源码并自动上线，不必每次手动上传文件或粘贴命令。
+
+请实际检查和执行，而不是只给建议。已有本机后端已安装，不要重复首装。使用本机可用的 SSH、腾讯云网页终端或客户端确实提供的电脑操控能力；遇到工具所要求的网络或电脑访问授权时，通过真实的授权机制申请。不要声称拥有尚未提供的电脑控制能力，也不要要求用户寻找未经验证的设置入口。
+
+只修改本项目的新服务及专用发布配置，保留同一服务器上现有 kdfz 网站、旅行网站、账户数据库、通知服务、密钥和数据。需要必要的域名专用 Nginx 配置、HTTPS 证书及新发布通道时，可以继续完成；无需反复确认已授权的常规操作。涉及其他项目的数据删除、覆盖、共享运行时升级或全局服务重启不在授权范围内。
+
+二、此刻已经完成的事情
+
+1. SwiftUI 原生工程已生成，面向 iPhone 和原生 Mac，共享 SwiftUI 与业务源码。
+2. 已准备本机 SwiftData、UserNotifications、本机导入导出及自建服务器接口。
+3. 用户已用腾讯云 OrcaTerm 登录目标服务器，whoami 返回 root。
+4. 用户已打开 kdfz.com.cn 的 DNSPod 主账号记录页，具有新增、修改解析记录入口。
+5. workspace.kdfz.com.cn 已解析到 146.56.249.84。
+6. 用户已在服务器上传 GuangyiWorkSpaceServer.tar.gz，并执行 install-backend.sh。
+7. 从用户终端截图确认：独立 Node.js 24.21.0 下载和 SHA-256 检查成功，服务器上的 7 个后端测试全部通过。
+8. guangyi-workspace.service 已创建并启用。
+9. 首装脚本末尾明确输出：
+   BACKEND_READY: health=ok, unauthenticated=401, listen=127.0.0.1:8087
+10. 这表示本机 API 已运行，不能据此宣称公网 HTTPS、原生登录、真实 APNs 或自动发布已完成。
+
+三、尚未完成的事情
+
+1. 专用 Nginx 站点和 workspace.kdfz.com.cn 的证书配置。
+2. 从外网核验健康 JSON、未登录 401、真实应用登录和快照读取。
+3. 专用证书自动续期及续期后 Nginx reload。
+4. 广益自己的 GitHub 仓库、Actions 工作流、服务器受限发布网关及专用密钥绑定。
+5. 原生 iPhone/Mac 在 Apple SDK 下的编译和真机运行。
+6. 真实 APNs 发送与设备间自动后台同步。
+   当前已经提供手动快照同步，不是自动增量同步；不要把当前完整快照 PUT 定期执行来冒充自动同步。
+
+四、服务器身份和当前环境
+
+云厂商：腾讯云轻量应用服务器
+地域：南京，ap-nanjing
+实例 ID：lhins-k7an3sh7
+公网 IPv4：146.56.249.84
+内网 IPv4：10.10.0.13
+主机名：VM-0-13-opencloudos
+操作系统：OpenCloudOS 9
+架构：x86_64
+SSH 用户：root
+SSH 端口：22
+CPU：4 核
+内存：4 GB
+磁盘：40 GB，用户检查时已用约 12 GB、剩余约 29 GB
+
+服务器 SSH 配置已由用户通过 root 终端执行 sshd -T 检查：
+port 22
+permitrootlogin yes
+pubkeyauthentication yes
+passwordauthentication yes
+
+服务器 ED25519 主机公钥指纹：
+SHA256:JBcQiSm17qpuZ7exeCgq8koWx0021Nyx3F5OZ4gWeXk
+
+该指纹与旅行仓库之前记录的主机身份一致。
+它是服务器主机公钥指纹，不是用户登录密钥。
+登录用户的密码或私钥从未提供给此 Cloud 会话。
+本地 Codex 必须使用本机已有的正确认证，或经用户在服务器终端安装新的专用公钥；不能把主机公钥当作登录凭据。
+
+本次已看到的工具：
+/usr/bin/curl
+/usr/bin/tar
+/usr/bin/xz
+/usr/bin/systemctl
+/usr/bin/certbot
+/usr/local/bin/node
+/usr/sbin/nginx
+/usr/bin/pm2
+
+原共享 Node.js 为 v22.13.1。Docker 不存在。
+不要覆盖 /usr/local/bin/node、卸载 Node.js 22 或修改其他应用的 PM2 运行时。
+新后端已安装自己独立的 Node.js 24。
+
+Nginx 编译路径：
+--prefix=/usr/share/nginx
+--conf-path=/etc/nginx/nginx.conf
+
+五、必须保留的现有服务
+
+已从用户 ss -lntp 输出看到：
+
+127.0.0.1:3011：旅行网页服务。
+127.0.0.1:3012：旅行相关现有 Node 服务，具体功能请读取真实配置后确认。
+127.0.0.1:3013：旅行相关现有 Node 服务，具体功能请读取真实配置后确认。
+127.0.0.1:3014：现有行程提醒服务。
+127.0.0.1:4000：现有 /opt/kdfz-... Node 服务。
+127.0.0.1:8080：现有 /opt/kdfz-... Node 服务。
+0.0.0.0:22、[::]:22：sshd。
+80、443：现有 Nginx。
+1125：现有 Nginx 特殊站点端口。
+8888：现有宝塔面板。
+127.0.0.1:25、[::1]:25：现有邮件相关服务。
+
+上面的“/opt/kdfz-...”是 ss 输出截断的进程名称，不是确认过的完整目录。
+不能臆测其目录或删除它们。
+
+已确认存在的 Nginx 配置：
+/etc/nginx/nginx.conf
+/etc/nginx/conf.d/kdfz.conf
+/etc/nginx/conf.d/travelhk.conf
+
+kdfz.conf 已包含：
+kdfz.com.cn
+www.kdfz.com.cn
+map.kdfz.com.cn
+bluemap.kdfz.com.cn
+其中还包含 www.kdfz.com.cn 的 1125 SSL 监听。
+现有 kdfz 证书路径：
+/etc/letsencrypt/live/kdfz-event/fullchain.pem
+
+travelhk.conf 服务：
+travelhk.chenqirui.cn
+现有旅行证书：
+/etc/letsencrypt/live/travelhk.chenqirui.cn/fullchain.pem
+
+保留：
+/opt/travel-site
+原账户数据库与账户服务
+原通知服务与 VAPID 密钥
+/opt/travel-site/reminder-data
+原旅行发布网关及 SSH authorized_keys 条目
+用户已经在其他项目创建的所有配置和持久数据
+
+不得执行：
+pm2 restart all
+停止或重新安装整套 Nginx
+覆盖 /etc/nginx/nginx.conf
+替换 kdfz.conf 或 travelhk.conf
+为了清理空间删除已有数据库或密钥
+docker compose down -v
+删除或重置 /var/lib/guangyi-workspace
+把 Node.js 24 全局链接到 /usr/local/bin/node
+覆盖整份 /root/.ssh/authorized_keys
+把旅行发布密钥改成不受限制的管理员密钥
+
+六、广益新后端已经安装的真实布局
+
+systemd 服务：
+guangyi-workspace.service
+
+unit：
+/etc/systemd/system/guangyi-workspace.service
+
+专用非登录运行用户及组：
+guangyi-workspace
+
+项目目录：
+/opt/guangyi-workspace
+
+当前源码：
+/opt/guangyi-workspace/current/server.mjs
+
+独立运行时：
+/opt/guangyi-workspace/runtime/bin/node
+版本：24.21.0
+
+应用配置：
+/etc/guangyi-workspace.env
+root 所有，0600。
+含用户已经设置的应用登录邮箱和独立密码。
+不要打印、截图、上传、提交或回传此文件。
+这些资料是广益应用账号，不是腾讯云、宝塔或 root 密码。
+不要再次要求用户在聊天中提供它们。
+不要通过更改 ADMIN_EMAIL 或删库来重建账号。
+已存在账号不会因为修改 ADMIN_PASSWORD 环境值就被自动重置。
+
+数据：
+/var/lib/guangyi-workspace/workspace.sqlite
+还可能有 SQLite WAL、SHM 等伴随文件。
+由 systemd StateDirectory 管理。
+此目录必须在代码更新和回滚时保留。
+
+已知服务环境：
+NODE_ENV=production
+HOST=127.0.0.1
+PORT=8087
+DATABASE_PATH=/var/lib/guangyi-workspace/workspace.sqlite
+
+systemd ExecStart：
+/opt/guangyi-workspace/runtime/bin/node /opt/guangyi-workspace/current/server.mjs
+
+原上传包：
+/root/GuangyiWorkSpaceServer.tar.gz
+原解压源码：
+/root/GuangyiWorkSpaceServer
+
+不要再次运行 install-backend.sh。
+它是首次安装脚本，发现已有目录或服务会拒绝覆盖；这是正确的保护机制。
+后续更新应创建明确的更新或发布流程。
+
+服务器独立 Node.js 24.21.0 x64 安装包固定 SHA-256：
+fd8e59d5a511510f6a298afb548f18c7d2b1be404d8b4a27d94fbe49f56cb2d6
+
+来源：
+https://nodejs.org/dist/v24.21.0/node-v24.21.0-linux-x64.tar.xz
+
+七、DNS 和 HTTPS 当前证据
+
+用户已选用 kdfz.com.cn 名下域名，并确认继续使用 146.56.249.84。
+正式候选 API 地址：
+https://workspace.kdfz.com.cn
+
+DNSPod 原有记录截图：
+www A 默认 146.56.249.84 TTL 600
+@ A 默认 146.56.249.84 TTL 600
+map A 默认 146.56.249.84 TTL 600
+travel A 默认 146.56.249.84 TTL 600
+
+workspace 之后已经解析到该服务器。
+不要改动上述原有记录；如已经存在正确的 workspace A 记录，不重复创建。
+如有 AAAA、CAA 或其他限制，以当前真实 DNS 检查结果为准，不凭截图假设。
+
+在新后端公网配置之前，Cloud 的只读 HTTPS 检查曾得到：
+/ 返回 200，Content-Type 为 text/html，页面标题“毕业生蹭饭地图｜KDFZ & Me”。
+/health 同样返回旧地图 HTML，不能作为 API 健康通过的证据。
+/api/native/v1/workspace 返回 404。
+HTTP 根地址 301 到 HTTPS。
+
+原因判断：
+workspace 尚没有专用 Nginx server_name，落到了旧站点。
+需要添加精确匹配的独立虚拟主机，不应修改旧站点来“接管”整个根域名。
+先检查是否有其他人在交接期间已经完成该配置；不要重复操作。
+
+HTTPS 配置脚本已在 Cloud 编写并通过 bash -n：
+Server/configure-workspace-https.sh
+它尚未在目标服务器执行，也没有证据表明专用证书已签发。
+本文末尾附有该脚本的完整纯文本，可重建为本机文件后审阅使用。
+
+八、本地 Codex 先完成可靠的管理连接
+
+优先检查本机已有 SSH 配置和用户之前使用的连接，不输出私钥内容。
+先判断哪个身份有真实管理员 shell，而不是受限的旅行发布身份。
+不要把 ~/.ssh 中任意一个密钥猜成管理员密钥。
+
+若无已知管理员连接：
+1. 可用腾讯云 OrcaTerm 已登录的 root 会话执行必要操作。
+2. 若本地 Codex 确实具有浏览器/电脑操控工具，可以申请系统要求的授权，操作当前 OrcaTerm。
+3. 若需要新的 SSH 登录密钥，可在 Mac 本机创建专用于广益的 Ed25519 密钥，私钥保留本机，0600；不要覆盖已有密钥。仅将公钥追加到服务器的授权列表，保留旧条目。
+4. 可由用户在已登录的 OrcaTerm 安装公钥。不要为了省这一步把密码或私钥粘到聊天。
+5. 如果本机 SSH 需要用户输入密码或密钥口令，使用真实的交互终端，不把口令写进命令行、脚本、环境打印或历史。
+
+主机身份验证：
+ssh-keyscan 只能取得候选主机公钥，不能单独证明身份。
+读取候选公钥的指纹，与本说明的固定 ED25519 指纹核对后，才存入本项目专用 known_hosts。
+若指纹不同，停止并通过腾讯云可信控制台核实，不关闭 StrictHostKeyChecking，不盲目删除旧指纹。
+
+推荐连接参数：
+ssh -p 22 -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=本项目专用known_hosts路径 -i 已确认的管理员私钥路径 root@146.56.249.84
+
+上面是参数说明，实际执行时把占位路径替换为本机真实路径。
+SSH 的 -i 参数应写成 -i 后跟路径，不能把文中的“本项目…”直接执行。
+如需要执行本文附录里的交互脚本，使用真实 PTY，例如 ssh -tt；不要把交互密码输入伪造成自动参数。
+
+七天前旅行项目的成功通道是 GitHub Actions SSH 发布，不是 Cloud 直接 SSH。
+此前 Cloud 检查仅看到 HTTP/HTTPS 网络可用，没有配置到目标 IP 的 SSH TCP 访问，TCP 代理连接被拒绝，也没有登录凭据。
+本地 Mac 的网络、SSH 配置和凭据需要单独验证，不能继承或假定 Cloud 的状态。
+本机连接失败时区分路由、防火墙、认证、强制命令和主机指纹问题，避免无关重装。
+
+九、接管后先做的检查
+
+以下在目标服务器上执行：
+
+whoami
+uname -m
+systemctl is-active guangyi-workspace.service
+/opt/guangyi-workspace/runtime/bin/node --version
+curl --fail http://127.0.0.1:8087/health
+curl --silent --output /dev/null --write-out '%{http_code}\n' http://127.0.0.1:8087/api/native/v1/workspace
+ss -lntp
+nginx -t
+
+预期：
+root
+x86_64
+active
+v24.21.0
+{"status":"ok"}
+401
+8087 仅为 127.0.0.1 监听
+Nginx 配置检查通过
+
+必要时看新服务日志：
+journalctl -u guangyi-workspace.service --since "30 minutes ago" --no-pager
+
+只看本项目所需日志，不导出全系统日志或真实账号凭据。
+如果服务已正常运行，不需要为了查看状态重启。
+
+查看站点结构时，只输出所需的非敏感字段：
+nginx -T 2>/dev/null | awk '/^# configuration file /{print} /^[ \t]*(listen|server_name|ssl_certificate)[ \t]/{sub(/;.*/, ";");print}'
+
+不要把 nginx -T 全量输出发到聊天，也不要读取或输出私钥文件。
+保存既有站点的健康状态和非敏感发布版本基线：
+https://kdfz.com.cn/
+https://www.kdfz.com.cn/
+https://map.kdfz.com.cn/
+https://travelhk.chenqirui.cn/
+https://travelhk.chenqirui.cn/deploy-revision.json
+如某个旧站点原本有故障，应记录基线，不把本次修改误认为既有故障原因。
+
+十、完成专用 HTTPS 的方案和验收
+
+候选新 Nginx 文件：
+/etc/nginx/conf.d/guangyi-workspace.conf
+
+候选 ACME webroot：
+/var/lib/guangyi-workspace-acme
+
+候选证书及续期配置：
+/etc/letsencrypt/live/workspace.kdfz.com.cn/fullchain.pem
+/etc/letsencrypt/live/workspace.kdfz.com.cn/privkey.pem
+/etc/letsencrypt/renewal/workspace.kdfz.com.cn.conf
+
+处理顺序：
+1. 验证本机后端与旧 Nginx 配置。
+2. 确认没有同名精确站点或现有证书。若存在，先检查是否是别人已完成的本项目配置。
+3. 新增只匹配 workspace.kdfz.com.cn 的 HTTP 站点。
+4. 保留 /.well-known/acme-challenge/ 公共挑战路径；申请期间其他 HTTP 路径不提供登录接口。
+5. nginx -t 成功才 reload，不 stop/restart 整个 Nginx。
+6. 使用已有 Certbot 的 webroot 模式，仅申请该子域名证书，不使用 --nginx 插件改写所有旧站点。
+7. 证书联系邮箱由用户在可信交互终端输入，或使用已经获准的正确邮箱；它不是应用密码。
+8. 开通仅该域名的 HTTPS proxy_pass 到 http://127.0.0.1:8087。
+9. 保留原始 API 路径、请求方法、Authorization 和 If-Match，支持 128 MiB 请求体。
+10. HTTP 除 ACME 外跳转到固定的新 HTTPS 主机，避免把 Host 请求头任意拼入开放重定向。
+11. 再做 nginx -t，然后 reload。
+12. 本机通过正常证书校验和精确主机名验证，外网再独立检查一次。
+
+预期结果：
+https://workspace.kdfz.com.cn/health
+必须返回 JSON {"status":"ok"}，不能是任何 HTML，也不能只看 200。
+
+https://workspace.kdfz.com.cn/api/native/v1/workspace
+未登录应返回 401，Content-Type 为 application/json。
+401 在这里是正确的鉴权行为，不是站点故障。
+
+根路径可以返回 API 的 JSON 404。
+该地址是原生应用的后端，不包含重新托管的网页 UI。
+不要为了根路径 404 复制旧地图网站或给 API 塞入网页。
+
+验收命令：
+curl --fail https://workspace.kdfz.com.cn/health
+curl --silent --output /dev/null --write-out '%{http_code}\n' https://workspace.kdfz.com.cn/api/native/v1/workspace
+
+禁止用 curl -k 或忽略 ATS 代替正常 HTTPS。
+
+HTTPS 脚本会因已有站点文件、ACME 目录或同名证书而停止。
+如果先前尝试失败，它可能已移除新站点，但保留了 ACME 目录、证书或续期配置。
+此时不要随手删除目录来绕过保护，不要重复请求证书；核查现有状态后续接或修复。
+现有有效证书可以复用到本项目精确站点，旧站点文件仍保持不变。
+
+十一、证书续期必须完成
+
+检查系统已有的 Certbot timer/cron 和钩子，不假定申请成功就有完整续期。
+对本项目 lineage 做限定的 renew dry-run，避免批量测试或改写其他证书。
+例如，在核对当前 Certbot 支持的参数后：
+certbot renew --cert-name workspace.kdfz.com.cn --dry-run
+
+确保：
+1. ACME webroot 在之后的代码发布中保留。
+2. HTTP 挑战路径继续可访问。
+3. 专用证书可以正常续期。
+4. 续期成功后 Nginx 会在 nginx -t 通过时 reload。
+5. 复用已存在的合适 timer，或创建专用的项目 timer；不要重复配置多个竞争任务。
+6. 不把其他站点证书的路径、账户或续期策略改成广益配置。
+7. 不把私钥内容写进任何报告。
+
+十二、真实账号验证，保护现有数据
+
+当前首装时用户已设置广益应用邮箱和独立密码。
+不要在聊天请求密码，用户也不必把密码提供给 Cloud。
+可在本机可信终端隐藏输入进行验证。
+若使用服务器既有 /etc/guangyi-workspace.env，应由仅用于验证的可信进程安全加载，且不打印环境或账号密码。
+
+特别注意：
+该文件是 systemd EnvironmentFile 格式，不是可执行 Shell 脚本。
+不要使用 source /etc/guangyi-workspace.env 或 bash -x。
+密码可能包含美元符号、引号、反斜杠等；把环境文件当 Shell 执行可能产生错误或意外命令执行。
+
+登录接口：
+POST /api/native/v1/session
+请求为 JSON，email 和 password。
+
+健康与登录之外的接口使用：
+Authorization: Bearer 实际accessToken
+
+验收：
+1. 正确登录成功。
+2. token 只在测试进程内或安全临时文件持有，不输出到日志、聊天或截图。
+3. GET workspace 成功，报告 revision 和记录数量等非敏感结果即可。
+4. 当前实际快照数据不公开打印。
+5. DELETE session 后，同一 token 再 GET 应返回 401。
+6. 不上传空快照覆盖用户的数据。
+7. 若要验证 PUT 冲突，应使用隔离测试账号或有明确保护的测试环境；已有 7 项测试已覆盖 CAS，可优先复跑它们，而不是对真实账号反复写入。
+8. 不生成假 APNs 设备或向真实设备测试发送垃圾通知。
+
+十三、API 结构与已知限制
+
+GET /health：无鉴权健康检查。
+POST /api/native/v1/session：登录。
+DELETE /api/native/v1/session：撤销会话。
+GET /api/native/v1/workspace：读取快照。
+PUT /api/native/v1/workspace：完整快照更新。
+PUT /api/native/v1/devices：登记原生 APNs 设备。
+DELETE /api/native/v1/devices：注销当前用户设备。
+
+成功结构：
+{"data": ...}
+错误结构：
+{"error":{"code":"..."}}
+
+常见状态：
+401：未鉴权或会话过期。
+409：快照版本冲突。
+428：缺少 If-Match。
+422：内容校验失败。
+
+workspace GET 包含 revision 和 snapshot。
+workspace PUT 的 body 为 {"snapshot": ...}，If-Match 为带引号的当前 revision。
+服务端在 SQLite 事务中比较版本并更新，不能绕过这个版本保护。
+
+snapshot 格式：
+format = guangyi-native
+schemaVersion = 1
+records / series / activities / revisions / assets / trash 为数组
+profile 包含 name、timezone
+日期为带时区的 ISO 8601，原生导出含毫秒
+PDF Data 为 base64
+
+账号密码使用 scrypt。
+会话有效期为 30 天，没有 refresh endpoint；过期后重新登录。
+当前登录限流以连接 IP 计数，位于 Nginx 后时共享代理地址，之后可以改进但不能盲目信任客户端 X-Forwarded-For。
+服务保留最近约 5 个历史快照，仍应做独立备份。
+完整快照含附件时较大，未来增量同步和对象存储需要另行实现。
+
+十四、建立以后可由 Cloud 发布的专用通道
+
+用户明确希望“以后不再每次手动执行”。
+当前自动发布通道尚未创建，不能在报告中声称已完成。
+新后端已运行，并不等于 Cloud 已获得部署能力。
+
+已有旅行仓库：
+chenqr02/hong-kong-travel-2026
+默认分支 main
+可通过已连接的 GitHub connector 读取。
+已读取：
+README.md
+AGENTS.md
+deploy/CLOUD.md
+.github/workflows/deploy-site.yml
+
+旅行 Deploy site 会在 main push 时自动执行 site-only。
+旅行 Actions 密钥是受限公钥：
+authorized_keys 配置 restrict 和 command 网关。
+网关：
+/opt/travel-site/deploy-channel/gateway.sh
+允许 status、rollback、deploy 等受控旅行发布操作。
+它不提供管理员 Shell、PTY、SFTP 或转发。
+仓库中的网关源码修改不意味着服务器实际网关自动更新。
+
+旧 secret 名：
+TRAVELHK_DEPLOY_KEY
+TRAVELHK_KNOWN_HOSTS
+
+不要提取、复用、重设或复制这些 secrets。
+不要向旅行仓库 main 提交广益代码来触发旅行发布。
+不要往旧 gateway 追加通用 shell 或关闭 restrict。
+不要把旧网站发布成功当成广益上线成功。
+
+建议为广益创建或使用独立私有仓库。
+候选名称：guangyi-workspace。
+账号应以用户本机和连接器实际身份为准；历史用户仓库 owner 为 chenqr02，但不能盲目使用其他当前登录账号。
+如果用户已存在本项目仓库，优先检查并复用，保留本机未提交改动。
+仓库可包含完整 SwiftUI 工程与 Server；不要加入任何运行数据或真实 .env。
+
+候选专用 Actions secret：
+GUANGYI_DEPLOY_KEY
+GUANGYI_KNOWN_HOSTS
+名称可合理调整，需前后匹配并在报告明确。
+
+通过本机安全方式生成专用发布密钥，不把私钥提供给聊天。
+仅给服务器添加新的强制命令公钥条目，保留原授权列表。
+私钥通过 gh secret set 的标准输入等安全机制写入专用仓库 secrets，不把值作为 CLI 参数或打印。
+known_hosts 必须核对上述固定 ED25519 身份，不临时 ssh-keyscan 后盲目信任。
+
+候选服务器新网关路径：
+/opt/guangyi-workspace/deploy-channel/gateway.sh
+只允许本项目 status、deploy、rollback。
+严格解析 SSH_ORIGINAL_COMMAND，不 eval、不执行任意用户命令。
+提供 archive streaming 接收能力，而不是假设受限密钥可以 scp/SFTP。
+校验提交 SHA、发布 ID、包大小与摘要，拒绝目录穿越、绝对路径、symlink/hardlink、设备节点等不需要的归档条目。
+网关脚本 root 所有且不可由运行用户改写。
+用项目专用 flock 串行部署，不共享旅行锁。
+
+Actions 应做到：
+1. main push 触发后端发布；只对可信 main 使用生产部署凭据。
+2. 对同一完整提交 SHA checkout、执行 Node.js 24 测试并生成发布包。
+3. 不把工作树其他版本或旧产物发布到新 SHA。
+4. 无 npm 依赖的初版后端无需每次在生产安装依赖。
+5. 使用专用部署密钥和 StrictHostKeyChecking=yes。
+6. 向广益专用网关发送该版本，切换且仅重启 guangyi-workspace.service。
+7. 本机健康、HTTPS、鉴权检查不通过则恢复上一代码版本。
+8. 不改数据库、.env、APNs 私钥、ACME webroot 或旧站点。
+9. 发布失败在 Actions 明确失败，不能仅输出警告然后标绿。
+10. 添加后端真实版本标识，精确核对已部署 SHA。
+    当前后端没有实现 /deploy-revision.json；需要明确新增和验证，不能假装已有这个接口。
+11. 发布后核验旧站点基线未受影响。
+12. 可提供 manual status 和 rollback，限制到本项目。
+13. 保留最近可恢复版本，并维护备份；不要自动清理数据库或别的项目 release。
+
+服务目前 current 是首装创建的真实目录，不是发布 symlink。
+如果迁移到 releases/current 模式，应先验证准备好的 release，保留原源码目录作为首个可回退版本，然后有计划地切换。
+数据库和环境文件始终在 release 之外。
+代码回滚不能擅自回滚用户数据。
+未来若引入不兼容数据库迁移，需要单独的可恢复迁移方案，不能承诺任何代码都能自动回滚。
+
+新通道准备好后，用一次实际提交验证：
+GitHub main SHA = Actions checkout SHA = 包内 revision = 服务器状态/HTTPS 版本 SHA。
+验证 status，必要时做受控的代码回滚再恢复最新版本。
+报告真实 run URL、SHA、健康检查结果，不把 git push 成功当作已上线。
+如果本地现有 GitHub 权限不足以创建仓库/写 secrets/触发 Actions，明确报告缺少的具体权限，并通过可用的安全登录或用户 UI 补齐；不要要求用户在聊天提供 token。
+
+十五、原生工程与交付文件
+
+完整 Xcode 工程包：
+GuangyiWorkSpaceNative.zip
+
+后端源码包：
+GuangyiWorkSpaceServer.zip
+GuangyiWorkSpaceServer.tar.gz
+
+HTTPS 单文件脚本：
+configure-workspace-https.sh
+
+本地 Codex 的文件位置说明：
+Cloud 源码目录曾是 /workspace/GuangyiWorkSpaceNative。
+Cloud 交付目录曾是 /workspace/outputs。
+这些不是用户 Mac 上已存在的路径。
+用户需从聊天下载交付文件并在 Mac 解压；请在用户实际选择的本机目录工作。
+不要让 Mac 的终端执行 /workspace/...，不要假装本地可以直接读 Cloud 文件。
+聊天附件链接也不应假设是可供服务器 curl 下载的公开 URL。
+
+原生项目：
+GuangyiWorkSpace.xcodeproj
+Schemes：
+GuangyiWorkSpace-iOS
+GuangyiWorkSpace-Mac
+WorkspaceCoreTests
+
+推荐 Xcode 15.3 或更新稳定版。
+最低 iOS 17、macOS 14。
+Mac 是原生 macOS 目标，不是 Catalyst。
+21 个共享 Swift 源文件，另有 2 个测试文件及 Package.swift。
+主导航是 iPhone TabView、Mac NavigationSplitView。
+本机存储为 SwiftData，未启用 CloudKit。
+SwiftUI 共享代码不自动同步设备数据。
+
+用户首选本机数据，支持导入导出。
+归档为原生 GWNA1（PBKDF2 + AES-GCM）或 JSON。
+网页 GWOS1/GWOS2 备份不直接兼容，本次没有迁移原网站生产数据。
+Markdown 预览保留源码，但不是网页完整 KaTeX/GFM 渲染。
+
+服务器设置：
+在原生应用设置填写 https://workspace.kdfz.com.cn，以已有应用账号登录。
+URLSession 只允许 HTTPS，拒绝重定向，登录 token 在 Keychain。
+同步目前是下载审阅、确认上传的手动快照模式。
+
+Cloud 实际完成：
+Swift 语法树、Xcode 工程引用、plist、scheme 和图标尺寸静态检查。
+7 项 Node HTTP/SQLite 测试。
+用户服务器上的 7 项同类测试及回环 API 验收。
+Cloud 没有 Swift 编译器、Xcode 或 Apple SDK，因此没有执行 Apple 编译或 XCTest。
+13 项纯业务 XCTest 与 2 项 Apple 专用测试已提供但没有在 Cloud 运行。
+
+如果本机 Xcode 可用，可以后续验证：
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-Mac -configuration Debug -destination 'platform=macOS' build
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme WorkspaceCoreTests -destination 'platform=macOS' test
+swift test
+
+iPhone simulator 命令要使用本机实际安装的 Simulator 名称，不盲目使用示例机型。
+真机 Team、Bundle Identifier 和签名由用户的 Apple 开发者身份配置。
+如果只是接管服务器，先完成 HTTPS 与自动发布，原生编译可以作为后续任务；不要扩大成无关 UI 重写。
+
+十六、APNs：本次尚未打通，不能混淆
+
+本地 UserNotifications 与服务器 APNs 是不同通道。
+原生远程推送需要：
+Apple Team ID
+APNs Key ID
+服务器上的专用 .p8 私钥
+应用签名与 Push Notifications capability
+匹配的 iOS/Mac Bundle ID
+真机注册的 device token
+sandbox/production 匹配
+
+Info.plist RemotePushEnabled 当前默认 false。
+iOS entitlement 与 Mac entitlement 不同，工程提供分别的示例，优先由 Xcode capability 生成。
+默认 Bundle ID：
+com.guangyi.workspace.native.ios
+com.guangyi.workspace.native.mac
+若用户改 Bundle ID，服务端 allowlist 和 APNs topic 也要对应。
+
+systemd 部署没有容器 /run/secrets 路径。
+如以后接入 APNs，可将专用私钥放入受控的 /etc/guangyi-workspace/secrets/，仅 root 与运行服务需要的身份可读，并设置 APNS_PRIVATE_KEY_FILE 为真实路径。
+不要把 Docker 示例路径原样照搬到 systemd。
+不要把用户 .p8 放入 Mac 项目、交付包、Git 或 Actions 日志。
+
+每 30 秒后台扫描的后端已实现，但 APNs 凭据尚未配置。
+服务器接受推送请求不等于 iPhone 已显示。
+旧网站 VAPID 与原有提醒服务不能代替原生 APNs。
+远程通知验收需要实际签名设备，不能靠 mock 测试宣称成功。
+自动双向后台数据同步和完整账户管理同样是后续功能。
+
+十七、故障处理与回退边界
+
+1. Nginx 配置测试失败：不 reload，保留旧站点运行状态，修复本项目新增文件。
+2. 证书申请失败：检查目标 A/AAAA、CAA、80 端口可达性及 ACME 路径，不关闭验证或替换旧证书。
+3. 首次 HTTPS 脚本失败：它会尝试移除本次新增站点，保留后端、目录和证书；再检查真实状态，不盲目重跑。
+4. 后端健康失败：只处理 guangyi-workspace.service，保留 SQLite 和环境文件。
+5. 代码发布失败：恢复已验证上一代码 release，只重启广益服务，不恢复或删除用户数据库。
+6. 已有广益数据：备份使用 SQLite backup 或一致性快照方式，不只在运行中复制裸 .sqlite 而忽略 WAL。
+7. 本机 SSH 指纹不一致：通过可信控制台核实，绝不“忽略然后继续”。
+8. GitHub 密钥连接只返回受限网关报错：区分管理员身份与发布身份，不试图用发布 key 执行 shell。
+9. 遇到同名文件：检查它是不是本项目已完成的一部分，不能为了让脚本通过删除整个目录。
+10. 日志或截图中不输出密码、令牌、私钥或真实 APNs device token。
+
+十八、最终请报告的内容
+
+1. 实际管理通道：管理员 SSH / OrcaTerm / 可用电脑控制工具。
+2. 新服务 active 状态、监听地址和 Node.js 版本。
+3. 公网 HTTPS 正常证书验证结果。
+4. health JSON 和未登录 401。
+5. 真实登录、读取快照和撤销会话的结果，不报告敏感字段。
+6. 原网站健康基线是否保持。
+7. 本项目证书续期检查和 reload 钩子。
+8. 新 GitHub 仓库与专用发布工作流 URL。
+9. 一次实际自动发布的完整 SHA、Actions run URL、线上 SHA 一致性。
+10. status/rollback 功能测试情况。
+11. 未完成的条件：例如 GitHub 权限、Apple 签名、APNs 凭据、原生运行验证。
+12. 以后用户的正常流程应为“在 Cloud Codex 修改源码，推送已配置仓库，等待并核验 Actions 上线”，而不是每次上传文件。
+    只有该通道实际验证成功后，才能承诺这一流程已可用。
+
+十九、HTTPS 脚本完整附录
+
+以下从 #!/usr/bin/env bash 开始的内容，保存为 configure-workspace-https.sh。
+先审阅并执行 bash -n，再上传到服务器的专用工作目录，用管理员交互终端执行。
+如果此脚本在服务器上已经执行或存在部分配置，应先按正文检查现状，而不是强行重跑。
+脚本申请本项目的 Let’s Encrypt 证书并接受该证书申请所需条款，需要输入证书联系邮箱。
+脚本首次失败后的 ACME 和证书保留行为见正文。
+
+#!/usr/bin/env bash
+# Dedicated vhost only. Does not edit existing site configs or private app data.
+set -Eeuo pipefail
+umask 077
+
+domain=workspace.kdfz.com.cn
+config=/etc/nginx/conf.d/guangyi-workspace.conf
+webroot=/var/lib/guangyi-workspace-acme
+certificate=/etc/letsencrypt/live/workspace.kdfz.com.cn
+staging=''
+created=0
+ready=0
+
+fail() { printf '%s\n' "$*" >&2; exit 1; }
+finish() {
+    local rc=$?
+    trap - EXIT
+    if [[ "$created" == 1 && "$ready" != 1 ]]; then
+        rm -f -- "$config"
+        if nginx -t; then systemctl reload nginx || true; fi
+        printf '%s\n' '域名配置未完成，已移除本次新增站点；保留现有站点、广益后端、证书与数据。请发送末尾错误信息，不要发送私钥。' >&2
+    fi
+    if [[ -n "$staging" ]]; then rm -rf -- "$staging"; fi
+    exit "$rc"
+}
+trap finish EXIT
+
+[[ "$EUID" == 0 && -t 0 ]] || fail '请在服务器 root 网页终端运行。'
+for tool in nginx certbot curl systemctl mktemp install awk flock; do
+    command -v "$tool" >/dev/null || fail "缺少工具：$tool"
+done
+exec 9>/run/lock/guangyi-workspace-https.lock
+flock -n 9 || fail '另一个广益域名配置操作正在运行。'
+[[ ! -e "$config" && ! -L "$config" ]] || fail '同名站点配置已存在；停止，不覆盖。'
+[[ ! -e "$webroot" && ! -L "$webroot" ]] || fail '同名 ACME 目录已存在；停止，请核查先前配置结果。'
+[[ ! -e "$certificate" && ! -L "$certificate" && ! -e /etc/letsencrypt/renewal/workspace.kdfz.com.cn.conf ]] || fail '同名证书已存在；停止，不替换证书或续期配置。'
+nginx -t
+systemctl is-active --quiet guangyi-workspace.service || fail '广益后端服务未运行。'
+health=$(curl --silent --show-error --fail --max-time 5 http://127.0.0.1:8087/health)
+[[ "$health" == '{"status":"ok"}' ]] || fail '本机广益健康检查不通过。'
+if nginx -T 2>/dev/null | awk '
+    /^[[:space:]]*server_name[[:space:]]/ {
+        sub(/;.*/, "");
+        for (i=2; i<=NF; i++) if ($i == "workspace.kdfz.com.cn") found=1;
+    }
+    END { exit !found }
+'; then
+    fail '已有站点显式配置 workspace.kdfz.com.cn；停止，避免抢占站点。'
+fi
+
+printf '%s\n' '将新增广益专用 Nginx 站点，申请 Let’s Encrypt 证书；不改现有 kdfz/travel 配置。'
+read -r -p '证书联系邮箱（用于证书申请及到期联系）：' contact_email
+[[ "$contact_email" =~ ^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$ ]] || fail '邮箱格式不正确。'
+staging=$(mktemp -d /var/tmp/guangyi-https.XXXXXXXX)
+install -d -m 0755 "$webroot" "$webroot/.well-known" "$webroot/.well-known/acme-challenge"
+cat > "$staging/http.conf" <<'NGINX'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name workspace.kdfz.com.cn;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/lib/guangyi-workspace-acme;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+    location / { return 404; }
+}
+NGINX
+install -m 0644 "$staging/http.conf" "$config"
+created=1
+nginx -t
+systemctl reload nginx
+
+# Public challenges must be readable by the existing nginx worker.
+(
+    umask 022
+    certbot certonly --webroot --webroot-path "$webroot" \
+        --cert-name "$domain" --domain "$domain" \
+        --non-interactive --agree-tos --email "$contact_email"
+)
+unset contact_email
+[[ -r "$certificate/fullchain.pem" && -r "$certificate/privkey.pem" ]] || fail '证书文件未生成。'
+
+cat > "$staging/https.conf" <<'NGINX'
+server {
+    listen 80;
+    listen [::]:80;
+    server_name workspace.kdfz.com.cn;
+    location ^~ /.well-known/acme-challenge/ {
+        root /var/lib/guangyi-workspace-acme;
+        default_type text/plain;
+        try_files $uri =404;
+    }
+    location / { return 301 https://workspace.kdfz.com.cn$request_uri; }
+}
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl;
+    server_name workspace.kdfz.com.cn;
+    ssl_certificate /etc/letsencrypt/live/workspace.kdfz.com.cn/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/workspace.kdfz.com.cn/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:GuangyiTLS:10m;
+    ssl_session_timeout 1d;
+    client_max_body_size 128m;
+    location / {
+        proxy_pass http://127.0.0.1:8087;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 90s;
+        proxy_send_timeout 90s;
+    }
+}
+NGINX
+install -m 0644 "$staging/https.conf" "$config"
+nginx -t
+systemctl reload nginx
+health=$(curl --silent --show-error --fail --max-time 10 \
+    --resolve "$domain:443:127.0.0.1" "https://$domain/health")
+[[ "$health" == '{"status":"ok"}' ]] || fail 'HTTPS 健康检查不通过。'
+status=$(curl --silent --show-error --max-time 10 --output /dev/null --write-out '%{http_code}' \
+    --resolve "$domain:443:127.0.0.1" "https://$domain/api/native/v1/workspace")
+[[ "$status" == 401 ]] || fail 'HTTPS 未登录接口没有返回 401。'
+ready=1
+printf '%s\n' 'HTTPS_READY: https://workspace.kdfz.com.cn/health, health=ok, unauthenticated=401'
+printf '%s\n' '原生应用服务器地址：https://workspace.kdfz.com.cn。此地址提供 API，不是网页版界面。'
+printf '%s\n' '证书续期仍需核查现有 Certbot 定时任务与续期后的 Nginx reload；自动发布通道尚未配置。'
+
+# 脚本附录结束。

@@ -1,0 +1,94 @@
+# 广益 WorkSpace · SwiftUI 原生工程
+
+面向 **iPhone 和 Mac** 的共享 SwiftUI 实现。解压后直接打开 `GuangyiWorkSpace.xcodeproj`，无需安装 CocoaPods、XcodeGen 或第三方 Swift 包。网页工程和现有 Sites 站点没有被修改。
+
+## 在 Xcode 中打开
+
+1. 使用 Xcode 15.3 或更新版本，推荐当前稳定版本。
+2. 双击 `GuangyiWorkSpace.xcodeproj`。
+3. iPhone 选择 Scheme **GuangyiWorkSpace-iOS** 和一个 iPhone 模拟器，按 ⌘R。
+4. Mac 选择 Scheme **GuangyiWorkSpace-Mac**，运行目标为 **My Mac**，按 ⌘R。
+5. 真机运行时，在 Signing & Capabilities 中选择你自己的 Team；必要时修改 Bundle Identifier。工程没有绑定作者的签名身份。
+
+最低系统：iOS 17、macOS 14。Mac 是独立 macOS 原生目标，不是 Catalyst。iOS 目标也允许在 iPad 上运行，但本次重点为 iPhone/Mac，未验证 iPad 布局。
+
+项目包含三个共享 Scheme：iPhone 应用、Mac 应用和 WorkspaceCoreTests。`Package.swift` 仅用于独立运行纯 Foundation 业务测试，应用应打开 `.xcodeproj`。
+
+## 原生实现
+
+| 功能 | 原生 API / 实现 |
+| --- | --- |
+| iPhone 主导航 | TabView：概览、项目、行动、截止、更多 |
+| Mac 导航 | NavigationSplitView、原生菜单、⌘N 与 ⌘1…⌘5、⌘R |
+| 列表和编辑 | List、Form、NavigationStack、DatePicker、Picker、原生搜索、滑动操作和上下文菜单 |
+| 本机持久化 | SwiftData；独立上下文保存成功后才更新界面；PDF 使用 externalStorage |
+| 项目与行动 | 状态、类型、领域、里程碑、关联、安排、截止、完成/重开与归档 |
+| 截止事项 | 日期/时刻、时区、改期、完成、取消、倒计时、日/周/月循环、例外实例、停止后续循环和历史记录 |
+| 日历与时间线 | 原生图形日期选择、日程列表、Swift Charts 项目图表 |
+| 回收站 | 删除范围预览、版本复核、项目级联恢复、30 天边界；知识笔记独立恢复期限 |
+| 知识库 | 标题/正文/标签搜索、分类、置顶、Markdown 编辑与原生文本预览、版本恢复、PDFKit 附件阅读 |
+| 系统通知 | UserNotifications；到期提醒、点击定位、完成与十分钟稍后提醒 |
+| 系统日历 | 用户主动授权后，EventKit 创建/更新相关事件 |
+| 个人资料 | PhotosPicker、ImageIO 居中裁剪与去除原头像 EXIF、姓名、默认时区 |
+| 文件交换 | 原生文件选择和导出；JSON 或密码加密的 .gwspace 归档 |
+| 自建服务器 | URLSession、HTTPS、Keychain、快照版本检查、APNs 设备注册接口 |
+
+界面使用简体中文、SF Symbols 和系统语义样式，遵循系统外观与辅助功能字号。应用主体没有 WKWebView。
+
+## 本机数据与设备迁移
+
+默认本机存储，未启用 CloudKit。iPhone 与 Mac 共用代码，但不会因为使用 SwiftUI 就自动同步数据。
+
+在“设置 → 导出归档”选择保存位置，再在另一台设备的“设置 → 导入归档”读取和审阅。支持密码加密及明文 JSON；导入先校验，再按“保留本机版本 / 使用导入版本”合并，不删除本机独有记录。
+
+加密格式 `GWNA1` 使用 PBKDF2-HMAC-SHA256（200,000 轮、随机 16 字节 salt）和 AES-256-GCM。密码不保存，遗失后无法恢复。归档包含记录、循环、历史、PDF 和个人资料，不包含 Keychain 登录凭据或系统通知授权。JSON 时间精度为毫秒。
+
+单个 PDF 最大 10 MB，归档内容最多 128 MiB。网页的 GWOS1/GWOS2 加密备份采用不同格式，不能直接导入；本版未迁移原网站生产数据。Markdown 预览支持标题、代码块、引用和原生内联样式；保留全部原文，但未复制网页 KaTeX 数学排版、代码高亮和完整 GFM 表格渲染。
+
+## 本地通知
+
+在“设置 → 系统通知”允许通知，发送测试通知；原生本地通知不需要网站定时器或 APNs 服务器。
+
+提醒必须设置具体时间并开启通知。带时刻的截止事项按时刻提醒；仅日期截止事项在当天 09:00 提醒，可选择提前量。“十分钟后提醒”不改动原截止日期。
+
+应用保守安排最近 60 条待触发通知，每次进入前台重新补齐。**长时间不打开应用时，超出已安排队列的未来提醒不会自动补齐**。已经安排的通知可在应用关闭后由系统触发，但仍受系统权限、专注模式、网络/设备状态影响。循环记录预生成三年；客户端重新进入前台时滚动补齐。
+
+## 自建服务器与 APNs
+
+`Server/` 包含无需 npm 依赖的 Node.js 24 初版后端：SQLite 持久化、scrypt 密码哈希、作用域会话、版本条件快照读写、设备注册与每 30 秒后台派发。服务端只在配置 Apple APNs 凭据后发送远程通知。
+
+当前客户端采用**手动快照同步**：先下载并审阅，再上传；上传携带 If-Match，防止其他设备已更新后静默覆盖。未实现实时自动后台合并、增量同步或多用户共享权限。详见 `API-CONTRACT.md` 和 `Server/README.md`。
+
+已读取 cqr 旅行网站的 GitHub 部署说明；其专用 SSH 通道受强制命令限制，不能安装广益新后端。用户确认服务器 146.56.249.84，workspace.kdfz.com.cn 已解析到服务器，并已在 OrcaTerm 首装独立 Node.js 24 + systemd 服务、本机 API 和真实应用账号。旧 Node.js 22 服务保留；专用 HTTPS、自动发布和真实 APNs 尚未验收。本会话不能直接 SSH 或操控电脑，用户转交本地 Codex，完整任务与脚本见 `LOCAL-CODEX-HANDOFF.txt`。
+
+接入远程通知时：
+
+1. 为两个 Target 分别选择签名 Team 并添加 Push Notifications 能力。
+2. 在对应 Info.plist 将 RemotePushEnabled 改为 YES。默认 NO，便于仅使用本地通知时运行。
+3. iOS 和 Mac 的 APNs entitlement 不同；使用 Xcode 自动生成对应配置，不要混用示例。
+4. 把 Apple Team ID、Key ID 和 .p8 私钥安全配置到服务器，绝不放入应用或版本库。
+5. 在应用登录自建服务器，注册设备并验证远程收件。Debug 对应 sandbox，Release 对应 production；最终以签名配置一致为准。
+6. 确认远程推送可用后，可关闭本机定时提醒，避免本地与远程各显示一次。
+
+网页 VAPID 密钥不能代替原生 APNs 私钥。原生 APNs 需要支持该能力的 Apple 开发者签名配置；本地通知不需要远程推送能力。
+
+## 验证
+
+本次环境为 Linux，没有 swift/swiftc、Xcode 或 Apple SDK，**没有执行 Apple 平台编译、模拟器/真机运行或 XCTest**。
+
+已执行 Swift 语法树解析、Xcode 工程 OpenStep 解析及引用检查、Info.plist/entitlement/scheme 检查、图标尺寸检查与后端 7 项真实本地 HTTP/SQLite 测试。结果记录在 `VALIDATION.md`。
+
+在 Mac 上运行：
+
+```sh
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-Mac -configuration Debug -destination 'platform=macOS' build
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme WorkspaceCoreTests -destination 'platform=macOS' test
+# 按你安装的模拟器名称替换下面的示例目标
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-iOS -destination 'platform=iOS Simulator,name=iPhone 16' build
+swift test
+node --test Server/server.test.mjs
+```
+
+工程提供 13 项纯业务 XCTest 和 2 项 Apple 加密/SwiftData 测试；未在本次声称它们已经通过。
+
+`Scripts/generate_project.py` 用于重生成已附带的工程；通常不需要运行，且会覆盖工程配置。图标已附带，生成脚本仅供开发维护。

@@ -1,0 +1,15 @@
+.DS_Store
+DerivedData/
+build/
+.build/
+.swiftpm/
+xcuserdata/
+*.xcuserstate
+*.log
+.env*
+!.env.example
+*.pem
+*.p8
+*.key
+server-data/
+Server/secrets/*
