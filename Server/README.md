@@ -1,3 +1,12 @@
+# Passkey build update
+
+Backend source now lives in `server.source.mjs`. From the repository root, run
+`npm ci && npm test` to generate and verify the single-file server.mjs release.
+The server runtime still needs no npm install. See [PASSKEYS.md](../PASSKEYS.md)
+for the authentication API and remaining Apple/domain acceptance steps.
+The existing initial-install instructions below are historical; do not rerun
+initial installation on the already deployed service.
+
 # 自建后端初版
 
 此目录提供与原生客户端契约一致的后端。用户已在真实服务器执行首次安装并提供 BACKEND_READY 输出；公网专用路由与证书仍待配置。需要 Node.js 24，使用系统内置 HTTP、HTTP/2、crypto 和 SQLite，不需要 npm install。

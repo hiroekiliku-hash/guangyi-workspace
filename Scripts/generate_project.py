@@ -2,12 +2,26 @@
 """Generate the checked-in Xcode project. No XcodeGen or third-party package needed."""
 from pathlib import Path
 import hashlib
+import json
+import subprocess
+import runpy
 import plistlib
 import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 PROJECT = ROOT / "GuangyiWorkSpace.xcodeproj"
 PROJECT.mkdir(exist_ok=True)
+# Retain signing and bundle identifiers if regenerating an existing local project.
+existing_plists = {p.name: plistlib.loads(p.read_bytes()) for p in (ROOT / 'Config').glob('*.plist')}
+existing_settings = {}
+if (PROJECT / 'project.pbxproj').exists():
+    existing = json.loads(subprocess.check_output(['plutil', '-convert', 'json', '-o', '-', str(PROJECT / 'project.pbxproj')]))
+    graph = existing['objects']
+    for target in graph.values():
+        if target.get('isa') == 'PBXNativeTarget':
+            for config_id in graph[target['buildConfigurationList']]['buildConfigurations']:
+                config = graph[config_id]
+                existing_settings[(target['name'], config['name'])] = {k: v for k, v in config['buildSettings'].items() if k.startswith('CODE_SIGN') or k in ['DEVELOPMENT_TEAM', 'PRODUCT_BUNDLE_IDENTIFIER', 'MARKETING_VERSION', 'CURRENT_PROJECT_VERSION']}
 objects = {}
 def ident(name):
     return hashlib.sha256(name.encode()).hexdigest()[:24].upper()
@@ -31,7 +45,7 @@ for path in shared + tests:
     refs[path] = obj('file:' + path, isa='PBXFileReference', lastKnownFileType='sourcecode.swift', path=path, sourceTree='<group>')
 assets = obj('assets', isa='PBXFileReference', lastKnownFileType='folder.assetcatalog', path='Shared/Assets.xcassets', sourceTree='<group>')
 config_refs = []
-for name in ['iOS-Info.plist', 'Mac-Info.plist', 'Mac.entitlements', 'Push-iOS.entitlements.example', 'Push-Mac.entitlements.example']:
+for name in ['iOS-Info.plist', 'Mac-Info.plist', 'iOS.entitlements', 'Mac.entitlements', 'Push-iOS.entitlements.example', 'Push-Mac.entitlements.example']:
     config_refs.append(obj('config:' + name, isa='PBXFileReference', lastKnownFileType='text.plist.xml', path='Config/' + name, sourceTree='<group>'))
 products = []
 targets = []
@@ -59,7 +73,7 @@ for platform, name in target_names:
         if platform == 'iOS':
             settings.update({'SDKROOT': 'iphoneos', 'SUPPORTED_PLATFORMS': 'iphoneos iphonesimulator', 'IPHONEOS_DEPLOYMENT_TARGET': '17.0',
                 'TARGETED_DEVICE_FAMILY': '1,2', 'SUPPORTS_MACCATALYST': 'NO', 'INFOPLIST_FILE': 'Config/iOS-Info.plist',
-                'PRODUCT_BUNDLE_IDENTIFIER': 'com.guangyi.workspace.native.ios', 'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon',
+                'PRODUCT_BUNDLE_IDENTIFIER': 'com.guangyi.workspace.native.ios', 'CODE_SIGN_ENTITLEMENTS': 'Config/iOS.entitlements', 'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon',
                 'LD_RUNPATH_SEARCH_PATHS': ['$(inherited)', '@executable_path/Frameworks']})
         else:
             settings.update({'SDKROOT': 'macosx', 'SUPPORTED_PLATFORMS': 'macosx', 'MACOSX_DEPLOYMENT_TARGET': '14.0',
@@ -72,6 +86,7 @@ for platform, name in target_names:
             else:
                 settings.update({'INFOPLIST_FILE': 'Config/Mac-Info.plist', 'CODE_SIGN_ENTITLEMENTS': 'Config/Mac.entitlements',
                     'ASSETCATALOG_COMPILER_APPICON_NAME': 'AppIcon', 'ENABLE_HARDENED_RUNTIME': 'YES'})
+        settings.update(existing_settings.get((name, mode), {}))
         configurations.append(obj('configuration:' + platform + ':' + mode, isa='XCBuildConfiguration', buildSettings=settings, name=mode))
     config_list = obj('configurations:' + platform, isa='XCConfigurationList', buildConfigurations=configurations, defaultConfigurationIsVisible='0', defaultConfigurationName='Release')
     target = obj('target:' + platform, isa='PBXNativeTarget', buildConfigurationList=config_list,
@@ -128,12 +143,15 @@ base_info = {'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundleDisplayName': '广
     'CFBundleDocumentTypes': [{'CFBundleTypeName': 'WorkSpace归档', 'CFBundleTypeRole': 'Viewer', 'LSHandlerRank': 'Owner', 'LSItemContentTypes': ['com.guangyi.workspace.archive']}]}
 for platform in ['iOS', 'Mac']:
     info = dict(base_info)
-    if platform == 'iOS': info.update({'LSRequiresIPhoneOS': True, 'UILaunchScreen': {},
+    if platform == 'iOS': info.update({'LSRequiresIPhoneOS': True, 'LSSupportsOpeningDocumentsInPlace': False, 'UILaunchScreen': {},
         'UISupportedInterfaceOrientations': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
         'UIApplicationSupportsIndirectInputEvents': True})
     else: info.update({'LSMinimumSystemVersion': '$(MACOSX_DEPLOYMENT_TARGET)', 'LSApplicationCategoryType': 'public.app-category.productivity', 'NSHighResolutionCapable': True})
+    info.update(existing_plists.get(platform + '-Info.plist', {}))
+    if platform == 'iOS': info['LSSupportsOpeningDocumentsInPlace'] = False
     (ROOT / 'Config' / (platform + '-Info.plist')).write_bytes(plistlib.dumps(info, sort_keys=False))
-(ROOT / 'Config/Mac.entitlements').write_bytes(plistlib.dumps({'com.apple.security.app-sandbox': True,
+if not (ROOT / 'Config/Mac.entitlements').exists():
+    (ROOT / 'Config/Mac.entitlements').write_bytes(plistlib.dumps({'com.apple.security.app-sandbox': True,
     'com.apple.security.files.user-selected.read-write': True, 'com.apple.security.network.client': True,
     'com.apple.security.personal-information.calendars': True}))
 (ROOT / 'Config/Push-iOS.entitlements.example').write_bytes(plistlib.dumps({'aps-environment': 'development'}))
@@ -143,3 +161,5 @@ for platform in ['iOS', 'Mac']:
     'com.apple.developer.aps-environment': 'development'}))
 print('Generated Xcode project:', PROJECT)
 print('Shared Swift files:', len(shared), 'targets:', len(targets))
+
+runpy.run_path(str(ROOT / 'Scripts/integrate_live_activity.py'), run_name='__main__')

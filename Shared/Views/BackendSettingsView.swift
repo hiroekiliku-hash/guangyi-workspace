@@ -1,26 +1,47 @@
 import SwiftUI
+import AuthenticationServices
 
 struct BackendSettingsView: View {
     @Environment(WorkspaceStore.self) private var store
     @State private var email = ""
     @State private var password = ""
     @State private var busy = false
-    @State private var confirmingUpload = false
+    @State private var authorization = PasskeyAuthorization()
+    @State private var passkeys: [RegisteredPasskeys.Credential] = []
+    @State private var confirmingSync = false
     var body: some View {
         @Bindable var backend = store.backend
         Form {
             Section("服务器地址") {
                 TextField("https://workspace.example.com", text: $backend.address)
                     .autocorrectionDisabled()
-                    .nativeURLInput()
-                Text("需实现工程里的 /api/native/v1 接口契约。此处连接你自己的服务器，不使用 Sites 服务凭据。")
+                    .nativeURLInput().disabled(busy || store.syncing)
+                Text("使用同一账号连接 iPhone 与 Mac，登录凭据保存在本机钥匙串。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("登录") {
                 if backend.signedIn {
                     LabeledContent("账号", value: backend.displayName)
-                    Button("退出登录并注销远程设备", role: .destructive) { run { try await backend.signOut() } }
+                    Button("添加新的通行密钥", systemImage: "person.badge.key") {
+                        run { try await backend.addPasskey(using: authorization); passkeys = try await backend.registeredPasskeys().credentials; store.information = "通行密钥已添加，可在其他设备使用同一账号登录。" }
+                    }.disabled(busy || store.syncing)
+                    Text("通行密钥由系统钥匙串管理，私钥不会发送到服务器。").font(.caption).foregroundStyle(.secondary)
+                    ForEach(passkeys) { credential in
+                        HStack {
+                            Text("通行密钥 · " + Date(timeIntervalSince1970: credential.created / 1000).formatted(date: .abbreviated, time: .omitted))
+                            Spacer()
+                            Button("撤销", role: .destructive) {
+                                run { try await backend.revokePasskey(credential.id); passkeys = try await backend.registeredPasskeys().credentials }
+                            }.disabled(busy)
+                        }
+                    }
+                    Button("查看已注册通行密钥") { run { passkeys = try await backend.registeredPasskeys().credentials } }.disabled(busy)
+                    Button("退出登录并注销远程设备", role: .destructive) { run { try await backend.signOut() } }.disabled(busy || store.syncing)
                 } else {
+                    Button("使用通行密钥登录", systemImage: "person.badge.key") {
+                        run { try await backend.signInWithPasskey(using: authorization); store.information = "已使用通行密钥登录。" }
+                    }.disabled(busy)
+                    Text("首次使用请先通过密码登录，再添加一枚新的通行密钥。").font(.caption).foregroundStyle(.secondary)
                     TextField("邮箱", text: $email).autocorrectionDisabled().nativeEmailInput()
                     SecureField("密码", text: $password)
                     Button(busy ? "正在登录…" : "登录") {
@@ -31,14 +52,20 @@ struct BackendSettingsView: View {
                     }.disabled(busy || email.isEmpty || password.isEmpty)
                 }
             }
-            Section("手动同步") {
-                Button("下载并审阅服务器数据", systemImage: "arrow.down.circle") {
-                    run { store.pendingImport = try await backend.download(); store.importDescription = "服务器：\(backend.address)" }
-                }.disabled(busy || !backend.signedIn)
-                Button("上传本机快照", systemImage: "arrow.up.circle") { confirmingUpload = true }
-                    .disabled(busy || !backend.signedIn || backend.revision == nil)
-                if let sync = backend.lastSync { LabeledContent("最近传输", value: sync.formatted(date: .abbreviated, time: .shortened)) }
-                Text("先下载审阅，再上传。服务器必须原子检查版本；其他设备已经更新时会拒绝覆盖。本版默认手动同步，尚未启用自动后台合并。")
+            Section("同账号同步") {
+                LabeledContent("状态", value: store.syncStatus)
+                Toggle("打开应用时自动同步", isOn: Binding(get: { store.automaticSync }, set: { store.automaticSync = $0 }))
+                    .disabled(!backend.signedIn || store.syncing)
+                Button(store.syncing ? "正在同步…" : "立即同步", systemImage: "arrow.triangle.2.circlepath") {
+                    run { try await store.synchronize() }
+                }.disabled(busy || store.syncing || !backend.signedIn)
+                Button("首次连接或更换账号", systemImage: "person.crop.circle.badge.checkmark") { confirmingSync = true }
+                    .disabled(busy || store.syncing || !backend.signedIn)
+                Button("比较并解决同步冲突", systemImage: "arrow.left.arrow.right") {
+                    run { try await store.reviewSyncConflicts() }
+                }.disabled(busy || store.syncing || !backend.signedIn)
+                if let sync = backend.lastSync { LabeledContent("最近同步", value: sync.formatted(date: .abbreviated, time: .shortened)) }
+                Text("合并两台设备的改动。同一条记录同时修改时会暂停同步，保留双方版本供比较。自动同步在应用运行时进行，离线修改会在重新打开后重试。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("远程通知") {
@@ -52,14 +79,18 @@ struct BackendSettingsView: View {
                 Text("需要在 Xcode 配置签名与 Push Notifications 能力，并在服务器配置 APNs。项目默认使用本地通知。接入步骤见 README。")
                     .font(.caption).foregroundStyle(.secondary)
             }
-        }.formStyle(.grouped).navigationTitle("自建服务器")
-            .confirmationDialog("上传将以本机完整快照更新服务器。请确认已审阅服务器数据。", isPresented: $confirmingUpload, titleVisibility: .visible) {
-                Button("确认上传") { run { try await backend.upload(store.state); store.information = "服务器快照已更新。" } }
+        }.formStyle(.grouped).navigationTitle("账号与同步")
+            .onChange(of: backend.accountScope) { _, _ in passkeys = [] }
+            .confirmationDialog("将本机资料与当前登录账号合并？首次连接会把本机独有记录同步到此账号。", isPresented: $confirmingSync, titleVisibility: .visible) {
+                Button("确认连接并合并") { run { try await store.synchronize(bindAccount: true) } }
             }
     }
     private func run(_ operation: @escaping @MainActor () async throws -> Void) {
         busy = true
-        Task { do { try await operation() } catch { store.errorMessage = error.localizedDescription }; busy = false }
+        Task { do { try await operation() } catch {
+                let failure = error as NSError
+                if failure.domain != ASAuthorizationError.errorDomain || failure.code != ASAuthorizationError.canceled.rawValue { store.errorMessage = error.localizedDescription }
+            }; busy = false }
     }
 }
 extension View {

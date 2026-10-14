@@ -8,23 +8,29 @@ struct RecordRow: View {
                 .foregroundStyle(record.isOverdue ? Color.red : Color.indigo)
                 .font(.title3).frame(width: 28)
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.title).font(.headline).lineLimit(2)
+                Text(record.title).font(record.kind == .deadline ? .title3.weight(.semibold) : .headline).lineLimit(2)
                 if record.kind == .knowledge {
                     Text(record.category + (record.summary.isEmpty ? "" : " · " + record.summary))
                         .font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
                 } else {
-                    HStack(spacing: 6) {
-                        Text(StateLabels.title(record.status))
-                        if let date = record.dueDate ?? record.remindAt ?? record.scheduledAt {
-                            Text("·")
-                            Text(date, format: rowDateStyle)
-                        }
-                        if record.recurrenceSeriesID != nil { Image(systemName: "repeat") }
+                    ViewThatFits(in: .horizontal) {
+                        HStack(spacing: 6) { statusAndDate }
+                        VStack(alignment: .leading, spacing: 4) { statusAndDate }
                     }.font(.caption).foregroundStyle(record.isOverdue ? .red : .secondary)
+                }
+                if record.kind == .deadline, let due = record.dueDate, !record.isFinished {
+                    DeadlineCountdownView(target: record.effectiveDueDate(due))
                 }
             }
             Spacer(minLength: 4)
         }.padding(.vertical, 4).frame(minHeight: 44)
+    }
+    @ViewBuilder private var statusAndDate: some View {
+        if [.project, .milestone, .reminder].contains(record.kind) { Text(record.kind.title).fontWeight(.semibold) }
+        Text(StateLabels.title(record.status))
+        if record.isOverdue { Text("已逾期") }
+        if let date = record.dueDate ?? record.remindAt ?? record.scheduledAt { Text(date, format: rowDateStyle) }
+        if record.recurrenceSeriesID != nil { Image(systemName: "repeat").accessibilityLabel("循环事项") }
     }
     private var rowDateStyle: Date.FormatStyle {
         var style: Date.FormatStyle = record.dateOnly && record.dueDate != nil ? .dateTime.month().day() : .dateTime.month().day().hour().minute()
@@ -32,16 +38,25 @@ struct RecordRow: View {
         return style
     }
 }
+enum RecordSort: String, CaseIterable, Identifiable {
+    case standard = "默认", updated = "最近编辑", title = "标题", date = "日期"
+    var id: String { rawValue }
+}
 struct RecordListView: View {
     @Environment(WorkspaceStore.self) private var store
     let kind: ItemKind
+    var selection: Binding<UUID?>? = nil
+    var includedKinds: [ItemKind] = []
+    @State private var type = "all"
+    @State private var sort = RecordSort.standard
     @State private var query = ""
     @State private var status = "all"
     @State private var category = "all"
     @State private var seriesOnly = false
     @State private var creating = false
     private var filtered: [WorkspaceRecord] {
-        var values = store.records(kind).filter { record in
+        var values = (includedKinds.isEmpty ? store.records(kind) : includedKinds.flatMap { store.records($0) }).filter { record in
+            (type == "all" || record.kind.rawValue == type) &&
             (status == "all" || record.status == status) && (category == "all" || record.category == category) &&
             (query.isEmpty || "\(record.title) \(record.summary) \(record.body) \(record.tags.joined(separator: " "))".localizedCaseInsensitiveContains(query))
         }
@@ -49,15 +64,30 @@ struct RecordListView: View {
             var seen: Set<UUID> = []
             values = values.filter { record in record.recurrenceSeriesID.map { seen.insert($0).inserted } ?? true }
         }
+        if sort != .standard {
+            values.sort { a, b in
+                if kind == .knowledge && a.pinned != b.pinned { return a.pinned }
+                switch sort {
+                case .standard: return false
+                case .updated: return a.updatedAt == b.updatedAt ? a.id.uuidString < b.id.uuidString : a.updatedAt > b.updatedAt
+                case .title: return a.title == b.title ? a.id.uuidString < b.id.uuidString : a.title.localizedStandardCompare(b.title) == .orderedAscending
+                case .date:
+                    let x = a.dueDate ?? a.remindAt ?? a.scheduledAt ?? a.targetDate ?? .distantFuture
+                    let y = b.dueDate ?? b.remindAt ?? b.scheduledAt ?? b.targetDate ?? .distantFuture
+                    return x == y ? a.id.uuidString < b.id.uuidString : x < y
+                }
+            }
+        }
         return values
     }
     var body: some View {
-        List {
+        List(selection: selection ?? .constant(nil)) {
             if !filtered.isEmpty {
                 ForEach(filtered) { record in
-                    NavigationLink { RecordDetailView(id: record.id) } label: { RecordRow(record: record) }
+                    recordLink(record)
+                        .tag(record.id)
                         .swipeActions(edge: .trailing, allowsFullSwipe: false) {
-                            if !record.isFinished && [.task, .deadline, .reminder].contains(kind) {
+                            if !record.isFinished && [.task, .deadline, .reminder].contains(record.kind) {
                                 Button("完成", systemImage: "checkmark") { store.perform { try store.setStatus(record.id, "DONE") } }.tint(.green)
                             }
                             Button("归档", systemImage: "archivebox") { store.perform { try store.archive(record.id) } }.tint(.orange)
@@ -69,17 +99,43 @@ struct RecordListView: View {
                 }
             }
         }
-        .overlay { if filtered.isEmpty { ContentUnavailableView.search(text: query).overlay(alignment: .bottom) {
-            if query.isEmpty { Button("新建\(kind.title)", systemImage: "plus") { creating = true }.padding(.bottom, 30) }
-        } } }
+        .overlay {
+            if filtered.isEmpty {
+                ContentUnavailableView {
+                    Label(hasFilters ? "没有匹配的记录" : "还没有\(kind.title)", systemImage: hasFilters ? "magnifyingglass" : kind.symbol)
+                } description: {
+                    Text(hasFilters ? "调整搜索或清除筛选后再试。" : "创建第一条记录，开始安排工作空间。")
+                } actions: {
+                    if hasFilters { Button("清除筛选") { clearFilters() } }
+                    else { Button("新建\(kind.title)", systemImage: "plus") { creating = true } }
+                }
+            }
+        }
+        .safeAreaInset(edge: .top) {
+            if hasFilters {
+                HStack { Label("已应用筛选", systemImage: "line.3.horizontal.decrease.circle"); Spacer(); Button("清除") { clearFilters() } }
+                    .font(.caption).padding(8).background(.bar)
+            }
+        }
+        .onChange(of: filtered.map(\.id)) { _, ids in
+            if let id = selection?.wrappedValue, !ids.contains(id) { selection?.wrappedValue = nil }
+        }
         .navigationTitle(kind == .knowledge ? "知识库" : kind.title)
         .searchable(text: $query, prompt: kind == .knowledge ? "搜索标题、正文和标签" : "搜索\(kind.title)")
         .toolbar {
             ToolbarItem { Menu {
+                if !includedKinds.isEmpty {
+                    Picker("类型", selection: $type) {
+                        Text("全部行动").tag("all")
+                        ForEach(includedKinds) { Text($0.title).tag($0.rawValue) }
+                    }
+                }
+                Picker("排序", selection: $sort) { ForEach(RecordSort.allCases) { Text($0.rawValue).tag($0) } }
+                Divider()
                 if kind != .knowledge && kind != .area {
                     Picker("状态", selection: $status) {
                         Text("全部状态").tag("all")
-                        ForEach(kind.states, id: \.self) { value in Text(StateLabels.title(value)).tag(value) }
+                        ForEach(Array(Set((includedKinds.isEmpty ? [kind] : includedKinds).flatMap(\.states))).sorted(), id: \.self) { value in Text(StateLabels.title(value)).tag(value) }
                     }
                 }
                 if kind == .knowledge {
@@ -91,24 +147,28 @@ struct RecordListView: View {
                 if kind == .deadline { Toggle("每个循环显示一条", isOn: $seriesOnly) }
             } label: { Label("筛选", systemImage: "line.3.horizontal.decrease.circle") } }
             ToolbarItem(placement: .primaryAction) {
-                Button("新建\(kind.title)", systemImage: "plus") { creating = true }.keyboardShortcut("n")
+                Menu {
+                    ForEach(includedKinds.isEmpty ? [kind] : includedKinds) { value in
+                        Button("新建\(value.title)", systemImage: value.symbol) { store.createKind = value }
+                    }
+                } label: { Label("新建", systemImage: "plus") }
             }
         }
-        .sheet(isPresented: $creating) { NavigationStack { RecordEditorView(kind: kind) }.nativeSheetSize() }
+        .sheet(isPresented: $creating) { NavigationStack { RecordEditorView(kind: kind) }.nativeEditorPresentation() }
         .refreshable { store.refresh() }
     }
+    private var hasFilters: Bool { type != "all" || !query.isEmpty || status != "all" || category != "all" || seriesOnly }
+    private func clearFilters() { type = "all"; query = ""; status = "all"; category = "all"; seriesOnly = false }
+    @ViewBuilder private func recordLink(_ record: WorkspaceRecord) -> some View {
+        if selection != nil { RecordRow(record: record) }
+        else { NavigationLink { RecordDetailView(id: record.id) } label: { RecordRow(record: record) } }
+    }
+
 }
 struct ActionsView: View {
-    @State private var reminders = false
+    var selection: Binding<UUID?>? = nil
     var body: some View {
-        RecordListView(kind: reminders ? .reminder : .task)
-            .id(reminders)
-            .safeAreaInset(edge: .top) {
-                Picker("行动类型", selection: $reminders) {
-                    Text("行动事项").tag(false); Text("提醒").tag(true)
-                }.pickerStyle(.segmented).padding(.horizontal).padding(.vertical, 8)
-                    .background(.bar)
-            }
+        RecordListView(kind: .task, selection: selection, includedKinds: [.task, .project, .reminder, .milestone])
     }
 }
 struct ArchivesView: View {
@@ -143,5 +203,27 @@ struct TrashView: View {
                 }.padding(.vertical, 4)
             }
         }.navigationTitle("回收站")
+    }
+}
+
+#Preview("记录行") {
+    RecordRow(record: WorkspaceRecord(kind: .task, title: "整理下一步行动与项目安排", id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!)).padding()
+}
+
+struct DeadlineCountdownView: View {
+    let target: Date
+    var body: some View {
+        TimelineView(.periodic(from: .now, by: 1)) { context in
+            let overdue = target <= context.date
+            VStack(alignment: .leading, spacing: 4) {
+                Label(overdue ? "已逾期" : "距离截止", systemImage: overdue ? "exclamationmark.circle.fill" : "timer")
+                    .font(.caption.weight(.semibold))
+                Text(target, style: .timer).font(.title2.bold().monospacedDigit()).contentTransition(.numericText())
+            }
+            .foregroundStyle(overdue ? Color.red : Color.primary)
+            .padding(10).frame(maxWidth: .infinity, alignment: .leading)
+            .background(overdue ? Color.red.opacity(0.1) : Color.indigo.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
+            .accessibilityElement(children: .combine)
+        }
     }
 }

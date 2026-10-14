@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var photo: PhotosPickerItem?
     @State private var showExport = false
     @State private var showImport = false
+    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         Form {
@@ -38,6 +39,9 @@ struct SettingsView: View {
             Section("外观") {
                 Picker("主题", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
             }
+            #if os(iOS)
+            Section("触感") { Toggle("操作触感反馈", isOn: $hapticsEnabled) }
+            #endif
             NotificationSettingsSection()
             Section("导入与导出") {
                 LabeledContent("本机记录", value: "\(store.state.records.count) 项")
@@ -58,6 +62,9 @@ struct SettingsView: View {
                 Link("打开原网站", destination: URL(string: "https://guangyi-workspace-sites.cleverfir5.chatgpt.site/app")!)
             }
         }.formStyle(.grouped).navigationTitle("设置")
+            .environment(\.locale, Locale(identifier: "zh_CN"))
+            .environment(\.timeZone, WorkspaceDates.calendar(store.state.profile.timezone).timeZone)
+            .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
             .onAppear { name = store.state.profile.name; zone = store.state.profile.timezone }
             .onChange(of: photo) { _, value in
                 Task {
@@ -221,11 +228,11 @@ struct ImportReviewView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Button("确认合并", systemImage: "arrow.triangle.merge") {
-                    do { try store.importState(incoming, preferIncoming: preferIncoming); store.pendingImport = nil; dismiss(); store.information = "归档已合并。" }
+                    do { try store.validateSyncReviewAccount(); try store.importState(incoming, preferIncoming: preferIncoming); try store.finishSyncReview(); store.pendingImport = nil; dismiss(); store.information = "归档已合并。" }
                     catch { store.errorMessage = error.localizedDescription }
                 }.buttonStyle(.borderedProminent)
             }
         }.formStyle(.grouped).navigationTitle("确认导入")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.pendingImport = nil; dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.pendingSyncReview = nil; store.pendingImport = nil; dismiss() } } }
     }
 }

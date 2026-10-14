@@ -27,7 +27,8 @@ jobs:
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
         with:
           node-version: '24.21.0'
-      - run: node --test Server/server.test.mjs
+      - run: npm ci
+      - run: npm test
       - name: Configure dedicated SSH identity
         env:
           DEPLOY_KEY: ${{ secrets.GUANGYI_DEPLOY_KEY }}

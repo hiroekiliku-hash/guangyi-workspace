@@ -47,6 +47,15 @@ import UserNotifications
         guard !Task.isCancelled else { return }
         let owned = pending.filter { $0.identifier.hasPrefix("gw:") }.map(\.identifier)
         center.removePendingNotificationRequests(withIdentifiers: owned)
+        let liveIDs = Set(state.records.filter { WorkspaceLogic.visible($0, in: state) && !$0.isFinished }.map { $0.id.uuidString })
+        let delivered = await center.deliveredNotifications()
+        let obsolete = delivered.filter { notification in
+            guard notification.request.identifier.hasPrefix("gw:"), let id = notification.request.content.userInfo["id"] as? String else { return false }
+            return !liveIDs.contains(id)
+        }.map { $0.request.identifier }
+        center.removeDeliveredNotifications(withIdentifiers: obsolete)
+        let overdue = state.records.filter { WorkspaceLogic.visible($0, in: state) && $0.isOverdue }.count
+        try? await center.setBadgeCount(enabled ? overdue : 0)
         let candidates = state.records.compactMap { record -> (WorkspaceRecord, Date)? in
             guard WorkspaceLogic.visible(record, in: state), let date = record.notificationDate, date > Date() else { return nil }
             return (record, date)
@@ -58,7 +67,14 @@ import UserNotifications
             let content = UNMutableNotificationContent()
             content.title = "广益 WorkSpace · \(record.kind.title)"
             content.body = record.title
-            content.sound = .default; content.categoryIdentifier = "WORKSPACE_REMINDER"
+            content.sound = .default
+            content.threadIdentifier = record.projectID?.uuidString ?? "workspace-\(record.kind.rawValue)"
+            if [.task, .deadline, .reminder].contains(record.kind) { content.categoryIdentifier = "WORKSPACE_REMINDER" }
+            if let due = record.dueDate {
+                let formatter = DateFormatter(); formatter.locale = Locale(identifier: "zh_CN"); formatter.timeZone = record.calendar.timeZone
+                formatter.dateFormat = record.dateOnly ? "M月d日截止" : "M月d日 HH:mm截止"
+                content.subtitle = formatter.string(from: due)
+            }
             content.userInfo = ["id": record.id.uuidString]
             var components = record.calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
             components.timeZone = record.calendar.timeZone
@@ -89,6 +105,13 @@ import UserNotifications
             guard let record = store.record(id) else {
                 store.information = "此提醒对应的记录尚未在本机，请到设置中的自建服务器下载并审阅最新数据。"
                 return
+            }
+            if action == "COMPLETE" || action == "SNOOZE" {
+                guard WorkspaceLogic.visible(record, in: store.state), !record.isFinished,
+                      [.task, .deadline, .reminder].contains(record.kind) else {
+                    store.information = "这项提醒已完成、取消或归档，操作未重复执行。"
+                    return
+                }
             }
             if action == "COMPLETE" { store.perform { try store.setStatus(id, record.kind == .project ? "COMPLETED" : "DONE") } }
             else if action == "SNOOZE" {
