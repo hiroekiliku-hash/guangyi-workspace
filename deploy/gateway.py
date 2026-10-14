@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 """Root-owned forced command. Archives contain only the dependency-free server."""
-import os, sys, re, json, tarfile, tempfile, hashlib, subprocess, pathlib, fcntl, shutil, time
+import os, sys, re, json, tarfile, tempfile, hashlib, subprocess, pathlib, fcntl, shutil, time, sqlite3
 BASE = pathlib.Path('/opt/guangyi-workspace')
 SHA = r'[0-9a-f]{40}'
 def run(*args):
@@ -26,6 +26,12 @@ def switch(target):
     os.replace(temporary, BASE/'current')
     run('systemctl','restart','guangyi-workspace.service')
 def activate(target):
+    backups=pathlib.Path('/var/backups/guangyi-workspace')
+    backups.mkdir(mode=0o700,parents=True,exist_ok=True)
+    source=sqlite3.connect('file:/var/lib/guangyi-workspace/workspace.sqlite?mode=ro',uri=True)
+    destination=sqlite3.connect(str(backups/('before-switch-'+str(time.time_ns())+'.sqlite')))
+    try: source.backup(destination)
+    finally: destination.close(); source.close()
     previous=(BASE/'current').resolve()
     try:
         switch(target)
@@ -36,6 +42,7 @@ def activate(target):
         raise
     (BASE/'deploy-channel/previous').write_text(str(previous)+'\n')
 def main():
+    os.umask(0o077)
     command=os.environ.get('SSH_ORIGINAL_COMMAND','')
     lock=open('/run/lock/guangyi-workspace-deploy.lock','w')
     fcntl.flock(lock,fcntl.LOCK_EX)
@@ -73,7 +80,10 @@ def main():
         target=BASE/'releases'/commit
         if target.exists():
             if any((target/name).read_bytes()!=(stage/name).read_bytes() for name in allowed): raise ValueError('immutable release differs')
-        else: shutil.copytree(stage,target)
+        else:
+            shutil.copytree(stage,target)
+            target.chmod(0o755)
+            for file in target.iterdir(): file.chmod(0o644)
         activate(target)
         print(json.dumps({'revision':revision(),'deployed':True}))
 if __name__=='__main__':
