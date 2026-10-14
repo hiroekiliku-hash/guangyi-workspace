@@ -90,4 +90,5 @@ if __name__=='__main__':
     try: main()
     except Exception as error:
         print('GUANGYI_DEPLOY_FAILED: '+type(error).__name__,file=sys.stderr)
-        if isinstance(error, subprocess.CalledProcessError): print(error.output.decode()[:4000],file=sys.stderr); sys.exit(1)
+        if isinstance(error, subprocess.CalledProcessError): print(error.output.decode()[:4000],file=sys.stderr)
+        sys.exit(1)
