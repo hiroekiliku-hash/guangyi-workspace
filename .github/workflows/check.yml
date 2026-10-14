@@ -1,8 +1,7 @@
 name: Native and authentication checks
 on:
   pull_request:
-  push:
-    branches: [codex/native-passkeys]
+  workflow_dispatch:
 permissions:
   contents: read
 jobs:
@@ -20,6 +19,7 @@ jobs:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: python3 Scripts/validate_project.py
       - run: swift test
       - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-iOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/guangyi-ios CODE_SIGNING_ALLOWED=NO build
       - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-Mac -configuration Debug -destination 'platform=macOS' -derivedDataPath /tmp/guangyi-mac CODE_SIGNING_ALLOWED=NO build
