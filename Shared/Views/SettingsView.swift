@@ -115,7 +115,7 @@ struct NotificationSettingsSection: View {
                 }
             }
             Button("打开系统通知设置", systemImage: "gearshape") { openNotificationSettings() }
-            Text("安排好的本地通知由系统触发，应用关闭时仍能提醒。长时间不打开应用时，超过已安排队列的未来提醒不会自动补齐；自建服务器上线后可接入 APNs。")
+            Text("安排好的本地通知由系统触发，应用关闭时仍能提醒。长时间不打开应用时，超过已安排队列的未来提醒不会自动补齐；其他设备的改动会在账号同步后更新本机提醒安排。")
                 .font(.caption).foregroundStyle(.secondary)
         }.task { await store.notifications.refreshAuthorization() }
     }

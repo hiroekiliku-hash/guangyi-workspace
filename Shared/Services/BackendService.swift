@@ -30,7 +30,8 @@ enum NativeBackendError: LocalizedError {
         case .configuration: "请先配置自建服务器并登录。"
         case .authentication: "登录已失效，请重新登录。"
         case .conflict: "服务器数据已被其他设备修改。请先下载并审阅，避免覆盖。"
-        case .status(let status): "服务器返回错误 \(status)。请确认后端符合随工程提供的接口契约。"
+        case .status(404): "服务器暂未启用此功能，请使用密码登录或稍后重试。"
+        case .status(let status): "服务器暂时无法完成此操作（\(status)），请稍后重试。"
         case .malformed: "服务器返回的数据格式无效。"
         case .insecureURL: "服务器地址必须使用 HTTPS，不能包含用户名、密码或查询参数。"
         }
@@ -55,7 +56,10 @@ struct URLSessionBackend: NativeBackendTransport {
         let (body, response) = try await session.data(for: request)
         guard let response = response as? HTTPURLResponse else { throw NativeBackendError.malformed }
         if response.statusCode == 401 { throw NativeBackendError.authentication }
-        if response.statusCode == 409 || response.statusCode == 412 { throw NativeBackendError.conflict }
+        if response.statusCode == 409 || response.statusCode == 412 {
+            if path.hasPrefix("passkeys") { throw NativeBackendError.status(response.statusCode) }
+            throw NativeBackendError.conflict
+        }
         guard (200...299).contains(response.statusCode) else { throw NativeBackendError.status(response.statusCode) }
         guard body.count <= 128 * 1024 * 1024 else { throw WorkspaceFailure.tooLarge }
         return body

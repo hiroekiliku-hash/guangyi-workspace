@@ -68,15 +68,14 @@ struct BackendSettingsView: View {
                 Text("合并两台设备的改动。同一条记录同时修改时会暂停同步，保留双方版本供比较。自动同步在应用运行时进行，离线修改会在重新打开后重试。")
                     .font(.caption).foregroundStyle(.secondary)
             }
-            Section("远程通知") {
-                LabeledContent("设备注册", value: backend.deviceRegistrationStatus)
-                Button("注册此设备接收 APNs", systemImage: "antenna.radiowaves.left.and.right") {
-                    run {
-                        try await store.notifications.requestAuthorization()
-                        try RemotePushBridge.registerWithApple()
-                    }
-                }.disabled(!backend.signedIn || busy)
-                Text("需要在 Xcode 配置签名与 Push Notifications 能力，并在服务器配置 APNs。项目默认使用本地通知。接入步骤见 README。")
+            Section("通知与同步") {
+                if Bundle.main.object(forInfoDictionaryKey: "RemotePushEnabled") as? Bool == true {
+                    LabeledContent("远程提醒", value: backend.deviceRegistrationStatus)
+                    Button("启用此设备的远程提醒", systemImage: "antenna.radiowaves.left.and.right") {
+                        run { try await store.notifications.requestAuthorization(); try RemotePushBridge.registerWithApple() }
+                    }.disabled(!backend.signedIn || busy)
+                }
+                Text("允许通知后，已安排的本机提醒由系统发送。其他设备的改动会在数据同步后更新提醒安排。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }.formStyle(.grouped).navigationTitle("账号与同步")
