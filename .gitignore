@@ -13,3 +13,8 @@ xcuserdata/
 *.key
 server-data/
 Server/secrets/*
+
+__pycache__/
+*.pyc
+Server/REVISION
+release.tar.gz
