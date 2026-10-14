@@ -280,3 +280,36 @@ extension DeadlineTrackingPolicyTests {
         XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: WorkspaceState(records: [record]), now: now))
     }
 }
+
+extension WorkspaceSyncMergeTests {
+    func testReviewResolutionOnlySelectsConflictsAndKeepsNonconflictingEdits() throws {
+        let a = WorkspaceRecord(kind: .task, title: "冲突原始")
+        let b = WorkspaceRecord(kind: .task, title: "另一记录")
+        let c = WorkspaceRecord(kind: .task, title: "服务器删除")
+        let base = WorkspaceState(records: [a,b,c])
+        var local = base, remote = base
+        local.records[0].title = "本机冲突"
+        remote.records[0].title = "服务器冲突"
+        remote.records[1].title = "服务器独有改动"
+        remote.records.removeAll { $0.id == c.id }
+        local.records.append(WorkspaceRecord(kind: .task, title: "本机新增"))
+        let keepLocal = try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote, resolution: .local)
+        XCTAssertEqual(Set(keepLocal.records.map(\.title)), ["本机冲突","服务器独有改动","本机新增"])
+        let keepRemote = try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote, resolution: .remote)
+        XCTAssertEqual(Set(keepRemote.records.map(\.title)), ["服务器冲突","服务器独有改动","本机新增"])
+    }
+}
+
+extension WorkspaceCoreTests {
+    func testNewDeadlineReminderIsEnabledAndStopsAfterCompletion() {
+        var record = WorkspaceRecord(kind: .deadline, title: "DDL")
+        record.dateOnly = false; record.dueDate = date("2040-10-14T12:00:00+08:00")
+        record.notificationLeadMinutes = 30
+        XCTAssertTrue(record.notificationsEnabled)
+        XCTAssertEqual(record.notificationDate, record.dueDate?.addingTimeInterval(-1800))
+        record.status = "DONE"
+        XCTAssertNil(record.notificationDate)
+        record.status = "CANCELLED"
+        XCTAssertNil(record.notificationDate)
+    }
+}

@@ -20,6 +20,8 @@ import PDFKit
     private(set) var syncing = false
     private(set) var syncStatus = "尚未同步"
     var pendingSyncReview: WorkspaceSyncCheckpoint?
+    private(set) var syncReviewBase: WorkspaceState?
+    private(set) var syncReviewLocal: WorkspaceState?
     var automaticSync: Bool {
         get { UserDefaults.standard.bool(forKey: "automaticWorkspaceSync") }
         set { UserDefaults.standard.set(newValue, forKey: "automaticWorkspaceSync"); if newValue { scheduleSync() } }
@@ -62,7 +64,7 @@ import PDFKit
         scheduleSync()
     }
     func scheduleSync() {
-        guard !syncing, automaticSync, backend.accountScope != nil else { return }
+        guard !syncing, pendingSyncReview == nil, automaticSync, backend.accountScope != nil else { return }
         syncTask?.cancel()
         syncTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(2))
@@ -73,6 +75,7 @@ import PDFKit
     }
     func synchronize(bindAccount: Bool = false) async throws {
         guard !syncing else { return }
+        guard pendingSyncReview == nil else { throw WorkspaceFailure.invalid("请先完成或取消冲突比较。") }
         guard let scope = backend.accountScope else { throw WorkspaceFailure.invalid("请重新登录以确认同步账号。") }
         let saved = try repository.syncCheckpoint()
         guard bindAccount || saved?.scope == scope else {
@@ -101,20 +104,38 @@ import PDFKit
         }
     }
     func reviewSyncConflicts() async throws {
-        guard let scope = backend.accountScope else { throw NativeBackendError.configuration }
+        guard !syncing, let scope = backend.accountScope else { throw NativeBackendError.configuration }
+        syncing = true; syncTask?.cancel()
+        defer { syncing = false }
         let remote = try await backend.downloadForSync(scope: scope)
+        let saved = try repository.syncCheckpoint()
+        syncReviewBase = saved?.scope == scope ? saved?.remote.snapshot : nil
+        syncReviewLocal = state
         pendingSyncReview = WorkspaceSyncCheckpoint(scope: scope, remote: remote)
-        importDescription = "同账号同步冲突：比较本机与服务器内容"
+        importDescription = "比较本机与服务器的冲突版本"
         pendingImport = remote.snapshot
+        syncTask?.cancel()
     }
-    func validateSyncReviewAccount() throws {
-        if let review = pendingSyncReview, backend.accountScope != review.scope { throw WorkspaceSyncError.accountChanged }
+    func cancelSyncReview() {
+        pendingSyncReview = nil; syncReviewBase = nil; syncReviewLocal = nil; pendingImport = nil
     }
-    func finishSyncReview() throws {
-        guard let checkpoint = pendingSyncReview else { return }
+    func resolveSyncReview(_ resolution: WorkspaceSyncResolution) throws {
+        guard let checkpoint = pendingSyncReview, let local = syncReviewLocal else { throw NativeBackendError.configuration }
         guard backend.accountScope == checkpoint.scope else { throw WorkspaceSyncError.accountChanged }
-        try repository.save(state, checkpoint: checkpoint)
-        pendingSyncReview = nil
+        guard state == local else { throw WorkspaceFailure.invalid("比较期间本机资料发生变化，请重新打开冲突比较。") }
+        var result = try WorkspaceSyncMerge.reconcile(base: syncReviewBase, local: local, remote: checkpoint.remote.snapshot, resolution: resolution)
+        RecurrenceEngine.materialize(&result)
+        try WorkspaceLogic.validate(result)
+        try repository.save(result, checkpoint: checkpoint)
+        state = result
+        notifications.reschedule(result)
+        #if os(iOS)
+        liveActivity.synchronize(result)
+        #endif
+        pendingSyncReview = nil; syncReviewBase = nil; syncReviewLocal = nil
+        pendingImport = nil
+        feedbackSequence += 1
+        syncStatus = "冲突已解决，等待同步"
         scheduleSync()
     }
     private func log(_ record: WorkspaceRecord, _ message: String, in draft: inout WorkspaceState) {

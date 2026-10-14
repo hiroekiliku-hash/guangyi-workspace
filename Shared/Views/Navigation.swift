@@ -6,7 +6,7 @@ enum AppDestination: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .overview: "概览"
-        case .projects: "项目"
+        case .projects: "行动"
         case .actions: "行动"
         case .deadlines: "DDL"
         case .more: "更多"
@@ -36,7 +36,7 @@ enum AppDestination: String, CaseIterable, Identifiable {
         }
     }
     var creationKind: ItemKind {
-        switch self { case .projects: .project; case .deadlines: .deadline; case .knowledge: .knowledge; case .areas: .area; default: .task }
+        switch self { case .projects: .task; case .deadlines: .deadline; case .knowledge: .knowledge; case .areas: .area; default: .task }
     }
 }
 struct RecordRoute: Identifiable { var id: UUID }
@@ -59,7 +59,7 @@ struct WorkspaceRootView: View {
                 }
                 .nativeSheetSize()
             }
-            .sheet(isPresented: Binding(get: { store.pendingImport != nil }, set: { if !$0 { store.pendingImport = nil; store.pendingSyncReview = nil } })) {
+            .sheet(isPresented: Binding(get: { store.pendingImport != nil }, set: { if !$0 { store.cancelSyncReview() } })) {
                 NavigationStack { ImportReviewView() }.nativeSheetSize()
             }
             .alert("操作未完成", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
@@ -123,7 +123,7 @@ struct DestinationView: View {
     @ViewBuilder var body: some View {
         switch destination {
         case .overview: OverviewView()
-        case .projects: RecordListView(kind: .project)
+        case .projects: ActionsView()
         case .actions: ActionsView()
         case .deadlines: RecordListView(kind: .deadline)
         case .knowledge: RecordListView(kind: .knowledge)
@@ -190,7 +190,7 @@ struct MacWorkspaceNavigation: View {
     @State private var selection: UUID?
     private var listKind: ItemKind? {
         switch store.navigation {
-        case .projects: .project
+        case .projects: .task
         case .actions: .task
         case .deadlines: .deadline
         case .knowledge: .knowledge
@@ -205,7 +205,7 @@ struct MacWorkspaceNavigation: View {
                     sidebar
                 } content: {
                     VStack(spacing: 0) {
-                        if store.navigation == .actions {
+                        if store.navigation == .actions || store.navigation == .projects {
                             ActionsView(selection: $selection)
                         } else { RecordListView(kind: kind, selection: $selection).id(kind) }
                     }.navigationSplitViewColumnWidth(min: 260, ideal: 340, max: 500)

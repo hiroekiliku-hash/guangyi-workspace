@@ -47,7 +47,7 @@ struct RecordDetailView: View {
                 if let reminder = record.remindAt { LabeledContent("提醒", value: formatted(reminder, record: record, time: true)) }
                 if let scheduled = record.scheduledAt { LabeledContent("安排", value: formatted(scheduled, record: record, time: true)) }
                 if let project = record.projectID.flatMap(store.record) {
-                    NavigationLink { RecordDetailView(id: project.id) } label: { LabeledContent("项目", value: project.title) }
+                    NavigationLink { RecordDetailView(id: project.id) } label: { LabeledContent("行动组", value: project.title) }
                 }
                 if let area = record.areaID.flatMap(store.record) { LabeledContent("领域", value: area.title) }
                 if let milestone = record.milestoneID.flatMap(store.record) { LabeledContent("里程碑", value: milestone.title) }

@@ -25,7 +25,7 @@ struct RecordEditorView: View {
             notificationSection
             contentSection
             if draft.kind == .project && draft.status == "COMPLETED" && originalStatus != "COMPLETED" {
-                Section { Toggle("确认完成项目（保留未完成行动）", isOn: $confirmed) }
+                Section { Toggle("确认完成行动组（保留未完成行动）", isOn: $confirmed) }
             }
             if let localError { Section { Text(localError).foregroundStyle(.red) } }
         }
@@ -64,7 +64,7 @@ struct RecordEditorView: View {
                 }
             }
             if draft.kind == .project {
-                Picker("项目类型", selection: $draft.projectKind) {
+                Picker("分组类型", selection: $draft.projectKind) {
                     ForEach(["RESEARCH", "PAPER", "VERTICAL_PROJECT", "INDUSTRY_PROJECT", "LEARNING", "ADMINISTRATIVE", "PERSONAL"], id: \.self) { key in
                         Text(projectKindLabel(key)).tag(key)
                     }
@@ -75,7 +75,7 @@ struct RecordEditorView: View {
     @ViewBuilder private var relationshipSection: some View {
         if [.task, .deadline, .milestone].contains(draft.kind) {
             Section("关联") {
-                Picker("项目", selection: $draft.projectID) {
+                Picker("行动组", selection: $draft.projectID) {
                     Text("独立事项").tag(UUID?.none)
                     ForEach(store.records(.project)) { Text($0.title).tag(Optional($0.id)) }
                 }.onChange(of: draft.projectID) { _, _ in draft.milestoneID = nil }
@@ -98,7 +98,7 @@ struct RecordEditorView: View {
     }
     @ViewBuilder private var dateSection: some View {
         if draft.kind == .project {
-            Section("项目日期") {
+            Section("分组日期") {
                 optionalDate("开始日期", date: $draft.startDate, time: false)
                 optionalDate("目标日期", date: $draft.targetDate, time: false)
             }

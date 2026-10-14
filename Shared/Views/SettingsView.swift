@@ -212,7 +212,11 @@ struct ImportReviewView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var preferIncoming = false
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if store.pendingSyncReview != nil { SyncConflictReviewView() }
+        else { importForm }
+    }
+    private var importForm: some View {
         Form {
             if let incoming = store.pendingImport {
                 let conflicts = incoming.records.filter { item in store.record(item.id).map { !WorkspaceCoding.equivalent($0, item) } ?? false }.count
@@ -228,11 +232,89 @@ struct ImportReviewView: View {
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 Button("确认合并", systemImage: "arrow.triangle.merge") {
-                    do { try store.validateSyncReviewAccount(); try store.importState(incoming, preferIncoming: preferIncoming); try store.finishSyncReview(); store.pendingImport = nil; dismiss(); store.information = "归档已合并。" }
+                    do { try store.importState(incoming, preferIncoming: preferIncoming); store.pendingImport = nil; dismiss(); store.information = "归档已合并。" }
                     catch { store.errorMessage = error.localizedDescription }
                 }.buttonStyle(.borderedProminent)
             }
         }.formStyle(.grouped).navigationTitle("确认导入")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.pendingSyncReview = nil; store.pendingImport = nil; dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.cancelSyncReview(); dismiss() } } }
     }
+}
+
+
+struct SyncConflictReviewView: View {
+    @Environment(WorkspaceStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var resolution = WorkspaceSyncResolution.local
+    private var differences: [UUID] {
+        guard let remote = store.pendingSyncReview?.remote.snapshot else { return [] }
+        let local = store.syncReviewLocal ?? store.state
+        let left = Dictionary(uniqueKeysWithValues: local.records.map { ($0.id, $0) })
+        let right = Dictionary(uniqueKeysWithValues: remote.records.map { ($0.id, $0) })
+        return Set(left.keys).union(right.keys).filter { id in
+            if let a = left[id], let b = right[id] { return !WorkspaceCoding.equivalent(a, b) }
+            return true
+        }.sorted { $0.uuidString < $1.uuidString }
+    }
+    var body: some View {
+        List {
+            Section("冲突选择") {
+                Picker("同时修改的内容", selection: $resolution) {
+                    ForEach(WorkspaceSyncResolution.allCases) { Text($0.rawValue).tag($0) }
+                }
+                Text("此选择只处理双方同时修改的内容。其他新增、改期和删除仍按同步基线合并。下方显示所有不同记录，包括只在一端有改动的记录。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let checkpoint = store.pendingSyncReview {
+                Section("个人资料") {
+                    LabeledContent("本机", value: (store.syncReviewLocal ?? store.state).profile.name + " · " + (store.syncReviewLocal ?? store.state).profile.timezone)
+                    LabeledContent("服务器", value: checkpoint.remote.snapshot.profile.name + " · " + checkpoint.remote.snapshot.profile.timezone)
+                }
+                Section("内容比较") {
+                    if differences.isEmpty { Text("记录内容一致；请核对循环、附件或个人资料的变更。") }
+                    ForEach(differences, id: \.self) { id in
+                        VStack(alignment: .leading, spacing: 12) {
+                            version("本机", record: (store.syncReviewLocal ?? store.state).records.first { $0.id == id })
+                            Divider()
+                            version("服务器", record: checkpoint.remote.snapshot.records.first { $0.id == id })
+                        }.padding(.vertical, 6)
+                    }
+                }
+                Section("其他资料") {
+                    LabeledContent("本机循环 / 附件", value: "\((store.syncReviewLocal ?? store.state).series.count) / \((store.syncReviewLocal ?? store.state).assets.count)")
+                    LabeledContent("服务器循环 / 附件", value: "\(checkpoint.remote.snapshot.series.count) / \(checkpoint.remote.snapshot.assets.count)")
+                }
+            }
+        }.navigationTitle("比较同步内容")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { store.cancelSyncReview(); dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("应用选择") {
+                        do { try store.resolveSyncReview(resolution); dismiss(); store.information = "冲突选择已保存，可立即同步到其他设备。" }
+                        catch { store.errorMessage = error.localizedDescription }
+                    }
+                }
+            }
+    }
+    @ViewBuilder private func version(_ source: String, record: WorkspaceRecord?) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(source).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            if let record {
+                Text(record.title).font(.headline).textSelection(.enabled)
+                Text(record.deletedAt != nil ? "已删除" : record.archivedAt != nil ? "已归档" : StateLabels.title(record.status)).font(.subheadline)
+                if let due = record.dueDate { Text(dateLabel(due, record: record)).font(.caption) }
+                if !record.summary.isEmpty { Text(record.summary).textSelection(.enabled) }
+                if !record.body.isEmpty {
+                    Text(record.body).lineLimit(6).textSelection(.enabled)
+                    DisclosureGroup("查看完整正文") { Text(record.body).font(.body).textSelection(.enabled) }
+                }
+            } else { Text("此端没有这条记录").foregroundStyle(.secondary) }
+        }
+    }
+    private func dateLabel(_ date: Date, record: WorkspaceRecord) -> String {
+        var format: Date.FormatStyle = record.dateOnly ? .dateTime.year().month().day() : .dateTime.year().month().day().hour().minute()
+        format.locale = Locale(identifier: "zh_CN"); format.timeZone = record.calendar.timeZone
+        return format.format(date) + " · " + record.timezone
+    }
+
 }

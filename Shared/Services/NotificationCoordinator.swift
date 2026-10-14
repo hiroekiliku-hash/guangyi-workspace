@@ -119,7 +119,7 @@ import UserNotifications
                 changed.snoozedUntil = Date().addingTimeInterval(600)
                 store.perform { try store.save(changed, expectedVersion: record.version) }
             } else {
-                store.navigation = record.kind == .knowledge ? .knowledge : record.kind == .project ? .projects : record.kind == .deadline ? .deadlines : .actions
+                store.navigation = record.kind == .knowledge ? .knowledge : record.kind == .deadline ? .deadlines : .actions
                 store.openedRecordID = id
             }
         }

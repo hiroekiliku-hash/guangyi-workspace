@@ -105,8 +105,13 @@ enum WorkspaceLogic {
 
 /// Three-way reconciliation for same-account devices. The acknowledged server
 /// snapshot is the base; simultaneous edits to one entity require review.
+enum WorkspaceSyncResolution: String, CaseIterable, Identifiable {
+    case local = "保留本机冲突版本", remote = "使用服务器冲突版本"
+    var id: String { rawValue }
+}
+
 enum WorkspaceSyncMerge {
-    static func reconcile(base: WorkspaceState?, local: WorkspaceState, remote: WorkspaceState) throws -> WorkspaceState {
+    static func reconcile(base: WorkspaceState?, local: WorkspaceState, remote: WorkspaceState, resolution: WorkspaceSyncResolution? = nil) throws -> WorkspaceState {
         func normalized(_ state: WorkspaceState) throws -> WorkspaceState {
             try WorkspaceLogic.validate(state)
             return try WorkspaceCoding.decoder().decode(WorkspaceState.self, from: WorkspaceCoding.encoder().encode(state))
@@ -114,22 +119,23 @@ enum WorkspaceSyncMerge {
         let local = try normalized(local), remote = try normalized(remote)
         let base = try base.map(normalized)
         var result = remote
-        result.records = try entities(base?.records ?? [], local.records, remote.records, label: "记录")
-        result.series = try entities(base?.series ?? [], local.series, remote.series, label: "循环规则")
-        result.assets = try entities(base?.assets ?? [], local.assets, remote.assets, label: "附件")
-        result.activities = try entities(base?.activities ?? [], local.activities, remote.activities, label: "历史")
-        result.revisions = try entities(base?.revisions ?? [], local.revisions, remote.revisions, label: "笔记版本")
-        result.trash = try entities(base?.trash ?? [], local.trash, remote.trash, label: "回收站")
+        result.records = try entities(base?.records ?? [], local.records, remote.records, label: "记录", resolution: resolution)
+        result.series = try entities(base?.series ?? [], local.series, remote.series, label: "循环规则", resolution: resolution)
+        result.assets = try entities(base?.assets ?? [], local.assets, remote.assets, label: "附件", resolution: resolution)
+        result.activities = try entities(base?.activities ?? [], local.activities, remote.activities, label: "历史", resolution: resolution)
+        result.revisions = try entities(base?.revisions ?? [], local.revisions, remote.revisions, label: "笔记版本", resolution: resolution)
+        result.trash = try entities(base?.trash ?? [], local.trash, remote.trash, label: "回收站", resolution: resolution)
         let initialProfile = base?.profile ?? WorkspaceProfile()
         if local.profile == remote.profile || local.profile == initialProfile { result.profile = remote.profile }
         else if remote.profile == initialProfile { result.profile = local.profile }
+        else if let resolution { result.profile = resolution == .local ? local.profile : remote.profile }
         else { throw WorkspaceFailure.invalid("两台设备都修改了个人资料，请比较后选择要保留的版本。") }
         // Restoring a record on either side must remove an obsolete trash batch.
         result.trash = result.trash.filter { batch in result.records.contains { $0.trashBatchID == batch.id } }
         try WorkspaceLogic.validate(result)
         return result
     }
-    private static func entities<T: Identifiable & Equatable>(_ base: [T], _ local: [T], _ remote: [T], label: String) throws -> [T] where T.ID == UUID {
+    private static func entities<T: Identifiable & Equatable>(_ base: [T], _ local: [T], _ remote: [T], label: String, resolution: WorkspaceSyncResolution?) throws -> [T] where T.ID == UUID {
         func index(_ values: [T]) throws -> [UUID: T] {
             var result: [UUID: T] = [:]
             for value in values {
@@ -145,6 +151,7 @@ enum WorkspaceSyncMerge {
             if left == right { return left }
             if left == old { return right }
             if right == old { return left }
+            if let resolution { return resolution == .local ? left : right }
             throw WorkspaceFailure.invalid("两台设备同时修改了同一\(label)（\(id.uuidString)）。同步已停止，双方数据保留，请先解决冲突。")
         }
     }
