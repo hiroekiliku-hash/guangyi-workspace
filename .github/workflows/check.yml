@@ -1,0 +1,26 @@
+name: Native and authentication checks
+on:
+  pull_request:
+  push:
+    branches: [codex/native-passkeys]
+permissions:
+  contents: read
+jobs:
+  authentication:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.21.0'
+      - run: npm ci
+      - run: npm test
+      - run: git diff --exit-code -- Server/server.mjs
+  native:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - run: swift test
+      - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-iOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/guangyi-ios CODE_SIGNING_ALLOWED=NO build
+      - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-Mac -configuration Debug -destination 'platform=macOS' -derivedDataPath /tmp/guangyi-mac CODE_SIGNING_ALLOWED=NO build
+      - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme WorkspaceCoreTests -destination 'platform=macOS' -derivedDataPath /tmp/guangyi-tests test
