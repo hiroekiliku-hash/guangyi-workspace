@@ -82,3 +82,13 @@ for mode, settings in configurations(host).items():
     for field in ['DEVELOPMENT_TEAM', 'MARKETING_VERSION', 'CURRENT_PROJECT_VERSION', 'IPHONEOS_DEPLOYMENT_TARGET']:
         assert extension.get(field) == settings.get(field), field
 print('Widget bundle prefix, inherited signing/version and actual embed product checked.')
+
+for target in apps.values():
+    for phase_key in target['buildPhases']:
+        phase = native[phase_key]
+        if phase['isa'] != 'PBXSourcesBuildPhase': continue
+        references = [native[file]['fileRef'] for file in phase['files']]
+        assert len(references) == len(set(references)), 'Duplicate Swift source membership'
+        for reference in references:
+            assert (root / native[reference]['path']).is_file(), native[reference]['path']
+print('All target Swift source files exist and have unique membership.')
