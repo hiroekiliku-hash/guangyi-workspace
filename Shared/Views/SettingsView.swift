@@ -274,6 +274,8 @@ struct SyncConflictReviewView: View {
                     if differences.isEmpty { Text("记录内容一致；请核对循环、附件或个人资料的变更。") }
                     ForEach(differences, id: \.self) { id in
                         VStack(alignment: .leading, spacing: 12) {
+                            Label(isConflict(id) ? "双方同时修改：将按您的选择处理" : "单端改动：将自动合并", systemImage: isConflict(id) ? "exclamationmark.triangle" : "arrow.triangle.merge")
+                                .font(.caption.weight(.semibold)).foregroundStyle(isConflict(id) ? Color.orange : Color.secondary)
                             version("本机", record: (store.syncReviewLocal ?? store.state).records.first { $0.id == id })
                             Divider()
                             version("服务器", record: checkpoint.remote.snapshot.records.first { $0.id == id })
@@ -310,6 +312,16 @@ struct SyncConflictReviewView: View {
                 }
             } else { Text("此端没有这条记录").foregroundStyle(.secondary) }
         }
+    }
+    private func isConflict(_ id: UUID) -> Bool {
+        let old = store.syncReviewBase?.records.first { $0.id == id }
+        let local = (store.syncReviewLocal ?? store.state).records.first { $0.id == id }
+        let remote = store.pendingSyncReview?.remote.snapshot.records.first { $0.id == id }
+        func equivalent(_ a: WorkspaceRecord?, _ b: WorkspaceRecord?) -> Bool {
+            if let a, let b { return WorkspaceCoding.equivalent(a, b) }
+            return a == nil && b == nil
+        }
+        return !equivalent(local, remote) && !equivalent(local, old) && !equivalent(remote, old)
     }
     private func dateLabel(_ date: Date, record: WorkspaceRecord) -> String {
         var format: Date.FormatStyle = record.dateOnly ? .dateTime.year().month().day() : .dateTime.year().month().day().hour().minute()
