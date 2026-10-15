@@ -23684,7 +23684,8 @@ var APIError = class extends Error {
 };
 function passkeyRecoveryTable(db) {
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_recoveries(
-    hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,created INTEGER NOT NULL);`);
+    hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,created INTEGER NOT NULL);
+    CREATE UNIQUE INDEX IF NOT EXISTS passkey_recoveries_user_id ON passkey_recoveries(user_id);`);
 }
 function createPasskeyRecovery(db, { email, origin, now = Date.now() }) {
   const parsed = new URL(origin);
@@ -23693,8 +23694,15 @@ function createPasskeyRecovery(db, { email, origin, now = Date.now() }) {
   const users = email ? db.prepare("SELECT id,email FROM users WHERE email=?").all(email.trim().toLowerCase()) : db.prepare("SELECT id,email FROM users ORDER BY id").all();
   if (users.length !== 1) throw new Error(email ? "ACCOUNT_NOT_FOUND" : "ACCOUNT_MUST_BE_SPECIFIED");
   const user = users[0], token = randomBytes(32).toString("base64url"), expires = now + 10 * 6e4;
-  db.prepare("DELETE FROM passkey_recoveries WHERE expires<=? OR user_id=?").run(now, user.id);
-  db.prepare("INSERT INTO passkey_recoveries(hash,user_id,expires,created) VALUES(?,?,?,?)").run(sha(token), user.id, expires, now);
+  db.exec("BEGIN IMMEDIATE");
+  try {
+    db.prepare("DELETE FROM passkey_recoveries WHERE expires<=? OR user_id=?").run(now, user.id);
+    db.prepare("INSERT INTO passkey_recoveries(hash,user_id,expires,created) VALUES(?,?,?,?)").run(sha(token), user.id, expires, now);
+    db.exec("COMMIT");
+  } catch (error) {
+    db.exec("ROLLBACK");
+    throw error;
+  }
   return { token, url: `${origin}/#passkey-recovery=${token}`, expires, account: user.email };
 }
 function issuePasskeyRecovery({ databasePath, email, origin = "https://workspace.kdfz.com.cn", now = Date.now() }) {
@@ -23790,8 +23798,8 @@ function createNativeServer(configuration) {
   if (parsedOrigin.hostname !== rpID || parsedOrigin.origin !== passkeyOrigin || parsedOrigin.protocol !== "https:" && !(rpID === "localhost" && parsedOrigin.protocol === "http:")) throw new Error("INVALID_PASSKEY_ORIGIN");
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_users(user_id INTEGER PRIMARY KEY REFERENCES users(id),handle TEXT UNIQUE NOT NULL);
     CREATE TABLE IF NOT EXISTS passkeys(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),public_key BLOB NOT NULL,counter INTEGER NOT NULL,created INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS passkey_recoveries(hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,created INTEGER NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
+  passkeyRecoveryTable(db);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
   const attempts = /* @__PURE__ */ new Map();
   function passkeyRateLimit(request) {

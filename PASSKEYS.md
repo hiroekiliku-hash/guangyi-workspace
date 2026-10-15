@@ -28,10 +28,11 @@ Password-loss recovery:
 The recovery command needs direct filesystem access to the SQLite database; there
 is no public endpoint that creates recovery links. Only a SHA-256 token hash is
 stored. Issuing a new link invalidates the older link for that account. The link
-is consumed in the same SQLite transaction that saves the verified public key,
-and expires after ten minutes. The browser removes the fragment from its address
-bar before sending any request. It never submits the token in a URL, server log,
-referrer, or long-term browser storage.
+is issued in a SQLite write transaction with a one-active-link-per-account
+constraint. It is consumed in the same transaction that saves the verified
+public key, and expires after ten minutes. The browser removes the fragment from
+its address bar before sending any request. It never submits the token in a URL,
+server log, referrer, or long-term browser storage.
 
 Registration attaches a new passkey to the existing authenticated account. It
 never recreates an account or changes its workspace. Challenges are random,

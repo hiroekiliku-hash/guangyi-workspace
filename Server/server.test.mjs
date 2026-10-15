@@ -229,10 +229,18 @@ test('passkeys register, verify real signatures, reject replay/tampering and rev
     return {status:result.status,value:await result.json()};
   }
   try {
+    const preserved=instance.issuePasskeyRecovery();
+    instance.db.exec("CREATE TRIGGER reject_recovery BEFORE INSERT ON passkey_recoveries BEGIN SELECT RAISE(ABORT, 'test recovery insert failure'); END;");
+    assert.throws(()=>instance.issuePasskeyRecovery(),/test recovery insert failure/);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS total FROM passkey_recoveries WHERE hash=?').get(createHash('sha256').update(preserved.token).digest('hex')).total,1);
+    instance.db.exec('DROP TRIGGER reject_recovery');
     const superseded=instance.issuePasskeyRecovery();
     const recovery=instance.issuePasskeyRecovery();
     assert.match(recovery.url,/^https:\/\/passkey\.test\/#passkey-recovery=[A-Za-z0-9_-]{43}$/);
     assert.notEqual(recovery.token,superseded.token);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS total FROM passkey_recoveries').get().total,1);
+    const owner=instance.db.prepare('SELECT id FROM users WHERE email=?').get('passkey@test.invalid');
+    assert.throws(()=>instance.db.prepare('INSERT INTO passkey_recoveries VALUES(?,?,?,?)').run('second-hash',owner.id,testClock+600000,testClock),/UNIQUE constraint failed/);
     assert.equal(instance.db.prepare('SELECT COUNT(*) AS total FROM passkey_recoveries WHERE hash=?').get(recovery.token).total,0);
     assert.equal((await api('passkeys/recovery/options',{token:superseded.token})).status,401);
     const recoveryOptions=(await api('passkeys/recovery/options',{token:recovery.token})).value.data;
