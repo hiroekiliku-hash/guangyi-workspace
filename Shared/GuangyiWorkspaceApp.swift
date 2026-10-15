@@ -30,6 +30,16 @@ import SwiftUI
                 var overdue = WorkspaceRecord(kind: .deadline, title: "已逾期事项，优先处理", id: UUID(uuidString: "10000000-0000-0000-0000-000000000004")!)
                 overdue.dateOnly = false; overdue.dueDate = Date().addingTimeInterval(-600)
                 try store.save(overdue, expectedVersion: nil)
+                if ProcessInfo.processInfo.arguments.contains("--ui-smoke-notification") {
+                    Task {
+                        do {
+                            try await store.notifications.requestAuthorization()
+                            try await store.notifications.sendTest()
+                        } catch {
+                            store.errorMessage = error.localizedDescription
+                        }
+                    }
+                }
             }
             #endif
             _store = State(initialValue: store)
@@ -57,7 +67,15 @@ import SwiftUI
     private var mainWindow: some Scene {
         WindowGroup {
             if let store {
+                #if DEBUG
+                if ProcessInfo.processInfo.arguments.contains("--ui-smoke-backend") {
+                    NavigationStack { BackendSettingsView() }.environment(store).nativeWindowSize()
+                } else {
+                    WorkspaceRootView().environment(store).nativeWindowSize()
+                }
+                #else
                 WorkspaceRootView().environment(store).nativeWindowSize()
+                #endif
             } else { startupFailure }
         }.defaultSize(width: 1180, height: 780)
     }

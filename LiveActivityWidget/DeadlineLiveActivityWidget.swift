@@ -15,6 +15,7 @@ struct DeadlineLiveActivityWidget: Widget {
                 }
                 ProgressView(timerInterval: context.attributes.startedAt...context.state.dueDate, countsDown: false)
                     .tint(.indigo)
+                    .labelsHidden()
             }.padding(16)
                 .activityBackgroundTint(Color(.secondarySystemBackground))
                 .activitySystemActionForegroundColor(.indigo)
@@ -40,7 +41,10 @@ struct DeadlineLiveActivityWidget: Widget {
     }
     @ViewBuilder private func timer(_ context: ActivityViewContext<DeadlineActivityAttributes>) -> some View {
         if context.isStale { Text("00:00") }
-        else { Text(timerInterval: context.attributes.startedAt...context.state.dueDate, countsDown: true, showsHours: true) }
+        else {
+            Text(context.state.dueDate, style: .timer)
+                .contentTransition(.numericText(countsDown: true))
+        }
     }
     private func url(_ context: ActivityViewContext<DeadlineActivityAttributes>) -> URL {
         URL(string: "guangyi-workspace://record/\(context.attributes.recordID.uuidString)")!
