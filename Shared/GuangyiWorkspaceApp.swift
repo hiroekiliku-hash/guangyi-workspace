@@ -65,19 +65,29 @@ import SwiftUI
     @AppStorage("appearance") private var appearanceRaw = "system"
     private var settingsAppearance: ColorScheme? { appearanceRaw == "light" ? .light : appearanceRaw == "dark" ? .dark : nil }
     private var mainWindow: some Scene {
-        WindowGroup {
-            if let store {
-                #if DEBUG
-                if ProcessInfo.processInfo.arguments.contains("--ui-smoke-backend") {
-                    NavigationStack { BackendSettingsView() }.environment(store).nativeWindowSize()
-                } else {
-                    WorkspaceRootView().environment(store).nativeWindowSize()
-                }
-                #else
+        #if os(iOS)
+        WindowGroup { rootContent }
+            .defaultSize(width: 1180, height: 780)
+            .backgroundTask(.appRefresh(WorkspaceBackgroundSync.taskIdentifier)) {
+                await WorkspaceBackgroundSync.perform(store)
+            }
+        #else
+        WindowGroup { rootContent }
+            .defaultSize(width: 1180, height: 780)
+        #endif
+    }
+    @ViewBuilder private var rootContent: some View {
+        if let store {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--ui-smoke-backend") {
+                NavigationStack { BackendSettingsView() }.environment(store).nativeWindowSize()
+            } else {
                 WorkspaceRootView().environment(store).nativeWindowSize()
-                #endif
-            } else { startupFailure }
-        }.defaultSize(width: 1180, height: 780)
+            }
+            #else
+            WorkspaceRootView().environment(store).nativeWindowSize()
+            #endif
+        } else { startupFailure }
     }
     private var startupFailure: some View {
         ContentUnavailableView("无法打开本机资料库", systemImage: "externaldrive.badge.exclamationmark",

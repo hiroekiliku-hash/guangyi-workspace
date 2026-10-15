@@ -68,9 +68,12 @@ apps = {v['name']: v for v in native.values() if v.get('isa') == 'PBXNativeTarge
 host = apps['GuangyiWorkSpace-iOS']; widget = apps['DeadlineLiveActivityWidget']
 assert any(native[key]['target'] == next(key for key, value in native.items() if value is widget) for key in host['dependencies'])
 assert any(native[key].get('dstSubfolderSpec') == '13' for key in host['buildPhases'])
-assert plistlib.loads((root/'Config/iOS-Info.plist').read_bytes())['NSSupportsLiveActivities']
+ios_info = plistlib.loads((root/'Config/iOS-Info.plist').read_bytes())
+assert ios_info['NSSupportsLiveActivities']
+assert 'fetch' in ios_info['UIBackgroundModes']
+assert 'com.guangyi.workspace.native.ios.refresh' in ios_info['BGTaskSchedulerPermittedIdentifiers']
 assert plistlib.loads((root/'Config/LiveActivity-Info.plist').read_bytes())['NSExtension']['NSExtensionPointIdentifier'] == 'com.apple.widgetkit-extension'
-print('Live Activity dependency, embedding and plist declarations checked.')
+print('Live Activity and background refresh declarations checked.')
 
 assert len(apps) == 4
 assert any(native[file]['fileRef'] == widget['productReference'] for phase in host['buildPhases'] if native[phase]['isa'] == 'PBXCopyFilesBuildPhase' and native[phase].get('dstSubfolderSpec') == '13' for file in native[phase]['files'])

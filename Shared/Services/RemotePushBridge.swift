@@ -2,7 +2,36 @@ import Foundation
 #if os(macOS)
 import AppKit
 #else
+import BackgroundTasks
 import UIKit
+#endif
+
+#if os(iOS)
+@MainActor enum WorkspaceBackgroundSync {
+    static let taskIdentifier = "com.guangyi.workspace.native.ios.refresh"
+
+    static func updateSchedule(for store: WorkspaceStore?) {
+        guard let store, store.canAutomaticallySync else {
+            BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: taskIdentifier)
+            return
+        }
+        let request = BGAppRefreshTaskRequest(identifier: taskIdentifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 15 * 60)
+        try? BGTaskScheduler.shared.submit(request)
+    }
+
+    static func perform(_ store: WorkspaceStore?) async {
+        guard let store, store.canAutomaticallySync else {
+            updateSchedule(for: store)
+            return
+        }
+        // Schedule the next opportunity before starting so cancellation does not
+        // silently disable future refreshes. The system decides the actual time.
+        updateSchedule(for: store)
+        guard !store.syncing else { return }
+        try? await store.synchronize()
+    }
+}
 #endif
 
 @MainActor final class RemotePushBridge {

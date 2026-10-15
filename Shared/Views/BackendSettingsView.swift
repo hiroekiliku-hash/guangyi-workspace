@@ -54,7 +54,7 @@ struct BackendSettingsView: View {
             }
             Section("同账号同步") {
                 LabeledContent("状态", value: store.syncStatus)
-                Toggle("打开应用时自动同步", isOn: Binding(get: { store.automaticSync }, set: { store.automaticSync = $0 }))
+                Toggle("自动同步", isOn: Binding(get: { store.automaticSync }, set: { store.automaticSync = $0 }))
                     .disabled(!backend.signedIn || store.syncing)
                 Button(store.syncing ? "正在同步…" : "立即同步", systemImage: "arrow.triangle.2.circlepath") {
                     run { try await store.synchronize() }
@@ -65,7 +65,7 @@ struct BackendSettingsView: View {
                     run { try await store.reviewSyncConflicts() }
                 }.disabled(busy || store.syncing || !backend.signedIn)
                 if let sync = backend.lastSync { LabeledContent("最近同步", value: sync.formatted(date: .abbreviated, time: .shortened)) }
-                Text("合并两台设备的改动。同一条记录同时修改时会暂停同步，保留双方版本供比较。自动同步在应用运行时进行，离线修改会在重新打开后重试。")
+                Text("合并两台设备的改动。同一条记录同时修改时会暂停同步，保留双方版本供比较。应用运行时会在修改后和定时自动同步；iPhone 进入后台时会向系统申请短时刷新，执行时机由 iOS 决定。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("通知与同步") {
@@ -75,12 +75,12 @@ struct BackendSettingsView: View {
                         run { try await store.notifications.requestAuthorization(); try RemotePushBridge.registerWithApple() }
                     }.disabled(!backend.signedIn || busy)
                 }
-                Text("允许通知后，已安排的本机提醒由系统发送。其他设备的改动会在数据同步后更新提醒安排。")
+                Text("允许通知后，已安排的本机提醒由系统发送。其他设备的改动会在前台自动同步或系统批准的后台刷新后更新提醒安排。")
                     .font(.caption).foregroundStyle(.secondary)
             }
         }.formStyle(.grouped).navigationTitle("账号与同步")
             .onChange(of: backend.accountScope) { _, _ in passkeys = [] }
-            .confirmationDialog("将本机资料与当前登录账号合并？首次连接会把本机独有记录同步到此账号。", isPresented: $confirmingSync, titleVisibility: .visible) {
+            .confirmationDialog("将本机资料与当前登录账号合并？首次连接会把本机独有记录同步到此账号，并开启自动同步。", isPresented: $confirmingSync, titleVisibility: .visible) {
                 Button("确认连接并合并") { run { try await store.synchronize(bindAccount: true) } }
             }
     }

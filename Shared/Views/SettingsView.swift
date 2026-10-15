@@ -48,7 +48,7 @@ struct SettingsView: View {
                 LabeledContent("PDF 附件", value: "\(store.state.assets.count) 个")
                 Button("导出归档", systemImage: "square.and.arrow.up") { showExport = true }
                 Button("导入归档", systemImage: "square.and.arrow.down") { showImport = true }
-                Text("通过加密归档或 JSON 在 iPhone 与 Mac 之间迁移。默认本机存储；SwiftUI 不会自动同步设备数据。")
+                Text("通过加密归档或 JSON 手动迁移，也可以在“登录与设备同步”中启用服务器自动同步。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("自建服务器") {
