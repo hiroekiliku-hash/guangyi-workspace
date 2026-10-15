@@ -49,8 +49,9 @@ WebAuthn binary fields as base64url and uses the same endpoints and validation
 as the native clients. The bearer session remains in tab-scoped sessionStorage;
 the page never receives or stores authenticator private-key material.
 
-Database changes are additive tables: passkey_users, passkeys and
-passkey_challenges. Existing accounts, sessions and workspace rows are retained.
+Database changes are additive tables: passkey_users, passkeys,
+passkey_challenges and passkey_recoveries. Existing accounts, sessions and
+workspace rows are retained.
 An older release can still read the database after a code rollback; rollback
 continues not to restore the database.
 

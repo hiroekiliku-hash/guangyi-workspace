@@ -71,7 +71,7 @@ APNS_PRIVATE_KEY_FILE=/run/secrets/apns-key.p8
 APNS_ALLOWED_BUNDLE_IDS=你实际使用的iOSBundleID,你实际使用的MacBundleID
 ```
 
-将真实 .p8 放入服务器 secrets 目录，限制权限并确保容器 uid 1000 可以只读访问。不要把它放入原生应用、Git 或交付包。配置后重启 API 容器，使用已签名真机/应用注册设备并验证后台发送。服务端会派发到期提醒，也会在工作空间 revision 更新后发送只含 revision 的静默同步提示。
+生产 systemd 安装应把真实 .p8 放在 release 目录之外的专用 secrets 路径，设为 `root:guangyi-workspace` 且权限不宽于 `0640`，并让 `APNS_PRIVATE_KEY_FILE` 指向该文件；若使用上面的历史 Docker 方案，则改为确保容器实际运行用户可以只读访问。不要把私钥放入原生应用、Git 或交付包。更新 EnvironmentFile 后只重启 `guangyi-workspace.service`；Docker 方案才重启对应 API 容器。随后用已签名真机/应用注册设备并验证后台发送。服务端会派发到期提醒，也会在工作空间 revision 更新后发送只含 revision 的静默同步提示。
 
 ## 数据与边界
 
