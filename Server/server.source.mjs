@@ -6,6 +6,9 @@ import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey,
 import { readFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { effectiveDeadline, formatCountdown, webAsset } from './web.mjs';
+
+export { effectiveDeadline, formatCountdown };
 
 let deploymentRevision = 'unversioned';
 try { deploymentRevision = readFileSync(join(dirname(new URL(import.meta.url).pathname), 'REVISION'), 'utf8').trim(); } catch {}
@@ -152,9 +155,17 @@ export function createNativeServer(configuration) {
     response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
     response.end(JSON.stringify(data));
   }
+  function respondWeb(response, asset, headOnly) {
+    response.writeHead(200, asset.headers);
+    response.end(headOnly ? undefined : asset.body);
+  }
   const server = http.createServer(async (request, response) => {
     try {
       const path = new URL(request.url, 'http://localhost').pathname;
+      if (request.method === 'GET' || request.method === 'HEAD') {
+        const asset = webAsset(path);
+        if (asset) return respondWeb(response, asset, request.method === 'HEAD');
+      }
       if (path === '/.well-known/apple-app-site-association' && request.method === 'GET') return respond(response, 200, { webcredentials: { apps: passkeyApps } });
       if (path === '/api/native/v1/passkeys/login/options' && request.method === 'POST') {
         passkeyRateLimit(request);

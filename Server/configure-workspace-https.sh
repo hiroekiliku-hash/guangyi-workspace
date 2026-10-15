@@ -127,5 +127,5 @@ status=$(curl --silent --show-error --max-time 10 --output /dev/null --write-out
 [[ "$status" == 401 ]] || fail 'HTTPS 未登录接口没有返回 401。'
 ready=1
 printf '%s\n' 'HTTPS_READY: https://workspace.kdfz.com.cn/health, health=ok, unauthenticated=401'
-printf '%s\n' '原生应用服务器地址：https://workspace.kdfz.com.cn。此地址提供 API，不是网页版界面。'
+printf '%s\n' '应用服务器地址：https://workspace.kdfz.com.cn。当前 release 可同时提供 API 与只读网页版。'
 printf '%s\n' '证书续期仍需核查现有 Certbot 定时任务与续期后的 Nginx reload；自动发布通道尚未配置。'

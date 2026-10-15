@@ -1,6 +1,6 @@
 # 广益 WorkSpace · SwiftUI 原生工程
 
-面向 **iPhone 和 Mac** 的共享 SwiftUI 实现。解压后直接打开 `GuangyiWorkSpace.xcodeproj`，无需安装 CocoaPods、XcodeGen 或第三方 Swift 包。网页工程和现有 Sites 站点没有被修改。
+面向 **iPhone 和 Mac** 的共享 SwiftUI 实现，并附带同源只读网页版。原生工程直接打开 `GuangyiWorkSpace.xcodeproj`，无需安装 CocoaPods、XcodeGen 或第三方 Swift 包；网页源码由后端构建进单文件发布包，不依赖原 Sites 工程。
 
 ## 在 Xcode 中打开
 
@@ -18,11 +18,11 @@
 
 | 功能 | 原生 API / 实现 |
 | --- | --- |
-| iPhone 主导航 | TabView：概览、项目、行动、截止、更多 |
-| Mac 导航 | NavigationSplitView、原生菜单、⌘N 与 ⌘1…⌘5、⌘R |
+| iPhone 主导航 | TabView：行动、DDL |
+| Mac 导航 | NavigationSplitView：行动、DDL；原生菜单、⌘N、⌘1/⌘2 与 ⌘R |
 | 列表和编辑 | List、Form、NavigationStack、DatePicker、Picker、原生搜索、滑动操作和上下文菜单 |
 | 本机持久化 | SwiftData；独立上下文保存成功后才更新界面；PDF 使用 externalStorage |
-| 项目与行动 | 状态、类型、领域、里程碑、关联、安排、截止、完成/重开与归档 |
+| 行动与行动组 | 状态、类型、领域、里程碑、关联、安排、截止、完成/重开与归档 |
 | 截止事项 | 日期/时刻、时区、改期、完成、取消、倒计时、日/周/月循环、例外实例、停止后续循环和历史记录 |
 | 日历与时间线 | 原生图形日期选择、日程列表、Swift Charts 项目图表 |
 | 回收站 | 删除范围预览、版本复核、项目级联恢复、30 天边界；知识笔记独立恢复期限 |
@@ -32,6 +32,7 @@
 | 个人资料 | PhotosPicker、ImageIO 居中裁剪与去除原头像 EXIF、姓名、默认时区 |
 | 文件交换 | 原生文件选择和导出；JSON 或密码加密的 .gwspace 归档 |
 | 自建服务器 | URLSession、HTTPS、Keychain、快照版本检查、APNs 设备注册接口 |
+| 只读网页版 | 同账号密码/通行密钥登录、行动与 DDL、按记录时区计算的秒级倒计时 |
 
 界面使用简体中文、SF Symbols 和系统语义样式，遵循系统外观与辅助功能字号。应用主体没有 WKWebView。
 
@@ -55,11 +56,13 @@
 
 ## 自建服务器与 APNs
 
-`Server/` 包含无需 npm 依赖的 Node.js 24 初版后端：SQLite 持久化、scrypt 密码哈希、作用域会话、版本条件快照读写、设备注册与每 30 秒后台派发。服务端只在配置 Apple APNs 凭据后发送远程通知。
+`Server/` 包含 Node.js 24 后端：SQLite 持久化、scrypt 密码哈希、作用域会话、版本条件快照读写、设备注册与每 30 秒后台派发。源码构建使用固定版本的 SimpleWebAuthn 与 esbuild，发布后的单文件运行时无需 npm install。服务端只在配置 Apple APNs 凭据后发送远程通知。
 
 首次连接账号时会明确确认本机资料与服务器资料的合并。此后客户端在前台修改后和定时自动同步，iOS 也会申请系统后台刷新；上传携带 If-Match，并以账号专属基线做三方合并，同一记录的并发修改会暂停并要求审阅。配置 APNs 后，服务器还会在 revision 更新时发送不含业务正文的静默提示，让已登记设备尽快拉取。系统决定后台执行时间；当前仍是完整快照协议，不是操作日志式增量同步，也没有多用户共享权限。详见 `API-CONTRACT.md` 和 `Server/README.md`。
 
-生产 API 已在 `https://workspace.kdfz.com.cn` 使用独立 Node.js 24、systemd 服务、Nginx 配置和证书运行；专用 GitHub Actions 发布及受限部署密钥已经验收。旧 Node.js 22 服务和旅行项目均保留且未改动。真实 APNs 凭据、两个原生目标的签名描述文件及真机收件仍待单独验收。本仓库不包含网页版前端源码；DDL 倒计时与实时活动实现位于原生 SwiftUI 应用。
+生产 API 已在 `https://workspace.kdfz.com.cn` 使用独立 Node.js 24、systemd 服务、Nginx 配置和证书运行；专用 GitHub Actions 发布及受限部署密钥已经验收。旧 Node.js 22 服务和旅行项目均保留且未改动。真实 APNs 凭据、两个原生目标的签名描述文件及真机收件仍待单独验收。
+
+`Server/web.mjs` 提供根路径的只读网页版：登录后只读取服务器快照，主入口只有“行动”和“DDL”，不会从浏览器提交完整快照。DDL 依照记录时区处理日期型截止并按秒倒计时；页面使用同源资源、严格 CSP，Bearer 会话只存于当前标签页的 `sessionStorage`。旧 Sites 项目在当前账号与仓库中均不可访问，因此这里是依据现有原生数据契约重建的实现，不声称还原旧站源码。
 
 接入远程通知时：
 
@@ -74,9 +77,7 @@
 
 ## 验证
 
-本次环境为 Linux，没有 swift/swiftc、Xcode 或 Apple SDK，**没有执行 Apple 平台编译、模拟器/真机运行或 XCTest**。
-
-已执行 Swift 语法树解析、Xcode 工程 OpenStep 解析及引用检查、Info.plist/entitlement/scheme 检查、图标尺寸检查与后端 7 项真实本地 HTTP/SQLite 测试。结果记录在 `VALIDATION.md`。
+当前本机已完成 SwiftPM 27 项、Apple XCTest 30 项、iOS 主应用与 Live Activity Widget 构建、macOS 构建和工程静态校验。网页版新增后，Node 24 的 11 项测试全部通过，并在真实浏览器检查了桌面与 390 px 窄屏、密码登录、行动/DDL 切换、秒级倒计时、逾期样式和安全退出。真实通行密钥创建、已签名真机同步、APNs 收件与物理触感仍需用户设备验收。完整边界见 `VALIDATION.md`。
 
 在 Mac 上运行：
 
@@ -86,9 +87,9 @@ xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme WorkspaceCoreTests -desti
 # 按你安装的模拟器名称替换下面的示例目标
 xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-iOS -destination 'platform=iOS Simulator,name=iPhone 16' build
 swift test
-node --test Server/server.test.mjs
+npm test
 ```
 
-工程提供 13 项纯业务 XCTest 和 2 项 Apple 加密/SwiftData 测试；未在本次声称它们已经通过。
+工程当前提供 27 项 SwiftPM 业务测试和 30 项 Apple XCTest；数量以后续新增测试为准。
 
 `Scripts/generate_project.py` 用于重生成已附带的工程；通常不需要运行，且会覆盖工程配置。图标已附带，生成脚本仅供开发维护。

@@ -4,6 +4,8 @@
 
 | 路径 | 方法 | 作用 |
 | --- | --- | --- |
+| `/`、`/index.html` | GET/HEAD | 同账号只读网页版 |
+| `/app.js`、`/app.css`、`/favicon.svg` | GET/HEAD | 同源网页资源 |
 | `/health` | GET | 无鉴权运行检查 |
 | `/api/native/v1/session` | POST | 邮箱/密码登录 |
 | `/api/native/v1/session` | DELETE | 撤销当前会话 |
@@ -12,7 +14,13 @@
 | `/api/native/v1/devices` | PUT | 登记本账号的 APNs 设备 |
 | `/api/native/v1/devices` | DELETE | 注销本账号设备 |
 
-除登录和健康检查外，均要求 `Authorization: Bearer <accessToken>`。成功响应使用 `{ "data": ... }`；失败使用 `{ "error": { "code": "..." } }`。会话过期返回 401；版本冲突返回 409；缺少 If-Match 返回 428；校验失败返回 422。
+网页资源、健康检查、AASA、部署 revision 和登录入口不要求 Bearer；工作空间、设备、通行密钥注册/管理及退出均要求 `Authorization: Bearer <accessToken>`。成功响应使用 `{ "data": ... }`；失败使用 `{ "error": { "code": "..." } }`。会话过期返回 401；版本冲突返回 409；缺少 If-Match 返回 428；校验失败返回 422。
+
+## 只读网页版
+
+根路径的网页是 API 的同源客户端。它支持密码登录、discoverable passkey 登录和登录后创建新通行密钥，只读取 GET workspace；没有编辑入口，也不会调用 PUT workspace。行动入口包含 PROJECT/TASK/MILESTONE/REMINDER，另一个主入口只显示 DEADLINE。
+
+日期型 DDL 截止于记录时区的 23:59:59，带时刻 DDL 使用保存的绝对时间；浏览器按秒更新显示，并在页面可见时每 30 秒重新读取服务器 revision。Bearer token 与账号显示信息只保存在当前标签页 `sessionStorage`。页面不用第三方资源，用户字段以 `textContent` 渲染，并设置 no-store、self-only CSP、frame-ancestors none、COOP、Permissions-Policy、no-referrer 和 nosniff。
 
 ## 登录
 

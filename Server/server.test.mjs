@@ -1,7 +1,7 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createNativeServer, apnsDelivery } from './server.mjs';
+import { createNativeServer, apnsDelivery, effectiveDeadline, formatCountdown } from './server.mjs';
 let app, origin, token;
 const password = 'test-only-password-not-a-production-credential';
 const registeredDeviceID = randomUUID();
@@ -24,6 +24,43 @@ async function call(path, method = 'GET', body, auth = token, revision, sourceDe
     ...(sourceDeviceID ? { 'X-Workspace-Device-ID': sourceDeviceID } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: response.status, value: await response.json() };
 }
+test('web countdown uses the record timezone and reports overdue values', () => {
+  const timed = { dueDate: '2026-10-15T04:05:06.000Z', dateOnly: false, timezone: 'Asia/Shanghai' };
+  assert.equal(effectiveDeadline(timed), Date.parse(timed.dueDate));
+  const shanghai = { dueDate: '2026-10-15T00:00:00.000Z', dateOnly: true, timezone: 'Asia/Shanghai' };
+  assert.equal(new Date(effectiveDeadline(shanghai)).toISOString(), '2026-10-15T15:59:59.000Z');
+  const newYorkDST = { dueDate: '2026-03-08T12:00:00.000Z', dateOnly: true, timezone: 'America/New_York' };
+  assert.equal(new Date(effectiveDeadline(newYorkDST)).toISOString(), '2026-03-09T03:59:59.000Z');
+  assert.equal(formatCountdown(Date.UTC(2026, 0, 3, 2, 3, 4), Date.UTC(2026, 0, 1)), '2天 02:03:04');
+  assert.equal(formatCountdown(Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 1, 0, 0, 1)), '已逾期 00:00:01');
+  assert.equal(formatCountdown(NaN), '未设置截止');
+});
+test('web UI is self-contained, protected by strict headers and leaves APIs authenticated', async () => {
+  const page = await fetch(origin + '/');
+  assert.equal(page.status, 200);
+  assert.match(page.headers.get('content-type'), /^text\/html/);
+  assert.equal(page.headers.get('cache-control'), 'no-store');
+  assert.equal(page.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(page.headers.get('x-frame-options'), 'DENY');
+  assert.equal(page.headers.get('cross-origin-resource-policy'), 'same-origin');
+  assert.match(page.headers.get('content-security-policy'), /default-src 'none'/);
+  assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  const html = await page.text();
+  assert.match(html, /id="actions-tab"/); assert.match(html, /id="deadlines-tab"/);
+  assert.match(html, /使用通行密钥登录/); assert.doesNotMatch(html, /https?:\/\//);
+  const script = await fetch(origin + '/app.js');
+  assert.match(script.headers.get('content-type'), /^text\/javascript/);
+  const source = await script.text();
+  assert.doesNotThrow(() => new Function(source));
+  assert.match(source, /navigator\.credentials\.get/); assert.match(source, /navigator\.credentials\.create/);
+  assert.match(source, /sessionStorage/); assert.doesNotMatch(source, /localStorage/);
+  assert.doesNotMatch(source, /If-Match/); assert.doesNotMatch(source, /method:\s*['"]PUT['"]/);
+  const style = await fetch(origin + '/app.css');
+  assert.match(style.headers.get('content-type'), /^text\/css/); assert.match(await style.text(), /prefers-reduced-motion/);
+  const head = await fetch(origin + '/', { method: 'HEAD' });
+  assert.equal(head.status, 200); assert.equal(await head.text(), '');
+  assert.equal((await call('workspace', 'GET', undefined, '')).status, 401);
+});
 test('authentication rejects missing and incorrect credentials, returns a scoped session', async () => {
   assert.equal((await call('workspace', 'GET', undefined, '')).status, 401);
   assert.equal((await call('session', 'POST', { email: 'owner@test.invalid', password: 'incorrect' }, '')).status, 401);
