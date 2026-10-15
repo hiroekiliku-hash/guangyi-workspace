@@ -19,6 +19,20 @@ Credential management:
 - GET /api/native/v1/passkeys (authenticated)
 - DELETE /api/native/v1/passkeys with {id} (authenticated)
 
+Password-loss recovery:
+- A local server operator runs `node server.mjs issue-passkey-recovery <database-path> [account-email]`.
+- The command prints a ten-minute HTTPS URL whose secret stays in the URL fragment.
+- POST /api/native/v1/passkeys/recovery/options with `{token}` starts registration.
+- POST /api/native/v1/passkeys/recovery/verify with `{token, challengeID, credential}` finishes registration and returns a scoped session.
+
+The recovery command needs direct filesystem access to the SQLite database; there
+is no public endpoint that creates recovery links. Only a SHA-256 token hash is
+stored. Issuing a new link invalidates the older link for that account. The link
+is consumed in the same SQLite transaction that saves the verified public key,
+and expires after ten minutes. The browser removes the fragment from its address
+bar before sending any request. It never submits the token in a URL, server log,
+referrer, or long-term browser storage.
+
 Registration attaches a new passkey to the existing authenticated account. It
 never recreates an account or changes its workspace. Challenges are random,
 expire after five minutes, are stored in SQLite, and are atomically consumed.

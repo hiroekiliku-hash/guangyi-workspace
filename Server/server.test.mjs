@@ -1,16 +1,21 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createNativeServer, apnsDelivery, effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords } from './server.mjs';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { createNativeServer, issuePasskeyRecovery, apnsDelivery, effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords } from './server.mjs';
 let app, origin, token;
 const password = 'test-only-password-not-a-production-credential';
 const registeredDeviceID = randomUUID();
-let reminderPushCount = 0, workspacePushes = [], workspaceCollapseIDs = [], pushResult = { accepted: true, expired: false };
+let reminderPushCount = 0, reminderPayloads = [], workspacePushes = [], workspaceCollapseIDs = [], pushResult = { accepted: true, expired: false };
 before(async () => {
   app = createNativeServer({ databasePath: ':memory:', adminEmail: 'owner@test.invalid', adminPassword: password,
     sendPush: async (_device, payload, collapseID) => {
       if (payload.kind === 'WORKSPACE_SYNC') { workspacePushes.push(payload); workspaceCollapseIDs.push(collapseID); }
-      else { assert.equal(payload.aps.category, 'WORKSPACE_REMINDER'); reminderPushCount++; }
+      else { assert.equal(payload.aps.category, 'WORKSPACE_REMINDER'); reminderPushCount++; reminderPayloads.push(payload); }
       return pushResult;
     } });
   await new Promise((resolve, reject) => { app.server.once('error', reject); app.server.listen(0, '127.0.0.1', resolve); });
@@ -73,6 +78,7 @@ test('web UI is self-contained, protected by strict headers and leaves APIs auth
   const source = await script.text();
   assert.doesNotThrow(() => new Function(source));
   assert.match(source, /navigator\.credentials\.get/); assert.match(source, /navigator\.credentials\.create/);
+  assert.match(source, /passkey-recovery/); assert.match(source, /history\.replaceState/);
   assert.match(source, /sessionStorage/); assert.doesNotMatch(source, /localStorage/);
   assert.doesNotMatch(source, /If-Match/); assert.doesNotMatch(source, /method:\s*['"]PUT['"]/);
   const style = await fetch(origin + '/app.css');
@@ -129,12 +135,15 @@ test('workspace writes send a collapsible background revision hint', async () =>
   assert.deepEqual(apnsDelivery({ aps: { alert: { title: '提醒' } } }), { pushType: 'alert', priority: '10', lifetime: 86400 });
 });
 test('server timer sends an accepted notification once and excludes completed reminders', async () => {
+  reminderPushCount = 0; reminderPayloads = [];
   const remote = (await call('workspace')).value.data;
   const snapshot = remote.snapshot, now = Date.now() + 1000;
   snapshot.records[0].remindAt = new Date(now - 100).toISOString();
   assert.equal((await call('workspace', 'PUT', { snapshot }, token, remote.revision)).status, 200);
   await Promise.all([app.sweep(now), app.sweep(now)]);
   assert.equal(reminderPushCount, 1);
+  assert.equal(reminderPayloads[0].scheduledAt, now - 100);
+  assert.equal(reminderPayloads[0].id, snapshot.records[0].id);
   await app.sweep(now); assert.equal(reminderPushCount, 1);
   const next = (await call('workspace')).value.data;
   next.snapshot.records[0].status = 'DONE';
@@ -154,6 +163,28 @@ test('expired APNs device registrations are removed', async () => {
 test('logout revokes the session server-side', async () => {
   assert.equal((await call('session', 'DELETE')).status, 200);
   assert.equal((await call('workspace')).status, 401);
+});
+
+test('operator recovery helper stores only a short-lived token hash', () => {
+  const directory=mkdtempSync(join(tmpdir(),'guangyi-passkey-recovery-')), databasePath=join(directory,'workspace.sqlite');
+  try {
+    const seeded=createNativeServer({databasePath,adminEmail:'recovery@test.invalid',adminPassword:password,
+      passkeyRPID:'passkey.test',passkeyOrigin:'https://passkey.test'});
+    seeded.close();
+    const now=Date.now(), recovery=issuePasskeyRecovery({databasePath,origin:'https://passkey.test',now});
+    assert.match(recovery.url,/^https:\/\/passkey\.test\/#passkey-recovery=[A-Za-z0-9_-]{43}$/);
+    assert.equal(recovery.expires,now+10*60000);
+    const reopened=createNativeServer({databasePath,adminEmail:'recovery@test.invalid',adminPassword:password,
+      passkeyRPID:'passkey.test',passkeyOrigin:'https://passkey.test'});
+    try {
+      const row=reopened.db.prepare('SELECT hash,expires,created FROM passkey_recoveries').get();
+      assert.notEqual(row.hash,recovery.token); assert.equal(row.expires-row.created,10*60000);
+    } finally { reopened.close(); }
+    const command=spawnSync(process.execPath,[fileURLToPath(new URL('./server.mjs',import.meta.url)),'issue-passkey-recovery',databasePath,'recovery@test.invalid'],
+      {encoding:'utf8',env:{...process.env,PASSKEY_ORIGIN:'https://passkey.test'}});
+    assert.equal(command.status,0,command.stderr);
+    assert.match(command.stdout,/^https:\/\/passkey\.test\/#passkey-recovery=[A-Za-z0-9_-]{43}\n有效期至 .*Z\n$/);
+  } finally { rmSync(directory,{recursive:true,force:true}); }
 });
 
 // Test-only platform authenticator: real P-256 key, COSE key and signatures.
@@ -198,6 +229,26 @@ test('passkeys register, verify real signatures, reject replay/tampering and rev
     return {status:result.status,value:await result.json()};
   }
   try {
+    const superseded=instance.issuePasskeyRecovery();
+    const recovery=instance.issuePasskeyRecovery();
+    assert.match(recovery.url,/^https:\/\/passkey\.test\/#passkey-recovery=[A-Za-z0-9_-]{43}$/);
+    assert.notEqual(recovery.token,superseded.token);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS total FROM passkey_recoveries WHERE hash=?').get(recovery.token).total,0);
+    assert.equal((await api('passkeys/recovery/options',{token:superseded.token})).status,401);
+    const recoveryOptions=(await api('passkeys/recovery/options',{token:recovery.token})).value.data;
+    assert.equal(recoveryOptions.options.authenticatorSelection.userVerification,'required');
+    const recoveredDevice=authenticator(rpID,recoveryOptions.options.user.id);
+    const recoveryProof={challengeID:recoveryOptions.challengeID,credential:recoveredDevice.register(recoveryOptions.options.challenge,expectedOrigin)};
+    assert.equal((await api('passkeys/recovery/verify',{...recoveryProof,token:randomBytes(32).toString('base64url')})).status,401);
+    const recovered=await api('passkeys/recovery/verify',{...recoveryProof,token:recovery.token});
+    assert.equal(recovered.status,200); assert.equal(recovered.value.data.account,'passkey@test.invalid');
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS total FROM passkey_recoveries').get().total,0);
+    assert.equal((await api('passkeys/recovery/options',{token:recovery.token})).status,401);
+    const recoveredChallenge=(await api('passkeys/login/options')).value.data;
+    assert.equal((await api('passkeys/login/verify',{challengeID:recoveredChallenge.challengeID,
+      credential:recoveredDevice.login(recoveredChallenge.options.challenge,expectedOrigin)})).status,200);
+    const expiring=instance.issuePasskeyRecovery(); testClock += 600001;
+    assert.equal((await api('passkeys/recovery/options',{token:expiring.token})).status,401);
     const session=(await api('session',{email:'passkey@test.invalid',password})).value.data.accessToken;
     assert.equal((await api('passkeys/register/options',{})).status,401);
     const registration=(await api('passkeys/register/options',{},session)).value.data;

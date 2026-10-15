@@ -329,4 +329,19 @@ extension WorkspaceCoreTests {
         record.status = "CANCELLED"
         XCTAssertNil(record.notificationDate)
     }
+    func testNotificationActionsRejectStaleDisabledAndRescheduledAlerts() {
+        var record = WorkspaceRecord(kind: .deadline, title: "DDL")
+        record.dateOnly = false; record.dueDate = date("2040-10-14T12:00:00+08:00")
+        record.notificationLeadMinutes = 30
+        let scheduled = record.notificationDate!.timeIntervalSince1970 * 1000
+        XCTAssertTrue(WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduled))
+        XCTAssertTrue(WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduled + 500))
+        record.dueDate = record.dueDate!.addingTimeInterval(3600)
+        XCTAssertFalse(WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduled))
+        record.dueDate = date("2040-10-14T12:00:00+08:00"); record.notificationsEnabled = false
+        XCTAssertFalse(WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduled))
+        record.notificationsEnabled = true; record.status = "DONE"
+        XCTAssertFalse(WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduled))
+        XCTAssertFalse(WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: nil))
+    }
 }

@@ -108,6 +108,18 @@ struct WorkspaceRecord: Identifiable, Codable, Hashable {
     }
 }
 
+enum WorkspaceNotificationPolicy {
+    /// Notification actions must belong to the record's current reminder
+    /// occurrence. This prevents an old delivered banner from completing or
+    /// snoozing a record after its reminder was disabled, moved, or replaced.
+    static func isCurrentAction(for record: WorkspaceRecord, scheduledAtMilliseconds: Double?) -> Bool {
+        guard let supplied = scheduledAtMilliseconds, supplied.isFinite,
+              let current = record.notificationDate else { return false }
+        let expected = current.timeIntervalSince1970 * 1000
+        return abs(expected - supplied) < 1000
+    }
+}
+
 struct RecurrenceRule: Codable, Hashable {
     enum Frequency: String, Codable, CaseIterable, Identifiable {
         case daily = "DAILY", weekly = "WEEKLY", monthly = "MONTHLY"

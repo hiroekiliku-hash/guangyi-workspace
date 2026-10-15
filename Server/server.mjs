@@ -23097,7 +23097,7 @@ import http from "node:http";
 import http2 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
 import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
-import { readFileSync, mkdirSync } from "node:fs";
+import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
@@ -23246,17 +23246,28 @@ var webHTML = String.raw`<!doctype html>
           </div>
         </div>
         <div class="auth-card">
-          <form id="password-form">
-            <label for="email">账号邮箱</label>
-            <input id="email" name="email" type="email" inputmode="email" autocomplete="username" required>
-            <label for="password">密码</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required>
-            <button class="primary" type="submit">使用密码登录</button>
-          </form>
-          <div class="or" aria-hidden="true"><span>或</span></div>
-          <button id="passkey-login" class="secondary" type="button">使用通行密钥登录</button>
-          <p id="login-status" class="status" role="status" aria-live="polite"></p>
-          <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
+          <section id="recovery-view" hidden aria-labelledby="recovery-title">
+            <p class="eyebrow">一次性账号恢复</p>
+            <h3 id="recovery-title">创建新的通行密钥</h3>
+            <p class="recovery-copy">此短时链接由服务器本机管理员生成。继续后使用系统验证创建通行密钥，不需要在网页输入原密码。</p>
+            <button id="recover-passkey" class="primary full-width" type="button">使用系统验证继续</button>
+            <button id="cancel-recovery" class="quiet full-width recovery-cancel" type="button">暂不恢复，返回普通登录</button>
+            <p id="recovery-status" class="status" role="status" aria-live="polite"></p>
+            <p class="privacy-note">链接只能成功使用一次，并会在十分钟后失效。通行密钥私钥始终留在系统钥匙串。</p>
+          </section>
+          <div id="login-options">
+            <form id="password-form">
+              <label for="email">账号邮箱</label>
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="username" required>
+              <label for="password">密码</label>
+              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <button class="primary" type="submit">使用密码登录</button>
+            </form>
+            <div class="or" aria-hidden="true"><span>或</span></div>
+            <button id="passkey-login" class="secondary" type="button">使用通行密钥登录</button>
+            <p id="login-status" class="status" role="status" aria-live="polite"></p>
+            <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
+          </div>
         </div>
       </section>
 
@@ -23333,6 +23344,7 @@ label { margin-top: .55rem; font-weight: 700; }
 input { width: 100%; padding: .85rem .9rem; border: 1px solid var(--line); border-radius: .8rem; color: var(--ink); background: color-mix(in srgb, var(--surface) 88%, transparent); }
 .primary, .secondary, .quiet { min-height: 2.8rem; border-radius: .85rem; border: 1px solid transparent; padding: .65rem 1rem; font-weight: 750; }
 .primary { margin-top: .8rem; color: white; background: var(--accent); }
+.full-width { width: 100%; }
 .secondary { width: 100%; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 25%, transparent); background: var(--accent-soft); }
 .quiet { color: var(--ink); border-color: var(--line); background: var(--surface); }
 .danger { color: var(--urgent); }
@@ -23341,6 +23353,8 @@ input { width: 100%; padding: .85rem .9rem; border: 1px solid var(--line); borde
 .status { min-height: 1.35rem; margin: .9rem 0 0; color: var(--accent); font-weight: 650; }
 .status.error { color: var(--urgent); }
 .privacy-note { margin: 1rem 0 0; font-size: .76rem; line-height: 1.5; }
+.recovery-copy { color: var(--muted); line-height: 1.65; }
+.recovery-cancel { margin-top: .55rem; }
 .workspace-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; padding: 1.3rem 1.4rem; border-radius: 1.4rem; }
 .workspace-header h2 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.8rem); }
 .toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; }
@@ -23393,12 +23407,12 @@ var webJS = String.raw`(() => {
   const visibleRecord = ${visibleRecordSource};
   const compareActionRecords = ${compareActionRecordsSource};
   const compareDeadlineRecords = ${compareDeadlineRecordsSource};
-  const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '' };
+  const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '', recoveryToken: '' };
   const finished = new Set(['DONE', 'COMPLETED', 'CANCELLED']);
   const actionKinds = new Set(['PROJECT', 'TASK', 'MILESTONE', 'REMINDER']);
   const kindNames = { PROJECT: '行动组', TASK: '行动', MILESTONE: '里程碑', REMINDER: '提醒', DEADLINE: 'DDL' };
   const statusNames = { PLANNED: '计划中', ACTIVE: '进行中', WAITING: '等待中', PAUSED: '已暂停', COMPLETED: '已完成', TODO: '待行动', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消', OPEN: '待处理' };
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
+  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
   const byID = id => document.getElementById(id);
   function saved(key) { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } }
   function save(key, value) { try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch {} }
@@ -23459,9 +23473,22 @@ var webJS = String.raw`(() => {
     state.token = session.accessToken; state.account = session.account || ''; state.displayName = session.displayName || '';
     save('gw-session', state.token); save('gw-account', state.account); save('gw-display-name', state.displayName);
   }
+  function recoveryFromLocation() {
+    const parameters = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+    const supplied = parameters.get('passkey-recovery');
+    if (supplied !== null) history.replaceState(null, '', location.pathname + location.search);
+    if (supplied === null) return { token: '', invalid: false };
+    return /^[A-Za-z0-9_-]{43}$/.test(supplied) ? { token: supplied, invalid: false } : { token: '', invalid: true };
+  }
   function showLogin(message, error) {
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
+    byID('recovery-view').hidden = true; byID('login-options').hidden = false;
     setMessage(byID('login-status'), message || '', error); byID('password').value = '';
+  }
+  function showRecovery(message, error) {
+    byID('workspace-view').hidden = true; byID('login-view').hidden = false;
+    byID('login-options').hidden = true; byID('recovery-view').hidden = false;
+    setMessage(byID('recovery-status'), message || '', error);
   }
   function showWorkspace() {
     byID('login-view').hidden = true; byID('workspace-view').hidden = false;
@@ -23564,6 +23591,24 @@ var webJS = String.raw`(() => {
     } catch (error) { setMessage(byID('app-status'), error.name === 'NotAllowedError' ? '已取消创建通行密钥。' : error.message, true); }
     finally { button.disabled = false; }
   }
+  async function recoverPasskey() {
+    const button = byID('recover-passkey'); button.disabled = true; setMessage(byID('recovery-status'), '正在准备系统验证…');
+    try {
+      if (!state.recoveryToken) throw Object.assign(new Error(errorNames.INVALID_RECOVERY_TOKEN), { code: 'INVALID_RECOVERY_TOKEN' });
+      if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥。');
+      const challenge = await api('passkeys/recovery/options', { method: 'POST', authenticated: false, body: { token: state.recoveryToken } });
+      const credential = await navigator.credentials.create({ publicKey: creationOptions(challenge.options) });
+      if (!credential) throw new Error('没有创建通行密钥。');
+      const session = await api('passkeys/recovery/verify', { method: 'POST', authenticated: false,
+        body: { token: state.recoveryToken, challengeID: challenge.challengeID, credential: registrationCredential(credential) } });
+      state.recoveryToken = ''; beginSession(session); await loadWorkspace(false);
+      setMessage(byID('app-status'), '新通行密钥已创建并完成登录。');
+    } catch (error) {
+      const message = error.name === 'NotAllowedError' ? '已取消创建通行密钥；恢复链接在有效期内仍可重试。' : error.message;
+      if (error.code === 'INVALID_RECOVERY_TOKEN') { state.recoveryToken = ''; showLogin(message, true); }
+      else setMessage(byID('recovery-status'), message, true);
+    } finally { button.disabled = false; }
+  }
   async function logout() {
     const token = state.token; try { if (token) await api('session', { method: 'DELETE' }); } catch {}
     clearSession(); showLogin('已安全退出。', false);
@@ -23574,6 +23619,8 @@ var webJS = String.raw`(() => {
     byID('actions-panel').hidden = deadlines; byID('deadlines-panel').hidden = !deadlines; save('gw-view', view);
   }
   byID('password-form').addEventListener('submit', passwordLogin); byID('passkey-login').addEventListener('click', passkeyLogin);
+  byID('recover-passkey').addEventListener('click', recoverPasskey);
+  byID('cancel-recovery').addEventListener('click', () => { state.recoveryToken = ''; showLogin('', false); });
   byID('register-passkey').addEventListener('click', registerPasskey); byID('refresh').addEventListener('click', () => loadWorkspace(false)); byID('logout').addEventListener('click', logout);
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => selectView(button.dataset.view)));
   byID('workspace-view').querySelector('.tabs').addEventListener('keydown', event => {
@@ -23585,12 +23632,16 @@ var webJS = String.raw`(() => {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && state.token) loadWorkspace(true); });
   setInterval(updateCountdowns, 1000);
   setInterval(() => { if (state.token && !document.hidden) loadWorkspace(true); }, 30000);
+  const recovery = recoveryFromLocation(); state.recoveryToken = recovery.token;
   state.token = saved('gw-session'); state.account = saved('gw-account'); state.displayName = saved('gw-display-name'); selectView(saved('gw-view') === 'deadlines' ? 'deadlines' : 'actions');
   if (!window.PublicKeyCredential || !navigator.credentials) {
     byID('passkey-login').disabled = true; byID('passkey-login').textContent = '此浏览器不支持通行密钥';
-    byID('register-passkey').disabled = true;
+    byID('register-passkey').disabled = true; byID('recover-passkey').disabled = true;
+    byID('recover-passkey').textContent = '此浏览器不支持通行密钥';
   }
-  if (state.token) loadWorkspace(false); else showLogin('', false);
+  if (state.recoveryToken) showRecovery('', false);
+  else if (recovery.invalid) showLogin('一次性恢复链接格式无效。', true);
+  else if (state.token) loadWorkspace(false); else showLogin('', false);
 })();`;
 var favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#315b4c"/><path d="M20 14h24v7c0 7-4 10-8 12 4 2 8 5 8 12v6H20v-6c0-7 4-10 8-12-4-2-8-5-8-12zm6 7c0 5 3 7 6 9 3-2 6-4 6-9zm6 15c-3 2-6 4-6 9h12c0-5-3-7-6-9z" fill="#fff"/></svg>`;
 var headers = Object.freeze({
@@ -23631,6 +23682,31 @@ var APIError = class extends Error {
     this.status = status;
   }
 };
+function passkeyRecoveryTable(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS passkey_recoveries(
+    hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,created INTEGER NOT NULL);`);
+}
+function createPasskeyRecovery(db, { email, origin, now = Date.now() }) {
+  const parsed = new URL(origin);
+  if (parsed.origin !== origin || parsed.username || parsed.password || parsed.protocol !== "https:") throw new Error("INVALID_PASSKEY_ORIGIN");
+  passkeyRecoveryTable(db);
+  const users = email ? db.prepare("SELECT id,email FROM users WHERE email=?").all(email.trim().toLowerCase()) : db.prepare("SELECT id,email FROM users ORDER BY id").all();
+  if (users.length !== 1) throw new Error(email ? "ACCOUNT_NOT_FOUND" : "ACCOUNT_MUST_BE_SPECIFIED");
+  const user = users[0], token = randomBytes(32).toString("base64url"), expires = now + 10 * 6e4;
+  db.prepare("DELETE FROM passkey_recoveries WHERE expires<=? OR user_id=?").run(now, user.id);
+  db.prepare("INSERT INTO passkey_recoveries(hash,user_id,expires,created) VALUES(?,?,?,?)").run(sha(token), user.id, expires, now);
+  return { token, url: `${origin}/#passkey-recovery=${token}`, expires, account: user.email };
+}
+function issuePasskeyRecovery({ databasePath, email, origin = "https://workspace.kdfz.com.cn", now = Date.now() }) {
+  if (typeof databasePath !== "string" || databasePath === ":memory:" || !existsSync(databasePath)) throw new Error("DATABASE_NOT_FOUND");
+  const db = new DatabaseSync(databasePath);
+  try {
+    db.exec("PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;");
+    return createPasskeyRecovery(db, { email, origin, now });
+  } finally {
+    db.close();
+  }
+}
 function validateSnapshot(snapshot) {
   if (!snapshot || snapshot.format !== "guangyi-native" || snapshot.schemaVersion !== 1) throw new APIError(422, "INVALID_SNAPSHOT");
   for (const key of ["records", "series", "activities", "revisions", "assets", "trash"]) {
@@ -23714,7 +23790,8 @@ function createNativeServer(configuration) {
   if (parsedOrigin.hostname !== rpID || parsedOrigin.origin !== passkeyOrigin || parsedOrigin.protocol !== "https:" && !(rpID === "localhost" && parsedOrigin.protocol === "http:")) throw new Error("INVALID_PASSKEY_ORIGIN");
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_users(user_id INTEGER PRIMARY KEY REFERENCES users(id),handle TEXT UNIQUE NOT NULL);
     CREATE TABLE IF NOT EXISTS passkeys(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),public_key BLOB NOT NULL,counter INTEGER NOT NULL,created INTEGER NOT NULL);
-    CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
+    CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS passkey_recoveries(hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,created INTEGER NOT NULL);`);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
   const attempts = /* @__PURE__ */ new Map();
   function passkeyRateLimit(request) {
@@ -23735,6 +23812,54 @@ function createNativeServer(configuration) {
     const value = db.prepare("DELETE FROM passkey_challenges WHERE id=? AND kind=? AND session_hash IS ? RETURNING *").get(id, kind, sessionHash);
     if (!value || value.expires <= passkeyNow()) throw new APIError(401, "INVALID_CHALLENGE");
     return value;
+  }
+  function recoveryFor(token) {
+    if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new APIError(401, "INVALID_RECOVERY_TOKEN");
+    const hash = sha(token), value = db.prepare("SELECT hash,user_id,expires FROM passkey_recoveries WHERE hash=?").get(hash);
+    if (!value || value.expires <= passkeyNow()) {
+      db.prepare("DELETE FROM passkey_recoveries WHERE hash=?").run(hash);
+      throw new APIError(401, "INVALID_RECOVERY_TOKEN");
+    }
+    return value;
+  }
+  async function registrationOptions(userID) {
+    const user = db.prepare("SELECT * FROM users WHERE id=?").get(userID);
+    db.prepare("INSERT OR IGNORE INTO passkey_users(user_id,handle) VALUES(?,?)").run(userID, randomBytes(32).toString("base64url"));
+    const handle = db.prepare("SELECT handle FROM passkey_users WHERE user_id=?").get(userID).handle;
+    const credentials = db.prepare("SELECT id FROM passkeys WHERE user_id=?").all(userID);
+    if (credentials.length >= 10) throw new APIError(422, "PASSKEY_LIMIT");
+    const options = await generateRegistrationOptions({
+      rpName: "\u5E7F\u76CA WorkSpace",
+      rpID,
+      userID: new Uint8Array(Buffer.from(handle, "base64url")),
+      userName: user.email,
+      userDisplayName: user.name,
+      attestationType: "none",
+      supportedAlgorithmIDs: [-7],
+      authenticatorSelection: { residentKey: "required", userVerification: "required", authenticatorAttachment: "platform" },
+      excludeCredentials: credentials.map((value) => ({ id: value.id }))
+    });
+    return { user, options };
+  }
+  async function verifiedRegistration(value, challenge, userID) {
+    let result;
+    try {
+      result = await verifyRegistrationResponse({
+        response: value.credential,
+        expectedChallenge: challenge.challenge,
+        expectedOrigin: passkeyOrigin,
+        expectedRPID: rpID,
+        requireUserVerification: true,
+        supportedAlgorithmIDs: [-7]
+      });
+    } catch {
+      throw new APIError(401, "INVALID_PASSKEY");
+    }
+    if (!result.verified || !result.registrationInfo) throw new APIError(401, "INVALID_PASSKEY");
+    const credential = result.registrationInfo.credential;
+    if (db.prepare("SELECT COUNT(*) AS total FROM passkeys WHERE user_id=?").get(userID).total >= 10) throw new APIError(422, "PASSKEY_LIMIT");
+    if (db.prepare("SELECT id FROM passkeys WHERE id=?").get(credential.id)) throw new APIError(409, "PASSKEY_EXISTS");
+    return credential;
   }
   function createSession(user) {
     const accessToken = randomBytes(32).toString("base64url");
@@ -23829,6 +23954,31 @@ function createNativeServer(configuration) {
         if (changed.changes !== 1) throw new APIError(409, "PASSKEY_COUNTER_CONFLICT");
         return respond(response, 200, { data: createSession(owner) });
       }
+      if (path === "/api/native/v1/passkeys/recovery/options" && request.method === "POST") {
+        passkeyRateLimit(request);
+        const value = await body(request, 8192), recovery = recoveryFor(value.token);
+        const { options } = await registrationOptions(recovery.user_id);
+        return respond(response, 200, { data: { challengeID: issueChallenge("recovery", options.challenge, recovery.user_id, recovery.hash), options } });
+      }
+      if (path === "/api/native/v1/passkeys/recovery/verify" && request.method === "POST") {
+        passkeyRateLimit(request);
+        const value = await body(request, 65536), recovery = recoveryFor(value.token);
+        const challenge = consumeChallenge(value.challengeID, "recovery", recovery.hash);
+        if (challenge.user_id !== recovery.user_id) throw new APIError(401, "INVALID_CHALLENGE");
+        const credential = await verifiedRegistration(value, challenge, recovery.user_id);
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          const consumed = db.prepare("DELETE FROM passkey_recoveries WHERE hash=? AND user_id=? AND expires>?").run(recovery.hash, recovery.user_id, passkeyNow());
+          if (consumed.changes !== 1) throw new APIError(401, "INVALID_RECOVERY_TOKEN");
+          db.prepare("INSERT INTO passkeys VALUES(?,?,?,?,?)").run(credential.id, recovery.user_id, Buffer.from(credential.publicKey), credential.counter, Date.now());
+          db.exec("COMMIT");
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+        const user = db.prepare("SELECT * FROM users WHERE id=?").get(recovery.user_id);
+        return respond(response, 200, { data: createSession(user) });
+      }
       if (path === "/deploy-revision.json" && request.method === "GET") return respond(response, 200, { revision: deploymentRevision });
       if (path === "/health" && request.method === "GET") return respond(response, 200, { status: "ok" });
       if (path === "/api/native/v1/session" && request.method === "POST") {
@@ -23847,45 +23997,14 @@ function createNativeServer(configuration) {
       const userID = userFor(request);
       if (path === "/api/native/v1/passkeys/register/options" && request.method === "POST") {
         passkeyRateLimit(request);
-        const user = db.prepare("SELECT * FROM users WHERE id=?").get(userID);
-        db.prepare("INSERT OR IGNORE INTO passkey_users(user_id,handle) VALUES(?,?)").run(userID, randomBytes(32).toString("base64url"));
-        const handle = db.prepare("SELECT handle FROM passkey_users WHERE user_id=?").get(userID).handle;
-        const credentials = db.prepare("SELECT id FROM passkeys WHERE user_id=?").all(userID);
-        if (credentials.length >= 10) throw new APIError(422, "PASSKEY_LIMIT");
-        const options = await generateRegistrationOptions({
-          rpName: "\u5E7F\u76CA WorkSpace",
-          rpID,
-          userID: new Uint8Array(Buffer.from(handle, "base64url")),
-          userName: user.email,
-          userDisplayName: user.name,
-          attestationType: "none",
-          supportedAlgorithmIDs: [-7],
-          authenticatorSelection: { residentKey: "required", userVerification: "required", authenticatorAttachment: "platform" },
-          excludeCredentials: credentials.map((value) => ({ id: value.id }))
-        });
+        const { options } = await registrationOptions(userID);
         return respond(response, 200, { data: { challengeID: issueChallenge("register", options.challenge, userID, sha(request.headers.authorization.slice(7))), options } });
       }
       if (path === "/api/native/v1/passkeys/register/verify" && request.method === "POST") {
         passkeyRateLimit(request);
         const value = await body(request, 65536), challenge = consumeChallenge(value.challengeID, "register", sha(request.headers.authorization.slice(7)));
         if (challenge.user_id !== userID) throw new APIError(401, "INVALID_CHALLENGE");
-        let result;
-        try {
-          result = await verifyRegistrationResponse({
-            response: value.credential,
-            expectedChallenge: challenge.challenge,
-            expectedOrigin: passkeyOrigin,
-            expectedRPID: rpID,
-            requireUserVerification: true,
-            supportedAlgorithmIDs: [-7]
-          });
-        } catch {
-          throw new APIError(401, "INVALID_PASSKEY");
-        }
-        if (!result.verified || !result.registrationInfo) throw new APIError(401, "INVALID_PASSKEY");
-        const credential = result.registrationInfo.credential;
-        if (db.prepare("SELECT COUNT(*) AS total FROM passkeys WHERE user_id=?").get(userID).total >= 10) throw new APIError(422, "PASSKEY_LIMIT");
-        if (db.prepare("SELECT id FROM passkeys WHERE id=?").get(credential.id)) throw new APIError(409, "PASSKEY_EXISTS");
+        const credential = await verifiedRegistration(value, challenge, userID);
         db.prepare("INSERT INTO passkeys VALUES(?,?,?,?,?)").run(credential.id, userID, Buffer.from(credential.publicKey), credential.counter, Date.now());
         return respond(response, 200, { data: { registered: true } });
       }
@@ -23955,6 +24074,7 @@ function createNativeServer(configuration) {
   let sweeping = false;
   async function sweep(now = Date.now()) {
     db.prepare("DELETE FROM sessions WHERE expires<?").run(now);
+    db.prepare("DELETE FROM passkey_recoveries WHERE expires<=?").run(now);
     for (const [ip, value] of attempts) if (now - value.start > 6e5) attempts.delete(ip);
     if (!sendPush || sweeping) return { accepted: 0 };
     sweeping = true;
@@ -23981,7 +24101,7 @@ function createNativeServer(configuration) {
             if (!activeDevice || !current || !freshParent || current.deletedAt || current.archivedAt || ["DONE", "COMPLETED", "CANCELLED"].includes(current.status) || !current.notificationsEnabled || moment(current) !== at) continue;
             let result;
             try {
-              result = await sendPush(activeDevice, { aps: { alert: { title: "\u5E7F\u76CA WorkSpace \xB7 \u63D0\u9192", body: current.title }, sound: "default", category: "WORKSPACE_REMINDER" }, id: current.id }, id);
+              result = await sendPush(activeDevice, { aps: { alert: { title: "\u5E7F\u76CA WorkSpace \xB7 \u63D0\u9192", body: current.title }, sound: "default", category: "WORKSPACE_REMINDER" }, id: current.id, scheduledAt: at }, id);
             } catch {
               continue;
             }
@@ -23999,10 +24119,17 @@ function createNativeServer(configuration) {
     }
     return { accepted };
   }
-  return { server, db, sweep, flushPushes: () => Promise.all([...pendingPushes]), close: () => {
-    server.close();
-    db.close();
-  } };
+  return {
+    server,
+    db,
+    sweep,
+    issuePasskeyRecovery: (email2) => createPasskeyRecovery(db, { email: email2, origin: passkeyOrigin, now: passkeyNow() }),
+    flushPushes: () => Promise.all([...pendingPushes]),
+    close: () => {
+      server.close();
+      db.close();
+    }
+  };
 }
 function apnsDelivery(payload) {
   const background = payload?.aps?.["content-available"] === 1 && payload?.aps?.alert == null;
@@ -24065,19 +24192,36 @@ function applePushSender({ teamID, keyID, keyPath }) {
 }
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   process.umask(63);
-  const app = createNativeServer({
-    databasePath: process.env.DATABASE_PATH ?? "/data/workspace.sqlite",
-    adminEmail: process.env.ADMIN_EMAIL,
-    adminPassword: process.env.ADMIN_PASSWORD,
-    passkeyRPID: process.env.PASSKEY_RP_ID,
-    passkeyOrigin: process.env.PASSKEY_ORIGIN,
-    passkeyApps: process.env.PASSKEY_APP_IDS,
-    displayName: process.env.DISPLAY_NAME,
-    allowedBundles: process.env.APNS_ALLOWED_BUNDLE_IDS,
-    sendPush: applePushSender({ teamID: process.env.APNS_TEAM_ID, keyID: process.env.APNS_KEY_ID, keyPath: process.env.APNS_PRIVATE_KEY_FILE })
-  });
-  app.server.listen(Number(process.env.PORT ?? 8080), process.env.HOST ?? "127.0.0.1", () => console.log("Native workspace API is listening"));
-  setInterval(() => app.sweep().catch(() => console.error("notification_dispatch_failed")), 3e4).unref();
+  if (process.argv[2] === "issue-passkey-recovery") {
+    try {
+      const recovery = issuePasskeyRecovery({
+        databasePath: process.argv[3] ?? process.env.DATABASE_PATH,
+        email: process.argv[4] ?? process.env.ADMIN_EMAIL,
+        origin: process.env.PASSKEY_ORIGIN ?? "https://workspace.kdfz.com.cn"
+      });
+      process.stdout.write(`${recovery.url}
+\u6709\u6548\u671F\u81F3 ${new Date(recovery.expires).toISOString()}
+`);
+    } catch (error) {
+      process.stderr.write(`\u65E0\u6CD5\u751F\u6210\u901A\u884C\u5BC6\u94A5\u6062\u590D\u94FE\u63A5\uFF1A${error.message}
+`);
+      process.exitCode = 1;
+    }
+  } else {
+    const app = createNativeServer({
+      databasePath: process.env.DATABASE_PATH ?? "/data/workspace.sqlite",
+      adminEmail: process.env.ADMIN_EMAIL,
+      adminPassword: process.env.ADMIN_PASSWORD,
+      passkeyRPID: process.env.PASSKEY_RP_ID,
+      passkeyOrigin: process.env.PASSKEY_ORIGIN,
+      passkeyApps: process.env.PASSKEY_APP_IDS,
+      displayName: process.env.DISPLAY_NAME,
+      allowedBundles: process.env.APNS_ALLOWED_BUNDLE_IDS,
+      sendPush: applePushSender({ teamID: process.env.APNS_TEAM_ID, keyID: process.env.APNS_KEY_ID, keyPath: process.env.APNS_PRIVATE_KEY_FILE })
+    });
+    app.server.listen(Number(process.env.PORT ?? 8080), process.env.HOST ?? "127.0.0.1", () => console.log("Native workspace API is listening"));
+    setInterval(() => app.sweep().catch(() => console.error("notification_dispatch_failed")), 3e4).unref();
+  }
 }
 export {
   apnsDelivery,
@@ -24087,6 +24231,7 @@ export {
   createNativeServer,
   effectiveDeadline,
   formatCountdown,
+  issuePasskeyRecovery,
   validateSnapshot,
   visibleRecord
 };

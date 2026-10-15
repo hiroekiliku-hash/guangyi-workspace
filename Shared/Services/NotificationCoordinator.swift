@@ -47,11 +47,16 @@ import UserNotifications
         guard !Task.isCancelled else { return }
         let owned = pending.filter { $0.identifier.hasPrefix("gw:") }.map(\.identifier)
         center.removePendingNotificationRequests(withIdentifiers: owned)
-        let liveIDs = Set(state.records.filter { WorkspaceLogic.visible($0, in: state) && !$0.isFinished }.map { $0.id.uuidString })
+        let liveRecords = Dictionary(uniqueKeysWithValues: state.records.filter { WorkspaceLogic.visible($0, in: state) }
+            .map { ($0.id.uuidString, $0) })
         let delivered = await center.deliveredNotifications()
         let obsolete = delivered.filter { notification in
-            guard notification.request.identifier.hasPrefix("gw:"), let id = notification.request.content.userInfo["id"] as? String else { return false }
-            return !liveIDs.contains(id)
+            let content = notification.request.content
+            let managed = notification.request.identifier.hasPrefix("gw:") || content.categoryIdentifier == "WORKSPACE_REMINDER"
+            guard managed, let id = content.userInfo["id"] as? String else { return false }
+            guard let record = liveRecords[id] else { return true }
+            let scheduledAt = (content.userInfo["scheduledAt"] as? NSNumber)?.doubleValue
+            return !WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduledAt)
         }.map { $0.request.identifier }
         center.removeDeliveredNotifications(withIdentifiers: obsolete)
         let overdue = state.records.filter { WorkspaceLogic.visible($0, in: state) && $0.isOverdue }.count
@@ -75,7 +80,7 @@ import UserNotifications
                 formatter.dateFormat = record.dateOnly ? "M月d日截止" : "M月d日 HH:mm截止"
                 content.subtitle = formatter.string(from: due)
             }
-            content.userInfo = ["id": record.id.uuidString]
+            content.userInfo = ["id": record.id.uuidString, "scheduledAt": Int64((date.timeIntervalSince1970 * 1000).rounded())]
             var components = record.calendar.dateComponents([.year, .month, .day, .hour, .minute, .second], from: date)
             components.timeZone = record.calendar.timeZone
             let trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
@@ -98,11 +103,12 @@ import UserNotifications
     }
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let rawID = response.notification.request.content.userInfo["id"] as? String
+        let scheduledAt = (response.notification.request.content.userInfo["scheduledAt"] as? NSNumber)?.doubleValue
         let action = response.actionIdentifier
         guard let rawID, let id = UUID(uuidString: rawID) else { return }
-        await handleNotification(id: id, action: action)
+        await handleNotification(id: id, action: action, scheduledAt: scheduledAt)
     }
-    private func handleNotification(id: UUID, action: String) async {
+    private func handleNotification(id: UUID, action: String, scheduledAt: Double?) async {
         guard let store else { return }
         if store.record(id) == nil, store.canAutomaticallySync {
             do { try await store.synchronize() }
@@ -117,8 +123,9 @@ import UserNotifications
         }
         if action == "COMPLETE" || action == "SNOOZE" {
             guard WorkspaceLogic.visible(record, in: store.state), !record.isFinished,
-                  [.task, .deadline, .reminder].contains(record.kind) else {
-                store.information = "这项提醒已完成、取消或归档，操作未重复执行。"
+                  [.task, .deadline, .reminder].contains(record.kind),
+                  WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduledAt) else {
+                store.information = "这项提醒已经完成、关闭或改期，旧通知没有修改当前记录。"
                 return
             }
         }

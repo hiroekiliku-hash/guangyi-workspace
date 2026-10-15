@@ -126,17 +126,28 @@ const webHTML = String.raw`<!doctype html>
           </div>
         </div>
         <div class="auth-card">
-          <form id="password-form">
-            <label for="email">账号邮箱</label>
-            <input id="email" name="email" type="email" inputmode="email" autocomplete="username" required>
-            <label for="password">密码</label>
-            <input id="password" name="password" type="password" autocomplete="current-password" required>
-            <button class="primary" type="submit">使用密码登录</button>
-          </form>
-          <div class="or" aria-hidden="true"><span>或</span></div>
-          <button id="passkey-login" class="secondary" type="button">使用通行密钥登录</button>
-          <p id="login-status" class="status" role="status" aria-live="polite"></p>
-          <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
+          <section id="recovery-view" hidden aria-labelledby="recovery-title">
+            <p class="eyebrow">一次性账号恢复</p>
+            <h3 id="recovery-title">创建新的通行密钥</h3>
+            <p class="recovery-copy">此短时链接由服务器本机管理员生成。继续后使用系统验证创建通行密钥，不需要在网页输入原密码。</p>
+            <button id="recover-passkey" class="primary full-width" type="button">使用系统验证继续</button>
+            <button id="cancel-recovery" class="quiet full-width recovery-cancel" type="button">暂不恢复，返回普通登录</button>
+            <p id="recovery-status" class="status" role="status" aria-live="polite"></p>
+            <p class="privacy-note">链接只能成功使用一次，并会在十分钟后失效。通行密钥私钥始终留在系统钥匙串。</p>
+          </section>
+          <div id="login-options">
+            <form id="password-form">
+              <label for="email">账号邮箱</label>
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="username" required>
+              <label for="password">密码</label>
+              <input id="password" name="password" type="password" autocomplete="current-password" required>
+              <button class="primary" type="submit">使用密码登录</button>
+            </form>
+            <div class="or" aria-hidden="true"><span>或</span></div>
+            <button id="passkey-login" class="secondary" type="button">使用通行密钥登录</button>
+            <p id="login-status" class="status" role="status" aria-live="polite"></p>
+            <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
+          </div>
         </div>
       </section>
 
@@ -214,6 +225,7 @@ label { margin-top: .55rem; font-weight: 700; }
 input { width: 100%; padding: .85rem .9rem; border: 1px solid var(--line); border-radius: .8rem; color: var(--ink); background: color-mix(in srgb, var(--surface) 88%, transparent); }
 .primary, .secondary, .quiet { min-height: 2.8rem; border-radius: .85rem; border: 1px solid transparent; padding: .65rem 1rem; font-weight: 750; }
 .primary { margin-top: .8rem; color: white; background: var(--accent); }
+.full-width { width: 100%; }
 .secondary { width: 100%; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 25%, transparent); background: var(--accent-soft); }
 .quiet { color: var(--ink); border-color: var(--line); background: var(--surface); }
 .danger { color: var(--urgent); }
@@ -222,6 +234,8 @@ input { width: 100%; padding: .85rem .9rem; border: 1px solid var(--line); borde
 .status { min-height: 1.35rem; margin: .9rem 0 0; color: var(--accent); font-weight: 650; }
 .status.error { color: var(--urgent); }
 .privacy-note { margin: 1rem 0 0; font-size: .76rem; line-height: 1.5; }
+.recovery-copy { color: var(--muted); line-height: 1.65; }
+.recovery-cancel { margin-top: .55rem; }
 .workspace-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; padding: 1.3rem 1.4rem; border-radius: 1.4rem; }
 .workspace-header h2 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.8rem); }
 .toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; }
@@ -275,12 +289,12 @@ const webJS = String.raw`(() => {
   const visibleRecord = ${visibleRecordSource};
   const compareActionRecords = ${compareActionRecordsSource};
   const compareDeadlineRecords = ${compareDeadlineRecordsSource};
-  const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '' };
+  const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '', recoveryToken: '' };
   const finished = new Set(['DONE', 'COMPLETED', 'CANCELLED']);
   const actionKinds = new Set(['PROJECT', 'TASK', 'MILESTONE', 'REMINDER']);
   const kindNames = { PROJECT: '行动组', TASK: '行动', MILESTONE: '里程碑', REMINDER: '提醒', DEADLINE: 'DDL' };
   const statusNames = { PLANNED: '计划中', ACTIVE: '进行中', WAITING: '等待中', PAUSED: '已暂停', COMPLETED: '已完成', TODO: '待行动', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消', OPEN: '待处理' };
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
+  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
   const byID = id => document.getElementById(id);
   function saved(key) { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } }
   function save(key, value) { try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch {} }
@@ -341,9 +355,22 @@ const webJS = String.raw`(() => {
     state.token = session.accessToken; state.account = session.account || ''; state.displayName = session.displayName || '';
     save('gw-session', state.token); save('gw-account', state.account); save('gw-display-name', state.displayName);
   }
+  function recoveryFromLocation() {
+    const parameters = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
+    const supplied = parameters.get('passkey-recovery');
+    if (supplied !== null) history.replaceState(null, '', location.pathname + location.search);
+    if (supplied === null) return { token: '', invalid: false };
+    return /^[A-Za-z0-9_-]{43}$/.test(supplied) ? { token: supplied, invalid: false } : { token: '', invalid: true };
+  }
   function showLogin(message, error) {
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
+    byID('recovery-view').hidden = true; byID('login-options').hidden = false;
     setMessage(byID('login-status'), message || '', error); byID('password').value = '';
+  }
+  function showRecovery(message, error) {
+    byID('workspace-view').hidden = true; byID('login-view').hidden = false;
+    byID('login-options').hidden = true; byID('recovery-view').hidden = false;
+    setMessage(byID('recovery-status'), message || '', error);
   }
   function showWorkspace() {
     byID('login-view').hidden = true; byID('workspace-view').hidden = false;
@@ -446,6 +473,24 @@ const webJS = String.raw`(() => {
     } catch (error) { setMessage(byID('app-status'), error.name === 'NotAllowedError' ? '已取消创建通行密钥。' : error.message, true); }
     finally { button.disabled = false; }
   }
+  async function recoverPasskey() {
+    const button = byID('recover-passkey'); button.disabled = true; setMessage(byID('recovery-status'), '正在准备系统验证…');
+    try {
+      if (!state.recoveryToken) throw Object.assign(new Error(errorNames.INVALID_RECOVERY_TOKEN), { code: 'INVALID_RECOVERY_TOKEN' });
+      if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥。');
+      const challenge = await api('passkeys/recovery/options', { method: 'POST', authenticated: false, body: { token: state.recoveryToken } });
+      const credential = await navigator.credentials.create({ publicKey: creationOptions(challenge.options) });
+      if (!credential) throw new Error('没有创建通行密钥。');
+      const session = await api('passkeys/recovery/verify', { method: 'POST', authenticated: false,
+        body: { token: state.recoveryToken, challengeID: challenge.challengeID, credential: registrationCredential(credential) } });
+      state.recoveryToken = ''; beginSession(session); await loadWorkspace(false);
+      setMessage(byID('app-status'), '新通行密钥已创建并完成登录。');
+    } catch (error) {
+      const message = error.name === 'NotAllowedError' ? '已取消创建通行密钥；恢复链接在有效期内仍可重试。' : error.message;
+      if (error.code === 'INVALID_RECOVERY_TOKEN') { state.recoveryToken = ''; showLogin(message, true); }
+      else setMessage(byID('recovery-status'), message, true);
+    } finally { button.disabled = false; }
+  }
   async function logout() {
     const token = state.token; try { if (token) await api('session', { method: 'DELETE' }); } catch {}
     clearSession(); showLogin('已安全退出。', false);
@@ -456,6 +501,8 @@ const webJS = String.raw`(() => {
     byID('actions-panel').hidden = deadlines; byID('deadlines-panel').hidden = !deadlines; save('gw-view', view);
   }
   byID('password-form').addEventListener('submit', passwordLogin); byID('passkey-login').addEventListener('click', passkeyLogin);
+  byID('recover-passkey').addEventListener('click', recoverPasskey);
+  byID('cancel-recovery').addEventListener('click', () => { state.recoveryToken = ''; showLogin('', false); });
   byID('register-passkey').addEventListener('click', registerPasskey); byID('refresh').addEventListener('click', () => loadWorkspace(false)); byID('logout').addEventListener('click', logout);
   document.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => selectView(button.dataset.view)));
   byID('workspace-view').querySelector('.tabs').addEventListener('keydown', event => {
@@ -467,12 +514,16 @@ const webJS = String.raw`(() => {
   document.addEventListener('visibilitychange', () => { if (!document.hidden && state.token) loadWorkspace(true); });
   setInterval(updateCountdowns, 1000);
   setInterval(() => { if (state.token && !document.hidden) loadWorkspace(true); }, 30000);
+  const recovery = recoveryFromLocation(); state.recoveryToken = recovery.token;
   state.token = saved('gw-session'); state.account = saved('gw-account'); state.displayName = saved('gw-display-name'); selectView(saved('gw-view') === 'deadlines' ? 'deadlines' : 'actions');
   if (!window.PublicKeyCredential || !navigator.credentials) {
     byID('passkey-login').disabled = true; byID('passkey-login').textContent = '此浏览器不支持通行密钥';
-    byID('register-passkey').disabled = true;
+    byID('register-passkey').disabled = true; byID('recover-passkey').disabled = true;
+    byID('recover-passkey').textContent = '此浏览器不支持通行密钥';
   }
-  if (state.token) loadWorkspace(false); else showLogin('', false);
+  if (state.recoveryToken) showRecovery('', false);
+  else if (recovery.invalid) showLogin('一次性恢复链接格式无效。', true);
+  else if (state.token) loadWorkspace(false); else showLogin('', false);
 })();`;
 
 const favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#315b4c"/><path d="M20 14h24v7c0 7-4 10-8 12 4 2 8 5 8 12v6H20v-6c0-7 4-10 8-12-4-2-8-5-8-12zm6 7c0 5 3 7 6 9 3-2 6-4 6-9zm6 15c-3 2-6 4-6 9h12c0-5-3-7-6-9z" fill="#fff"/></svg>`;

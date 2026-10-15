@@ -41,7 +41,9 @@ struct BackendSettingsView: View {
                     Button("使用通行密钥登录", systemImage: "person.badge.key") {
                         run { try await backend.signInWithPasskey(using: authorization); store.information = "已使用通行密钥登录。" }
                     }.disabled(busy)
-                    Text("首次使用请先通过密码登录，再添加一枚新的通行密钥。").font(.caption).foregroundStyle(.secondary)
+                    Text("通常请先通过密码登录，再添加一枚新的通行密钥。").font(.caption).foregroundStyle(.secondary)
+                    Text("若密码遗失且还没有通行密钥，服务器本机管理员可以生成十分钟有效的一次性登记链接；恢复不会重建账号或覆盖资料。")
+                        .font(.caption).foregroundStyle(.secondary)
                     TextField("邮箱", text: $email).autocorrectionDisabled().nativeEmailInput()
                     SecureField("密码", text: $password)
                     Button(busy ? "正在登录…" : "登录") {
