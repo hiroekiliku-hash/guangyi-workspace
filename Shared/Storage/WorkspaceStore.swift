@@ -63,11 +63,18 @@ import PDFKit
         do { try action() } catch { errorMessage = error.localizedDescription }
     }
     var canAutomaticallySync: Bool {
-        guard automaticSync, pendingSyncReview == nil, let scope = backend.accountScope else { return false }
+        automaticSyncCheckpoint() != nil
+    }
+    func shouldAutomaticallySync(remoteRevision: Int) -> Bool {
+        guard let checkpoint = automaticSyncCheckpoint() else { return false }
+        return checkpoint.remote.revision < remoteRevision
+    }
+    private func automaticSyncCheckpoint() -> WorkspaceSyncCheckpoint? {
+        guard automaticSync, pendingSyncReview == nil, let scope = backend.accountScope else { return nil }
         let checkpoint: WorkspaceSyncCheckpoint?
         do { checkpoint = try repository.syncCheckpoint() }
-        catch { return false }
-        return checkpoint?.scope == scope
+        catch { return nil }
+        return checkpoint?.scope == scope ? checkpoint : nil
     }
     func commit(_ update: (inout WorkspaceState) throws -> Void) throws {
         var draft = state
@@ -313,7 +320,7 @@ import PDFKit
     func refresh() {
         perform { try commit { RecurrenceEngine.materialize(&$0) } }
         Task { await notifications.refreshAuthorization() }
-        if backend.signedIn && Bundle.main.object(forInfoDictionaryKey: "RemotePushEnabled") as? Bool == true {
+        if RemotePushBridge.isEnabled && (backend.signedIn || RemotePushBridge.isSmokeTesting) {
             do { try RemotePushBridge.registerWithApple() } catch { errorMessage = error.localizedDescription }
         }
     }

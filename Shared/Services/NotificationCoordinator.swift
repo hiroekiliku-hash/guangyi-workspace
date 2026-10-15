@@ -100,28 +100,36 @@ import UserNotifications
         let rawID = response.notification.request.content.userInfo["id"] as? String
         let action = response.actionIdentifier
         guard let rawID, let id = UUID(uuidString: rawID) else { return }
-        await MainActor.run {
-            guard let store = self.store else { return }
-            guard let record = store.record(id) else {
-                store.information = "此提醒对应的记录尚未在本机，请到设置中的自建服务器下载并审阅最新数据。"
+        await handleNotification(id: id, action: action)
+    }
+    private func handleNotification(id: UUID, action: String) async {
+        guard let store else { return }
+        if store.record(id) == nil, store.canAutomaticallySync {
+            do { try await store.synchronize() }
+            catch {
+                store.errorMessage = "无法取得这项提醒的最新资料：\(error.localizedDescription)"
                 return
             }
-            if action == "COMPLETE" || action == "SNOOZE" {
-                guard WorkspaceLogic.visible(record, in: store.state), !record.isFinished,
-                      [.task, .deadline, .reminder].contains(record.kind) else {
-                    store.information = "这项提醒已完成、取消或归档，操作未重复执行。"
-                    return
-                }
+        }
+        guard let record = store.record(id) else {
+            store.information = "此提醒对应的记录尚未同步到本机。请确认已登录同一账号并开启自动同步。"
+            return
+        }
+        if action == "COMPLETE" || action == "SNOOZE" {
+            guard WorkspaceLogic.visible(record, in: store.state), !record.isFinished,
+                  [.task, .deadline, .reminder].contains(record.kind) else {
+                store.information = "这项提醒已完成、取消或归档，操作未重复执行。"
+                return
             }
-            if action == "COMPLETE" { store.perform { try store.setStatus(id, record.kind == .project ? "COMPLETED" : "DONE") } }
-            else if action == "SNOOZE" {
-                var changed = record
-                changed.snoozedUntil = Date().addingTimeInterval(600)
-                store.perform { try store.save(changed, expectedVersion: record.version) }
-            } else {
-                store.navigation = record.kind == .knowledge ? .knowledge : record.kind == .deadline ? .deadlines : .actions
-                store.openedRecordID = id
-            }
+        }
+        if action == "COMPLETE" { store.perform { try store.setStatus(id, record.kind == .project ? "COMPLETED" : "DONE") } }
+        else if action == "SNOOZE" {
+            var changed = record
+            changed.snoozedUntil = Date().addingTimeInterval(600)
+            store.perform { try store.save(changed, expectedVersion: record.version) }
+        } else {
+            store.navigation = record.kind == .knowledge ? .knowledge : record.kind == .deadline ? .deadlines : .actions
+            store.openedRecordID = id
         }
     }
 }

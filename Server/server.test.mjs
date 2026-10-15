@@ -1,21 +1,27 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createNativeServer } from './server.mjs';
+import { createNativeServer, apnsDelivery } from './server.mjs';
 let app, origin, token;
 const password = 'test-only-password-not-a-production-credential';
-let pushCount = 0, pushResult = { accepted: true, expired: false };
+const registeredDeviceID = randomUUID();
+let reminderPushCount = 0, workspacePushes = [], workspaceCollapseIDs = [], pushResult = { accepted: true, expired: false };
 before(async () => {
   app = createNativeServer({ databasePath: ':memory:', adminEmail: 'owner@test.invalid', adminPassword: password,
-    sendPush: async (_device, payload) => { assert.equal(payload.aps.category, 'WORKSPACE_REMINDER'); pushCount++; return pushResult; } });
+    sendPush: async (_device, payload, collapseID) => {
+      if (payload.kind === 'WORKSPACE_SYNC') { workspacePushes.push(payload); workspaceCollapseIDs.push(collapseID); }
+      else { assert.equal(payload.aps.category, 'WORKSPACE_REMINDER'); reminderPushCount++; }
+      return pushResult;
+    } });
   await new Promise((resolve, reject) => { app.server.once('error', reject); app.server.listen(0, '127.0.0.1', resolve); });
   origin = 'http://127.0.0.1:' + app.server.address().port;
 });
-after(() => app.close());
-async function call(path, method = 'GET', body, auth = token, revision) {
+after(async () => { await app.flushPushes(); app.close(); });
+async function call(path, method = 'GET', body, auth = token, revision, sourceDeviceID) {
   const response = await fetch(origin + '/api/native/v1/' + path, { method, headers: {
     ...(auth ? { Authorization: 'Bearer ' + auth } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}),
-    ...(revision !== undefined ? { 'If-Match': '"' + revision + '"' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    ...(revision !== undefined ? { 'If-Match': '"' + revision + '"' } : {}),
+    ...(sourceDeviceID ? { 'X-Workspace-Device-ID': sourceDeviceID } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: response.status, value: await response.json() };
 }
 test('authentication rejects missing and incorrect credentials, returns a scoped session', async () => {
@@ -42,9 +48,28 @@ test('invalid data rolls back without incrementing the workspace revision', asyn
   assert.deepEqual((await call('workspace')).value.data, original);
 });
 test('device registration validates the app topic and push environment', async () => {
-  const device = { deviceID: randomUUID(), token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' };
+  const device = { deviceID: registeredDeviceID, token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' };
   assert.equal((await call('devices', 'PUT', { ...device, bundleID: 'other.app' })).status, 422);
   assert.equal((await call('devices', 'PUT', device)).status, 200);
+});
+test('workspace writes send a collapsible background revision hint', async () => {
+  workspacePushes = []; workspaceCollapseIDs = [];
+  const remote = (await call('workspace')).value.data;
+  remote.snapshot.profile.name = '另一台设备的更新';
+  assert.equal((await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision, 'not-a-uuid')).status, 422);
+  const updated = await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision, registeredDeviceID);
+  assert.equal(updated.status, 200);
+  await app.flushPushes(); assert.equal(workspacePushes.length, 0);
+  updated.value.data.snapshot.profile.name = '紧接着的更新';
+  const second = await call('workspace', 'PUT', { snapshot: updated.value.data.snapshot }, token, updated.value.data.revision);
+  second.value.data.snapshot.profile.name = '最新更新';
+  assert.equal((await call('workspace', 'PUT', { snapshot: second.value.data.snapshot }, token, second.value.data.revision)).status, 200);
+  await app.flushPushes();
+  assert.deepEqual(workspacePushes.map(value => value.revision).sort(), [remote.revision + 2, remote.revision + 3]);
+  assert.equal(new Set(workspaceCollapseIDs).size, 1); assert.match(workspaceCollapseIDs[0], /^[a-f0-9]{64}$/);
+  assert.deepEqual(workspacePushes[0].aps, { 'content-available': 1 });
+  assert.deepEqual(apnsDelivery(workspacePushes[0]), { pushType: 'background', priority: '5', lifetime: 300 });
+  assert.deepEqual(apnsDelivery({ aps: { alert: { title: '提醒' } } }), { pushType: 'alert', priority: '10', lifetime: 86400 });
 });
 test('server timer sends an accepted notification once and excludes completed reminders', async () => {
   const remote = (await call('workspace')).value.data;
@@ -52,19 +77,20 @@ test('server timer sends an accepted notification once and excludes completed re
   snapshot.records[0].remindAt = new Date(now - 100).toISOString();
   assert.equal((await call('workspace', 'PUT', { snapshot }, token, remote.revision)).status, 200);
   await Promise.all([app.sweep(now), app.sweep(now)]);
-  assert.equal(pushCount, 1);
-  await app.sweep(now); assert.equal(pushCount, 1);
+  assert.equal(reminderPushCount, 1);
+  await app.sweep(now); assert.equal(reminderPushCount, 1);
   const next = (await call('workspace')).value.data;
   next.snapshot.records[0].status = 'DONE';
   next.snapshot.records[0].remindAt = new Date(now - 50).toISOString();
   await call('workspace', 'PUT', { snapshot: next.snapshot }, token, next.revision);
-  await app.sweep(now); assert.equal(pushCount, 1);
+  await app.sweep(now); assert.equal(reminderPushCount, 1);
 });
 test('expired APNs device registrations are removed', async () => {
   const remote = (await call('workspace')).value.data;
   remote.snapshot.records[0].status = 'OPEN'; remote.snapshot.records[0].remindAt = new Date(Date.now() + 2000).toISOString();
-  await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision);
   pushResult = { accepted: false, expired: true };
+  await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision);
+  await app.flushPushes();
   await app.sweep(Date.now() + 3000);
   assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM devices').get().n, 0);
 });

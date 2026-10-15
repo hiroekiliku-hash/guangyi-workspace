@@ -57,9 +57,9 @@
 
 `Server/` 包含无需 npm 依赖的 Node.js 24 初版后端：SQLite 持久化、scrypt 密码哈希、作用域会话、版本条件快照读写、设备注册与每 30 秒后台派发。服务端只在配置 Apple APNs 凭据后发送远程通知。
 
-当前客户端采用**手动快照同步**：先下载并审阅，再上传；上传携带 If-Match，防止其他设备已更新后静默覆盖。未实现实时自动后台合并、增量同步或多用户共享权限。详见 `API-CONTRACT.md` 和 `Server/README.md`。
+首次连接账号时会明确确认本机资料与服务器资料的合并。此后客户端在前台修改后和定时自动同步，iOS 也会申请系统后台刷新；上传携带 If-Match，并以账号专属基线做三方合并，同一记录的并发修改会暂停并要求审阅。配置 APNs 后，服务器还会在 revision 更新时发送不含业务正文的静默提示，让已登记设备尽快拉取。系统决定后台执行时间；当前仍是完整快照协议，不是操作日志式增量同步，也没有多用户共享权限。详见 `API-CONTRACT.md` 和 `Server/README.md`。
 
-已读取 cqr 旅行网站的 GitHub 部署说明；其专用 SSH 通道受强制命令限制，不能安装广益新后端。用户确认服务器 146.56.249.84，workspace.kdfz.com.cn 已解析到服务器，并已在 OrcaTerm 首装独立 Node.js 24 + systemd 服务、本机 API 和真实应用账号。旧 Node.js 22 服务保留；专用 HTTPS、自动发布和真实 APNs 尚未验收。本会话不能直接 SSH 或操控电脑，用户转交本地 Codex，完整任务与脚本见 `LOCAL-CODEX-HANDOFF.txt`。
+生产 API 已在 `https://workspace.kdfz.com.cn` 使用独立 Node.js 24、systemd 服务、Nginx 配置和证书运行；专用 GitHub Actions 发布及受限部署密钥已经验收。旧 Node.js 22 服务和旅行项目均保留且未改动。真实 APNs 凭据、两个原生目标的签名描述文件及真机收件仍待单独验收。本仓库不包含网页版前端源码；DDL 倒计时与实时活动实现位于原生 SwiftUI 应用。
 
 接入远程通知时：
 

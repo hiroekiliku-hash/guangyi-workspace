@@ -71,6 +71,7 @@ assert any(native[key].get('dstSubfolderSpec') == '13' for key in host['buildPha
 ios_info = plistlib.loads((root/'Config/iOS-Info.plist').read_bytes())
 assert ios_info['NSSupportsLiveActivities']
 assert 'fetch' in ios_info['UIBackgroundModes']
+assert 'remote-notification' in ios_info['UIBackgroundModes']
 assert 'com.guangyi.workspace.native.ios.refresh' in ios_info['BGTaskSchedulerPermittedIdentifiers']
 assert plistlib.loads((root/'Config/LiveActivity-Info.plist').read_bytes())['NSExtension']['NSExtensionPointIdentifier'] == 'com.apple.widgetkit-extension'
 print('Live Activity and background refresh declarations checked.')

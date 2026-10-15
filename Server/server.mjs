@@ -23226,6 +23226,25 @@ function createNativeServer(configuration) {
     return { accessToken, displayName: user.name, account: user.email };
   }
   const allowedBundles = new Set((configuration.allowedBundles ?? "com.guangyi.workspace.native.ios,com.guangyi.workspace.native.mac").split(","));
+  const pendingPushes = /* @__PURE__ */ new Set();
+  function queuePush(work) {
+    const pending = Promise.resolve().then(work).catch(() => {
+    }).finally(() => pendingPushes.delete(pending));
+    pendingPushes.add(pending);
+  }
+  async function notifyWorkspaceChanged(userID, revision, sourceDeviceID) {
+    if (!sendPush) return;
+    const payload = { aps: { "content-available": 1 }, kind: "WORKSPACE_SYNC", revision };
+    const collapseID = sha(JSON.stringify(["workspace", userID]));
+    for (const device of db.prepare("SELECT * FROM devices WHERE user_id=?").all(userID)) {
+      if (device.device_id === sourceDeviceID) continue;
+      try {
+        const result = await sendPush(device, payload, collapseID);
+        if (result.expired) db.prepare("DELETE FROM devices WHERE user_id=? AND device_id=?").run(userID, device.device_id);
+      } catch {
+      }
+    }
+  }
   function userFor(request) {
     const header = request.headers.authorization;
     if (typeof header !== "string" || !header.startsWith("Bearer ") || header.length > 300) throw new APIError(401, "UNAUTHENTICATED");
@@ -23364,6 +23383,8 @@ function createNativeServer(configuration) {
         return respond(response, 200, { data: { revision: row.revision, snapshot: JSON.parse(row.snapshot) } });
       }
       if (path === "/api/native/v1/workspace" && request.method === "PUT") {
+        const sourceDeviceID = request.headers["x-workspace-device-id"];
+        if (sourceDeviceID != null && (typeof sourceDeviceID !== "string" || !uuid.test(sourceDeviceID))) throw new APIError(422, "INVALID_DEVICE");
         const match = request.headers["if-match"];
         if (typeof match !== "string" || !/^"\d+"$/.test(match)) throw new APIError(428, "VERSION_REQUIRED");
         const revision = Number(match.slice(1, -1));
@@ -23383,7 +23404,10 @@ function createNativeServer(configuration) {
           db.exec("ROLLBACK");
           throw error;
         }
-        return respond(response, 200, { data: { revision: revision + 1, snapshot: value.snapshot } });
+        const nextRevision = revision + 1;
+        respond(response, 200, { data: { revision: nextRevision, snapshot: value.snapshot } });
+        queuePush(() => notifyWorkspaceChanged(userID, nextRevision, sourceDeviceID));
+        return;
       }
       if (path === "/api/native/v1/devices" && request.method === "PUT") {
         const device = await body(request, 8192);
@@ -23451,10 +23475,14 @@ function createNativeServer(configuration) {
     }
     return { accepted };
   }
-  return { server, db, sweep, close: () => {
+  return { server, db, sweep, flushPushes: () => Promise.all([...pendingPushes]), close: () => {
     server.close();
     db.close();
   } };
+}
+function apnsDelivery(payload) {
+  const background = payload?.aps?.["content-available"] === 1 && payload?.aps?.alert == null;
+  return background ? { pushType: "background", priority: "5", lifetime: 300 } : { pushType: "alert", priority: "10", lifetime: 86400 };
 }
 function applePushSender({ teamID, keyID, keyPath }) {
   if (!teamID || !keyID || !keyPath) return void 0;
@@ -23482,15 +23510,16 @@ function applePushSender({ teamID, keyID, keyPath }) {
         finish();
         reject(error);
       });
+      const delivery = apnsDelivery(payload);
       const request = session.request({
         ":method": "POST",
         ":path": "/3/device/" + device.token,
         authorization: "bearer " + jwt,
         "apns-topic": device.bundle_id,
-        "apns-push-type": "alert",
-        "apns-priority": "10",
+        "apns-push-type": delivery.pushType,
+        "apns-priority": delivery.priority,
         "apns-collapse-id": collapseID.slice(0, 64),
-        "apns-expiration": String(Math.floor(Date.now() / 1e3) + 86400)
+        "apns-expiration": String(Math.floor(Date.now() / 1e3) + delivery.lifetime)
       });
       let status = 0;
       request.on("response", (headers) => {
@@ -23527,6 +23556,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   setInterval(() => app.sweep().catch(() => console.error("notification_dispatch_failed")), 3e4).unref();
 }
 export {
+  apnsDelivery,
   applePushSender,
   createNativeServer,
   validateSnapshot

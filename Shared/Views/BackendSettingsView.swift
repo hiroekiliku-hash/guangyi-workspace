@@ -69,7 +69,7 @@ struct BackendSettingsView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("通知与同步") {
-                if Bundle.main.object(forInfoDictionaryKey: "RemotePushEnabled") as? Bool == true {
+                if RemotePushBridge.isEnabled {
                     LabeledContent("远程提醒", value: backend.deviceRegistrationStatus)
                     Button("启用此设备的远程提醒", systemImage: "antenna.radiowaves.left.and.right") {
                         run { try await store.notifications.requestAuthorization(); try RemotePushBridge.registerWithApple() }
