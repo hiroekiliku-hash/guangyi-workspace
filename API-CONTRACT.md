@@ -9,6 +9,13 @@
 | `/health` | GET | 无鉴权运行检查 |
 | `/api/native/v1/session` | POST | 邮箱/密码登录 |
 | `/api/native/v1/session` | DELETE | 撤销当前会话 |
+| `/api/native/v1/passkeys/login/options` | POST | 开始 discoverable 通行密钥登录 |
+| `/api/native/v1/passkeys/login/verify` | POST | 验证通行密钥并建立会话 |
+| `/api/native/v1/passkeys/register/options` | POST | 已登录账号开始新增通行密钥 |
+| `/api/native/v1/passkeys/register/verify` | POST | 验证并保存新通行密钥公钥 |
+| `/api/native/v1/passkeys` | GET / DELETE | 已登录账号列出或撤销通行密钥 |
+| `/api/native/v1/passkeys/recovery/options` | POST | 用服务器本机签发的一次性令牌开始创建首枚通行密钥 |
+| `/api/native/v1/passkeys/recovery/verify` | POST | 验证首枚通行密钥、消费令牌并建立会话 |
 | `/api/native/v1/workspace` | GET | 读取账号的快照与服务器 revision |
 | `/api/native/v1/workspace` | PUT | 按 If-Match 原子更新完整快照 |
 | `/api/native/v1/devices` | PUT | 登记本账号的 APNs 设备 |
@@ -27,6 +34,16 @@
 请求 `{ "email": "你配置的邮箱", "password": "你配置的密码" }`，响应 `data` 包含 `accessToken`、`displayName`，可选 `refreshToken`。原生客户端将服务器地址和令牌以一个 Keychain 项原子保存，不写入 UserDefaults、日志或备份文件。
 
 初版后端会话有效期为 30 天，没有实现 refresh endpoint；失效后重新登录。登录限流按连接 IP；生产环境应结合反向代理配置精确客户端 IP 和更完善的账号限流。
+
+### 忘记密码且尚无通行密钥
+
+服务器本机管理员可在当前 release 使用服务运行用户执行：
+
+```bash
+node server.mjs issue-passkey-recovery /实际数据库路径 [账号邮箱]
+```
+
+只有一个账号时可省略邮箱。命令直接访问 SQLite，因此不能从公网调用；它会输出一个十分钟有效的一次性 HTTPS 链接。链接秘密位于 URL fragment，浏览器读取后立即从地址栏和历史项移除，再以 POST body 发送。数据库只保存 SHA-256 哈希；同账号重新签发会废止旧链接，成功登记公钥与消费链接在同一事务完成。恢复不会重建账号、修改密码或替换工作空间，成功后直接建立该账号的作用域会话。管理员应通过受信任的本机界面把链接交给账号本人，不应写入工单、聊天记录或长期日志。
 
 ## 快照
 
@@ -71,9 +88,12 @@ DELETE 请求 `{ "deviceID": "..." }`，只允许注销当前账号的设备。�
     "sound": "default",
     "category": "WORKSPACE_REMINDER"
   },
-  "id": "原生记录 UUID"
+  "id": "原生记录 UUID",
+  "scheduledAt": 1792045800000
 }
 ```
+
+`scheduledAt` 是这一次提醒时刻的 Unix 毫秒值。本机和远程通知操作都会把它与记录当前的提醒时刻比较；记录完成、关闭通知、改期或稍后提醒后，旧横幅不能再完成或延后当前记录。同步重新安排提醒时还会从通知中心移除这些失效横幅。
 
 工作空间成功写入新 revision 后，已配置 APNs 的服务器还发送静默提示：
 

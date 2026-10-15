@@ -30,6 +30,14 @@ bash install-backend.sh
 
 `GET /`（或 `/index.html`）加载行动与 DDL 页面，`/app.js`、`/app.css` 和 `/favicon.svg` 也由同一进程提供。资源在构建时打进单文件 `server.mjs`，所以发布网关仍只需原有的 `server.mjs`、`server.test.mjs` 和 `REVISION`，不需要扩大文件白名单。
 
+若账号忘记密码且尚未登记通行密钥，可由服务器本机管理员使用当前 release 的 Node 运行时和服务运行用户生成一次性登记链接：
+
+```bash
+runuser -u guangyi-workspace -- /opt/guangyi-workspace/runtime/bin/node --preserve-symlinks-main /opt/guangyi-workspace/current/server.mjs issue-passkey-recovery /var/lib/guangyi-workspace/workspace.sqlite [账号邮箱]
+```
+
+上述运行用户和数据库路径已在 2026-10-15 对当前生产 systemd 单元与文件权限只读核验。命令只在本机直接打开 SQLite，不提供签发链接的公网 API。链接十分钟后失效、成功一次后失效，同账号新链接会废止旧链接；数据库只保存令牌哈希。不要通过 `source` 执行 EnvironmentFile，也不要把链接写入持久日志。若部署路径以后改变，应先用 `systemctl cat guangyi-workspace.service` 与只读文件检查重新确认，不要猜测或新建空数据库。
+
 网页支持现有账号的密码和 discoverable passkey 登录；登录后可为同一账号创建新通行密钥。页面只调用 GET workspace，不提供编辑或 PUT，以免浏览器用旧快照覆盖原生客户端的合并结果。Bearer token 只进入当前标签页的 `sessionStorage`，页面关闭后清除；用户内容只通过 `textContent` 渲染。响应设置 self-only CSP、防嵌入、no-referrer、no-store 与 WebAuthn 权限策略。
 
 日期型 DDL 以记录自身时区的 23:59:59 为截止，包含夏令时转换；带时刻 DDL 使用原始绝对时间。倒计时每秒更新，页面可见时每 30 秒重新读取服务器 revision。旧 Sites 项目没有在当前账号或仓库中找到，因此本实现按现有 API 与原生模型重建。
@@ -63,13 +71,13 @@ APNS_PRIVATE_KEY_FILE=/run/secrets/apns-key.p8
 APNS_ALLOWED_BUNDLE_IDS=你实际使用的iOSBundleID,你实际使用的MacBundleID
 ```
 
-将真实 .p8 放入服务器 secrets 目录，限制权限并确保容器 uid 1000 可以只读访问。不要把它放入原生应用、Git 或交付包。配置后重启 API 容器，使用已签名真机/应用注册设备并验证后台发送。服务端会派发到期提醒，也会在工作空间 revision 更新后发送只含 revision 的静默同步提示。
+生产 systemd 安装应把真实 .p8 放在 release 目录之外的专用 secrets 路径，设为 `root:guangyi-workspace` 且权限不宽于 `0640`，并让 `APNS_PRIVATE_KEY_FILE` 指向该文件；若使用上面的历史 Docker 方案，则改为确保容器实际运行用户可以只读访问。不要把私钥放入原生应用、Git 或交付包。更新 EnvironmentFile 后只重启 `guangyi-workspace.service`；Docker 方案才重启对应 API 容器。随后用已签名真机/应用注册设备并验证后台发送。服务端会派发到期提醒，也会在工作空间 revision 更新后发送只含 revision 的静默同步提示。
 
 ## 数据与边界
 
 - SQLite WAL、本机 volume 持久化，完整快照按服务器 revision 原子更新。
 - 密码使用随机 salt 和 scrypt；Bearer token 只保存 SHA-256 哈希。会话有效期 30 天。
-- 每个账号隔离自己的工作空间与设备。此版没有公开注册、共享成员角色、账号找回或管理员 UI。
+- 每个账号隔离自己的工作空间与设备。此版没有公开注册、共享成员角色、密码重置或管理员 UI；只有需要服务器 SQLite 文件权限的短时一次性通行密钥恢复命令。
 - 请求上限 128 MiB，单 PDF 10 MiB；保存最近约 5 个服务器快照版本供维护恢复，尚未提供管理恢复接口。
 - 适合受控的个人服务器初版。大规模数据应将附件移到对象存储，加入数据库迁移、监控、独立备份、精确代理限流和运维恢复流程。
 - APNs 每 30 秒检查，失败两分钟后重试；网络和 Apple/系统设置仍可能延迟或阻止收件。

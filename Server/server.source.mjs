@@ -3,7 +3,7 @@ import http from 'node:http';
 import http2 from 'node:http2';
 import { DatabaseSync } from 'node:sqlite';
 import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
-import { readFileSync, mkdirSync } from 'node:fs';
+import { readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
@@ -18,6 +18,37 @@ const sha = value => createHash('sha256').update(value).digest('hex');
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const emptyWorkspace = name => ({ format: 'guangyi-native', schemaVersion: 1, records: [], series: [], activities: [], revisions: [], assets: [], trash: [], profile: { name, timezone: 'Asia/Shanghai' } });
 class APIError extends Error { constructor(status, code) { super(code); this.status = status; } }
+function passkeyRecoveryTable(db) {
+  db.exec(`CREATE TABLE IF NOT EXISTS passkey_recoveries(
+    hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),expires INTEGER NOT NULL,created INTEGER NOT NULL);
+    CREATE UNIQUE INDEX IF NOT EXISTS passkey_recoveries_user_id ON passkey_recoveries(user_id);`);
+}
+function createPasskeyRecovery(db, { email, origin, now = Date.now() }) {
+  const parsed = new URL(origin);
+  if (parsed.origin !== origin || parsed.username || parsed.password || parsed.protocol !== 'https:') throw new Error('INVALID_PASSKEY_ORIGIN');
+  passkeyRecoveryTable(db);
+  const users = email
+    ? db.prepare('SELECT id,email FROM users WHERE email=?').all(email.trim().toLowerCase())
+    : db.prepare('SELECT id,email FROM users ORDER BY id').all();
+  if (users.length !== 1) throw new Error(email ? 'ACCOUNT_NOT_FOUND' : 'ACCOUNT_MUST_BE_SPECIFIED');
+  const user = users[0], token = randomBytes(32).toString('base64url'), expires = now + 10 * 60000;
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.prepare('DELETE FROM passkey_recoveries WHERE expires<=? OR user_id=?').run(now, user.id);
+    db.prepare('INSERT INTO passkey_recoveries(hash,user_id,expires,created) VALUES(?,?,?,?)').run(sha(token), user.id, expires, now);
+    db.exec('COMMIT');
+  } catch (error) { db.exec('ROLLBACK'); throw error; }
+  return { token, url: `${origin}/#passkey-recovery=${token}`, expires, account: user.email };
+}
+export function issuePasskeyRecovery({ databasePath, email, origin = 'https://workspace.kdfz.com.cn', now = Date.now() }) {
+  if (typeof databasePath !== 'string' || databasePath === ':memory:' || !existsSync(databasePath)) throw new Error('DATABASE_NOT_FOUND');
+  const db = new DatabaseSync(databasePath);
+  try {
+    db.exec('PRAGMA foreign_keys=ON; PRAGMA busy_timeout=5000;');
+    return createPasskeyRecovery(db, { email, origin, now });
+  }
+  finally { db.close(); }
+}
 export function validateSnapshot(snapshot) {
   if (!snapshot || snapshot.format !== 'guangyi-native' || snapshot.schemaVersion !== 1) throw new APIError(422, 'INVALID_SNAPSHOT');
   for (const key of ['records', 'series', 'activities', 'revisions', 'assets', 'trash']) {
@@ -94,6 +125,7 @@ export function createNativeServer(configuration) {
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_users(user_id INTEGER PRIMARY KEY REFERENCES users(id),handle TEXT UNIQUE NOT NULL);
     CREATE TABLE IF NOT EXISTS passkeys(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),public_key BLOB NOT NULL,counter INTEGER NOT NULL,created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
+  passkeyRecoveryTable(db);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
   const attempts = new Map();
   function passkeyRateLimit(request) {
@@ -114,6 +146,38 @@ export function createNativeServer(configuration) {
     const value = db.prepare('DELETE FROM passkey_challenges WHERE id=? AND kind=? AND session_hash IS ? RETURNING *').get(id, kind, sessionHash);
     if (!value || value.expires <= passkeyNow()) throw new APIError(401, 'INVALID_CHALLENGE');
     return value;
+  }
+  function recoveryFor(token) {
+    if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new APIError(401, 'INVALID_RECOVERY_TOKEN');
+    const hash = sha(token), value = db.prepare('SELECT hash,user_id,expires FROM passkey_recoveries WHERE hash=?').get(hash);
+    if (!value || value.expires <= passkeyNow()) {
+      db.prepare('DELETE FROM passkey_recoveries WHERE hash=?').run(hash);
+      throw new APIError(401, 'INVALID_RECOVERY_TOKEN');
+    }
+    return value;
+  }
+  async function registrationOptions(userID) {
+    const user = db.prepare('SELECT * FROM users WHERE id=?').get(userID);
+    db.prepare('INSERT OR IGNORE INTO passkey_users(user_id,handle) VALUES(?,?)').run(userID, randomBytes(32).toString('base64url'));
+    const handle = db.prepare('SELECT handle FROM passkey_users WHERE user_id=?').get(userID).handle;
+    const credentials = db.prepare('SELECT id FROM passkeys WHERE user_id=?').all(userID);
+    if (credentials.length >= 10) throw new APIError(422, 'PASSKEY_LIMIT');
+    const options = await generateRegistrationOptions({ rpName: '广益 WorkSpace', rpID, userID: new Uint8Array(Buffer.from(handle, 'base64url')),
+      userName: user.email, userDisplayName: user.name, attestationType: 'none', supportedAlgorithmIDs: [-7],
+      authenticatorSelection: { residentKey: 'required', userVerification: 'required', authenticatorAttachment: 'platform' },
+      excludeCredentials: credentials.map(value => ({ id: value.id })) });
+    return { user, options };
+  }
+  async function verifiedRegistration(value, challenge, userID) {
+    let result;
+    try { result = await verifyRegistrationResponse({ response: value.credential, expectedChallenge: challenge.challenge,
+      expectedOrigin: passkeyOrigin, expectedRPID: rpID, requireUserVerification: true, supportedAlgorithmIDs: [-7] }); }
+    catch { throw new APIError(401, 'INVALID_PASSKEY'); }
+    if (!result.verified || !result.registrationInfo) throw new APIError(401, 'INVALID_PASSKEY');
+    const credential = result.registrationInfo.credential;
+    if (db.prepare('SELECT COUNT(*) AS total FROM passkeys WHERE user_id=?').get(userID).total >= 10) throw new APIError(422, 'PASSKEY_LIMIT');
+    if (db.prepare('SELECT id FROM passkeys WHERE id=?').get(credential.id)) throw new APIError(409, 'PASSKEY_EXISTS');
+    return credential;
   }
   function createSession(user) {
     const accessToken = randomBytes(32).toString('base64url');
@@ -189,6 +253,28 @@ export function createNativeServer(configuration) {
         if (changed.changes !== 1) throw new APIError(409, 'PASSKEY_COUNTER_CONFLICT');
         return respond(response, 200, { data: createSession(owner) });
       }
+      if (path === '/api/native/v1/passkeys/recovery/options' && request.method === 'POST') {
+        passkeyRateLimit(request);
+        const value = await body(request, 8192), recovery = recoveryFor(value.token);
+        const { options } = await registrationOptions(recovery.user_id);
+        return respond(response, 200, { data: { challengeID: issueChallenge('recovery', options.challenge, recovery.user_id, recovery.hash), options } });
+      }
+      if (path === '/api/native/v1/passkeys/recovery/verify' && request.method === 'POST') {
+        passkeyRateLimit(request);
+        const value = await body(request, 65536), recovery = recoveryFor(value.token);
+        const challenge = consumeChallenge(value.challengeID, 'recovery', recovery.hash);
+        if (challenge.user_id !== recovery.user_id) throw new APIError(401, 'INVALID_CHALLENGE');
+        const credential = await verifiedRegistration(value, challenge, recovery.user_id);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          const consumed = db.prepare('DELETE FROM passkey_recoveries WHERE hash=? AND user_id=? AND expires>?').run(recovery.hash, recovery.user_id, passkeyNow());
+          if (consumed.changes !== 1) throw new APIError(401, 'INVALID_RECOVERY_TOKEN');
+          db.prepare('INSERT INTO passkeys VALUES(?,?,?,?,?)').run(credential.id, recovery.user_id, Buffer.from(credential.publicKey), credential.counter, Date.now());
+          db.exec('COMMIT');
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+        const user = db.prepare('SELECT * FROM users WHERE id=?').get(recovery.user_id);
+        return respond(response, 200, { data: createSession(user) });
+      }
       if (path === '/deploy-revision.json' && request.method === 'GET') return respond(response, 200, { revision: deploymentRevision });
       if (path === '/health' && request.method === 'GET') return respond(response, 200, { status: 'ok' });
       if (path === '/api/native/v1/session' && request.method === 'POST') {
@@ -207,29 +293,14 @@ export function createNativeServer(configuration) {
       const userID = userFor(request);
       if (path === '/api/native/v1/passkeys/register/options' && request.method === 'POST') {
         passkeyRateLimit(request);
-        const user = db.prepare('SELECT * FROM users WHERE id=?').get(userID);
-        db.prepare('INSERT OR IGNORE INTO passkey_users(user_id,handle) VALUES(?,?)').run(userID, randomBytes(32).toString('base64url'));
-        const handle = db.prepare('SELECT handle FROM passkey_users WHERE user_id=?').get(userID).handle;
-        const credentials = db.prepare('SELECT id FROM passkeys WHERE user_id=?').all(userID);
-        if (credentials.length >= 10) throw new APIError(422, 'PASSKEY_LIMIT');
-        const options = await generateRegistrationOptions({ rpName: '广益 WorkSpace', rpID, userID: new Uint8Array(Buffer.from(handle, 'base64url')),
-          userName: user.email, userDisplayName: user.name, attestationType: 'none',
-          supportedAlgorithmIDs: [-7], authenticatorSelection: { residentKey: 'required', userVerification: 'required', authenticatorAttachment: 'platform' },
-          excludeCredentials: credentials.map(value => ({ id: value.id })) });
+        const { options } = await registrationOptions(userID);
         return respond(response, 200, { data: { challengeID: issueChallenge('register', options.challenge, userID, sha(request.headers.authorization.slice(7))), options } });
       }
       if (path === '/api/native/v1/passkeys/register/verify' && request.method === 'POST') {
         passkeyRateLimit(request);
         const value = await body(request, 65536), challenge = consumeChallenge(value.challengeID, 'register', sha(request.headers.authorization.slice(7)));
         if (challenge.user_id !== userID) throw new APIError(401, 'INVALID_CHALLENGE');
-        let result;
-        try { result = await verifyRegistrationResponse({ response: value.credential, expectedChallenge: challenge.challenge,
-          expectedOrigin: passkeyOrigin, expectedRPID: rpID, requireUserVerification: true, supportedAlgorithmIDs: [-7] }); }
-        catch { throw new APIError(401, 'INVALID_PASSKEY'); }
-        if (!result.verified || !result.registrationInfo) throw new APIError(401, 'INVALID_PASSKEY');
-        const credential = result.registrationInfo.credential;
-        if (db.prepare('SELECT COUNT(*) AS total FROM passkeys WHERE user_id=?').get(userID).total >= 10) throw new APIError(422, 'PASSKEY_LIMIT');
-        if (db.prepare('SELECT id FROM passkeys WHERE id=?').get(credential.id)) throw new APIError(409, 'PASSKEY_EXISTS');
+        const credential = await verifiedRegistration(value, challenge, userID);
         db.prepare('INSERT INTO passkeys VALUES(?,?,?,?,?)').run(credential.id, userID, Buffer.from(credential.publicKey), credential.counter, Date.now());
         return respond(response, 200, { data: { registered: true } });
       }
@@ -296,6 +367,7 @@ export function createNativeServer(configuration) {
   let sweeping = false;
   async function sweep(now = Date.now()) {
     db.prepare('DELETE FROM sessions WHERE expires<?').run(now);
+    db.prepare('DELETE FROM passkey_recoveries WHERE expires<=?').run(now);
     for (const [ip, value] of attempts) if (now - value.start > 600000) attempts.delete(ip);
     if (!sendPush || sweeping) return { accepted: 0 };
     sweeping = true; let accepted = 0;
@@ -322,7 +394,7 @@ export function createNativeServer(configuration) {
             const freshParent = !current?.projectID || fresh.records.some(r => r.id === current.projectID && !r.deletedAt && !r.archivedAt);
             if (!activeDevice || !current || !freshParent || current.deletedAt || current.archivedAt || ['DONE', 'COMPLETED', 'CANCELLED'].includes(current.status) || !current.notificationsEnabled || moment(current) !== at) continue;
             let result;
-            try { result = await sendPush(activeDevice, { aps: { alert: { title: '广益 WorkSpace · 提醒', body: current.title }, sound: 'default', category: 'WORKSPACE_REMINDER' }, id: current.id }, id); }
+            try { result = await sendPush(activeDevice, { aps: { alert: { title: '广益 WorkSpace · 提醒', body: current.title }, sound: 'default', category: 'WORKSPACE_REMINDER' }, id: current.id, scheduledAt: at }, id); }
             catch { continue; }
             if (result.accepted) { db.prepare('UPDATE deliveries SET accepted=1 WHERE id=?').run(id); accepted++; }
             else if (result.expired) db.prepare('DELETE FROM devices WHERE user_id=? AND device_id=?').run(row.user_id, device.device_id);
@@ -334,7 +406,8 @@ export function createNativeServer(configuration) {
     } finally { sweeping = false; }
     return { accepted };
   }
-  return { server, db, sweep, flushPushes: () => Promise.all([...pendingPushes]), close: () => { server.close(); db.close(); } };
+  return { server, db, sweep, issuePasskeyRecovery: email => createPasskeyRecovery(db, { email, origin: passkeyOrigin, now: passkeyNow() }),
+    flushPushes: () => Promise.all([...pendingPushes]), close: () => { server.close(); db.close(); } };
 }
 export function apnsDelivery(payload) {
   const background = payload?.aps?.['content-available'] === 1 && payload?.aps?.alert == null;
@@ -369,9 +442,19 @@ export function applePushSender({ teamID, keyID, keyPath }) {
 }
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   process.umask(0o077);
-  const app = createNativeServer({ databasePath: process.env.DATABASE_PATH ?? '/data/workspace.sqlite', adminEmail: process.env.ADMIN_EMAIL,
-    adminPassword: process.env.ADMIN_PASSWORD, passkeyRPID: process.env.PASSKEY_RP_ID, passkeyOrigin: process.env.PASSKEY_ORIGIN, passkeyApps: process.env.PASSKEY_APP_IDS, displayName: process.env.DISPLAY_NAME, allowedBundles: process.env.APNS_ALLOWED_BUNDLE_IDS,
-    sendPush: applePushSender({ teamID: process.env.APNS_TEAM_ID, keyID: process.env.APNS_KEY_ID, keyPath: process.env.APNS_PRIVATE_KEY_FILE }) });
-  app.server.listen(Number(process.env.PORT ?? 8080), process.env.HOST ?? '127.0.0.1', () => console.log('Native workspace API is listening'));
-  setInterval(() => app.sweep().catch(() => console.error('notification_dispatch_failed')), 30000).unref();
+  if (process.argv[2] === 'issue-passkey-recovery') {
+    try {
+      const recovery = issuePasskeyRecovery({ databasePath: process.argv[3] ?? process.env.DATABASE_PATH,
+        email: process.argv[4] ?? process.env.ADMIN_EMAIL, origin: process.env.PASSKEY_ORIGIN ?? 'https://workspace.kdfz.com.cn' });
+      process.stdout.write(`${recovery.url}\n有效期至 ${new Date(recovery.expires).toISOString()}\n`);
+    } catch (error) {
+      process.stderr.write(`无法生成通行密钥恢复链接：${error.message}\n`); process.exitCode = 1;
+    }
+  } else {
+    const app = createNativeServer({ databasePath: process.env.DATABASE_PATH ?? '/data/workspace.sqlite', adminEmail: process.env.ADMIN_EMAIL,
+      adminPassword: process.env.ADMIN_PASSWORD, passkeyRPID: process.env.PASSKEY_RP_ID, passkeyOrigin: process.env.PASSKEY_ORIGIN, passkeyApps: process.env.PASSKEY_APP_IDS, displayName: process.env.DISPLAY_NAME, allowedBundles: process.env.APNS_ALLOWED_BUNDLE_IDS,
+      sendPush: applePushSender({ teamID: process.env.APNS_TEAM_ID, keyID: process.env.APNS_KEY_ID, keyPath: process.env.APNS_PRIVATE_KEY_FILE }) });
+    app.server.listen(Number(process.env.PORT ?? 8080), process.env.HOST ?? '127.0.0.1', () => console.log('Native workspace API is listening'));
+    setInterval(() => app.sweep().catch(() => console.error('notification_dispatch_failed')), 30000).unref();
+  }
 }
