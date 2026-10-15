@@ -107,6 +107,23 @@ final class WorkspaceCoreTests: XCTestCase {
         XCTAssertEqual(record.calendar.component(.hour, from: record.effectiveDueDate(record.dueDate!)), 23)
         XCTAssertEqual(record.calendar.component(.minute, from: record.effectiveDueDate(record.dueDate!)), 59)
     }
+    func testUnifiedActionsSortAcrossKindsByImportance() {
+        let now = date("2026-10-15T12:00:00Z")
+        var task = WorkspaceRecord(kind: .task, title: "普通行动")
+        task.updatedAt = now.addingTimeInterval(20)
+        var project = WorkspaceRecord(kind: .project, title: "行动组")
+        project.updatedAt = now.addingTimeInterval(30)
+        var reminder = WorkspaceRecord(kind: .reminder, title: "有时间的提醒")
+        reminder.remindAt = now.addingTimeInterval(3_600)
+        var milestone = WorkspaceRecord(kind: .milestone, title: "置顶里程碑")
+        milestone.pinned = true
+        var completed = WorkspaceRecord(kind: .task, title: "已完成行动")
+        completed.status = "DONE"; completed.updatedAt = now.addingTimeInterval(60)
+        var deadline = WorkspaceRecord(kind: .deadline, title: "不属于行动入口")
+        deadline.dueDate = now.addingTimeInterval(1_800)
+        let sorted = WorkspaceLogic.actionRecords(in: WorkspaceState(records: [task, project, reminder, milestone, completed, deadline]))
+        XCTAssertEqual(sorted.map(\.title), ["置顶里程碑", "有时间的提醒", "行动组", "普通行动", "已完成行动"])
+    }
     func testJSONExportRoundingIsNotAContentConflict() throws {
         var record = WorkspaceRecord(kind: .knowledge, title: "保留内容")
         record.body = "**原生笔记**\n数学源码：$x^2$"

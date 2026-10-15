@@ -59,7 +59,7 @@ struct SettingsView: View {
             Section("关于") {
                 LabeledContent("应用", value: "广益 WorkSpace")
                 LabeledContent("版本", value: "1.0")
-                Link("打开原网站", destination: URL(string: "https://guangyi-workspace-sites.cleverfir5.chatgpt.site/app")!)
+                Link("打开网页版", destination: URL(string: "https://workspace.kdfz.com.cn")!)
             }
         }.formStyle(.grouped).navigationTitle("设置")
             .environment(\.locale, Locale(identifier: "zh_CN"))

@@ -30,6 +30,7 @@ import SwiftUI
                 var overdue = WorkspaceRecord(kind: .deadline, title: "已逾期事项，优先处理", id: UUID(uuidString: "10000000-0000-0000-0000-000000000004")!)
                 overdue.dateOnly = false; overdue.dueDate = Date().addingTimeInterval(-600)
                 try store.save(overdue, expectedVersion: nil)
+                if ProcessInfo.processInfo.arguments.contains("--ui-smoke-deadlines") { store.navigation = .deadlines }
                 if ProcessInfo.processInfo.arguments.contains("--ui-smoke-notification") {
                     Task {
                         do {
