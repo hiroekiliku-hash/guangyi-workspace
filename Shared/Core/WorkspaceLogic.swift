@@ -1,6 +1,21 @@
 import Foundation
 
 enum WorkspaceLogic {
+    static func actionRecords(in state: WorkspaceState) -> [WorkspaceRecord] {
+        let kinds: Set<ItemKind> = [.task, .project, .reminder, .milestone]
+        return state.records.filter { kinds.contains($0.kind) && visible($0, in: state) }
+            .sorted(by: actionPrecedes)
+    }
+    private static func actionPrecedes(_ left: WorkspaceRecord, _ right: WorkspaceRecord) -> Bool {
+        if left.pinned != right.pinned { return left.pinned }
+        if left.isFinished != right.isFinished { return !left.isFinished }
+        let leftMoment = left.dueDate.map(left.effectiveDueDate) ?? left.remindAt ?? left.scheduledAt ?? left.targetDate
+        let rightMoment = right.dueDate.map(right.effectiveDueDate) ?? right.remindAt ?? right.scheduledAt ?? right.targetDate
+        if let leftMoment, let rightMoment, leftMoment != rightMoment { return leftMoment < rightMoment }
+        if (leftMoment != nil) != (rightMoment != nil) { return leftMoment != nil }
+        if left.updatedAt != right.updatedAt { return left.updatedAt > right.updatedAt }
+        return left.id.uuidString < right.id.uuidString
+    }
     static func visible(_ record: WorkspaceRecord, in state: WorkspaceState) -> Bool {
         guard record.isLive else { return false }
         return record.projectID.map { parent in state.records.contains { $0.id == parent && $0.isLive } } ?? true

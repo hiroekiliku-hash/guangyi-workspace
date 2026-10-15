@@ -13,6 +13,6 @@ The root-owned gateway at /opt/guangyi-workspace/deploy-channel/gateway.py requi
 
 Certificate renewal uses certbot-renew.timer and the dedicated lineage-filtered guangyi-workspace-reload hook. Nginx is tested then reloaded. Environment, data, ACME and other projects stay outside code releases.
 
-Sync remains manual snapshots. Native signing, real APNs and automatic background sync are separate unfinished work.
+Sync uses confirmed first-account binding, three-way snapshot merging and best-effort iOS background refresh. Native signing and real APNs credentials remain separate deployment work; without them, silent revision hints are inactive.
 
 The project-specific systemd drop-in release-symlink.conf includes --preserve-symlinks-main because the server's entrypoint guard compares import.meta.url with argv[1]. It is required for both the original server and release code when current is a symlink.

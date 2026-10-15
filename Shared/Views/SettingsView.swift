@@ -48,7 +48,7 @@ struct SettingsView: View {
                 LabeledContent("PDF 附件", value: "\(store.state.assets.count) 个")
                 Button("导出归档", systemImage: "square.and.arrow.up") { showExport = true }
                 Button("导入归档", systemImage: "square.and.arrow.down") { showImport = true }
-                Text("通过加密归档或 JSON 在 iPhone 与 Mac 之间迁移。默认本机存储；SwiftUI 不会自动同步设备数据。")
+                Text("通过加密归档或 JSON 手动迁移，也可以在“登录与设备同步”中启用服务器自动同步。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section("自建服务器") {
@@ -59,7 +59,7 @@ struct SettingsView: View {
             Section("关于") {
                 LabeledContent("应用", value: "广益 WorkSpace")
                 LabeledContent("版本", value: "1.0")
-                Link("打开原网站", destination: URL(string: "https://guangyi-workspace-sites.cleverfir5.chatgpt.site/app")!)
+                Link("打开网页版", destination: URL(string: "https://workspace.kdfz.com.cn")!)
             }
         }.formStyle(.grouped).navigationTitle("设置")
             .environment(\.locale, Locale(identifier: "zh_CN"))

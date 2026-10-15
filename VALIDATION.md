@@ -1,27 +1,33 @@
 # 验证与交付边界
 
-本次环境为 Linux；没有 Swift 编译器、Xcode、Apple SDK、iPhone 模拟器或真实 Apple 设备。
+最近更新：2026-10-15，北京时间。本文件记录当前分支可复核的结果；早期 Linux 静态检查已由 Mac、Xcode、模拟器和自动化测试取代。
 
-## 实际执行
+## 已验证
 
-- 24 个 Swift 文件（21 个应用共享源文件、2 个测试文件、Package.swift）使用 tree-sitter-swift 解析，全部没有语法错误节点；这是语法检查，不是 Swift 编译或 Apple SDK 类型检查。
-- Xcode project.pbxproj 的 114 个对象使用 OpenStep parser 解析通过；三个目标、所有 Sources/Resources 引用、共享 scheme 和构建文件路径检查通过。
-- Info.plist、entitlement、asset catalog 和图标尺寸检查；iPhone/Mac 使用同一组业务与界面源文件。
-- Node 后端 7 项本地 HTTP/SQLite 测试通过：鉴权、快照版本冲突、校验拒绝且不增版本、设备注册约束、后台去重与完成排除、失效设备清理、会话撤销。
-- 后端与维护 Python 脚本语法检查通过。
-- 源码包的 SHA-256 清单和 ZIP 完整性校验。
-- 只读域名检查：kdfz.com.cn 在当前解析器指向 146.56.249.84，代理路径 HTTPS HEAD 返回 200；workspace.kdfz.com.cn 当前未解析，代理 HTTPS 请求返回 403，不代表目标服务器拒绝。
-- 后续检查确认 workspace.kdfz.com.cn 已解析到服务器，但根路径与 /health 返回旧地图网站 HTML，原生 workspace 接口为 404；广益后端尚未上线。用户提供 root 网页终端、SSH 配置和 DNSPod 主账号管理页面证据。
-- 用户后来在 OrcaTerm 首装成功并提供输出：服务器上的 7 项测试通过，BACKEND_READY、127.0.0.1:8087、本机健康 JSON ok、未登录 401。专用 HTTPS 配置脚本只完成 Bash 语法检查，尚未在服务器执行。
+- Node 24 后端 12 项测试全部通过：网页时区/夏令时与截止临界点倒计时、跨类型排序、父行动组可见性、严格安全响应头和 API 鉴权，以及密码会话、快照冲突、数据回滚、设备约束、静默同步提示、提醒派发、失效设备清理、退出和真实 P-256 WebAuthn 验证。测试运行内存 SQLite 和本机随机端口，不读取生产凭据。
+- `Server/server.source.mjs` 与 `Server/web.mjs` 经 esbuild 生成单文件 `Server/server.mjs`；测试针对该生成物运行，发布网关的三文件白名单不需改变。
+- 真实浏览器本机预览验证密码登录、行动/DDL 两个主入口、置顶排序、逾期强调、日期型 DDL、连续秒级倒计时、30 秒读取逻辑与安全退出。桌面和 390×844 窄屏均无横向溢出，控制台没有警告或错误。
+- SwiftPM 28 项、Apple XCTest 31 项通过；iOS 主应用与 Live Activity Widget、macOS 构建成功，工程静态校验通过。新增测试覆盖 task/project/reminder/milestone 跨类型的重要性排序；远程同步提示加入后对应精确提交的 GitHub Actions authentication/native 检查也全部成功。
+- iOS 模拟器实际显示行动与行动组的统一列表、仅“行动/DDL”的主导航、逾期与未来 DDL、锁屏实时活动和灵动岛倒计时。最大辅助字号下复核了行动和 DDL：长标题不截断，状态与完整日期纵向排列，倒计时卡片无重叠或横向溢出。应用内、锁屏实时活动与灵动岛倒计时会在“减弱动态效果”开启时停用数字过渡，并向 VoiceOver 暴露简洁的截止状态和自然语言时长；进度条不重复播报。模拟器本地通知权限和横幅投递已验证。
+- 生产当前已发布版本的 `/health`、未登录 workspace 401、AASA、通行密钥 challenge 和 revision 已在正常 TLS 校验下通过；本网页分支仍为未发布草稿，不把本机预览当作生产证据。
 
-## 未执行
+## 尚需真实环境验收
 
-- xcodebuild build/test、swift test、SwiftData 宏展开和 Apple SDK 编译。
-- iPhone/Mac 布局、运行、真实本地通知、系统日历或照片权限验收。
-- Apple APNs provider 凭据、签名设备注册与真实收件。
-- Cloud 到服务器的管理员 SSH、专用 HTTPS 路由与证书配置、自动发布通道。用户已首装本机后端；剩余任务转交本地 Codex，见 LOCAL-CODEX-HANDOFF.txt。
-- 自动设备同步、生产数据迁移和原 Sites 服务更新。
+- 用户需在系统界面自行输入账号密码，创建首枚真实通行密钥；随后验证 iPhone/Mac 或另一台设备的注册、登录和同账号资料互通。助手不读取或代输真实密码。
+- Apple Developer 的签名描述文件、APS entitlement、APNs provider 凭据、真机登记与真实远程收件尚未完成。`RemotePushEnabled` 保持关闭，不把模拟 payload 当作 APNs 验收。
+- 物理触感需真机感受；实时活动已在模拟器显示，但仍需已签名真机确认锁屏、灵动岛、回跳与系统结束行为。
+- 后台刷新和静默 push 都由系统尽力调度，不能承诺固定周期或应用退出后的即时同步。完整快照协议遇到双向同记录冲突仍要求用户审阅。
+- 本分支只有在独立 CI 通过并获得本次生产发布授权后才能合并；先前 PR 的发布授权不自动覆盖这里。
 
-工程提供 13 项纯业务 XCTest、2 项 Apple 加密/SwiftData 测试，供在 Mac/Xcode 中运行。本次不声称这些 XCTest 已经通过。
+## 常用验证命令
 
-如 Xcode 报错，请提供完整错误与 Xcode 版本；静态语法与工程引用检查不能替代 Apple 平台编译。原网页的完整 Markdown/KaTeX 渲染、备份格式与用户管理不等于已在原生版实现。
+```sh
+npm test
+swift test
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme WorkspaceCoreTests -destination 'platform=macOS' test
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-iOS -destination 'platform=iOS Simulator,name=iPhone 18 Pro' build
+xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-Mac -destination 'platform=macOS' build
+python3 Scripts/validate_project.py
+```
+
+签名目标和可用模拟器名称因机器而异；命令成功不能替代真实用户验证、APNs 或物理触感验收。

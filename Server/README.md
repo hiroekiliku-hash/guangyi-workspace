@@ -1,6 +1,7 @@
 # Passkey build update
 
-Backend source now lives in `server.source.mjs`. From the repository root, run
+Backend source now lives in `server.source.mjs`; the read-only web client lives
+in `web.mjs`. From the repository root, run
 `npm ci && npm test` to generate and verify the single-file server.mjs release.
 The server runtime still needs no npm install. See [PASSKEYS.md](../PASSKEYS.md)
 for the authentication API and remaining Apple/domain acceptance steps.
@@ -9,9 +10,9 @@ initial installation on the already deployed service.
 
 # 自建后端初版
 
-此目录提供与原生客户端契约一致的后端。用户已在真实服务器执行首次安装并提供 BACKEND_READY 输出；公网专用路由与证书仍待配置。需要 Node.js 24，使用系统内置 HTTP、HTTP/2、crypto 和 SQLite，不需要 npm install。
+此目录提供与原生客户端契约一致的后端。真实服务器已经完成首次安装、专用 HTTPS、证书续期和 GitHub Actions 自动发布验收。运行时需要 Node.js 24，使用系统内置 HTTP、HTTP/2、crypto 和 SQLite，不需要 npm install；不要重新运行下面保留的历史首装步骤。
 
-已有服务器实际使用 Node.js 22.13.1，且没有 Docker。可使用独立 Node.js 24 官方发行包与 systemd，候选配置见 `guangyi-workspace.service.example`：运行时放在 `/opt/guangyi-workspace/runtime`，代码在 `/opt/guangyi-workspace/current`，数据库在 `/var/lib/guangyi-workspace`，配置在 `/etc/guangyi-workspace.env`。这些目录、专用服务用户和配置需在服务器上另行准备，示例文件本身不会安装服务。不要替换主机的 `/usr/local/bin/node` 或改变现有 PM2 运行时。
+生产服务已使用独立 Node.js 24.21.0 与 systemd；主机共享 Node 和其他应用没有被替换或重启。路径约定见 `guangyi-workspace.service.example`：运行时位于 `/opt/guangyi-workspace/runtime`，代码由 `/opt/guangyi-workspace/current` release symlink 选择，数据库在 `/var/lib/guangyi-workspace`，配置在 `/etc/guangyi-workspace.env`。不要替换主机的 `/usr/local/bin/node` 或改变现有 PM2 运行时。
 
 `install-backend.sh` 提供该 x86_64 服务器的首次安装：固定 Node.js 24.21.0 并核验官方 SHA-256，先执行后端测试，创建专用账号与 systemd 服务，仅绑定 127.0.0.1:8087。在 root 网页终端运行；邮箱与密码交互输入，密码不会回显。遇到已有目录、同名账号/服务或占用端口时拒绝覆盖。失败时仅停用本次新建的广益服务，保留其配置与数据，不自动删除或重置数据库。脚本不修改 Nginx、DNS、证书或旧网站；本机检查通过后再单独配置公网路由。
 
@@ -21,9 +22,17 @@ bash install-backend.sh
 
 成功标志为 BACKEND_READY。用户提供输出确认服务器上的 7 项测试通过、回环健康接口 ok、未登录接口 401；无需重新运行首装脚本。交互密码仅用于广益应用登录，不是腾讯云、宝塔或服务器 root 密码。真实配置位于服务器 /etc/guangyi-workspace.env，不能上传到 Git 或贴到聊天中。
 
-随后在 root 网页终端执行 `configure-workspace-https.sh`，输入证书联系邮箱，申请 Let’s Encrypt 证书并新增独立的 `/etc/nginx/conf.d/guangyi-workspace.conf`。脚本先检查本机后端与旧 Nginx 配置，拒绝覆盖同名配置或证书；每次 reload 前执行 nginx -t，失败时移除本次新增站点并保留后端与数据。成功标志为 HTTPS_READY；后续还需从公网验证、核查证书续期定时任务，并配置专用自动发布通道。本脚本提供 API 路由，不部署网页版界面。
+历史首次配置曾在 root 网页终端执行 `configure-workspace-https.sh`，申请 Let’s Encrypt 证书并新增独立的 `/etc/nginx/conf.d/guangyi-workspace.conf`。该站点、续期钩子、公网 TLS 和专用自动发布通道现已验收；不要重新运行首次配置脚本。首次配置脚本没有安装独立静态站点；当前网页版资源由同一个 `server.mjs` 在根路径直接提供。
 
 直接运行服务默认仅监听 127.0.0.1，可用 HOST 配置；Dockerfile 显式设置 HOST=0.0.0.0 用于容器内部，Compose 仍只把端口发布到主机回环地址。
+
+## 只读网页版
+
+`GET /`（或 `/index.html`）加载行动与 DDL 页面，`/app.js`、`/app.css` 和 `/favicon.svg` 也由同一进程提供。资源在构建时打进单文件 `server.mjs`，所以发布网关仍只需原有的 `server.mjs`、`server.test.mjs` 和 `REVISION`，不需要扩大文件白名单。
+
+网页支持现有账号的密码和 discoverable passkey 登录；登录后可为同一账号创建新通行密钥。页面只调用 GET workspace，不提供编辑或 PUT，以免浏览器用旧快照覆盖原生客户端的合并结果。Bearer token 只进入当前标签页的 `sessionStorage`，页面关闭后清除；用户内容只通过 `textContent` 渲染。响应设置 self-only CSP、防嵌入、no-referrer、no-store 与 WebAuthn 权限策略。
+
+日期型 DDL 以记录自身时区的 23:59:59 为截止，包含夏令时转换；带时刻 DDL 使用原始绝对时间。倒计时每秒更新，页面可见时每 30 秒重新读取服务器 revision。旧 Sites 项目没有在当前账号或仓库中找到，因此本实现按现有 API 与原生模型重建。
 
 ## 部署前
 
@@ -54,7 +63,7 @@ APNS_PRIVATE_KEY_FILE=/run/secrets/apns-key.p8
 APNS_ALLOWED_BUNDLE_IDS=你实际使用的iOSBundleID,你实际使用的MacBundleID
 ```
 
-将真实 .p8 放入服务器 secrets 目录，限制权限并确保容器 uid 1000 可以只读访问。不要把它放入原生应用、Git 或交付包。配置后重启 API 容器，使用已签名真机/应用注册设备并验证后台发送。初版提供后台派发，不包含静默推送自动数据同步。
+将真实 .p8 放入服务器 secrets 目录，限制权限并确保容器 uid 1000 可以只读访问。不要把它放入原生应用、Git 或交付包。配置后重启 API 容器，使用已签名真机/应用注册设备并验证后台发送。服务端会派发到期提醒，也会在工作空间 revision 更新后发送只含 revision 的静默同步提示。
 
 ## 数据与边界
 
@@ -64,6 +73,7 @@ APNS_ALLOWED_BUNDLE_IDS=你实际使用的iOSBundleID,你实际使用的MacBundl
 - 请求上限 128 MiB，单 PDF 10 MiB；保存最近约 5 个服务器快照版本供维护恢复，尚未提供管理恢复接口。
 - 适合受控的个人服务器初版。大规模数据应将附件移到对象存储，加入数据库迁移、监控、独立备份、精确代理限流和运维恢复流程。
 - APNs 每 30 秒检查，失败两分钟后重试；网络和 Apple/系统设置仍可能延迟或阻止收件。
-- 同步目前是客户端明确确认的完整快照操作，不是自动实时双向合并。
+- 静默 revision 提示是低优先级尽力投递，使用固定折叠键保留最新值；Apple 可能延迟或节流，客户端仍保留前台定时同步和 BGAppRefresh 兜底。
+- 首次账号绑定需明确确认；之后客户端使用完整快照、If-Match 与三方合并自动同步。静默 APNs 只负责提示拉取，不能代替版本检查或冲突审阅。
 
-测试：`node --test server.test.mjs`，只使用内存 SQLite、本机随机端口与模拟推送服务。
+测试：在仓库根目录执行 `npm test`；测试只使用内存 SQLite、本机随机端口与模拟推送服务，并验证生成后的单文件发布包。

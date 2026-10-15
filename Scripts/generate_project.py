@@ -144,6 +144,8 @@ base_info = {'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundleDisplayName': '广
 for platform in ['iOS', 'Mac']:
     info = dict(base_info)
     if platform == 'iOS': info.update({'LSRequiresIPhoneOS': True, 'LSSupportsOpeningDocumentsInPlace': False, 'UILaunchScreen': {},
+        'BGTaskSchedulerPermittedIdentifiers': ['com.guangyi.workspace.native.ios.refresh'],
+        'UIBackgroundModes': ['fetch', 'remote-notification'],
         'UISupportedInterfaceOrientations': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
         'UIApplicationSupportsIndirectInputEvents': True})
     else: info.update({'LSMinimumSystemVersion': '$(MACOSX_DEPLOYMENT_TARGET)', 'LSApplicationCategoryType': 'public.app-category.productivity', 'NSHighResolutionCapable': True})

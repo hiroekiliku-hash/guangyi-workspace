@@ -30,6 +30,17 @@ import SwiftUI
                 var overdue = WorkspaceRecord(kind: .deadline, title: "已逾期事项，优先处理", id: UUID(uuidString: "10000000-0000-0000-0000-000000000004")!)
                 overdue.dateOnly = false; overdue.dueDate = Date().addingTimeInterval(-600)
                 try store.save(overdue, expectedVersion: nil)
+                if ProcessInfo.processInfo.arguments.contains("--ui-smoke-deadlines") { store.navigation = .deadlines }
+                if ProcessInfo.processInfo.arguments.contains("--ui-smoke-notification") {
+                    Task {
+                        do {
+                            try await store.notifications.requestAuthorization()
+                            try await store.notifications.sendTest()
+                        } catch {
+                            store.errorMessage = error.localizedDescription
+                        }
+                    }
+                }
             }
             #endif
             _store = State(initialValue: store)
@@ -55,11 +66,29 @@ import SwiftUI
     @AppStorage("appearance") private var appearanceRaw = "system"
     private var settingsAppearance: ColorScheme? { appearanceRaw == "light" ? .light : appearanceRaw == "dark" ? .dark : nil }
     private var mainWindow: some Scene {
-        WindowGroup {
-            if let store {
+        #if os(iOS)
+        WindowGroup { rootContent }
+            .defaultSize(width: 1180, height: 780)
+            .backgroundTask(.appRefresh(WorkspaceBackgroundSync.taskIdentifier)) {
+                await WorkspaceBackgroundSync.perform(store)
+            }
+        #else
+        WindowGroup { rootContent }
+            .defaultSize(width: 1180, height: 780)
+        #endif
+    }
+    @ViewBuilder private var rootContent: some View {
+        if let store {
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("--ui-smoke-backend") {
+                NavigationStack { BackendSettingsView() }.environment(store).nativeWindowSize()
+            } else {
                 WorkspaceRootView().environment(store).nativeWindowSize()
-            } else { startupFailure }
-        }.defaultSize(width: 1180, height: 780)
+            }
+            #else
+            WorkspaceRootView().environment(store).nativeWindowSize()
+            #endif
+        } else { startupFailure }
     }
     private var startupFailure: some View {
         ContentUnavailableView("无法打开本机资料库", systemImage: "externaldrive.badge.exclamationmark",

@@ -4,6 +4,8 @@
 
 | 路径 | 方法 | 作用 |
 | --- | --- | --- |
+| `/`、`/index.html` | GET/HEAD | 同账号只读网页版 |
+| `/app.js`、`/app.css`、`/favicon.svg` | GET/HEAD | 同源网页资源 |
 | `/health` | GET | 无鉴权运行检查 |
 | `/api/native/v1/session` | POST | 邮箱/密码登录 |
 | `/api/native/v1/session` | DELETE | 撤销当前会话 |
@@ -12,7 +14,13 @@
 | `/api/native/v1/devices` | PUT | 登记本账号的 APNs 设备 |
 | `/api/native/v1/devices` | DELETE | 注销本账号设备 |
 
-除登录和健康检查外，均要求 `Authorization: Bearer <accessToken>`。成功响应使用 `{ "data": ... }`；失败使用 `{ "error": { "code": "..." } }`。会话过期返回 401；版本冲突返回 409；缺少 If-Match 返回 428；校验失败返回 422。
+网页资源、健康检查、AASA、部署 revision 和登录入口不要求 Bearer；工作空间、设备、通行密钥注册/管理及退出均要求 `Authorization: Bearer <accessToken>`。成功响应使用 `{ "data": ... }`；失败使用 `{ "error": { "code": "..." } }`。会话过期返回 401；版本冲突返回 409；缺少 If-Match 返回 428；校验失败返回 422。
+
+## 只读网页版
+
+根路径的网页是 API 的同源客户端。它支持密码登录、discoverable passkey 登录和登录后创建新通行密钥，只读取 GET workspace；没有编辑入口，也不会调用 PUT workspace。行动入口包含 PROJECT/TASK/MILESTONE/REMINDER，另一个主入口只显示 DEADLINE。
+
+日期型 DDL 截止于记录时区的 23:59:59，带时刻 DDL 使用保存的绝对时间；浏览器按秒更新显示，并在页面可见时每 30 秒重新读取服务器 revision。Bearer token 与账号显示信息只保存在当前标签页 `sessionStorage`。页面不用第三方资源，用户字段以 `textContent` 渲染，并设置 no-store、self-only CSP、frame-ancestors none、COOP、Permissions-Policy、no-referrer 和 nosniff。
 
 ## 登录
 
@@ -42,7 +50,9 @@ snapshot 与原生导出 JSON 一致：
 
 UUID 是字符串；Date 使用带时区的 ISO 8601 字符串，导出含毫秒；Data 使用 base64。字段与可选值以 `Shared/Core/WorkspaceModels.swift` 为准。记录 kind 使用 AREA/PROJECT/MILESTONE/TASK/DEADLINE/REMINDER/KNOWLEDGE。服务器可存储该结构，不能将 body Markdown 当作 HTML 执行。
 
-此版是手动快照同步。上传完整本机快照会更新服务器完整工作空间，客户端会先要求下载审阅和明确确认。若开发自动增量同步，应增加 operationID 幂等、变更游标、逐记录版本、冲突合并与附件单独传输，不能直接把当前 PUT 做成定期覆盖。
+接口仍以完整快照和单调 revision 为边界。客户端首次绑定账号时明确确认合并；之后以本机保存的账号专属远程基线做三方合并，并用 If-Match 上传。同一记录两端并发修改时暂停自动同步，要求用户逐项审阅；不会把当前 PUT 当作无条件定期覆盖。若后续改成操作日志式增量协议，还应增加 operationID 幂等、变更游标与附件单独传输。
+
+原生客户端在 PUT 时附带 `X-Workspace-Device-ID`（UUID）。服务器只用它跳过向来源设备发送静默 revision 提示；它不是身份凭据，鉴权仍完全依赖 Bearer 会话。旧客户端可以省略此头。
 
 ## 设备注册
 
@@ -65,7 +75,17 @@ DELETE 请求 `{ "deviceID": "..." }`，只允许注销当前账号的设备。�
 }
 ```
 
-使用 ES256 provider JWT、对应 bundleID 的 apns-topic、alert push-type，以及独立 sandbox/production 服务。私钥留在服务器。客户端点击通知后根据 id 打开本机记录；本机尚未同步该记录时会提示先下载数据。
+工作空间成功写入新 revision 后，已配置 APNs 的服务器还发送静默提示：
+
+```json
+{
+  "aps": { "content-available": 1 },
+  "kind": "WORKSPACE_SYNC",
+  "revision": 17
+}
+```
+
+提醒使用 alert push-type、优先级 10；同步提示使用 background push-type、优先级 5，并以工作空间固定折叠键只保留最新 revision。使用 ES256 provider JWT、对应 bundleID 的 apns-topic，以及独立 sandbox/production 服务，私钥只留在服务器。客户端仅在提示 revision 新于当前账号检查点时拉取；iOS 在 25 秒内未完成会取消任务并及时结束系统回调。通知点击对应的记录尚未在本机时，也会先尝试账号自动同步再定位。
 
 后台初版每 30 秒检查到期记录，只补发过去 24 小时内、设备登记后到期的通知。按设备/记录/提醒时刻生成派发键，成功去重，失败后租约到期重试，410 清理失效设备。完成、归档、删除、停用通知和改期都会重新核验。服务已接受但成功状态尚未保存时发生进程中断，仍可能重复发送，不能承诺严格一次交付。
 

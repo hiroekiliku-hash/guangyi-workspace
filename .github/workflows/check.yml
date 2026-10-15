@@ -15,6 +15,14 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: git diff --exit-code -- Server/server.mjs
+      - name: Verify the exact three-file release
+        run: |
+          release_dir="$RUNNER_TEMP/guangyi-release"
+          mkdir "$release_dir"
+          cp Server/server.mjs Server/server.test.mjs "$release_dir/"
+          printf '%040d\n' 0 > "$release_dir/REVISION"
+          cd "$release_dir"
+          node --test server.test.mjs
   native:
     runs-on: macos-latest
     steps:

@@ -29,6 +29,12 @@ The verified account email is returned with each successful session so native
 sync can bind its local checkpoint to an authenticated account identity.
 Private keys remain on the authenticator. The server stores public keys only.
 
+The same-origin read-only web client supports discoverable login and lets an
+already authenticated account register a new passkey. It serializes browser
+WebAuthn binary fields as base64url and uses the same endpoints and validation
+as the native clients. The bearer session remains in tab-scoped sessionStorage;
+the page never receives or stores authenticator private-key material.
+
 Database changes are additive tables: passkey_users, passkeys and
 passkey_challenges. Existing accounts, sessions and workspace rows are retained.
 An older release can still read the database after a code rollback; rollback

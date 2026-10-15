@@ -1,23 +1,86 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createNativeServer } from './server.mjs';
+import { createNativeServer, apnsDelivery, effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords } from './server.mjs';
 let app, origin, token;
 const password = 'test-only-password-not-a-production-credential';
-let pushCount = 0, pushResult = { accepted: true, expired: false };
+const registeredDeviceID = randomUUID();
+let reminderPushCount = 0, workspacePushes = [], workspaceCollapseIDs = [], pushResult = { accepted: true, expired: false };
 before(async () => {
   app = createNativeServer({ databasePath: ':memory:', adminEmail: 'owner@test.invalid', adminPassword: password,
-    sendPush: async (_device, payload) => { assert.equal(payload.aps.category, 'WORKSPACE_REMINDER'); pushCount++; return pushResult; } });
+    sendPush: async (_device, payload, collapseID) => {
+      if (payload.kind === 'WORKSPACE_SYNC') { workspacePushes.push(payload); workspaceCollapseIDs.push(collapseID); }
+      else { assert.equal(payload.aps.category, 'WORKSPACE_REMINDER'); reminderPushCount++; }
+      return pushResult;
+    } });
   await new Promise((resolve, reject) => { app.server.once('error', reject); app.server.listen(0, '127.0.0.1', resolve); });
   origin = 'http://127.0.0.1:' + app.server.address().port;
 });
-after(() => app.close());
-async function call(path, method = 'GET', body, auth = token, revision) {
+after(async () => { await app.flushPushes(); app.close(); });
+async function call(path, method = 'GET', body, auth = token, revision, sourceDeviceID) {
   const response = await fetch(origin + '/api/native/v1/' + path, { method, headers: {
     ...(auth ? { Authorization: 'Bearer ' + auth } : {}), ...(body ? { 'Content-Type': 'application/json' } : {}),
-    ...(revision !== undefined ? { 'If-Match': '"' + revision + '"' } : {}) }, body: body ? JSON.stringify(body) : undefined });
+    ...(revision !== undefined ? { 'If-Match': '"' + revision + '"' } : {}),
+    ...(sourceDeviceID ? { 'X-Workspace-Device-ID': sourceDeviceID } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: response.status, value: await response.json() };
 }
+test('web countdown uses the record timezone and reports overdue values', () => {
+  const timed = { dueDate: '2026-10-15T04:05:06.000Z', dateOnly: false, timezone: 'Asia/Shanghai' };
+  assert.equal(effectiveDeadline(timed), Date.parse(timed.dueDate));
+  const shanghai = { dueDate: '2026-10-15T00:00:00.000Z', dateOnly: true, timezone: 'Asia/Shanghai' };
+  assert.equal(new Date(effectiveDeadline(shanghai)).toISOString(), '2026-10-15T15:59:59.000Z');
+  const newYorkDST = { dueDate: '2026-03-08T12:00:00.000Z', dateOnly: true, timezone: 'America/New_York' };
+  assert.equal(new Date(effectiveDeadline(newYorkDST)).toISOString(), '2026-03-09T03:59:59.000Z');
+  assert.equal(formatCountdown(Date.UTC(2026, 0, 3, 2, 3, 4), Date.UTC(2026, 0, 1)), '2天 02:03:04');
+  assert.equal(formatCountdown(Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 1)), '已逾期 00:00:00');
+  assert.equal(formatCountdown(Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 1, 0, 0, 1)), '已逾期 00:00:01');
+  assert.equal(formatCountdown(NaN), '未设置截止');
+});
+test('web hierarchy and sorting match native importance and parent visibility', () => {
+  const now = Date.parse('2026-10-15T12:00:00.000Z');
+  const group = { id: '20', kind: 'PROJECT', title: '行动组', status: 'ACTIVE', updatedAt: new Date(now + 30_000).toISOString() };
+  const action = { id: '30', kind: 'TASK', title: '普通行动', status: 'TODO', updatedAt: new Date(now + 20_000).toISOString() };
+  const reminder = { id: '40', kind: 'REMINDER', title: '有时间的提醒', status: 'OPEN', remindAt: new Date(now + 3_600_000).toISOString() };
+  const milestone = { id: '10', kind: 'MILESTONE', title: '置顶里程碑', status: 'PLANNED', pinned: true };
+  const completed = { id: '50', kind: 'TASK', title: '已完成行动', status: 'DONE', updatedAt: new Date(now + 60_000).toISOString() };
+  assert.deepEqual([action, completed, reminder, group, milestone].sort(compareActionRecords).map(value => value.title),
+    ['置顶里程碑', '有时间的提醒', '行动组', '普通行动', '已完成行动']);
+  const hiddenGroup = { ...group, archivedAt: new Date(now).toISOString() };
+  const child = { ...action, projectID: hiddenGroup.id };
+  assert.equal(visibleRecord(child, [hiddenGroup, child]), false);
+  assert.equal(visibleRecord(child, [group, child]), true);
+  const later = { id: 'd2', status: 'OPEN', dueDate: new Date(now + 7_200_000).toISOString(), dateOnly: false };
+  const sooner = { id: 'd1', status: 'OPEN', dueDate: new Date(now + 3_600_000).toISOString(), dateOnly: false, updatedAt: new Date(now).toISOString() };
+  const sameDueNewer = { id: 'd3', status: 'OPEN', dueDate: sooner.dueDate, dateOnly: false, updatedAt: new Date(now + 10_000).toISOString() };
+  const pinnedDone = { id: 'd0', status: 'DONE', pinned: true, dueDate: new Date(now - 3_600_000).toISOString(), dateOnly: false };
+  assert.deepEqual([later, sooner, sameDueNewer, pinnedDone].sort(compareDeadlineRecords).map(value => value.id), ['d0', 'd3', 'd1', 'd2']);
+});
+test('web UI is self-contained, protected by strict headers and leaves APIs authenticated', async () => {
+  const page = await fetch(origin + '/');
+  assert.equal(page.status, 200);
+  assert.match(page.headers.get('content-type'), /^text\/html/);
+  assert.equal(page.headers.get('cache-control'), 'no-store');
+  assert.equal(page.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(page.headers.get('x-frame-options'), 'DENY');
+  assert.equal(page.headers.get('cross-origin-resource-policy'), 'same-origin');
+  assert.match(page.headers.get('content-security-policy'), /default-src 'none'/);
+  assert.match(page.headers.get('content-security-policy'), /frame-ancestors 'none'/);
+  const html = await page.text();
+  assert.match(html, /id="actions-tab"/); assert.match(html, /id="deadlines-tab"/);
+  assert.match(html, /使用通行密钥登录/); assert.doesNotMatch(html, /https?:\/\//);
+  const script = await fetch(origin + '/app.js');
+  assert.match(script.headers.get('content-type'), /^text\/javascript/);
+  const source = await script.text();
+  assert.doesNotThrow(() => new Function(source));
+  assert.match(source, /navigator\.credentials\.get/); assert.match(source, /navigator\.credentials\.create/);
+  assert.match(source, /sessionStorage/); assert.doesNotMatch(source, /localStorage/);
+  assert.doesNotMatch(source, /If-Match/); assert.doesNotMatch(source, /method:\s*['"]PUT['"]/);
+  const style = await fetch(origin + '/app.css');
+  assert.match(style.headers.get('content-type'), /^text\/css/); assert.match(await style.text(), /prefers-reduced-motion/);
+  const head = await fetch(origin + '/', { method: 'HEAD' });
+  assert.equal(head.status, 200); assert.equal(await head.text(), '');
+  assert.equal((await call('workspace', 'GET', undefined, '')).status, 401);
+});
 test('authentication rejects missing and incorrect credentials, returns a scoped session', async () => {
   assert.equal((await call('workspace', 'GET', undefined, '')).status, 401);
   assert.equal((await call('session', 'POST', { email: 'owner@test.invalid', password: 'incorrect' }, '')).status, 401);
@@ -42,9 +105,28 @@ test('invalid data rolls back without incrementing the workspace revision', asyn
   assert.deepEqual((await call('workspace')).value.data, original);
 });
 test('device registration validates the app topic and push environment', async () => {
-  const device = { deviceID: randomUUID(), token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' };
+  const device = { deviceID: registeredDeviceID, token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' };
   assert.equal((await call('devices', 'PUT', { ...device, bundleID: 'other.app' })).status, 422);
   assert.equal((await call('devices', 'PUT', device)).status, 200);
+});
+test('workspace writes send a collapsible background revision hint', async () => {
+  workspacePushes = []; workspaceCollapseIDs = [];
+  const remote = (await call('workspace')).value.data;
+  remote.snapshot.profile.name = '另一台设备的更新';
+  assert.equal((await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision, 'not-a-uuid')).status, 422);
+  const updated = await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision, registeredDeviceID);
+  assert.equal(updated.status, 200);
+  await app.flushPushes(); assert.equal(workspacePushes.length, 0);
+  updated.value.data.snapshot.profile.name = '紧接着的更新';
+  const second = await call('workspace', 'PUT', { snapshot: updated.value.data.snapshot }, token, updated.value.data.revision);
+  second.value.data.snapshot.profile.name = '最新更新';
+  assert.equal((await call('workspace', 'PUT', { snapshot: second.value.data.snapshot }, token, second.value.data.revision)).status, 200);
+  await app.flushPushes();
+  assert.deepEqual(workspacePushes.map(value => value.revision).sort(), [remote.revision + 2, remote.revision + 3]);
+  assert.equal(new Set(workspaceCollapseIDs).size, 1); assert.match(workspaceCollapseIDs[0], /^[a-f0-9]{64}$/);
+  assert.deepEqual(workspacePushes[0].aps, { 'content-available': 1 });
+  assert.deepEqual(apnsDelivery(workspacePushes[0]), { pushType: 'background', priority: '5', lifetime: 300 });
+  assert.deepEqual(apnsDelivery({ aps: { alert: { title: '提醒' } } }), { pushType: 'alert', priority: '10', lifetime: 86400 });
 });
 test('server timer sends an accepted notification once and excludes completed reminders', async () => {
   const remote = (await call('workspace')).value.data;
@@ -52,19 +134,20 @@ test('server timer sends an accepted notification once and excludes completed re
   snapshot.records[0].remindAt = new Date(now - 100).toISOString();
   assert.equal((await call('workspace', 'PUT', { snapshot }, token, remote.revision)).status, 200);
   await Promise.all([app.sweep(now), app.sweep(now)]);
-  assert.equal(pushCount, 1);
-  await app.sweep(now); assert.equal(pushCount, 1);
+  assert.equal(reminderPushCount, 1);
+  await app.sweep(now); assert.equal(reminderPushCount, 1);
   const next = (await call('workspace')).value.data;
   next.snapshot.records[0].status = 'DONE';
   next.snapshot.records[0].remindAt = new Date(now - 50).toISOString();
   await call('workspace', 'PUT', { snapshot: next.snapshot }, token, next.revision);
-  await app.sweep(now); assert.equal(pushCount, 1);
+  await app.sweep(now); assert.equal(reminderPushCount, 1);
 });
 test('expired APNs device registrations are removed', async () => {
   const remote = (await call('workspace')).value.data;
   remote.snapshot.records[0].status = 'OPEN'; remote.snapshot.records[0].remindAt = new Date(Date.now() + 2000).toISOString();
-  await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision);
   pushResult = { accepted: false, expired: true };
+  await call('workspace', 'PUT', { snapshot: remote.snapshot }, token, remote.revision);
+  await app.flushPushes();
   await app.sweep(Date.now() + 3000);
   assert.equal(app.db.prepare('SELECT COUNT(*) AS n FROM devices').get().n, 0);
 });

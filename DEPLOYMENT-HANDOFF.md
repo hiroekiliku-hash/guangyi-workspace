@@ -89,6 +89,6 @@ curl --fail http://127.0.0.1:8087/health
 
 ## APNs 另行验收
 
-服务器登录与手动同步可先上线。真实远程通知还需 Apple 开发者签名、两个应用的 Push Notifications capability、匹配 Bundle ID/环境、服务器专用 .p8 与真机设备注册。原有网页 VAPID 与行程通知服务不能代替 APNs。接口返回已接受不等于设备已显示通知。
+服务器登录与快照同步可先上线。真实远程通知还需 Apple 开发者签名、两个应用的 Push Notifications capability、匹配 Bundle ID/环境、服务器专用 .p8 与真机设备注册。原有网页 VAPID 与行程通知服务不能代替 APNs。接口返回已接受不等于设备已显示通知。
 
-客户端当前是手动快照同步，尚未实现自动后台双向合并；运行步骤与接口见 `README.md`、`Server/README.md` 和 `API-CONTRACT.md`。
+后续版本已加入首次确认后的三方快照自动合并、iOS 尽力而为后台刷新及可选静默 revision 提示；运行步骤与接口以 `README.md`、`Server/README.md` 和 `API-CONTRACT.md` 为准。真实 APNs 和两台签名设备仍需单独验收。

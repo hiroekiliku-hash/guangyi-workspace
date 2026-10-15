@@ -19,7 +19,7 @@ struct RemoteDeviceRegistration: Codable {
 protocol NativeBackendTransport {
     func signIn(baseURL: URL, email: String, password: String) async throws -> NativeSession
     func download(baseURL: URL, token: String) async throws -> RemoteWorkspace
-    func upload(baseURL: URL, token: String, snapshot: WorkspaceState, expectedRevision: Int) async throws -> RemoteWorkspace
+    func upload(baseURL: URL, token: String, snapshot: WorkspaceState, expectedRevision: Int, sourceDeviceID: String) async throws -> RemoteWorkspace
     func register(baseURL: URL, token: String, device: RemoteDeviceRegistration) async throws
     func signOut(baseURL: URL, token: String, deviceID: String?) async throws
 }
@@ -41,7 +41,8 @@ struct URLSessionBackend: NativeBackendTransport {
     private struct Envelope<T: Decodable>: Decodable { var data: T }
     private struct Login: Encodable { var email: String; var password: String }
     private struct Upload: Encodable { var snapshot: WorkspaceState }
-    private func request(_ baseURL: URL, path: String, method: String = "GET", token: String? = nil, data: Data? = nil, revision: Int? = nil) async throws -> Data {
+    private func request(_ baseURL: URL, path: String, method: String = "GET", token: String? = nil, data: Data? = nil,
+        revision: Int? = nil, sourceDeviceID: String? = nil) async throws -> Data {
         let url = baseURL.appendingPathComponent("api").appendingPathComponent("native").appendingPathComponent("v1").appendingPathComponent(path)
         var request = URLRequest(url: url)
         request.httpMethod = method; request.httpBody = data; request.timeoutInterval = 45
@@ -49,6 +50,7 @@ struct URLSessionBackend: NativeBackendTransport {
         if data != nil { request.setValue("application/json", forHTTPHeaderField: "Content-Type") }
         if let token { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
         if let revision { request.setValue("\"\(revision)\"", forHTTPHeaderField: "If-Match") }
+        if let sourceDeviceID { request.setValue(sourceDeviceID, forHTTPHeaderField: "X-Workspace-Device-ID") }
         let configuration = URLSessionConfiguration.ephemeral
         configuration.httpShouldSetCookies = false
         let session = URLSession(configuration: configuration, delegate: NoBackendRedirects(), delegateQueue: nil)
@@ -76,9 +78,9 @@ struct URLSessionBackend: NativeBackendTransport {
         try WorkspaceLogic.validate(result.snapshot)
         return result
     }
-    func upload(baseURL: URL, token: String, snapshot: WorkspaceState, expectedRevision: Int) async throws -> RemoteWorkspace {
+    func upload(baseURL: URL, token: String, snapshot: WorkspaceState, expectedRevision: Int, sourceDeviceID: String) async throws -> RemoteWorkspace {
         let result = try decode(RemoteWorkspace.self, await request(baseURL, path: "workspace", method: "PUT", token: token,
-            data: ArchiveService.encoder().encode(Upload(snapshot: snapshot)), revision: expectedRevision))
+            data: ArchiveService.encoder().encode(Upload(snapshot: snapshot)), revision: expectedRevision, sourceDeviceID: sourceDeviceID))
         try WorkspaceLogic.validate(result.snapshot)
         return result
     }
@@ -174,6 +176,12 @@ enum SecureCredentials {
         }
         return (url, credentials.accessToken)
     }
+    private static func deviceID() -> String {
+        if let existing = UserDefaults.standard.string(forKey: "deviceID"), UUID(uuidString: existing) != nil { return existing }
+        let created = UUID().uuidString
+        UserDefaults.standard.set(created, forKey: "deviceID")
+        return created
+    }
     func signIn(email: String, password: String) async throws {
         let url = try baseURL()
         let result = try await transport.signIn(baseURL: url, email: email, password: password)
@@ -215,7 +223,7 @@ enum SecureCredentials {
         guard accountScope == scope else { throw NativeBackendError.configuration }
         let (url, token) = try credentials()
         let result: RemoteWorkspace
-        do { result = try await transport.upload(baseURL: url, token: token, snapshot: snapshot, expectedRevision: revision) }
+        do { result = try await transport.upload(baseURL: url, token: token, snapshot: snapshot, expectedRevision: revision, sourceDeviceID: Self.deviceID()) }
         catch NativeBackendError.conflict { throw WorkspaceSyncError.revisionChanged }
         guard accountScope == scope else { throw NativeBackendError.configuration }
         return result
@@ -230,13 +238,12 @@ enum SecureCredentials {
     func upload(_ state: WorkspaceState) async throws {
         let (url, token) = try credentials()
         guard let revision else { throw WorkspaceFailure.invalid("请先下载服务器快照并审阅，然后再上传。") }
-        let result = try await transport.upload(baseURL: url, token: token, snapshot: state, expectedRevision: revision)
+        let result = try await transport.upload(baseURL: url, token: token, snapshot: state, expectedRevision: revision, sourceDeviceID: Self.deviceID())
         self.revision = result.revision; lastSync = Date()
     }
     func registerDevice(_ token: Data) async throws {
         let (url, access) = try credentials()
-        let existing = UserDefaults.standard.string(forKey: "deviceID") ?? UUID().uuidString
-        UserDefaults.standard.set(existing, forKey: "deviceID")
+        let existing = Self.deviceID()
         #if os(macOS)
         let platform = "macOS"
         #else

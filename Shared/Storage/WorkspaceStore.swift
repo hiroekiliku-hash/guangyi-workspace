@@ -24,7 +24,18 @@ import PDFKit
     private(set) var syncReviewLocal: WorkspaceState?
     var automaticSync: Bool {
         get { UserDefaults.standard.bool(forKey: "automaticWorkspaceSync") }
-        set { UserDefaults.standard.set(newValue, forKey: "automaticWorkspaceSync"); if newValue { scheduleSync() } }
+        set {
+            UserDefaults.standard.set(newValue, forKey: "automaticWorkspaceSync")
+            if newValue {
+                scheduleSync()
+            } else {
+                syncTask?.cancel()
+                syncTask = nil
+            }
+            #if os(iOS)
+            WorkspaceBackgroundSync.updateSchedule(for: self)
+            #endif
+        }
     }
     @ObservationIgnored private var syncTask: Task<Void, Never>?
     @ObservationIgnored private let repository: SwiftDataRepository
@@ -51,6 +62,20 @@ import PDFKit
     func perform(_ action: () throws -> Void) {
         do { try action() } catch { errorMessage = error.localizedDescription }
     }
+    var canAutomaticallySync: Bool {
+        automaticSyncCheckpoint() != nil
+    }
+    func shouldAutomaticallySync(remoteRevision: Int) -> Bool {
+        guard let checkpoint = automaticSyncCheckpoint() else { return false }
+        return checkpoint.remote.revision < remoteRevision
+    }
+    private func automaticSyncCheckpoint() -> WorkspaceSyncCheckpoint? {
+        guard automaticSync, pendingSyncReview == nil, let scope = backend.accountScope else { return nil }
+        let checkpoint: WorkspaceSyncCheckpoint?
+        do { checkpoint = try repository.syncCheckpoint() }
+        catch { return nil }
+        return checkpoint?.scope == scope ? checkpoint : nil
+    }
     func commit(_ update: (inout WorkspaceState) throws -> Void) throws {
         var draft = state
         try update(&draft)
@@ -64,11 +89,11 @@ import PDFKit
         scheduleSync()
     }
     func scheduleSync() {
-        guard !syncing, pendingSyncReview == nil, automaticSync, backend.accountScope != nil else { return }
+        guard !syncing, canAutomaticallySync else { return }
         syncTask?.cancel()
         syncTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(2))
-            guard !Task.isCancelled, let self else { return }
+            guard !Task.isCancelled, let self, self.canAutomaticallySync else { return }
             do { try await self.synchronize() }
             catch { self.syncStatus = error.localizedDescription }
         }
@@ -98,6 +123,7 @@ import PDFKit
                     self.backend.acknowledgeSync(remote)
                 })
             syncStatus = "已同步"
+            if bindAccount { automaticSync = true }
         } catch {
             syncStatus = error.localizedDescription
             throw error
@@ -294,7 +320,7 @@ import PDFKit
     func refresh() {
         perform { try commit { RecurrenceEngine.materialize(&$0) } }
         Task { await notifications.refreshAuthorization() }
-        if backend.signedIn && Bundle.main.object(forInfoDictionaryKey: "RemotePushEnabled") as? Bool == true {
+        if RemotePushBridge.isEnabled && (backend.signedIn || RemotePushBridge.isSmokeTesting) {
             do { try RemotePushBridge.registerWithApple() } catch { errorMessage = error.localizedDescription }
         }
     }

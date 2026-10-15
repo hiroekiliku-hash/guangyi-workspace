@@ -83,7 +83,12 @@ struct WorkspaceRootView: View {
                     }
                 }
             }
-            .onChange(of: scenePhase) { _, phase in if phase == .active { store.refresh(); store.scheduleSync() } }
+            .onChange(of: scenePhase) { _, phase in
+                if phase == .active { store.refresh(); store.scheduleSync() }
+                #if os(iOS)
+                if phase == .background { WorkspaceBackgroundSync.updateSchedule(for: store) }
+                #endif
+            }
             .onOpenURL { url in
                 if url.scheme == "guangyi-workspace", let id = UUID(uuidString: url.lastPathComponent), store.record(id) != nil {
                     store.openedRecordID = id

@@ -1,17 +1,24 @@
 import SwiftUI
 
 struct RecordRow: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let record: WorkspaceRecord
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(alignment: dynamicTypeSize.isAccessibilitySize ? .top : .center, spacing: 12) {
             Image(systemName: record.pinned ? "pin.fill" : record.isFinished ? "checkmark.circle.fill" : record.kind.symbol)
                 .foregroundStyle(record.isOverdue ? Color.red : Color.indigo)
                 .font(.title3).frame(width: 28)
             VStack(alignment: .leading, spacing: 4) {
-                Text(record.title).font(record.kind == .deadline ? .title3.weight(.semibold) : .headline).lineLimit(2)
+                Text(record.title)
+                    .font(record.kind == .deadline ? .title3.weight(.semibold) : .headline)
+                    .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 2)
+                    .fixedSize(horizontal: false, vertical: true)
                 if record.kind == .knowledge {
                     Text(record.category + (record.summary.isEmpty ? "" : " · " + record.summary))
                         .font(.subheadline).foregroundStyle(.secondary).lineLimit(2)
+                } else if dynamicTypeSize.isAccessibilitySize {
+                    VStack(alignment: .leading, spacing: 4) { statusAndDate }
+                        .font(.caption).foregroundStyle(record.isOverdue ? .red : .secondary)
                 } else {
                     ViewThatFits(in: .horizontal) {
                         HStack(spacing: 6) { statusAndDate }
@@ -55,7 +62,8 @@ struct RecordListView: View {
     @State private var seriesOnly = false
     @State private var creating = false
     private var filtered: [WorkspaceRecord] {
-        var values = (includedKinds.isEmpty ? store.records(kind) : includedKinds.flatMap { store.records($0) }).filter { record in
+        let source = includedKinds.isEmpty ? store.records(kind) : WorkspaceLogic.actionRecords(in: store.state)
+        var values = source.filter { record in
             (type == "all" || record.kind.rawValue == type) &&
             (status == "all" || record.status == status) && (category == "all" || record.category == category) &&
             (query.isEmpty || "\(record.title) \(record.summary) \(record.body) \(record.tags.joined(separator: " "))".localizedCaseInsensitiveContains(query))
@@ -211,19 +219,34 @@ struct TrashView: View {
 }
 
 struct DeadlineCountdownView: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     let target: Date
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1)) { context in
             let overdue = target <= context.date
+            let duration = durationDescription(from: context.date)
             VStack(alignment: .leading, spacing: 4) {
                 Label(overdue ? "已逾期" : "距离截止", systemImage: overdue ? "exclamationmark.circle.fill" : "timer")
                     .font(.caption.weight(.semibold))
-                Text(target, style: .timer).font(.title2.bold().monospacedDigit()).contentTransition(.numericText())
+                Group {
+                    if reduceMotion { Text(target, style: .timer) }
+                    else { Text(target, style: .timer).contentTransition(.numericText()) }
+                }
+                .font(.title2.bold().monospacedDigit())
             }
             .foregroundStyle(overdue ? Color.red : Color.primary)
             .padding(10).frame(maxWidth: .infinity, alignment: .leading)
             .background(overdue ? Color.red.opacity(0.1) : Color.indigo.opacity(0.08), in: RoundedRectangle(cornerRadius: 10))
-            .accessibilityElement(children: .combine)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(overdue ? "已逾期" : "距离截止")
+            .accessibilityValue(duration)
         }
+    }
+    private func durationDescription(from now: Date) -> String {
+        var seconds = Int(abs(target.timeIntervalSince(now)))
+        let days = seconds / 86_400; seconds %= 86_400
+        let hours = seconds / 3_600; seconds %= 3_600
+        let minutes = seconds / 60; seconds %= 60
+        return (days > 0 ? "\(days)天 " : "") + "\(hours)小时 \(minutes)分 \(seconds)秒"
     }
 }
