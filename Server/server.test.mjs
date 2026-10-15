@@ -1,7 +1,7 @@
 import test, { before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { createNativeServer, apnsDelivery, effectiveDeadline, formatCountdown } from './server.mjs';
+import { createNativeServer, apnsDelivery, effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords } from './server.mjs';
 let app, origin, token;
 const password = 'test-only-password-not-a-production-credential';
 const registeredDeviceID = randomUUID();
@@ -32,8 +32,28 @@ test('web countdown uses the record timezone and reports overdue values', () => 
   const newYorkDST = { dueDate: '2026-03-08T12:00:00.000Z', dateOnly: true, timezone: 'America/New_York' };
   assert.equal(new Date(effectiveDeadline(newYorkDST)).toISOString(), '2026-03-09T03:59:59.000Z');
   assert.equal(formatCountdown(Date.UTC(2026, 0, 3, 2, 3, 4), Date.UTC(2026, 0, 1)), '2天 02:03:04');
+  assert.equal(formatCountdown(Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 1)), '已逾期 00:00:00');
   assert.equal(formatCountdown(Date.UTC(2026, 0, 1), Date.UTC(2026, 0, 1, 0, 0, 1)), '已逾期 00:00:01');
   assert.equal(formatCountdown(NaN), '未设置截止');
+});
+test('web hierarchy and sorting match native importance and parent visibility', () => {
+  const now = Date.parse('2026-10-15T12:00:00.000Z');
+  const group = { id: '20', kind: 'PROJECT', title: '行动组', status: 'ACTIVE', updatedAt: new Date(now + 30_000).toISOString() };
+  const action = { id: '30', kind: 'TASK', title: '普通行动', status: 'TODO', updatedAt: new Date(now + 20_000).toISOString() };
+  const reminder = { id: '40', kind: 'REMINDER', title: '有时间的提醒', status: 'OPEN', remindAt: new Date(now + 3_600_000).toISOString() };
+  const milestone = { id: '10', kind: 'MILESTONE', title: '置顶里程碑', status: 'PLANNED', pinned: true };
+  const completed = { id: '50', kind: 'TASK', title: '已完成行动', status: 'DONE', updatedAt: new Date(now + 60_000).toISOString() };
+  assert.deepEqual([action, completed, reminder, group, milestone].sort(compareActionRecords).map(value => value.title),
+    ['置顶里程碑', '有时间的提醒', '行动组', '普通行动', '已完成行动']);
+  const hiddenGroup = { ...group, archivedAt: new Date(now).toISOString() };
+  const child = { ...action, projectID: hiddenGroup.id };
+  assert.equal(visibleRecord(child, [hiddenGroup, child]), false);
+  assert.equal(visibleRecord(child, [group, child]), true);
+  const later = { id: 'd2', status: 'OPEN', dueDate: new Date(now + 7_200_000).toISOString(), dateOnly: false };
+  const sooner = { id: 'd1', status: 'OPEN', dueDate: new Date(now + 3_600_000).toISOString(), dateOnly: false, updatedAt: new Date(now).toISOString() };
+  const sameDueNewer = { id: 'd3', status: 'OPEN', dueDate: sooner.dueDate, dateOnly: false, updatedAt: new Date(now + 10_000).toISOString() };
+  const pinnedDone = { id: 'd0', status: 'DONE', pinned: true, dueDate: new Date(now - 3_600_000).toISOString(), dateOnly: false };
+  assert.deepEqual([later, sooner, sameDueNewer, pinnedDone].sort(compareDeadlineRecords).map(value => value.id), ['d0', 'd3', 'd1', 'd2']);
 });
 test('web UI is self-contained, protected by strict headers and leaves APIs authenticated', async () => {
   const page = await fetch(origin + '/');

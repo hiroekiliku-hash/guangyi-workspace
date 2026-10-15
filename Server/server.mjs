@@ -23149,7 +23149,7 @@ function effectiveDeadline(record) {
 }
 function formatCountdown(target, now = Date.now()) {
   if (!Number.isFinite(target)) return "\u672A\u8BBE\u7F6E\u622A\u6B62";
-  const overdue = target < now;
+  const overdue = target <= now;
   let seconds = Math.floor(Math.abs(target - now) / 1e3);
   const days = Math.floor(seconds / 86400);
   seconds %= 86400;
@@ -23160,6 +23160,57 @@ function formatCountdown(target, now = Date.now()) {
   const pad = (value) => String(value).padStart(2, "0");
   const clock = (days ? days + "\u5929 " : "") + pad(hours) + ":" + pad(minutes) + ":" + pad(seconds);
   return overdue ? "\u5DF2\u903E\u671F " + clock : clock;
+}
+function visibleRecord(record, records) {
+  if (!record || record.deletedAt || record.archivedAt) return false;
+  if (!record.projectID) return true;
+  const parent = records.find((value) => value && value.id === record.projectID);
+  return Boolean(parent && !parent.deletedAt && !parent.archivedAt);
+}
+function compareActionRecords(left, right) {
+  const finished = (value) => ["DONE", "COMPLETED", "CANCELLED"].includes(value?.status);
+  const timestamp = (value) => {
+    const parsed = Date.parse(value || "");
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const moment2 = (record) => {
+    const due = effectiveDeadline(record);
+    if (Number.isFinite(due)) return due;
+    for (const value of [record?.remindAt, record?.scheduledAt, record?.targetDate]) {
+      const parsed = Date.parse(value || "");
+      if (Number.isFinite(parsed)) return parsed;
+    }
+    return NaN;
+  };
+  const pinned = Number(Boolean(right?.pinned)) - Number(Boolean(left?.pinned));
+  if (pinned) return pinned;
+  const completion = Number(finished(left)) - Number(finished(right));
+  if (completion) return completion;
+  const leftMoment = moment2(left), rightMoment = moment2(right);
+  if (Number.isFinite(leftMoment) && Number.isFinite(rightMoment) && leftMoment !== rightMoment) return leftMoment - rightMoment;
+  if (Number.isFinite(leftMoment) !== Number.isFinite(rightMoment)) return Number.isFinite(leftMoment) ? -1 : 1;
+  const updated = timestamp(right?.updatedAt) - timestamp(left?.updatedAt);
+  if (updated) return updated;
+  const leftID = String(left?.id || ""), rightID = String(right?.id || "");
+  return leftID < rightID ? -1 : leftID > rightID ? 1 : 0;
+}
+function compareDeadlineRecords(left, right) {
+  const finished = (value) => ["DONE", "COMPLETED", "CANCELLED"].includes(value?.status);
+  const timestamp = (value) => {
+    const parsed = Date.parse(value || "");
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+  const pinned = Number(Boolean(right?.pinned)) - Number(Boolean(left?.pinned));
+  if (pinned) return pinned;
+  const completion = Number(finished(left)) - Number(finished(right));
+  if (completion) return completion;
+  const leftMoment = effectiveDeadline(left), rightMoment = effectiveDeadline(right);
+  if (Number.isFinite(leftMoment) && Number.isFinite(rightMoment) && leftMoment !== rightMoment) return leftMoment - rightMoment;
+  if (Number.isFinite(leftMoment) !== Number.isFinite(rightMoment)) return Number.isFinite(leftMoment) ? -1 : 1;
+  const updated = timestamp(right?.updatedAt) - timestamp(left?.updatedAt);
+  if (updated) return updated;
+  const leftID = String(left?.id || ""), rightID = String(right?.id || "");
+  return leftID < rightID ? -1 : leftID > rightID ? 1 : 0;
 }
 var webHTML = String.raw`<!doctype html>
 <html lang="zh-CN">
@@ -23332,10 +23383,16 @@ footer { padding: 2.5rem 0 1rem; color: var(--muted); font-size: .75rem; text-al
 }`;
 var effectiveDeadlineSource = effectiveDeadline.toString();
 var formatCountdownSource = formatCountdown.toString();
+var visibleRecordSource = visibleRecord.toString();
+var compareActionRecordsSource = compareActionRecords.toString();
+var compareDeadlineRecordsSource = compareDeadlineRecords.toString();
 var webJS = String.raw`(() => {
   'use strict';
   const effectiveDeadline = ${effectiveDeadlineSource};
   const formatCountdown = ${formatCountdownSource};
+  const visibleRecord = ${visibleRecordSource};
+  const compareActionRecords = ${compareActionRecordsSource};
+  const compareDeadlineRecords = ${compareDeadlineRecordsSource};
   const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '' };
   const finished = new Set(['DONE', 'COMPLETED', 'CANCELLED']);
   const actionKinds = new Set(['PROJECT', 'TASK', 'MILESTONE', 'REMINDER']);
@@ -23410,8 +23467,6 @@ var webJS = String.raw`(() => {
     byID('login-view').hidden = true; byID('workspace-view').hidden = false;
     byID('account-label').textContent = state.displayName ? state.displayName + ' · ' + state.account : state.account;
   }
-  function live(record) { return record && !record.deletedAt && !record.archivedAt; }
-  function timestamp(value) { const parsed = Date.parse(value || ''); return Number.isFinite(parsed) ? parsed : 0; }
   function recordCard(record) {
     const card = element('article', 'record-card' + (record.pinned ? ' pinned' : '') + (finished.has(record.status) ? ' finished' : ''));
     const top = element('div', 'record-top'); top.append(element('h4', 'record-title', record.title || '未命名'));
@@ -23429,7 +23484,7 @@ var webJS = String.raw`(() => {
     return formatter.format(new Date(record.dateOnly ? Date.parse(record.dueDate) : target)) + (record.dateOnly ? ' 当日结束前' : '');
   }
   function deadlineCard(record) {
-    const target = effectiveDeadline(record); const isFinished = finished.has(record.status); const overdue = !isFinished && Number.isFinite(target) && target < Date.now();
+    const target = effectiveDeadline(record); const isFinished = finished.has(record.status); const overdue = !isFinished && Number.isFinite(target) && target <= Date.now();
     const card = element('article', 'record-card' + (record.pinned ? ' pinned' : '') + (isFinished ? ' finished' : '') + (overdue ? ' overdue' : ''));
     const top = element('div', 'record-top'); top.append(element('h4', 'record-title', record.title || '未命名 DDL'));
     top.append(element('span', 'kind-label', isFinished ? (statusNames[record.status] || record.status) : overdue ? '已逾期' : '进行中')); card.append(top);
@@ -23442,19 +23497,20 @@ var webJS = String.raw`(() => {
   }
   function empty(text) { return element('p', 'empty', text); }
   function render() {
-    const records = state.workspace && Array.isArray(state.workspace.records) ? state.workspace.records.filter(live) : [];
-    const actions = records.filter(record => actionKinds.has(record.kind)).sort((left, right) => Number(right.pinned) - Number(left.pinned) || Number(finished.has(left.status)) - Number(finished.has(right.status)) || timestamp(right.updatedAt) - timestamp(left.updatedAt));
-    const deadlines = records.filter(record => record.kind === 'DEADLINE').sort((left, right) => Number(finished.has(left.status)) - Number(finished.has(right.status)) || Number(right.pinned) - Number(left.pinned) || effectiveDeadline(left) - effectiveDeadline(right));
+    const allRecords = state.workspace && Array.isArray(state.workspace.records) ? state.workspace.records : [];
+    const records = allRecords.filter(record => visibleRecord(record, allRecords));
+    const actions = records.filter(record => actionKinds.has(record.kind)).sort(compareActionRecords);
+    const deadlines = records.filter(record => record.kind === 'DEADLINE').sort(compareDeadlineRecords);
     const actionList = byID('actions-list'); actionList.replaceChildren(...(actions.length ? actions.map(recordCard) : [empty('目前没有行动。')]));
     const deadlineList = byID('deadlines-list'); deadlineList.replaceChildren(...(deadlines.length ? deadlines.map(deadlineCard) : [empty('目前没有 DDL。')]));
-    const overdue = deadlines.filter(record => !finished.has(record.status) && effectiveDeadline(record) < Date.now()).length;
+    const overdue = deadlines.filter(record => !finished.has(record.status) && effectiveDeadline(record) <= Date.now()).length;
     byID('action-count').textContent = String(actions.length); byID('deadline-count').textContent = String(deadlines.length);
     byID('overdue-badge').hidden = overdue === 0; byID('overdue-badge').textContent = overdue + ' 逾期'; updateCountdowns();
   }
   function updateCountdowns() {
     document.querySelectorAll('.countdown[data-target]').forEach(node => {
       const target = Number(node.dataset.target); node.textContent = formatCountdown(target);
-      node.closest('.record-card').classList.toggle('overdue', target < Date.now());
+      node.closest('.record-card').classList.toggle('overdue', target <= Date.now());
     });
   }
   async function loadWorkspace(silent) {
@@ -24026,10 +24082,13 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
 export {
   apnsDelivery,
   applePushSender,
+  compareActionRecords,
+  compareDeadlineRecords,
   createNativeServer,
   effectiveDeadline,
   formatCountdown,
-  validateSnapshot
+  validateSnapshot,
+  visibleRecord
 };
 /*! Bundled license information:
 

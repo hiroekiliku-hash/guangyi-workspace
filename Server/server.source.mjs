@@ -6,9 +6,9 @@ import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey,
 import { readFileSync, mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { effectiveDeadline, formatCountdown, webAsset } from './web.mjs';
+import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
 
-export { effectiveDeadline, formatCountdown };
+export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
 
 let deploymentRevision = 'unversioned';
 try { deploymentRevision = readFileSync(join(dirname(new URL(import.meta.url).pathname), 'REVISION'), 'utf8').trim(); } catch {}
