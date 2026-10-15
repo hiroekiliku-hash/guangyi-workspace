@@ -5,6 +5,7 @@ struct RecordDetailView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     let id: UUID
+    var embedded = false
     @State private var editing = false
     @State private var recurrence = false
     @State private var preview: DeletionPreview?
@@ -20,11 +21,11 @@ struct RecordDetailView: View {
                         ToolbarItem(placement: .primaryAction) { Button("编辑", systemImage: "pencil") { editing = true }.disabled(record.archivedAt != nil) }
                         ToolbarItem { actions(record) }
                     }
-                    .sheet(isPresented: $editing) { NavigationStack { RecordEditorView(kind: record.kind, record: record) }.nativeSheetSize() }
+                    .sheet(isPresented: $editing) { NavigationStack { RecordEditorView(kind: record.kind, record: record) }.nativeEditorPresentation() }
                     .sheet(isPresented: $recurrence) { NavigationStack { RecurrenceEditorView(record: record) }.nativeSheetSize() }
-                    .sheet(item: $childKind) { kind in NavigationStack { RecordEditorView(kind: kind, projectID: record.id) }.nativeSheetSize() }
+                    .sheet(item: $childKind) { kind in NavigationStack { RecordEditorView(kind: kind, projectID: record.id) }.nativeEditorPresentation() }
                     .sheet(item: $preview) { preview in
-                        NavigationStack { DeleteReviewView(preview: preview, onDeleted: { dismiss() }) }.nativeSheetSize()
+                        NavigationStack { DeleteReviewView(preview: preview, onDeleted: { if !embedded { dismiss() } }) }.nativeSheetSize()
                     }
                     .fileImporter(isPresented: $pickingPDF, allowedContentTypes: [.pdf]) { result in
                         store.perform { try store.attachPDF(result.get(), to: id) }
@@ -40,12 +41,13 @@ struct RecordDetailView: View {
     private func detail(_ record: WorkspaceRecord) -> some View {
         List {
             Section {
+                Text(record.title).font(.title2.bold()).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
                 if record.kind != .knowledge && record.kind != .area { LabeledContent("状态", value: StateLabels.title(record.status)) }
                 if let due = record.dueDate { LabeledContent("截止", value: formatted(due, record: record)) }
                 if let reminder = record.remindAt { LabeledContent("提醒", value: formatted(reminder, record: record, time: true)) }
                 if let scheduled = record.scheduledAt { LabeledContent("安排", value: formatted(scheduled, record: record, time: true)) }
                 if let project = record.projectID.flatMap(store.record) {
-                    NavigationLink { RecordDetailView(id: project.id) } label: { LabeledContent("项目", value: project.title) }
+                    NavigationLink { RecordDetailView(id: project.id) } label: { LabeledContent("行动组", value: project.title) }
                 }
                 if let area = record.areaID.flatMap(store.record) { LabeledContent("领域", value: area.title) }
                 if let milestone = record.milestoneID.flatMap(store.record) { LabeledContent("里程碑", value: milestone.title) }
@@ -59,12 +61,12 @@ struct RecordDetailView: View {
                     Button("标记完成", systemImage: "checkmark.circle") { store.perform { try store.setStatus(id, "DONE") } }.buttonStyle(.borderedProminent)
                 }
             }
+            #if os(iOS)
+            if [.task, .deadline].contains(record.kind) { DeadlineLiveActivitySection(record: record) }
+            #endif
             if record.kind == .deadline, let due = record.dueDate, !record.isFinished {
                 Section("倒计时") {
-                    TimelineView(.periodic(from: .now, by: 1)) { context in
-                        Text(countdown(to: record.effectiveDueDate(due), now: context.date))
-                            .font(.title2.monospacedDigit()).foregroundStyle(record.isOverdue ? .red : .indigo)
-                    }
+                    DeadlineCountdownView(target: record.effectiveDueDate(due))
                 }
             }
             if !record.summary.isEmpty { Section("说明") { Text(record.summary).textSelection(.enabled) } }

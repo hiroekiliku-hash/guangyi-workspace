@@ -1,0 +1,3 @@
+CODE_SIGN_IDENTITY = Apple Development
+DEVELOPMENT_TEAM = 67WBP6S5QL
+CODE_SIGN_ENTITLEMENTS = Config/Mac-Passkeys.entitlements

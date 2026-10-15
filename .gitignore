@@ -18,3 +18,5 @@ __pycache__/
 *.pyc
 Server/REVISION
 release.tar.gz
+
+node_modules/

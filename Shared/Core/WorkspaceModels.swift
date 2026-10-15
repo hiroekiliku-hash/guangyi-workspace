@@ -7,7 +7,7 @@ enum ItemKind: String, Codable, CaseIterable, Identifiable {
     var title: String {
         switch self {
         case .area: "领域"
-        case .project: "项目"
+        case .project: "行动组"
         case .milestone: "里程碑"
         case .task: "行动"
         case .deadline: "截止事项"
@@ -86,7 +86,7 @@ struct WorkspaceRecord: Identifiable, Codable, Hashable {
     init(kind: ItemKind, title: String = "", id: UUID = UUID()) {
         self.id = id; self.kind = kind; self.title = title
         status = kind.states.first ?? "OPEN"
-        notificationsEnabled = kind == .reminder
+        notificationsEnabled = kind == .reminder || kind == .deadline
     }
     var isFinished: Bool { ["DONE", "COMPLETED", "CANCELLED"].contains(status) }
     var isLive: Bool { deletedAt == nil && archivedAt == nil }

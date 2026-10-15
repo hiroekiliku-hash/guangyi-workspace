@@ -4,15 +4,29 @@ import PDFKit
 
 @MainActor @Observable final class WorkspaceStore {
     private(set) var state: WorkspaceState
+    var feedbackSequence = 0
     var errorMessage: String?
     var information: String?
-    var navigation = AppDestination.overview
+    var navigation = AppDestination.actions
     var openedRecordID: UUID?
     var createKind: ItemKind?
     var pendingImport: WorkspaceState?
     var importDescription = ""
     let notifications = NotificationCoordinator()
     let backend = BackendService()
+    #if os(iOS)
+    let liveActivity = DeadlineLiveActivityCoordinator()
+    #endif
+    private(set) var syncing = false
+    private(set) var syncStatus = "尚未同步"
+    var pendingSyncReview: WorkspaceSyncCheckpoint?
+    private(set) var syncReviewBase: WorkspaceState?
+    private(set) var syncReviewLocal: WorkspaceState?
+    var automaticSync: Bool {
+        get { UserDefaults.standard.bool(forKey: "automaticWorkspaceSync") }
+        set { UserDefaults.standard.set(newValue, forKey: "automaticWorkspaceSync"); if newValue { scheduleSync() } }
+    }
+    @ObservationIgnored private var syncTask: Task<Void, Never>?
     @ObservationIgnored private let repository: SwiftDataRepository
 
     init(repository: SwiftDataRepository) throws {
@@ -44,6 +58,85 @@ import PDFKit
         try repository.save(draft)
         state = draft
         notifications.reschedule(draft)
+        #if os(iOS)
+        liveActivity.synchronize(draft)
+        #endif
+        scheduleSync()
+    }
+    func scheduleSync() {
+        guard !syncing, pendingSyncReview == nil, automaticSync, backend.accountScope != nil else { return }
+        syncTask?.cancel()
+        syncTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled, let self else { return }
+            do { try await self.synchronize() }
+            catch { self.syncStatus = error.localizedDescription }
+        }
+    }
+    func synchronize(bindAccount: Bool = false) async throws {
+        guard !syncing else { return }
+        guard pendingSyncReview == nil else { throw WorkspaceFailure.invalid("请先完成或取消冲突比较。") }
+        guard let scope = backend.accountScope else { throw WorkspaceFailure.invalid("请重新登录以确认同步账号。") }
+        let saved = try repository.syncCheckpoint()
+        guard bindAccount || saved?.scope == scope else {
+            throw WorkspaceFailure.invalid("首次同步或切换账号时，请在设置中确认将本机资料与此账号合并。")
+        }
+        syncing = true; syncStatus = "正在同步…"
+        defer { syncing = false }
+        do {
+            try await WorkspaceSyncDriver.run(base: saved?.scope == scope ? saved?.remote.snapshot : nil,
+                readLocal: { self.state }, isCurrentAccount: { self.backend.accountScope == scope },
+                download: { try await self.backend.downloadForSync(scope: scope) },
+                upload: { try await self.backend.uploadForSync($0, revision: $1, scope: scope) },
+                apply: { current, remote in
+                    try self.repository.save(current, checkpoint: WorkspaceSyncCheckpoint(scope: scope, remote: remote))
+                    self.state = current
+                    self.notifications.reschedule(current)
+                    #if os(iOS)
+                    self.liveActivity.synchronize(current)
+                    #endif
+                    self.backend.acknowledgeSync(remote)
+                })
+            syncStatus = "已同步"
+        } catch {
+            syncStatus = error.localizedDescription
+            throw error
+        }
+    }
+    func reviewSyncConflicts() async throws {
+        guard !syncing, let scope = backend.accountScope else { throw NativeBackendError.configuration }
+        syncing = true; syncTask?.cancel()
+        defer { syncing = false }
+        let remote = try await backend.downloadForSync(scope: scope)
+        let saved = try repository.syncCheckpoint()
+        syncReviewBase = saved?.scope == scope ? saved?.remote.snapshot : nil
+        syncReviewLocal = state
+        pendingSyncReview = WorkspaceSyncCheckpoint(scope: scope, remote: remote)
+        importDescription = "比较本机与服务器的冲突版本"
+        pendingImport = remote.snapshot
+        syncTask?.cancel()
+    }
+    func cancelSyncReview() {
+        pendingSyncReview = nil; syncReviewBase = nil; syncReviewLocal = nil; pendingImport = nil
+    }
+    func resolveSyncReview(_ resolution: WorkspaceSyncResolution) throws {
+        guard let checkpoint = pendingSyncReview, let local = syncReviewLocal else { throw NativeBackendError.configuration }
+        guard backend.accountScope == checkpoint.scope else { throw WorkspaceSyncError.accountChanged }
+        guard state == local else { throw WorkspaceFailure.invalid("比较期间本机资料发生变化，请重新打开冲突比较。") }
+        var result = try WorkspaceSyncMerge.reconcile(base: syncReviewBase, local: local, remote: checkpoint.remote.snapshot, resolution: resolution)
+        RecurrenceEngine.materialize(&result)
+        try WorkspaceLogic.validate(result)
+        try repository.save(result, checkpoint: checkpoint)
+        state = result
+        notifications.reschedule(result)
+        #if os(iOS)
+        liveActivity.synchronize(result)
+        #endif
+        pendingSyncReview = nil; syncReviewBase = nil; syncReviewLocal = nil
+        pendingImport = nil
+        feedbackSequence += 1
+        syncStatus = "冲突已解决，等待同步"
+        scheduleSync()
     }
     private func log(_ record: WorkspaceRecord, _ message: String, in draft: inout WorkspaceState) {
         draft.activities.append(ActivityEntry(entityID: record.id, projectID: record.kind == .project ? record.id : record.projectID,
@@ -91,6 +184,7 @@ import PDFKit
             }
             log(value, index == nil ? "创建\(value.kind.title)" : "修改\(value.kind.title)", in: &draft)
         }
+        feedbackSequence += 1
     }
     func setStatus(_ id: UUID, _ status: String) throws {
         guard var value = record(id) else { return }
@@ -107,6 +201,7 @@ import PDFKit
             draft.records[index].version += 1; draft.records[index].updatedAt = Date()
             log(draft.records[index], restore ? "恢复归档" : "归档", in: &draft)
         }
+        feedbackSequence += 1
     }
     func deletionPreview(_ id: UUID) throws -> DeletionPreview {
         guard let value = record(id) else { throw WorkspaceFailure.invalid("记录不存在。") }
@@ -118,6 +213,7 @@ import PDFKit
             try WorkspaceLogic.delete(preview, from: &draft)
             log(preview.root, "移入回收站（\(preview.records.count) 项）", in: &draft)
         }
+        feedbackSequence += 1
     }
     func restore(_ batch: TrashBatch) throws {
         try commit { draft in

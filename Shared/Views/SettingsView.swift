@@ -14,6 +14,7 @@ struct SettingsView: View {
     @State private var photo: PhotosPickerItem?
     @State private var showExport = false
     @State private var showImport = false
+    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         Form {
@@ -38,6 +39,9 @@ struct SettingsView: View {
             Section("外观") {
                 Picker("主题", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
             }
+            #if os(iOS)
+            Section("触感") { Toggle("操作触感反馈", isOn: $hapticsEnabled) }
+            #endif
             NotificationSettingsSection()
             Section("导入与导出") {
                 LabeledContent("本机记录", value: "\(store.state.records.count) 项")
@@ -58,6 +62,9 @@ struct SettingsView: View {
                 Link("打开原网站", destination: URL(string: "https://guangyi-workspace-sites.cleverfir5.chatgpt.site/app")!)
             }
         }.formStyle(.grouped).navigationTitle("设置")
+            .environment(\.locale, Locale(identifier: "zh_CN"))
+            .environment(\.timeZone, WorkspaceDates.calendar(store.state.profile.timezone).timeZone)
+            .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
             .onAppear { name = store.state.profile.name; zone = store.state.profile.timezone }
             .onChange(of: photo) { _, value in
                 Task {
@@ -108,7 +115,7 @@ struct NotificationSettingsSection: View {
                 }
             }
             Button("打开系统通知设置", systemImage: "gearshape") { openNotificationSettings() }
-            Text("安排好的本地通知由系统触发，应用关闭时仍能提醒。长时间不打开应用时，超过已安排队列的未来提醒不会自动补齐；自建服务器上线后可接入 APNs。")
+            Text("安排好的本地通知由系统触发，应用关闭时仍能提醒。长时间不打开应用时，超过已安排队列的未来提醒不会自动补齐；其他设备的改动会在账号同步后更新本机提醒安排。")
                 .font(.caption).foregroundStyle(.secondary)
         }.task { await store.notifications.refreshAuthorization() }
     }
@@ -205,7 +212,11 @@ struct ImportReviewView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var preferIncoming = false
-    var body: some View {
+    @ViewBuilder var body: some View {
+        if store.pendingSyncReview != nil { SyncConflictReviewView() }
+        else { importForm }
+    }
+    private var importForm: some View {
         Form {
             if let incoming = store.pendingImport {
                 let conflicts = incoming.records.filter { item in store.record(item.id).map { !WorkspaceCoding.equivalent($0, item) } ?? false }.count
@@ -226,6 +237,96 @@ struct ImportReviewView: View {
                 }.buttonStyle(.borderedProminent)
             }
         }.formStyle(.grouped).navigationTitle("确认导入")
-            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.pendingImport = nil; dismiss() } } }
+            .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.cancelSyncReview(); dismiss() } } }
     }
+}
+
+
+struct SyncConflictReviewView: View {
+    @Environment(WorkspaceStore.self) private var store
+    @Environment(\.dismiss) private var dismiss
+    @State private var resolution = WorkspaceSyncResolution.local
+    private var differences: [UUID] {
+        guard let remote = store.pendingSyncReview?.remote.snapshot else { return [] }
+        let local = store.syncReviewLocal ?? store.state
+        let left = Dictionary(uniqueKeysWithValues: local.records.map { ($0.id, $0) })
+        let right = Dictionary(uniqueKeysWithValues: remote.records.map { ($0.id, $0) })
+        return Set(left.keys).union(right.keys).filter { id in
+            if let a = left[id], let b = right[id] { return !WorkspaceCoding.equivalent(a, b) }
+            return true
+        }.sorted { $0.uuidString < $1.uuidString }
+    }
+    var body: some View {
+        List {
+            Section("冲突选择") {
+                Picker("同时修改的内容", selection: $resolution) {
+                    ForEach(WorkspaceSyncResolution.allCases) { Text($0.rawValue).tag($0) }
+                }
+                Text("此选择只处理双方同时修改的内容。其他新增、改期和删除仍按同步基线合并。下方显示所有不同记录，包括只在一端有改动的记录。")
+                    .font(.caption).foregroundStyle(.secondary)
+            }
+            if let checkpoint = store.pendingSyncReview {
+                Section("个人资料") {
+                    LabeledContent("本机", value: (store.syncReviewLocal ?? store.state).profile.name + " · " + (store.syncReviewLocal ?? store.state).profile.timezone)
+                    LabeledContent("服务器", value: checkpoint.remote.snapshot.profile.name + " · " + checkpoint.remote.snapshot.profile.timezone)
+                }
+                Section("内容比较") {
+                    if differences.isEmpty { Text("记录内容一致；请核对循环、附件或个人资料的变更。") }
+                    ForEach(differences, id: \.self) { id in
+                        VStack(alignment: .leading, spacing: 12) {
+                            Label(isConflict(id) ? "双方同时修改：将按您的选择处理" : "单端改动：将自动合并", systemImage: isConflict(id) ? "exclamationmark.triangle" : "arrow.triangle.merge")
+                                .font(.caption.weight(.semibold)).foregroundStyle(isConflict(id) ? Color.orange : Color.secondary)
+                            version("本机", record: (store.syncReviewLocal ?? store.state).records.first { $0.id == id })
+                            Divider()
+                            version("服务器", record: checkpoint.remote.snapshot.records.first { $0.id == id })
+                        }.padding(.vertical, 6)
+                    }
+                }
+                Section("其他资料") {
+                    LabeledContent("本机循环 / 附件", value: "\((store.syncReviewLocal ?? store.state).series.count) / \((store.syncReviewLocal ?? store.state).assets.count)")
+                    LabeledContent("服务器循环 / 附件", value: "\(checkpoint.remote.snapshot.series.count) / \(checkpoint.remote.snapshot.assets.count)")
+                }
+            }
+        }.navigationTitle("比较同步内容")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { store.cancelSyncReview(); dismiss() } }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("应用选择") {
+                        do { try store.resolveSyncReview(resolution); dismiss(); store.information = "冲突选择已保存，可立即同步到其他设备。" }
+                        catch { store.errorMessage = error.localizedDescription }
+                    }
+                }
+            }
+    }
+    @ViewBuilder private func version(_ source: String, record: WorkspaceRecord?) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            Text(source).font(.caption.weight(.semibold)).foregroundStyle(.secondary)
+            if let record {
+                Text(record.title).font(.headline).textSelection(.enabled)
+                Text(record.deletedAt != nil ? "已删除" : record.archivedAt != nil ? "已归档" : StateLabels.title(record.status)).font(.subheadline)
+                if let due = record.dueDate { Text(dateLabel(due, record: record)).font(.caption) }
+                if !record.summary.isEmpty { Text(record.summary).textSelection(.enabled) }
+                if !record.body.isEmpty {
+                    Text(record.body).lineLimit(6).textSelection(.enabled)
+                    DisclosureGroup("查看完整正文") { Text(record.body).font(.body).textSelection(.enabled) }
+                }
+            } else { Text("此端没有这条记录").foregroundStyle(.secondary) }
+        }
+    }
+    private func isConflict(_ id: UUID) -> Bool {
+        let old = store.syncReviewBase?.records.first { $0.id == id }
+        let local = (store.syncReviewLocal ?? store.state).records.first { $0.id == id }
+        let remote = store.pendingSyncReview?.remote.snapshot.records.first { $0.id == id }
+        func equivalent(_ a: WorkspaceRecord?, _ b: WorkspaceRecord?) -> Bool {
+            if let a, let b { return WorkspaceCoding.equivalent(a, b) }
+            return a == nil && b == nil
+        }
+        return !equivalent(local, remote) && !equivalent(local, old) && !equivalent(remote, old)
+    }
+    private func dateLabel(_ date: Date, record: WorkspaceRecord) -> String {
+        var format: Date.FormatStyle = record.dateOnly ? .dateTime.year().month().day() : .dateTime.year().month().day().hour().minute()
+        format.locale = Locale(identifier: "zh_CN"); format.timeZone = record.calendar.timeZone
+        return format.format(date) + " · " + record.timezone
+    }
+
 }

@@ -21,3 +21,20 @@ final class ArchiveAndPersistenceTests: XCTestCase {
         XCTAssertEqual(try repository.load(), state)
     }
 }
+
+extension ArchiveAndPersistenceTests {
+    @MainActor func testSyncCheckpointPersistsWithWorkspaceWithoutReplacingWorkspaceMetadata() throws {
+        let repository = try SwiftDataRepository(inMemory: true)
+        var state = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "同步资料")])
+        state.profile.name = "验收资料"
+        let checkpoint = WorkspaceSyncCheckpoint(scope: "https://example.com|test@example.com", remote: VersionedWorkspace(revision: 4, snapshot: state))
+        try repository.save(state, checkpoint: checkpoint)
+        XCTAssertEqual(try repository.load(), state)
+        XCTAssertEqual(try repository.syncCheckpoint()?.remote.revision, 4)
+        XCTAssertEqual(try repository.syncCheckpoint()?.remote.snapshot, state)
+        state.records[0].title = "离线编辑"
+        try repository.save(state)
+        XCTAssertEqual(try repository.load().records[0].title, "离线编辑")
+        XCTAssertEqual(try repository.syncCheckpoint()?.remote.snapshot.records[0].title, "同步资料")
+    }
+}

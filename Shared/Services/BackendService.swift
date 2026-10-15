@@ -6,11 +6,9 @@ struct NativeSession: Codable {
     var accessToken: String
     var refreshToken: String?
     var displayName: String
+    var account: String?
 }
-struct RemoteWorkspace: Codable {
-    var revision: Int
-    var snapshot: WorkspaceState
-}
+typealias RemoteWorkspace = VersionedWorkspace
 struct RemoteDeviceRegistration: Codable {
     var deviceID: String
     var platform: String
@@ -32,7 +30,8 @@ enum NativeBackendError: LocalizedError {
         case .configuration: "请先配置自建服务器并登录。"
         case .authentication: "登录已失效，请重新登录。"
         case .conflict: "服务器数据已被其他设备修改。请先下载并审阅，避免覆盖。"
-        case .status(let status): "服务器返回错误 \(status)。请确认后端符合随工程提供的接口契约。"
+        case .status(404): "服务器暂未启用此功能，请使用密码登录或稍后重试。"
+        case .status(let status): "服务器暂时无法完成此操作（\(status)），请稍后重试。"
         case .malformed: "服务器返回的数据格式无效。"
         case .insecureURL: "服务器地址必须使用 HTTPS，不能包含用户名、密码或查询参数。"
         }
@@ -57,7 +56,10 @@ struct URLSessionBackend: NativeBackendTransport {
         let (body, response) = try await session.data(for: request)
         guard let response = response as? HTTPURLResponse else { throw NativeBackendError.malformed }
         if response.statusCode == 401 { throw NativeBackendError.authentication }
-        if response.statusCode == 409 || response.statusCode == 412 { throw NativeBackendError.conflict }
+        if response.statusCode == 409 || response.statusCode == 412 {
+            if path.hasPrefix("passkeys") { throw NativeBackendError.status(response.statusCode) }
+            throw NativeBackendError.conflict
+        }
         guard (200...299).contains(response.statusCode) else { throw NativeBackendError.status(response.statusCode) }
         guard body.count <= 128 * 1024 * 1024 else { throw WorkspaceFailure.tooLarge }
         return body
@@ -130,6 +132,7 @@ enum SecureCredentials {
         var serverOrigin: String
         var accessToken: String
         var refreshToken: String?
+        var account: String?
     }
     private static func storedCredentials() -> Credentials? {
         guard let value = SecureCredentials.read("session") else { return nil }
@@ -150,7 +153,8 @@ enum SecureCredentials {
     private let transport: NativeBackendTransport
     init(transport: NativeBackendTransport = URLSessionBackend()) {
         self.transport = transport
-        let savedAddress = UserDefaults.standard.string(forKey: "backendAddress") ?? ""
+        let configured = UserDefaults.standard.string(forKey: "backendAddress") ?? ""
+        let savedAddress = configured.isEmpty ? "https://workspace.kdfz.com.cn" : configured
         address = savedAddress
         signedIn = Self.storedCredentials()?.serverOrigin == savedAddress
         displayName = UserDefaults.standard.string(forKey: "backendDisplayName") ?? ""
@@ -173,11 +177,13 @@ enum SecureCredentials {
     func signIn(email: String, password: String) async throws {
         let url = try baseURL()
         let result = try await transport.signIn(baseURL: url, email: email, password: password)
+        guard try baseURL() == url else { throw NativeBackendError.configuration }
         guard !result.accessToken.isEmpty else { throw NativeBackendError.malformed }
-        let credentials = Credentials(serverOrigin: url.absoluteString, accessToken: result.accessToken, refreshToken: result.refreshToken)
+        let credentials = Credentials(serverOrigin: url.absoluteString, accessToken: result.accessToken, refreshToken: result.refreshToken, account: result.account ?? email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased())
         let encoded = try JSONEncoder().encode(credentials)
         guard let value = String(data: encoded, encoding: .utf8) else { throw NativeBackendError.malformed }
         try SecureCredentials.save(value, key: "session")
+        address = url.absoluteString
         signedIn = true; displayName = result.displayName; revision = nil
         UserDefaults.standard.set(displayName, forKey: "backendDisplayName")
     }
@@ -194,6 +200,27 @@ enum SecureCredentials {
             } catch { throw WorkspaceFailure.invalid("本机凭据已清除，但服务器暂时不可达，远程会话可能要到期后才失效。") }
         }
     }
+    var accountScope: String? {
+        guard signedIn, let value = Self.storedCredentials(), value.serverOrigin == address, let account = value.account, !account.isEmpty else { return nil }
+        return value.serverOrigin + "|" + account
+    }
+    func downloadForSync(scope: String) async throws -> RemoteWorkspace {
+        guard accountScope == scope else { throw NativeBackendError.configuration }
+        let (url, token) = try credentials()
+        let result = try await transport.download(baseURL: url, token: token)
+        guard accountScope == scope else { throw NativeBackendError.configuration }
+        return result
+    }
+    func uploadForSync(_ snapshot: WorkspaceState, revision: Int, scope: String) async throws -> RemoteWorkspace {
+        guard accountScope == scope else { throw NativeBackendError.configuration }
+        let (url, token) = try credentials()
+        let result: RemoteWorkspace
+        do { result = try await transport.upload(baseURL: url, token: token, snapshot: snapshot, expectedRevision: revision) }
+        catch NativeBackendError.conflict { throw WorkspaceSyncError.revisionChanged }
+        guard accountScope == scope else { throw NativeBackendError.configuration }
+        return result
+    }
+    func acknowledgeSync(_ result: RemoteWorkspace) { revision = result.revision; lastSync = Date() }
     func download() async throws -> WorkspaceState {
         let (url, token) = try credentials()
         let result = try await transport.download(baseURL: url, token: token)
@@ -223,5 +250,93 @@ enum SecureCredentials {
         try await transport.register(baseURL: url, token: access, device: RemoteDeviceRegistration(deviceID: existing, platform: platform,
             token: token.map { String(format: "%02x", $0) }.joined(), bundleID: Bundle.main.bundleIdentifier ?? "", environment: environment))
         deviceRegistrationStatus = "已注册"
+    }
+}
+
+struct PasskeyChallenge: Decodable {
+    struct Options: Decodable {
+        struct RP: Decodable { var id: String }
+        struct User: Decodable { var id: String; var name: String }
+        struct Descriptor: Decodable { var id: String }
+        var challenge: String
+        var rp: RP?
+        var rpId: String?
+        var user: User?
+        var excludeCredentials: [Descriptor]?
+        var allowCredentials: [Descriptor]?
+    }
+    var challengeID: String
+    var options: Options
+}
+struct PasskeyCredential: Encodable {
+    struct Response: Encodable {
+        var clientDataJSON: String
+        var attestationObject: String?
+        var authenticatorData: String?
+        var signature: String?
+        var userHandle: String?
+        var transports: [String]?
+    }
+    var id: String
+    var rawId: String
+    var type = "public-key"
+    var authenticatorAttachment = "platform"
+    var clientExtensionResults: [String: String] = [:]
+    var response: Response
+}
+struct RegisteredPasskeys: Decodable {
+    struct Credential: Decodable, Identifiable { var id: String; var created: Double }
+    var credentials: [Credential]
+}
+extension URLSessionBackend {
+    func passkeyOptions(baseURL: URL, registering: Bool, token: String?) async throws -> PasskeyChallenge {
+        try decode(PasskeyChallenge.self, await request(baseURL, path: registering ? "passkeys/register/options" : "passkeys/login/options", method: "POST", token: token, data: Data("{}".utf8)))
+    }
+    func verifyPasskey(baseURL: URL, challengeID: String, credential: PasskeyCredential) async throws -> NativeSession {
+        struct Proof: Encodable { var challengeID: String; var credential: PasskeyCredential }
+        return try decode(NativeSession.self, await request(baseURL, path: "passkeys/login/verify", method: "POST", data: JSONEncoder().encode(Proof(challengeID: challengeID, credential: credential))))
+    }
+    func registerPasskey(baseURL: URL, token: String, challengeID: String, credential: PasskeyCredential) async throws {
+        struct Proof: Encodable { var challengeID: String; var credential: PasskeyCredential }
+        _ = try await request(baseURL, path: "passkeys/register/verify", method: "POST", token: token, data: JSONEncoder().encode(Proof(challengeID: challengeID, credential: credential)))
+    }
+    func passkeys(baseURL: URL, token: String) async throws -> RegisteredPasskeys {
+        try decode(RegisteredPasskeys.self, await request(baseURL, path: "passkeys", token: token))
+    }
+    func revokePasskey(baseURL: URL, token: String, id: String) async throws {
+        _ = try await request(baseURL, path: "passkeys", method: "DELETE", token: token, data: JSONEncoder().encode(["id": id]))
+    }
+}
+extension BackendService {
+    func signInWithPasskey(using authorization: PasskeyAuthorization) async throws {
+        let url = try baseURL()
+        let endpoint = URLSessionBackend()
+        let options = try await endpoint.passkeyOptions(baseURL: url, registering: false, token: nil)
+        let credential = try await authorization.perform(options: options.options, registering: false, expectedHost: url.host ?? "")
+        let result = try await endpoint.verifyPasskey(baseURL: url, challengeID: options.challengeID, credential: credential)
+        guard let account = result.account, !account.isEmpty, !result.accessToken.isEmpty else { throw NativeBackendError.malformed }
+        guard try baseURL() == url else { throw NativeBackendError.configuration }
+        let saved = Credentials(serverOrigin: url.absoluteString, accessToken: result.accessToken, refreshToken: result.refreshToken, account: account)
+        let value = try JSONEncoder().encode(saved)
+        try SecureCredentials.save(String(decoding: value, as: UTF8.self), key: "session")
+        address = url.absoluteString; signedIn = true; displayName = result.displayName; revision = nil
+        UserDefaults.standard.set(displayName, forKey: "backendDisplayName")
+    }
+    func addPasskey(using authorization: PasskeyAuthorization) async throws {
+        let (url, token) = try credentials()
+        let scope = accountScope
+        let endpoint = URLSessionBackend()
+        let options = try await endpoint.passkeyOptions(baseURL: url, registering: true, token: token)
+        let credential = try await authorization.perform(options: options.options, registering: true, expectedHost: url.host ?? "")
+        guard accountScope == scope, try credentials().1 == token else { throw NativeBackendError.configuration }
+        try await endpoint.registerPasskey(baseURL: url, token: token, challengeID: options.challengeID, credential: credential)
+    }
+    func registeredPasskeys() async throws -> RegisteredPasskeys {
+        let (url, token) = try credentials()
+        return try await URLSessionBackend().passkeys(baseURL: url, token: token)
+    }
+    func revokePasskey(_ id: String) async throws {
+        let (url, token) = try credentials()
+        try await URLSessionBackend().revokePasskey(baseURL: url, token: token, id: id)
     }
 }

@@ -19,7 +19,7 @@ import SwiftData
 @Model final class StoredMetadata {
     @Attribute(.unique) var key: String
     var payload: Data
-    init(payload: Data) { key = "workspace"; self.payload = payload }
+    init(payload: Data, key: String = "workspace") { self.key = key; self.payload = payload }
 }
 @MainActor protocol WorkspaceRepository {
     func load() throws -> WorkspaceState
@@ -36,7 +36,7 @@ import SwiftData
     func load() throws -> WorkspaceState {
         let context = ModelContext(container)
         let metadata = try context.fetch(FetchDescriptor<StoredMetadata>())
-        var state = try metadata.first.map { try JSONDecoder().decode(WorkspaceState.self, from: $0.payload) } ?? WorkspaceState()
+        var state = try metadata.first(where: { $0.key == "workspace" }).map { try JSONDecoder().decode(WorkspaceState.self, from: $0.payload) } ?? WorkspaceState()
         state.records = try context.fetch(FetchDescriptor<StoredRecord>()).map { try JSONDecoder().decode(WorkspaceRecord.self, from: $0.payload) }
         state.assets = try context.fetch(FetchDescriptor<StoredAsset>()).map {
             WorkspaceAsset(id: $0.id, ownerID: $0.ownerID, name: $0.name, data: $0.bytes, createdAt: $0.createdAt)
@@ -44,7 +44,13 @@ import SwiftData
         try WorkspaceLogic.validate(state)
         return state
     }
-    func save(_ state: WorkspaceState) throws {
+    func save(_ state: WorkspaceState) throws { try save(state, checkpoint: nil) }
+    func syncCheckpoint() throws -> WorkspaceSyncCheckpoint? {
+        let context = ModelContext(container)
+        let row = try context.fetch(FetchDescriptor<StoredMetadata>()).first { $0.key == "sync-checkpoint" }
+        return try row.map { try JSONDecoder().decode(WorkspaceSyncCheckpoint.self, from: $0.payload) }
+    }
+    func save(_ state: WorkspaceState, checkpoint: WorkspaceSyncCheckpoint?) throws {
         // A fresh context keeps failed edits out of the observable working state.
         let context = ModelContext(container)
         context.autosaveEnabled = false
@@ -73,8 +79,13 @@ import SwiftData
         var metadataState = state
         metadataState.records = []; metadataState.assets = []
         let payload = try encoder.encode(metadataState)
-        if let metadata = try context.fetch(FetchDescriptor<StoredMetadata>()).first { metadata.payload = payload }
+        if let metadata = try context.fetch(FetchDescriptor<StoredMetadata>()).first(where: { $0.key == "workspace" }) { metadata.payload = payload }
         else { context.insert(StoredMetadata(payload: payload)) }
+        if let checkpoint {
+            let encoded = try encoder.encode(checkpoint)
+            if let row = try context.fetch(FetchDescriptor<StoredMetadata>()).first(where: { $0.key == "sync-checkpoint" }) { row.payload = encoded }
+            else { context.insert(StoredMetadata(payload: encoded, key: "sync-checkpoint")) }
+        }
         try context.save()
     }
 }

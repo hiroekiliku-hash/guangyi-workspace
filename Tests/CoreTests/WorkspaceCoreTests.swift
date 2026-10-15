@@ -117,3 +117,199 @@ final class WorkspaceCoreTests: XCTestCase {
         XCTAssertFalse(WorkspaceCoding.equivalent(record, edited))
     }
 }
+
+final class WorkspaceSyncMergeTests: XCTestCase {
+    func testDisjointOfflineEditsAndNewRecordsArePreserved() throws {
+        let first = WorkspaceRecord(kind: .task, title: "行动一")
+        let second = WorkspaceRecord(kind: .deadline, title: "DDL 二")
+        let base = WorkspaceState(records: [first, second])
+        var local = base, remote = base
+        local.records[0].title = "本机修改"; local.records[0].version += 1
+        remote.records[1].title = "其他设备修改"; remote.records[1].version += 1
+        remote.records.append(WorkspaceRecord(kind: .task, title: "远程新增"))
+        let merged = try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote)
+        XCTAssertEqual(Set(merged.records.map(\.title)), ["本机修改", "其他设备修改", "远程新增"])
+    }
+    func testConcurrentSameVersionEditsRequireReview() throws {
+        let base = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "原始")])
+        var local = base, remote = base
+        local.records[0].title = "本机"; local.records[0].version += 1
+        remote.records[0].title = "远程"; remote.records[0].version += 1
+        XCTAssertThrowsError(try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote))
+        XCTAssertEqual(local.records[0].title, "本机")
+        XCTAssertEqual(remote.records[0].title, "远程")
+    }
+    func testRemoteDeletionOnlyWinsWhenLocalIsUnchanged() throws {
+        let base = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "原始")])
+        let remote = WorkspaceState()
+        XCTAssertTrue(try WorkspaceSyncMerge.reconcile(base: base, local: base, remote: remote).records.isEmpty)
+        var local = base; local.records[0].title = "离线修改"
+        XCTAssertThrowsError(try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote))
+    }
+    func testFirstSyncDoesNotOverwriteCollidingLocalContent() throws {
+        let local = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "本机")])
+        var remote = local; remote.records[0].title = "服务器"
+        XCTAssertThrowsError(try WorkspaceSyncMerge.reconcile(base: nil, local: local, remote: remote))
+    }
+}
+
+@MainActor final class WorkspaceSyncDriverTests: XCTestCase {
+    func testTwoDeviceRoundTripPreservesOfflineChanges() async throws {
+        let initial = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "初始")])
+        var server = VersionedWorkspace(revision: 0, snapshot: initial)
+        var phone = initial, mac = initial
+        phone.records.append(WorkspaceRecord(kind: .task, title: "手机新增"))
+        mac.records[0].title = "Mac 修改"
+        func sync(_ local: inout WorkspaceState) async throws {
+            // Value captured outside the inout access mirrors each device's store.
+            var current = local
+            try await WorkspaceSyncDriver.run(base: initial, readLocal: { current }, isCurrentAccount: { true },
+                download: { server }, upload: { value, revision in
+                    guard revision == server.revision else { throw WorkspaceSyncError.revisionChanged }
+                    server = VersionedWorkspace(revision: revision + 1, snapshot: value); return server
+                }, apply: { value, _ in current = value })
+            local = current
+        }
+        try await sync(&phone)
+        try await sync(&mac)
+        XCTAssertEqual(Set(server.snapshot.records.map(\.title)), ["手机新增", "Mac 修改"])
+        XCTAssertEqual(Set(mac.records.map(\.title)), ["手机新增", "Mac 修改"])
+    }
+    func testVersionConflictDownloadsAgainBeforeRetrying() async throws {
+        let base = WorkspaceState()
+        var current = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "本机")])
+        var server = VersionedWorkspace(revision: 0, snapshot: base)
+        var attempts = 0, downloads = 0
+        try await WorkspaceSyncDriver.run(base: base, readLocal: { current }, isCurrentAccount: { true }, download: {
+            downloads += 1; return server
+        }, upload: { value, revision in
+            attempts += 1
+            if attempts == 1 {
+                server.snapshot.records.append(WorkspaceRecord(kind: .task, title: "另一设备")); server.revision += 1
+                throw WorkspaceSyncError.revisionChanged
+            }
+            XCTAssertEqual(revision, server.revision)
+            server = VersionedWorkspace(revision: revision + 1, snapshot: value); return server
+        }, apply: { value, _ in current = value })
+        XCTAssertEqual(downloads, 2)
+        XCTAssertEqual(Set(current.records.map(\.title)), ["本机", "另一设备"])
+    }
+    func testEditingDuringUploadRemainsPendingWithoutLosingLocalEdit() async throws {
+        let base = WorkspaceState()
+        var current = WorkspaceState(records: [WorkspaceRecord(kind: .task, title: "已上传版本")])
+        var checkpoint: VersionedWorkspace?
+        try await WorkspaceSyncDriver.run(base: base, readLocal: { current }, isCurrentAccount: { true }, download: {
+            VersionedWorkspace(revision: 0, snapshot: base)
+        }, upload: { value, _ in
+            current.records[0].title = "上传期间继续编辑"
+            return VersionedWorkspace(revision: 1, snapshot: value)
+        }, apply: { value, remote in current = value; checkpoint = remote })
+        XCTAssertEqual(current.records[0].title, "上传期间继续编辑")
+        XCTAssertEqual(checkpoint?.snapshot.records[0].title, "已上传版本")
+    }
+    func testAccountChangeRejectsResponseAndNoopSkipsUpload() async throws {
+        let empty = WorkspaceState()
+        var isCurrent = true, applied = false, uploaded = false
+        do {
+            try await WorkspaceSyncDriver.run(base: empty, readLocal: { empty }, isCurrentAccount: { isCurrent }, download: {
+                isCurrent = false; return VersionedWorkspace(revision: 0, snapshot: empty)
+            }, upload: { _, _ in uploaded = true; return VersionedWorkspace(revision: 1, snapshot: empty) }, apply: { _, _ in applied = true })
+            XCTFail("Must reject old-account response")
+        } catch WorkspaceSyncError.accountChanged { }
+        XCTAssertFalse(applied); XCTAssertFalse(uploaded)
+        try await WorkspaceSyncDriver.run(base: empty, readLocal: { empty }, isCurrentAccount: { true }, download: {
+            VersionedWorkspace(revision: 0, snapshot: empty)
+        }, upload: { _, _ in uploaded = true; return VersionedWorkspace(revision: 1, snapshot: empty) }, apply: { _, _ in applied = true })
+        XCTAssertTrue(applied); XCTAssertFalse(uploaded)
+    }
+}
+
+final class DeadlineTrackingPolicyTests: XCTestCase {
+    func testEligibilityAndEightHourBoundary() {
+        let now = Date(timeIntervalSince1970: 1791964800)
+        var record = WorkspaceRecord(kind: .deadline, title: "测试")
+        record.dateOnly = false; record.dueDate = now.addingTimeInterval(8 * 3600)
+        var state = WorkspaceState(records: [record])
+        XCTAssertEqual(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now), record.dueDate)
+        record.dueDate = now.addingTimeInterval(8 * 3600 + 1); state.records = [record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+        record.dueDate = now; state.records = [record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+        record.dueDate = nil; state.records = [record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+    }
+    func testHiddenFinishedAndUnsupportedRecordsAreIneligible() {
+        let now = Date()
+        var project = WorkspaceRecord(kind: .project, title: "项目")
+        var record = WorkspaceRecord(kind: .task, title: "行动")
+        record.dateOnly = false; record.dueDate = now.addingTimeInterval(60); record.projectID = project.id
+        var state = WorkspaceState(records: [project, record])
+        XCTAssertNotNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+        project.archivedAt = now; state.records = [project, record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+        record.projectID = nil; record.status = "DONE"; state.records = [record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+        record.status = "TODO"; record.kind = .reminder; state.records = [record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now))
+    }
+    func testDateOnlyUsesRecordTimezoneAndRescheduleDoesNotExtendActivityLifetime() {
+        let now = Date(timeIntervalSince1970: 1791964800)
+        var record = WorkspaceRecord(kind: .deadline, title: "仅日期")
+        record.timezone = "Asia/Shanghai"; record.dueDate = now
+        var state = WorkspaceState(records: [record])
+        XCTAssertEqual(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now), record.effectiveDueDate(now))
+        record.dateOnly = false; record.dueDate = now.addingTimeInterval(3600); state.records = [record]
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: state, now: now, startedAt: now.addingTimeInterval(-8 * 3600)))
+    }
+}
+
+extension DeadlineTrackingPolicyTests {
+    func testCancelledArchivedDeletedAndPastDeadlineCannotStart() {
+        let now = Date()
+        var record = WorkspaceRecord(kind: .deadline, title: "资格")
+        record.dateOnly = false; record.dueDate = now.addingTimeInterval(60)
+        for status in ["DONE", "CANCELLED"] {
+            record.status = status
+            XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: WorkspaceState(records: [record]), now: now))
+        }
+        record.status = "OPEN"; record.archivedAt = now
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: WorkspaceState(records: [record]), now: now))
+        record.archivedAt = nil; record.deletedAt = now
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: WorkspaceState(records: [record]), now: now))
+        record.deletedAt = nil; record.dueDate = now.addingTimeInterval(-1)
+        XCTAssertNil(DeadlineTrackingPolicy.dueDate(for: record, in: WorkspaceState(records: [record]), now: now))
+    }
+}
+
+extension WorkspaceSyncMergeTests {
+    func testReviewResolutionOnlySelectsConflictsAndKeepsNonconflictingEdits() throws {
+        let a = WorkspaceRecord(kind: .task, title: "冲突原始")
+        let b = WorkspaceRecord(kind: .task, title: "另一记录")
+        let c = WorkspaceRecord(kind: .task, title: "服务器删除")
+        let base = WorkspaceState(records: [a,b,c])
+        var local = base, remote = base
+        local.records[0].title = "本机冲突"
+        remote.records[0].title = "服务器冲突"
+        remote.records[1].title = "服务器独有改动"
+        remote.records.removeAll { $0.id == c.id }
+        local.records.append(WorkspaceRecord(kind: .task, title: "本机新增"))
+        let keepLocal = try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote, resolution: .local)
+        XCTAssertEqual(Set(keepLocal.records.map(\.title)), ["本机冲突","服务器独有改动","本机新增"])
+        let keepRemote = try WorkspaceSyncMerge.reconcile(base: base, local: local, remote: remote, resolution: .remote)
+        XCTAssertEqual(Set(keepRemote.records.map(\.title)), ["服务器冲突","服务器独有改动","本机新增"])
+    }
+}
+
+extension WorkspaceCoreTests {
+    func testNewDeadlineReminderIsEnabledAndStopsAfterCompletion() {
+        var record = WorkspaceRecord(kind: .deadline, title: "DDL")
+        record.dateOnly = false; record.dueDate = date("2040-10-14T12:00:00+08:00")
+        record.notificationLeadMinutes = 30
+        XCTAssertTrue(record.notificationsEnabled)
+        XCTAssertEqual(record.notificationDate, record.dueDate?.addingTimeInterval(-1800))
+        record.status = "DONE"
+        XCTAssertNil(record.notificationDate)
+        record.status = "CANCELLED"
+        XCTAssertNil(record.notificationDate)
+    }
+}

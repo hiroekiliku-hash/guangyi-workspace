@@ -4,6 +4,9 @@ struct RecordEditorView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var draft: WorkspaceRecord
+    private enum Field: Hashable { case title, summary, body, category, tags }
+    @FocusState private var focusedField: Field?
+    @State private var previewing = false
     @State private var confirmed = false
     @State private var localError: String?
     private let expectedVersion: Int?
@@ -22,13 +25,16 @@ struct RecordEditorView: View {
             notificationSection
             contentSection
             if draft.kind == .project && draft.status == "COMPLETED" && originalStatus != "COMPLETED" {
-                Section { Toggle("确认完成项目（保留未完成行动）", isOn: $confirmed) }
+                Section { Toggle("确认完成行动组（保留未完成行动）", isOn: $confirmed) }
             }
             if let localError { Section { Text(localError).foregroundStyle(.red) } }
         }
         .formStyle(.grouped)
         .navigationTitle((expectedVersion == nil ? "新建" : "编辑") + draft.kind.title)
         .toolbar {
+            #if os(iOS)
+            ToolbarItemGroup(placement: .keyboard) { Spacer(); Button("完成") { focusedField = nil } }
+            #endif
             ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() }.keyboardShortcut(.cancelAction) }
             ToolbarItem(placement: .confirmationAction) {
                 Button("保存") {
@@ -37,19 +43,28 @@ struct RecordEditorView: View {
                 }.disabled(draft.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty).keyboardShortcut("s")
             }
         }
-        .nativeSheetSize()
+        .nativeEditorPresentation()
+        .scrollDismissesKeyboard(.interactively)
+        .task {
+            if expectedVersion == nil {
+                // Wait until the sheet's navigation and keyboard toolbar are installed.
+                try? await Task.sleep(for: .milliseconds(200))
+                guard !Task.isCancelled else { return }
+                focusedField = .title
+            }
+        }
         .onAppear { if expectedVersion == nil { draft.timezone = store.state.profile.timezone } }
     }
     private var identitySection: some View {
         Section("基本信息") {
-            TextField("标题", text: $draft.title, axis: .vertical)
+            TextField("标题", text: $draft.title, axis: .vertical).focused($focusedField, equals: .title)
             if draft.kind != .knowledge && draft.kind != .area {
                 Picker("状态", selection: $draft.status) {
                     ForEach(draft.kind.states, id: \.self) { Text(StateLabels.title($0)).tag($0) }
                 }
             }
             if draft.kind == .project {
-                Picker("项目类型", selection: $draft.projectKind) {
+                Picker("分组类型", selection: $draft.projectKind) {
                     ForEach(["RESEARCH", "PAPER", "VERTICAL_PROJECT", "INDUSTRY_PROJECT", "LEARNING", "ADMINISTRATIVE", "PERSONAL"], id: \.self) { key in
                         Text(projectKindLabel(key)).tag(key)
                     }
@@ -60,7 +75,7 @@ struct RecordEditorView: View {
     @ViewBuilder private var relationshipSection: some View {
         if [.task, .deadline, .milestone].contains(draft.kind) {
             Section("关联") {
-                Picker("项目", selection: $draft.projectID) {
+                Picker("行动组", selection: $draft.projectID) {
                     Text("独立事项").tag(UUID?.none)
                     ForEach(store.records(.project)) { Text($0.title).tag(Optional($0.id)) }
                 }.onChange(of: draft.projectID) { _, _ in draft.milestoneID = nil }
@@ -83,7 +98,7 @@ struct RecordEditorView: View {
     }
     @ViewBuilder private var dateSection: some View {
         if draft.kind == .project {
-            Section("项目日期") {
+            Section("分组日期") {
                 optionalDate("开始日期", date: $draft.startDate, time: false)
                 optionalDate("目标日期", date: $draft.targetDate, time: false)
             }
@@ -119,7 +134,7 @@ struct RecordEditorView: View {
                 Toggle("发送系统通知", isOn: $draft.notificationsEnabled)
                 if draft.notificationsEnabled {
                     Picker("提前提醒", selection: $draft.notificationLeadMinutes) {
-                        Text("准时").tag(0); Text("提前 15 分钟").tag(15); Text("提前 1 小时").tag(60); Text("提前 1 天").tag(1440)
+                        Text("准时").tag(0); Text("提前 5 分钟").tag(5); Text("提前 15 分钟").tag(15); Text("提前 30 分钟").tag(30); Text("提前 1 小时").tag(60); Text("提前 1 天").tag(1440)
                     }
                     if draft.dateOnly && draft.dueDate != nil { Text("仅日期截止事项在当天 09:00 提醒。请在设置中允许系统通知。").font(.caption).foregroundStyle(.secondary) }
                     if let snooze = draft.snoozedUntil {
@@ -133,19 +148,22 @@ struct RecordEditorView: View {
     @ViewBuilder private var contentSection: some View {
         if draft.kind == .knowledge {
             Section("笔记信息") {
-                TextField("摘要", text: $draft.summary, axis: .vertical)
-                TextField("分类", text: $draft.category)
+                TextField("摘要", text: $draft.summary, axis: .vertical).focused($focusedField, equals: .summary)
+                TextField("分类", text: $draft.category).focused($focusedField, equals: .category)
                 TextField("标签（逗号分隔）", text: Binding(get: { draft.tags.joined(separator: ", ") }, set: {
                     draft.tags = Array(Set($0.replacingOccurrences(of: "，", with: ",").split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty })).sorted()
-                }))
+                })).focused($focusedField, equals: .tags)
                 Toggle("置顶", isOn: $draft.pinned)
             }
-            Section("Markdown 正文") { TextEditor(text: $draft.body).font(.body.monospaced()).frame(minHeight: 280) }
-            Section("预览") { MarkdownDocumentView(source: draft.body) }
+            Section("Markdown 正文") {
+                Picker("正文模式", selection: $previewing) { Text("编辑").tag(false); Text("预览").tag(true) }.pickerStyle(.segmented)
+                if previewing { MarkdownDocumentView(source: draft.body) }
+                else { TextEditor(text: $draft.body).focused($focusedField, equals: .body).font(.body.monospaced()).frame(minHeight: 280) }
+            }
         } else {
             Section(draft.kind == .project || draft.kind == .area ? "说明" : "备注") {
-                TextField("简短说明", text: $draft.summary, axis: .vertical)
-                TextEditor(text: $draft.body).frame(minHeight: 130)
+                TextField("简短说明", text: $draft.summary, axis: .vertical).focused($focusedField, equals: .summary)
+                TextEditor(text: $draft.body).focused($focusedField, equals: .body).frame(minHeight: 130)
             }
         }
     }

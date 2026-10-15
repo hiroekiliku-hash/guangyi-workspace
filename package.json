@@ -1,0 +1,18 @@
+{
+  "dependencies": {
+    "@simplewebauthn/server": "14.0.0"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  },
+  "name": "guangyi-native-backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild Server/server.source.mjs --bundle --platform=node --target=node24 --format=esm --outfile=Server/server.mjs",
+    "test": "npm run build && node --test Server/server.test.mjs"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
+  }
+}
