@@ -995,3 +995,66 @@ test('text task custom reminders dispatch at remindAt rather than at the plan ti
     assert.equal(delivered.payload.scheduledAt, at); assert.equal(delivered.payload.aps.alert.body, '准时自定义提醒');
   });
 });
+
+test('linked accounts merge atomically, share exact snapshots, enforce roles and immediately revoke access', async () => {
+  await withTextIngress(async ({ native, session, state, instance, pushes }) => {
+    const register = async email => (await native('accounts', { method: 'POST', body: { email, password } })).value.data.accessToken;
+    const member = await register('linked-member@test.invalid'), stranger = await register('linked-stranger@test.invalid');
+    const ownerState = await state(), memberState = await state(member);
+    const record = title => ({ id: randomUUID(), kind: 'TASK', status: 'TODO', title, body: '', version: 1, timezone: 'Asia/Shanghai' });
+    ownerState.snapshot.records.push(record('Owner task')); memberState.snapshot.records.push(record('Member task'));
+    for (const [auth, snapshot] of [[session, ownerState.snapshot], [member, memberState.snapshot]]) {
+      assert.equal((await native('workspace', { auth, method: 'PUT', headers: { 'If-Match': '"0"' }, body: { snapshot } })).status, 200);
+      assert.equal((await native('devices', { auth, method: 'PUT', body: { deviceID: randomUUID(), token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' } })).status, 200);
+    }
+    const ownerID = ownerState.workspaceID, headers = { 'X-Workspace-ID': ownerID };
+    assert.equal((await native('workspace', { auth: member, headers })).status, 403);
+    const invited = await native('sharing/invitations', { auth: session, method: 'POST', body: { email: 'linked-member@test.invalid', role: 'viewer' } });
+    assert.equal(invited.status, 200); const id = invited.value.data.outgoing[0].id;
+    assert.equal((await native('sharing/accept', { auth: stranger, method: 'POST', body: { id } })).status, 404);
+    const accepted = await native('sharing/accept', { auth: member, method: 'POST', body: { id } });
+    assert.equal(accepted.status, 200); assert.equal(accepted.value.data.workspaceID, ownerID); assert.equal(accepted.value.data.accessRole, 'viewer');
+    assert.equal(accepted.value.data.workspaces[1].membershipID, id);
+    const shared = await native('workspace', { auth: member, headers });
+    assert.equal(shared.value.data.snapshot.records.length, 2); assert.equal(shared.value.data.revision, 2);
+    assert.deepEqual(shared.value.data.snapshot, (await state()).snapshot);
+    assert.deepEqual((await state(member)).snapshot, memberState.snapshot, 'personal pre-share snapshot stays untouched');
+    assert.equal((await native('workspace', { auth: member, method: 'PUT', headers: { ...headers, 'If-Match': '"2"' }, body: { snapshot: shared.value.data.snapshot } })).status, 403);
+    assert.equal((await native('sharing/permission', { auth: member, method: 'POST', body: { id, role: 'editor' } })).status, 404);
+    assert.equal((await native('sharing/permission', { auth: session, method: 'POST', body: { id, role: 'editor' } })).status, 200);
+    shared.value.data.snapshot.records.push(record('Together'));
+    assert.equal((await native('workspace', { auth: member, method: 'PUT', headers: { ...headers, 'If-Match': '"2"' }, body: { snapshot: shared.value.data.snapshot } })).status, 200);
+    assert.equal((await native('workspace', { auth: session, method: 'PUT', headers: { 'If-Match': '"2"' }, body: { snapshot: shared.value.data.snapshot } })).status, 409);
+    assert.equal((await state()).snapshot.records.length, 3);
+    await instance.flushPushes(); assert.ok(pushes.some(p => p.device.user_id === Number(ownerID) && p.payload.workspaceID === ownerID));
+    assert.ok(pushes.some(p => p.device.user_id !== Number(ownerID) && p.payload.workspaceID === ownerID));
+    assert.equal((await native('sharing/member', { auth: stranger, method: 'DELETE', body: { id } })).status, 404);
+    assert.equal((await native('sharing/member', { auth: session, method: 'DELETE', body: { id } })).status, 200);
+    assert.equal((await native('workspace', { auth: member, headers })).status, 403);
+    assert.equal((await native('workspace', { auth: member, method: 'PUT', headers: { ...headers, 'If-Match': '"3"' }, body: { snapshot: shared.value.data.snapshot } })).status, 403);
+    assert.equal((await state(stranger)).snapshot.records.length, 0);
+  });
+});
+
+test('linked invitations enforce expiry, owner control and conflict-safe merge', async () => {
+  await withTextIngress(async ({ native, session, state, instance }) => {
+    const member = (await native('accounts', { method: 'POST', body: { email: 'conflict-member@test.invalid', password } })).value.data.accessToken;
+    const owner = await state(), personal = await state(member);
+    const item = { id: randomUUID(), kind: 'TASK', status: 'TODO', title: 'Owner', body: '', version: 1, timezone: 'Asia/Shanghai' };
+    owner.snapshot.records.push(item); personal.snapshot.records.push({ ...item, title: 'Different' });
+    for (const [auth, snapshot] of [[session, owner.snapshot], [member, personal.snapshot]]) await native('workspace', { auth, method: 'PUT', body: { snapshot }, headers: { 'If-Match': '"0"' } });
+    const invite = async () => (await native('sharing/invitations', { auth: session, method: 'POST', body: { email: 'conflict-member@test.invalid', role: 'editor' } })).value.data.outgoing[0].id;
+    const id = await invite();
+    assert.equal((await native('sharing/invitation', { auth: member, method: 'DELETE', body: { id } })).status, 404);
+    const conflict = await native('sharing/accept', { auth: member, method: 'POST', body: { id } });
+    assert.equal(conflict.status, 409); assert.equal(conflict.value.error.code, 'SHARING_MERGE_CONFLICT');
+    assert.equal((await state()).revision, 1); assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM sharing_members').get().n, 0);
+    assert.equal((await native('sharing', { auth: member })).value.data.incoming.length, 1);
+    instance.db.prepare('UPDATE sharing_invitations SET expires=0 WHERE id=?').run(id);
+    assert.equal((await native('sharing', { auth: member })).value.data.incoming.length, 0);
+    assert.equal((await native('sharing/accept', { auth: member, method: 'POST', body: { id } })).status, 404);
+    const freshID = await invite();
+    assert.equal((await native('sharing/decline', { auth: member, method: 'POST', body: { id: freshID } })).status, 200);
+    assert.equal((await native('sharing', { auth: session })).value.data.outgoing.length, 0);
+  });
+});

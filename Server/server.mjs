@@ -23094,6 +23094,7 @@ async function verifyAuthenticationResponse(options) {
 
 // Server/server.source.mjs
 import http from "node:http";
+import { isDeepStrictEqual } from "node:util";
 import http2 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
 import { randomBytes, randomUUID as randomUUID2, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
@@ -24761,6 +24762,8 @@ function createNativeServer(configuration) {
   const db = new DatabaseSync(databasePath);
   db.exec(`PRAGMA journal_mode=WAL; PRAGMA foreign_keys=ON;
     CREATE TABLE IF NOT EXISTS users(id INTEGER PRIMARY KEY,email TEXT UNIQUE,salt TEXT,hash BLOB,name TEXT);
+    CREATE TABLE IF NOT EXISTS sharing_invitations(id TEXT PRIMARY KEY,owner_id INTEGER NOT NULL REFERENCES users(id),invitee_id INTEGER NOT NULL REFERENCES users(id),role TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,UNIQUE(owner_id,invitee_id));
+    CREATE TABLE IF NOT EXISTS sharing_members(id TEXT PRIMARY KEY,owner_id INTEGER NOT NULL REFERENCES users(id),member_id INTEGER NOT NULL REFERENCES users(id),role TEXT NOT NULL,created INTEGER NOT NULL,UNIQUE(owner_id,member_id));
     CREATE TABLE IF NOT EXISTS sessions(hash TEXT PRIMARY KEY,user_id INTEGER REFERENCES users(id),expires INTEGER);
     CREATE TABLE IF NOT EXISTS workspaces(user_id INTEGER PRIMARY KEY REFERENCES users(id),revision INTEGER,snapshot TEXT);
     CREATE TABLE IF NOT EXISTS history(user_id INTEGER,revision INTEGER,snapshot TEXT,created INTEGER,PRIMARY KEY(user_id,revision));
@@ -24959,13 +24962,13 @@ function createNativeServer(configuration) {
   }
   async function notifyWorkspaceChanged(userID, revision, sourceDeviceID) {
     if (!sendPush) return;
-    const payload = { aps: { "content-available": 1 }, kind: "WORKSPACE_SYNC", revision };
+    const payload = { aps: { "content-available": 1 }, kind: "WORKSPACE_SYNC", revision, workspaceID: String(userID) };
     const collapseID = sha(JSON.stringify(["workspace", userID]));
-    for (const device of db.prepare("SELECT * FROM devices WHERE user_id=?").all(userID)) {
+    for (const device of db.prepare("SELECT * FROM devices WHERE user_id=? OR user_id IN (SELECT member_id FROM sharing_members WHERE owner_id=?)").all(userID, userID)) {
       if (device.device_id === sourceDeviceID) continue;
       try {
         const result = await sendPush(device, payload, collapseID);
-        if (result.expired) db.prepare("DELETE FROM devices WHERE user_id=? AND device_id=?").run(userID, device.device_id);
+        if (result.expired) db.prepare("DELETE FROM devices WHERE user_id=? AND device_id=?").run(device.user_id, device.device_id);
       } catch {
       }
     }
@@ -24976,6 +24979,43 @@ function createNativeServer(configuration) {
     const session = db.prepare("SELECT user_id FROM sessions WHERE hash=? AND expires>?").get(sha(header.slice(7)), Date.now());
     if (!session) throw new APIError(401, "UNAUTHENTICATED");
     return session.user_id;
+  }
+  function workspaceAccess(request, writing = false) {
+    const userID = userFor(request), header = request.headers["x-workspace-id"];
+    if (header != null && (typeof header !== "string" || !/^[1-9]\d{0,14}$/.test(header))) throw new APIError(422, "INVALID_WORKSPACE_ID");
+    const ownerID = header == null ? userID : Number(header);
+    const role = ownerID === userID ? "owner" : db.prepare("SELECT role FROM sharing_members WHERE owner_id=? AND member_id=?").get(ownerID, userID)?.role;
+    if (!role) throw new APIError(403, "WORKSPACE_ACCESS_REVOKED");
+    if (writing && role === "viewer") throw new APIError(403, "WORKSPACE_READ_ONLY");
+    return { ownerID, role };
+  }
+  function sharingState(userID) {
+    const now = Date.now();
+    return {
+      ownedWorkspaceID: String(userID),
+      incoming: db.prepare("SELECT i.id,CAST(i.owner_id AS TEXT) AS workspaceID,u.email AS ownerEmail,i.role FROM sharing_invitations i JOIN users u ON u.id=i.owner_id WHERE i.invitee_id=? AND i.expires>? ORDER BY i.created").all(userID, now),
+      outgoing: db.prepare("SELECT i.id,u.email,i.role,'pending' AS status FROM sharing_invitations i JOIN users u ON u.id=i.invitee_id WHERE i.owner_id=? AND i.expires>? ORDER BY i.created").all(userID, now),
+      members: db.prepare("SELECT m.id,u.email,m.role FROM sharing_members m JOIN users u ON u.id=m.member_id WHERE m.owner_id=? ORDER BY m.created").all(userID),
+      workspaces: [
+        { id: String(userID), ownerEmail: db.prepare("SELECT email FROM users WHERE id=?").get(userID).email, role: "owner" },
+        ...db.prepare("SELECT CAST(m.owner_id AS TEXT) AS id,m.id AS membershipID,u.email AS ownerEmail,m.role FROM sharing_members m JOIN users u ON u.id=m.owner_id WHERE m.member_id=? ORDER BY m.created").all(userID)
+      ]
+    };
+  }
+  function mergeSharedSnapshots(owner, incoming) {
+    const merged = { ...owner };
+    for (const key of ["records", "series", "assets", "activities", "revisions", "trash"]) {
+      const entries = /* @__PURE__ */ new Map();
+      for (const item of [...owner[key], ...incoming[key]]) {
+        if (!item || typeof item.id !== "string" || !uuid2.test(item.id)) throw new APIError(409, "SHARING_MERGE_CONFLICT");
+        const id = item.id.toLowerCase(), prior = entries.get(id);
+        if (prior && !isDeepStrictEqual(prior, item)) throw new APIError(409, "SHARING_MERGE_CONFLICT");
+        entries.set(id, item);
+      }
+      merged[key] = [...entries.values()];
+    }
+    validateSnapshot(merged);
+    return merged;
   }
   async function body(request, limit = 128 * 1024 * 1024) {
     let size = 0;
@@ -25235,6 +25275,75 @@ function createNativeServer(configuration) {
         return;
       }
       const userID = userFor(request);
+      if (path === "/api/native/v1/sharing" && request.method === "GET") {
+        sameWebOrigin(request);
+        return respond(response, 200, { data: sharingState(userID) });
+      }
+      if (path.startsWith("/api/native/v1/sharing/") && ["POST", "DELETE"].includes(request.method)) {
+        sameWebOrigin(request);
+        requireJSON(request);
+        const value = await body(request, 2048);
+        if (!value || Array.isArray(value) || typeof value !== "object") throw new APIError(422, "INVALID_SHARING_REQUEST");
+        const inviting = path === "/api/native/v1/sharing/invitations" && request.method === "POST";
+        const permission = path === "/api/native/v1/sharing/permission" && request.method === "POST";
+        const action = path.slice("/api/native/v1/sharing/".length);
+        if (!(inviting || permission || ["accept", "decline"].includes(action) && request.method === "POST" || ["member", "invitation"].includes(action) && request.method === "DELETE")) throw new APIError(404, "NOT_FOUND");
+        const allowed = inviting ? ["email", "role"] : permission ? ["id", "role"] : ["id"];
+        if (Object.keys(value).length !== allowed.length || Object.keys(value).some((key) => !allowed.includes(key)) || (inviting || permission) && !["viewer", "editor"].includes(value.role) || !inviting && (typeof value.id !== "string" || !uuid2.test(value.id)) || inviting && (typeof value.email !== "string" || value.email.length > 254)) throw new APIError(422, "INVALID_SHARING_REQUEST");
+        let changedWorkspace, changedRevision;
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          const actor = userFor(request), now = Date.now();
+          db.prepare("DELETE FROM sharing_invitations WHERE expires<=?").run(now);
+          if (inviting) {
+            const other = db.prepare("SELECT id FROM users WHERE email=?").get(value.email.trim().toLowerCase());
+            if (!other) throw new APIError(404, "SHARING_ACCOUNT_NOT_FOUND");
+            if (other.id === actor) throw new APIError(422, "SHARING_SELF_INVITE");
+            if (db.prepare("SELECT id FROM sharing_members WHERE owner_id=? AND member_id=?").get(actor, other.id)) throw new APIError(409, "SHARING_ALREADY_LINKED");
+            if (db.prepare("SELECT id FROM sharing_invitations WHERE owner_id=? AND invitee_id=?").get(actor, other.id)) throw new APIError(409, "SHARING_INVITATION_EXISTS");
+            if (db.prepare("SELECT COUNT(*) AS n FROM sharing_invitations WHERE owner_id=?").get(actor).n >= 20 || db.prepare("SELECT COUNT(*) AS n FROM sharing_members WHERE owner_id=?").get(actor).n >= 20) throw new APIError(422, "SHARING_LIMIT");
+            db.prepare("INSERT INTO sharing_invitations VALUES(?,?,?,?,?,?)").run(randomUUID2(), actor, other.id, value.role, now, now + 7 * 864e5);
+          } else if (action === "accept" || action === "decline") {
+            const invitation = db.prepare("SELECT * FROM sharing_invitations WHERE id=? AND invitee_id=?").get(value.id.toLowerCase(), actor);
+            if (!invitation) throw new APIError(404, "SHARING_INVITATION_NOT_FOUND");
+            if (action === "accept") {
+              if (db.prepare("SELECT id FROM sharing_members WHERE owner_id=?").get(actor)) throw new APIError(409, "SHARING_HAS_MEMBERS");
+              if (db.prepare("SELECT COUNT(*) AS n FROM sharing_members WHERE owner_id=?").get(invitation.owner_id).n >= 20 || db.prepare("SELECT COUNT(*) AS n FROM sharing_members WHERE member_id=?").get(actor).n >= 20) throw new APIError(422, "SHARING_LIMIT");
+              const old = db.prepare("SELECT revision,snapshot FROM workspaces WHERE user_id=?").get(invitation.owner_id);
+              const personal = db.prepare("SELECT snapshot FROM workspaces WHERE user_id=?").get(actor);
+              const merged = mergeSharedSnapshots(JSON.parse(old.snapshot), JSON.parse(personal.snapshot));
+              db.prepare("INSERT INTO history VALUES(?,?,?,?)").run(invitation.owner_id, old.revision, old.snapshot, now);
+              db.prepare("UPDATE workspaces SET revision=revision+1,snapshot=? WHERE user_id=?").run(JSON.stringify(merged), invitation.owner_id);
+              db.prepare("DELETE FROM history WHERE user_id=? AND revision<?").run(invitation.owner_id, Math.max(0, old.revision - 4));
+              db.prepare("INSERT INTO sharing_members VALUES(?,?,?,?,?)").run(invitation.id, invitation.owner_id, actor, invitation.role, now);
+              changedWorkspace = invitation.owner_id;
+              changedRevision = old.revision + 1;
+            }
+            db.prepare("DELETE FROM sharing_invitations WHERE id=?").run(invitation.id);
+          } else if (permission) {
+            const result = db.prepare("UPDATE sharing_members SET role=? WHERE id=? AND owner_id=?").run(value.role, value.id.toLowerCase(), actor);
+            if (!result.changes) throw new APIError(404, "SHARING_MEMBER_NOT_FOUND");
+          } else if (action === "member") {
+            const result = db.prepare("DELETE FROM sharing_members WHERE id=? AND (owner_id=? OR member_id=?)").run(value.id.toLowerCase(), actor, actor);
+            if (!result.changes) throw new APIError(404, "SHARING_MEMBER_NOT_FOUND");
+          } else {
+            const result = db.prepare("DELETE FROM sharing_invitations WHERE id=? AND owner_id=?").run(value.id.toLowerCase(), actor);
+            if (!result.changes) throw new APIError(404, "SHARING_INVITATION_NOT_FOUND");
+          }
+          db.exec("COMMIT");
+          const data = sharingState(actor);
+          if (changedWorkspace != null) {
+            data.workspaceID = String(changedWorkspace);
+            data.accessRole = value.role ?? db.prepare("SELECT role FROM sharing_members WHERE owner_id=? AND member_id=?").get(changedWorkspace, actor).role;
+          }
+          respond(response, 200, { data });
+          if (changedWorkspace != null) queuePush(() => notifyWorkspaceChanged(changedWorkspace, changedRevision));
+          return;
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      }
       if (path === "/api/native/v1/integrations/text-tokens" && request.method === "GET") {
         sameWebOrigin(request);
         const credentials = db.prepare("SELECT * FROM text_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(userID, textNow()).map(textCredentialInfo);
@@ -25375,8 +25484,9 @@ function createNativeServer(configuration) {
         return respond(response, 200, { data: { signedOut: true } });
       }
       if (path === "/api/native/v1/workspace" && request.method === "GET") {
-        const row = db.prepare("SELECT revision,snapshot FROM workspaces WHERE user_id=?").get(userID);
-        return respond(response, 200, { data: { revision: row.revision, snapshot: JSON.parse(row.snapshot) } });
+        const { ownerID, role } = workspaceAccess(request);
+        const row = db.prepare("SELECT revision,snapshot FROM workspaces WHERE user_id=?").get(ownerID);
+        return respond(response, 200, { data: { revision: row.revision, snapshot: JSON.parse(row.snapshot), workspaceID: String(ownerID), accessRole: role } });
       }
       if (path === "/api/native/v1/workspace" && request.method === "PUT") {
         const sourceDeviceID = request.headers["x-workspace-device-id"];
@@ -25385,24 +25495,27 @@ function createNativeServer(configuration) {
         if (typeof match !== "string" || !/^"\d+"$/.test(match)) throw new APIError(428, "VERSION_REQUIRED");
         const revision = Number(match.slice(1, -1));
         if (!Number.isSafeInteger(revision)) throw new APIError(400, "INVALID_VERSION");
+        workspaceAccess(request, true);
         const value = await body(request);
         validateSnapshot(value.snapshot);
         const snapshot = JSON.stringify(value.snapshot);
+        let ownerID, role;
         db.exec("BEGIN IMMEDIATE");
         try {
-          const old = db.prepare("SELECT revision,snapshot FROM workspaces WHERE user_id=?").get(userID);
+          ({ ownerID, role } = workspaceAccess(request, true));
+          const old = db.prepare("SELECT revision,snapshot FROM workspaces WHERE user_id=?").get(ownerID);
           if (old.revision !== revision) throw new APIError(409, "WRITE_CONFLICT");
-          db.prepare("INSERT INTO history(user_id,revision,snapshot,created) VALUES(?,?,?,?)").run(userID, old.revision, old.snapshot, Date.now());
-          db.prepare("UPDATE workspaces SET revision=revision+1,snapshot=? WHERE user_id=?").run(snapshot, userID);
-          db.prepare("DELETE FROM history WHERE user_id=? AND revision<?").run(userID, Math.max(0, revision - 4));
+          db.prepare("INSERT INTO history(user_id,revision,snapshot,created) VALUES(?,?,?,?)").run(ownerID, old.revision, old.snapshot, Date.now());
+          db.prepare("UPDATE workspaces SET revision=revision+1,snapshot=? WHERE user_id=?").run(snapshot, ownerID);
+          db.prepare("DELETE FROM history WHERE user_id=? AND revision<?").run(ownerID, Math.max(0, revision - 4));
           db.exec("COMMIT");
         } catch (error) {
           db.exec("ROLLBACK");
           throw error;
         }
         const nextRevision = revision + 1;
-        respond(response, 200, { data: { revision: nextRevision, snapshot: value.snapshot } });
-        queuePush(() => notifyWorkspaceChanged(userID, nextRevision, sourceDeviceID));
+        respond(response, 200, { data: { revision: nextRevision, snapshot: value.snapshot, workspaceID: String(ownerID), accessRole: role } });
+        queuePush(() => notifyWorkspaceChanged(ownerID, nextRevision, sourceDeviceID));
         return;
       }
       if (path === "/api/native/v1/devices" && request.method === "PUT") {
