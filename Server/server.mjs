@@ -23518,7 +23518,7 @@ var webHTML = String.raw`<!doctype html>
               <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
               <label id="confirm-password-label" for="confirm-password" hidden>确认密码</label>
               <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" hidden disabled>
-              <div id="login-code-field" hidden><label for="login-code">验证码</label><input id="login-code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="验证码或恢复码"></div>
+              <div id="login-code-field" hidden><label for="login-code">验证码</label><input id="login-code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="6 位验证码"><button id="recovery-code-toggle" class="auth-text-button" type="button">使用恢复码</button></div>
               <button id="password-submit" class="primary" type="submit">登录</button>
             </form>
             <div id="passkey-options">
@@ -23608,9 +23608,10 @@ var nativeLoginHTML = String.raw`<!doctype html>
             </div>
             <div id="native-code-field" class="native-field" hidden>
               <label for="native-code">验证码</label>
-              <input id="native-code" name="code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="验证码或恢复码">
+              <input id="native-code" name="code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="6 位验证码">
             </div>
           </div>
+          <button id="native-recovery-code-toggle" class="auth-text-button" type="button" hidden>使用恢复码</button>
           <button id="native-password-login" class="primary" type="submit">登录</button>
         </form>
         <button id="native-passkey-login" class="native-passkey" type="button">使用通行密钥</button>
@@ -23850,6 +23851,7 @@ var webJS = String.raw`(() => {
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
     byID('recovery-view').hidden = true; byID('login-options').hidden = false;
     setMessage(byID('login-status'), message || '', error); byID('password').value = '';
+    byID('login-code-field').hidden = true; byID('login-code').value = '';
   }
   function showRecovery(message, error) {
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
@@ -23992,7 +23994,7 @@ var webJS = String.raw`(() => {
     finally { setAuthBusy(false); }
   }
   async function registerPasskey() {
-    const button = byID('register-passkey'); button.disabled = true; setMessage(byID('app-status'), '正在创建通行密钥…');
+    const button = byID('register-passkey'); button.disabled = true; byID('security-panel').inert = true; setMessage(byID('app-status'), '正在创建通行密钥…');
     try {
       if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥。');
       const challenge = await api('passkeys/register/options', { method: 'POST', body: {} });
@@ -24001,7 +24003,7 @@ var webJS = String.raw`(() => {
       await api('passkeys/register/verify', { method: 'POST', body: { challengeID: challenge.challengeID, credential: registrationCredential(credential) } });
       setMessage(byID('app-status'), '新通行密钥已保存，可以在下次登录时使用。');
     } catch (error) { setMessage(byID('app-status'), error.name === 'NotAllowedError' ? '已取消创建通行密钥。' : error.message, true); }
-    finally { button.disabled = false; }
+    finally { button.disabled = false; byID('security-panel').inert = false; }
   }
   async function recoverPasskey() {
     const button = byID('recover-passkey'); button.disabled = true; setMessage(byID('recovery-status'), '正在准备系统验证…');
@@ -24030,6 +24032,12 @@ var webJS = String.raw`(() => {
     byID('actions-tab').tabIndex = deadlines ? -1 : 0; byID('deadlines-tab').tabIndex = deadlines ? 0 : -1;
     byID('actions-panel').hidden = deadlines; byID('deadlines-panel').hidden = !deadlines; save('gw-view', view);
   }
+  byID('recovery-code-toggle').addEventListener('click', () => {
+    const input = byID('login-code'), recovery = input.inputMode !== 'text';
+    input.inputMode = recovery ? 'text' : 'numeric'; input.autocomplete = recovery ? 'off' : 'one-time-code';
+    input.placeholder = recovery ? 'XXXX-XXXX-XXXX-XXXX' : '6 位验证码'; input.value = '';
+    byID('recovery-code-toggle').textContent = recovery ? '使用验证码' : '使用恢复码'; input.focus();
+  });
   byID('registration-toggle').addEventListener('click', () => setRegistration(!state.registration));
   byID('password-form').addEventListener('submit', passwordLogin); byID('passkey-login').addEventListener('click', passkeyLogin);
   byID('recover-passkey').addEventListener('click', recoverPasskey);
@@ -24149,7 +24157,7 @@ var nativeLoginJS = String.raw`(() => {
       else { byID('native-add-passkey').hidden = true; byID('security-panel').hidden = true; await authorize(session); }
     } catch (error) {
       needsCode = ['SECOND_FACTOR_REQUIRED', 'INVALID_SECOND_FACTOR'].includes(error.code);
-      if (needsCode) { byID('native-code-field').hidden = false; byID('native-code').value = ''; }
+      if (needsCode) { byID('native-code-field').hidden = false; byID('native-recovery-code-toggle').hidden = false; byID('native-code').value = ''; }
       message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true);
     } finally {
       if (!needsCode) { byID('native-password').value = ''; byID('native-code').value = ''; }
@@ -24170,12 +24178,18 @@ var nativeLoginJS = String.raw`(() => {
     const code = byID('native-code').value.trim();
     login(() => api(registration ? 'accounts' : 'session', { email, password, ...(!registration && code ? { code } : {}) }), true);
   });
+  byID('native-recovery-code-toggle').addEventListener('click', () => {
+    const input = byID('native-code'), recovery = input.inputMode !== 'text';
+    input.inputMode = recovery ? 'text' : 'numeric'; input.autocomplete = recovery ? 'off' : 'one-time-code';
+    input.placeholder = recovery ? 'XXXX-XXXX-XXXX-XXXX' : '6 位验证码'; input.value = '';
+    byID('native-recovery-code-toggle').textContent = recovery ? '使用验证码' : '使用恢复码'; input.focus();
+  });
   byID('native-registration-toggle').addEventListener('click', () => {
     if (busy) return;
     registration = !registration;
     byID('native-login-title').textContent = registration ? '开始你的工作坊' : '欢迎回来';
     byID('native-login-subtitle').textContent = registration ? '从这里，开始有条理的每一天。' : '让每一步，都有条理。';
-    byID('native-code-field').hidden = true; byID('native-code').value = '';
+    byID('native-code-field').hidden = true; byID('native-recovery-code-toggle').hidden = true; byID('native-code').value = '';
     byID('native-password').autocomplete = registration ? 'new-password' : 'current-password';
     byID('native-password').minLength = registration ? 8 : 0;
     byID('native-password').placeholder = registration ? '至少 8 个字符' : '';
