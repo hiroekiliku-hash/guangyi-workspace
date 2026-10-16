@@ -728,3 +728,270 @@ test('native signup revokes a late session after pagehide instead of enrolling o
   assert.equal(node('native-password').value, '');
   assert.equal(node('native-confirm-password').value, '');
 });
+
+// Exercise the generated three-file release over HTTP: integrations must not
+// depend on an extra runtime module or on the native client's local database.
+async function withTextIngress(work) {
+  let clock = Date.now(); const pushes = [];
+  const instance = createNativeServer({ databasePath: ':memory:', adminEmail: 'text-owner@test.invalid', adminPassword: password,
+    passkeyRPID: 'text-import.test', passkeyOrigin: 'https://text-import.test', textNow: () => clock,
+    sendPush: async (device, payload) => { pushes.push({ device, payload }); return { accepted: true }; } });
+  await new Promise((resolve, reject) => { instance.server.once('error', reject); instance.server.listen(0, '127.0.0.1', resolve); });
+  const base = 'http://127.0.0.1:' + instance.server.address().port;
+  async function native(path, { method = 'GET', body, auth = '', headers = {} } = {}) {
+    const response = await fetch(base + '/api/native/v1/' + path, { method,
+      headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(auth ? { Authorization: 'Bearer ' + auth } : {}), ...headers },
+      body: body === undefined ? undefined : JSON.stringify(body) });
+    return { status: response.status, value: await response.json() };
+  }
+  const login = await native('session', { method: 'POST', body: { email: 'text-owner@test.invalid', password } });
+  assert.equal(login.status, 200); const session = login.value.data.accessToken;
+  async function createKey(auth = session, name = 'AI日程写入') {
+    const response = await native('integrations/text-tokens', { method: 'POST', body: { name }, auth });
+    assert.equal(response.status, 201); return response.value.data;
+  }
+  async function text(raw, { auth = '', key = randomUUID(), headers = {}, method = 'POST' } = {}) {
+    const response = await fetch(base + '/api/integrations/v1/calendar-text', { method,
+      headers: { Authorization: 'Bearer ' + auth, 'Content-Type': 'text/plain; charset=utf-8', 'Idempotency-Key': key, ...headers },
+      body: raw });
+    return { status: response.status, value: await response.json() };
+  }
+  async function slowText(auth, raw) {
+    const { request } = await import('node:http');
+    let handle;
+    const response = new Promise((resolve, reject) => {
+      handle = request(base + '/api/integrations/v1/calendar-text', { method: 'POST', headers: { Authorization: 'Bearer ' + auth,
+        'Content-Type': 'text/plain; charset=utf-8', 'Idempotency-Key': randomUUID() } }, incoming => {
+        const chunks = []; incoming.on('data', chunk => chunks.push(chunk)); incoming.once('error', reject);
+        incoming.once('end', () => resolve({ status: incoming.statusCode, value: JSON.parse(Buffer.concat(chunks).toString('utf8')) }));
+      });
+      handle.once('error', reject); handle.write(raw.slice(0, 4));
+    });
+    await new Promise(resolve => setImmediate(resolve));
+    return { finish: () => handle.end(raw.slice(4)), response };
+  }
+  const state = async (auth = session) => (await native('workspace', { auth })).value.data;
+  try { await work({ instance, base, native, text, slowText, state, createKey, session, pushes, now: () => clock, advance: value => { clock += value; } }); }
+  finally { await instance.flushPushes(); instance.close(); }
+}
+const sampleText = 'WORKSHOP/1\n类型: 事项\n标题: API 测试事项\n计划: 2026-10-20T09:00+08:00';
+
+test('text integration credentials are hash-only, owner-scoped, expiring and immediately revocable', async () => {
+  await withTextIngress(async ({ instance, native, text, state, createKey, session, advance }) => {
+    const key = await createKey();
+    assert.match(key.accessToken, /^wsi_[A-Za-z0-9_-]{43}$/);
+    assert.equal(key.endpoint, 'https://text-import.test/api/integrations/v1/calendar-text');
+    assert.equal(key.protocol, 'WORKSHOP/1'); assert.equal(key.credential.expires - key.credential.created, 365 * 86400000);
+    const stored = instance.db.prepare('SELECT * FROM text_tokens').get();
+    assert.equal(stored.hash, createHash('sha256').update(key.accessToken).digest('hex'));
+    assert.doesNotMatch(JSON.stringify(stored), /wsi_/);
+    const list = await native('integrations/text-tokens', { auth: session, headers: { Host: 'untrusted.test' } });
+    assert.equal(list.status, 200); assert.equal(list.value.data.credentials.length, 1);
+    assert.equal(list.value.data.endpoint, key.endpoint);
+    assert.match(list.value.data.prompt, /\{\{API_KEY\}\}/); assert.match(list.value.data.prompt, /WORKSHOP\/1/);
+    assert.match(list.value.data.prompt, /Idempotency-Key/); assert.doesNotMatch(list.value.data.prompt, new RegExp(key.accessToken));
+    assert.equal((await native('workspace', { auth: key.accessToken })).status, 401);
+    assert.equal((await native('integrations/text-tokens', { auth: key.accessToken })).status, 401);
+    assert.equal((await text(sampleText, { auth: session })).status, 401);
+    const otherSignup = await native('accounts', { method: 'POST', body: { email: 'text-other@test.invalid', password } });
+    assert.equal(otherSignup.status, 201); const other = otherSignup.value.data.accessToken;
+    assert.equal((await native('integrations/text-tokens', { auth: other })).value.data.credentials.length, 0);
+    assert.equal((await native('integrations/text-tokens', { method: 'DELETE', auth: other, body: { id: key.credential.id } })).status, 404);
+    const otherBefore = await state(other);
+    assert.equal((await text(sampleText, { auth: key.accessToken })).status, 201);
+    assert.deepEqual(await state(other), otherBefore);
+    assert.equal((await native('integrations/text-tokens', { auth: session })).value.data.credentials[0].lastUsed, stored.created);
+    assert.equal((await native('integrations/text-tokens', { method: 'DELETE', auth: session, body: { id: key.credential.id } })).status, 200);
+    assert.equal((await text(sampleText, { auth: key.accessToken })).status, 401);
+    const expiring = await createKey(); advance(365 * 86400000);
+    assert.equal((await text(sampleText, { auth: expiring.accessToken })).status, 401);
+    assert.equal((await native('integrations/text-tokens', { auth: session })).value.data.credentials.length, 0);
+  });
+});
+
+test('text batches append complete native records and bounded recurrence rules without changing existing metadata', async () => {
+  await withTextIngress(async ({ native, state, createKey, text, session, instance, pushes }) => {
+    const initial = await state();
+    const project = { id: randomUUID(), kind: 'PROJECT', status: 'ACTIVE', version: 1, title: '课程', body: '', timezone: 'Asia/Shanghai' };
+    initial.snapshot.records.push(project); initial.snapshot.profile.note = '保留未知资料字段'; initial.snapshot.custom = { untouched: true };
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: initial.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    await native('devices', { method: 'PUT', auth: session, body: { deviceID: randomUUID(), token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' } });
+    const key = await createKey();
+    const raw = `WORKSHOP/1\n类型: 事项\n标题: 晨间整理\n计划: 2026-10-20T08:00:00+08:00\n提醒: 2026-10-20T07:50:00+08:00\n项目: 课程\n重复: 每天\n备注: 第一行\n  第二行\n---\n类型: 截止事项\n标题: 课程报告\n截止: 2026-10-23\n提醒: 2026-10-23T08:30:00+08:00\n---\n类型: 提醒\n标题: 打印资料\n提醒: 2026-10-22T12:00:00+08:00`;
+    const added = await text(raw, { auth: key.accessToken });
+    assert.equal(added.status, 201); assert.equal(added.value.data.created, 3); assert.equal(added.value.data.seriesIDs.length, 1);
+    const final = await state(); assert.equal(final.revision, 2); assert.equal(final.snapshot.records.length, 4); assert.equal(final.snapshot.series.length, 1);
+    assert.deepEqual(final.snapshot.records[0], project); assert.deepEqual(final.snapshot.profile, initial.snapshot.profile); assert.deepEqual(final.snapshot.custom, initial.snapshot.custom);
+    for (const field of ['activities', 'revisions', 'assets', 'trash']) assert.deepEqual(final.snapshot[field], initial.snapshot[field]);
+    const [task, deadline, reminder] = final.snapshot.records.slice(1);
+    for (const record of [task, deadline, reminder, final.snapshot.series[0].template]) {
+      for (const field of ['id', 'kind', 'title', 'version', 'createdAt', 'updatedAt', 'status', 'summary', 'body', 'category', 'tags', 'pinned', 'projectKind', 'dateOnly', 'timezone', 'notificationsEnabled', 'notificationLeadMinutes', 'isException'])
+        assert.notEqual(record[field], undefined, field);
+      assert.equal(record.timezone, 'Asia/Shanghai'); assert.ok(Number.isFinite(Date.parse(record.updatedAt)));
+    }
+    assert.equal(task.projectID, project.id); assert.equal(task.body, '第一行\n第二行'); assert.equal(task.scheduledAt, '2026-10-20T00:00:00.000Z');
+    assert.equal(task.recurrenceSeriesID, final.snapshot.series[0].id); assert.equal(task.occurrenceDate, '2026-10-20');
+    assert.deepEqual(final.snapshot.series[0].rule, { frequency: 'DAILY', interval: 1, weekdays: [] });
+    assert.equal(deadline.dateOnly, true); assert.equal(deadline.dueDate, '2026-10-22T16:00:00.000Z'); assert.equal(deadline.notificationLeadMinutes, 30);
+    assert.equal(reminder.remindAt, '2026-10-22T04:00:00.000Z');
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM history').get().n, 2);
+    await instance.flushPushes(); assert.deepEqual(pushes.map(item => item.payload.revision), [2]);
+  });
+});
+
+test('text input rejects invalid types, encoding, dates and entire malformed batches without leaking input', async () => {
+  await withTextIngress(async ({ native, state, createKey, text, session }) => {
+    const key = await createKey(), before = await state();
+    const cases = [
+      ['WORKSHOP/2\n类型: 事项\n标题: 错误', 422],
+      [sampleText + '\n账户: never-return-this-private-value', 422],
+      [sampleText + '\n标题: 重复字段', 422],
+      [sampleText.replace('API 测试事项', 'a'.repeat(241)), 422],
+      [sampleText.replace('2026-10-20', '2026-02-30'), 422],
+      [sampleText.replace('09:00', '24:00'), 422],
+      [sampleText.replace('+08:00', 'Z'), 422],
+      [sampleText.replace('2026-10-20T09:00+08:00', '明天上午九点'), 422],
+      [sampleText + '\n时区: Invalid/Zone', 422],
+      [sampleText + '\n项目: 不存在的项目', 422],
+      [sampleText + '\n重复: __proto__', 422],
+      [sampleText + '\n星期: 1,2', 422],
+      [sampleText + '\n重复: 单周', 422],
+      [sampleText + '\n重复: 每周\n星期: 1,1', 422],
+      [sampleText + '\n重复: 每天\n重复结束: 2026-10-19', 422],
+      [sampleText.replace('2026-10-20', '2027-10-20') + '\n重复: 工作日（含调休）', 422],
+      ['WORKSHOP/1\n类型: 截止事项\n标题: 迟到提醒\n截止: 2026-10-23\n提醒: 2026-10-23T10:00+08:00', 422],
+      ['WORKSHOP/1\n类型: 截止事项\n标题: 秒级提前\n截止: 2026-10-23T10:00:00+08:00\n提醒: 2026-10-23T09:59:59+08:00', 422],
+      [sampleText + '\n---\n类型: 事项\n未知的保密字段: private-marker', 422],
+      ['WORKSHOP/1\n' + Array.from({ length: 51 }, (_, index) => `类型: 事项\n标题: ${index}`).join('\n---\n'), 422],
+      [Buffer.from([0xff, 0xfe]), 422],
+      ['x'.repeat(65537), 413]
+    ];
+    for (const [raw, expected] of cases) {
+      const response = await text(raw, { auth: key.accessToken });
+      assert.equal(response.status, expected, typeof raw === 'string' ? raw.slice(0, 120) : 'invalid UTF-8');
+      assert.doesNotMatch(JSON.stringify(response.value), /never-return-this-private-value|private-marker|保密字段/);
+      assert.deepEqual(await state(), before);
+    }
+    assert.equal((await text(sampleText, { auth: key.accessToken, headers: { 'Content-Type': 'application/json' } })).status, 415);
+    assert.equal((await text(sampleText, { auth: key.accessToken, headers: { 'Content-Type': 'text/plain; charset=gbk' } })).status, 415);
+    assert.equal((await text(sampleText, { auth: key.accessToken, key: 'bad' })).status, 400);
+    assert.equal((await text(sampleText, { auth: key.accessToken, headers: { Origin: 'https://evil.test' } })).status, 403);
+    assert.equal((await text(sampleText, { auth: key.accessToken, headers: { 'Sec-Fetch-Site': 'cross-site' } })).status, 403);
+    assert.equal((await native('integrations/text-tokens', { method: 'POST', auth: session, body: {}, headers: { Origin: 'https://evil.test' } })).status, 403);
+    assert.deepEqual(await state(), before);
+  });
+});
+
+test('text idempotence is durable per account, rejects changed bytes, and rolls back failed persistence', async () => {
+  await withTextIngress(async ({ text, state, createKey, native, instance, session }) => {
+    const key = await createKey(), operation = randomUUID();
+    const first = await text(sampleText, { auth: key.accessToken, key: operation });
+    assert.equal(first.status, 201); assert.equal(first.value.data.replayed, false);
+    const replay = await text(sampleText, { auth: key.accessToken, key: operation.toUpperCase() });
+    assert.equal(replay.status, 200); assert.deepEqual(replay.value.data, { ...first.value.data, replayed: true });
+    assert.equal((await text(sampleText + '\n', { auth: key.accessToken, key: operation })).status, 409);
+    assert.equal((await state()).snapshot.records.length, 1); assert.equal((await state()).revision, 1);
+    await native('integrations/text-tokens', { method: 'DELETE', auth: session, body: { id: key.credential.id } });
+    const replacement = await createKey();
+    assert.equal((await text(sampleText, { auth: replacement.accessToken, key: operation })).status, 200);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM text_imports').get().n, 1);
+    const before = await state();
+    instance.db.exec("CREATE TRIGGER reject_text_history BEFORE INSERT ON history BEGIN SELECT RAISE(ABORT, 'test history rejection'); END;");
+    const retryID = randomUUID();
+    assert.equal((await text(sampleText, { auth: replacement.accessToken, key: retryID })).status, 500);
+    assert.deepEqual(await state(), before); assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM text_imports').get().n, 1);
+    instance.db.exec('DROP TRIGGER reject_text_history');
+    assert.equal((await text(sampleText, { auth: replacement.accessToken, key: retryID })).status, 201);
+    assert.equal((await state()).revision, 2);
+  });
+});
+
+test('text append reads the latest snapshot after uploads and makes stale native PUTs conflict', async () => {
+  await withTextIngress(async ({ native, text, slowText, state, createKey, session }) => {
+    const key = await createKey(), before = await state();
+    const pending = await slowText(key.accessToken, sampleText);
+    const concurrent = structuredClone(before.snapshot); concurrent.profile.name = '上传时的最新资料';
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: concurrent }, headers: { 'If-Match': '"0"' } })).status, 200);
+    pending.finish(); assert.equal((await pending.response).status, 201);
+    const after = await state(); assert.equal(after.revision, 2); assert.equal(after.snapshot.profile.name, '上传时的最新资料'); assert.equal(after.snapshot.records.length, 1);
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: concurrent }, headers: { 'If-Match': '"1"' } })).status, 409);
+    const id = randomUUID();
+    const pair = await Promise.all([text(sampleText, { auth: key.accessToken, key: id }), text(sampleText, { auth: key.accessToken, key: id })]);
+    assert.deepEqual(pair.map(item => item.status).sort(), [200, 201]);
+    assert.deepEqual(pair[0].value.data.recordIDs, pair[1].value.data.recordIDs); assert.equal((await state()).snapshot.records.length, 2);
+  });
+});
+
+test('text tokens are checked again after a slow body, and names and active key counts are bounded', async () => {
+  await withTextIngress(async ({ native, text, slowText, state, createKey, session, advance }) => {
+    const key = await createKey(), pending = await slowText(key.accessToken, sampleText);
+    await native('integrations/text-tokens', { method: 'DELETE', auth: session, body: { id: key.credential.id } });
+    pending.finish(); assert.equal((await pending.response).status, 401); assert.equal((await state()).revision, 0);
+    const expiring = await createKey(), slowExpiry = await slowText(expiring.accessToken, sampleText);
+    advance(365 * 86400000); slowExpiry.finish(); assert.equal((await slowExpiry.response).status, 401);
+    assert.equal((await native('integrations/text-tokens', { method: 'POST', auth: session, body: { name: '' } })).status, 422);
+    assert.equal((await native('integrations/text-tokens', { method: 'POST', auth: session, body: { name: 'a'.repeat(61) } })).status, 422);
+    assert.equal((await native('integrations/text-tokens', { method: 'POST', auth: session, body: { userID: 2 } })).status, 422);
+    for (let index = 0; index < 10; index++) await createKey();
+    assert.equal((await native('integrations/text-tokens', { method: 'POST', auth: session, body: {} })).value.error.code, 'TEXT_TOKEN_LIMIT');
+    assert.equal((await text(sampleText, { auth: expiring.accessToken })).status, 401);
+  });
+});
+
+test('text recurrence supports weekly parity, date-only deadlines, DST and known workday years with one initial record', async () => {
+  await withTextIngress(async ({ text, state, createKey }) => {
+    const key = await createKey();
+    const raw = `WORKSHOP/1\n类型: 事项\n标题: 单周课程\n计划: 2026-10-20T09:00+08:00\n重复: 单周\n星期: 2,4\n第1周: 2026-10-19\n---\n类型: 事项\n标题: 隔周整理\n计划: 2026-10-20T09:00+08:00\n重复: 每2周\n---\n类型: 事项\n标题: 工作日打卡\n计划: 2026-10-10T09:00+08:00\n重复: 工作日（含调休）\n---\n类型: 截止事项\n标题: 夏令时日\n截止: 2026-03-08\n时区: America/New_York`;
+    assert.equal((await text(raw, { auth: key.accessToken })).status, 201);
+    const final = await state(); assert.equal(final.snapshot.records.length, 4); assert.equal(final.snapshot.series.length, 3);
+    assert.deepEqual(final.snapshot.series.map(item => [item.rule.frequency, item.rule.interval]), [['ODD_WEEKS', 1], ['WEEKLY', 2], ['CHINA_WORKDAYS', 1]]);
+    assert.equal(final.snapshot.records[2].isException, false); assert.equal(final.snapshot.records[3].dueDate, '2026-03-08T05:00:00.000Z');
+    assert.equal((await text('WORKSHOP/1\n类型: 事项\n标题: 夏令时不存在\n计划: 2026-03-08T02:30:00-05:00\n时区: America/New_York', { auth: key.accessToken })).status, 422);
+  });
+});
+
+test('text imports enforce bounded IP and account rate limits, including idempotent retries', async () => {
+  await withTextIngress(async ({ text, createKey, advance, instance }) => {
+    const key = await createKey(), id = randomUUID();
+    for (let index = 0; index < 60; index++) assert.ok([200, 201].includes((await text(sampleText, { auth: key.accessToken, key: id })).status));
+    assert.equal((await text(sampleText, { auth: key.accessToken, key: id })).status, 429);
+    advance(60000);
+    for (let index = 0; index < 60; index++) assert.equal((await text(sampleText, { auth: key.accessToken, key: id })).status, 200);
+    advance(60000);
+    assert.equal((await text(sampleText, { auth: key.accessToken, key: id })).status, 429);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM text_imports').get().n, 1);
+    advance(3600000); assert.equal((await text(sampleText, { auth: key.accessToken, key: id })).status, 200);
+  });
+});
+
+test('text project lookup excludes archived ancestors and rejects ambiguous exact names', async () => {
+  await withTextIngress(async ({ native, text, state, createKey, session }) => {
+    const initial = await state();
+    const area = { id: randomUUID(), kind: 'AREA', status: 'OPEN', version: 1, title: '旧领域', body: '', timezone: 'Asia/Shanghai', archivedAt: new Date().toISOString() };
+    const group = title => ({ id: randomUUID(), kind: 'PROJECT', status: 'ACTIVE', version: 1, title, body: '', timezone: 'Asia/Shanghai' });
+    const hidden = { ...group('不可见课程'), areaID: area.id }, first = group('同名课程'), second = group('同名课程');
+    initial.snapshot.records.push(area, hidden, first, second);
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: initial.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    const key = await createKey();
+    assert.equal((await text(sampleText + '\n项目: ' + hidden.id, { auth: key.accessToken })).value.error.code, 'TEXT_PROJECT_NOT_FOUND');
+    assert.equal((await text(sampleText + '\n项目: 同名课程', { auth: key.accessToken })).value.error.code, 'AMBIGUOUS_TEXT_PROJECT');
+    assert.equal((await state()).revision, 1);
+    assert.equal((await text(sampleText + '\n项目: ' + first.id.toUpperCase(), { auth: key.accessToken })).status, 201);
+    assert.equal((await state()).snapshot.records.at(-1).projectID, first.id);
+  });
+});
+
+test('text task custom reminders dispatch at remindAt rather than at the plan time', async () => {
+  await withTextIngress(async ({ native, text, createKey, instance, session, pushes, now }) => {
+    await native('devices', { method: 'PUT', auth: session, body: { deviceID: randomUUID(), token: 'ab'.repeat(32), platform: 'iOS', bundleID: 'com.guangyi.workspace.native.ios', environment: 'sandbox' } });
+    const at = Math.ceil((now() + 120000) / 60000) * 60000, later = at + 3600000;
+    const iso = value => new Date(value).toISOString().replace('.000Z', 'Z');
+    const key = await createKey();
+    const raw = `WORKSHOP/1\n类型: 事项\n标题: 准时自定义提醒\n计划: ${iso(later)}\n提醒: ${iso(at)}\n时区: UTC`;
+    assert.equal((await text(raw, { auth: key.accessToken })).status, 201);
+    await instance.flushPushes();
+    assert.equal((await instance.sweep(at + 100)).accepted, 1);
+    const delivered = pushes.find(item => item.payload.aps.alert);
+    assert.equal(delivered.payload.scheduledAt, at); assert.equal(delivered.payload.aps.alert.body, '准时自定义提醒');
+  });
+});
