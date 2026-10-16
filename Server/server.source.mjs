@@ -2,12 +2,13 @@ import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthen
 import http from 'node:http';
 import http2 from 'node:http2';
 import { DatabaseSync } from 'node:sqlite';
-import { randomBytes, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
+import { randomBytes, randomUUID, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
 import { readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isIP } from 'node:net';
 import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
+import { parseCalendarText, calendarTextPrompt, TextImportError, textImportPath, textImportProtocol, textImportLimit } from './text-ingress.mjs';
 
 export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
 
@@ -115,7 +116,8 @@ export function validateSnapshot(snapshot) {
 }
 function moment(record) {
   if (record.snoozedUntil) return Date.parse(record.snoozedUntil);
-  let at = record.kind === 'REMINDER' ? record.remindAt : record.dueDate ?? record.scheduledAt;
+  if (['TASK', 'MILESTONE', 'REMINDER'].includes(record.kind) && record.remindAt) return Date.parse(record.remindAt);
+  let at = record.dueDate ?? record.scheduledAt;
   if (!at) return NaN;
   if (record.kind !== 'REMINDER' && record.dueDate && record.dateOnly) {
     const formatter = new Intl.DateTimeFormat('en-CA', { timeZone: record.timezone, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
@@ -143,7 +145,10 @@ export function createNativeServer(configuration) {
     CREATE TABLE IF NOT EXISTS workspaces(user_id INTEGER PRIMARY KEY REFERENCES users(id),revision INTEGER,snapshot TEXT);
     CREATE TABLE IF NOT EXISTS history(user_id INTEGER,revision INTEGER,snapshot TEXT,created INTEGER,PRIMARY KEY(user_id,revision));
     CREATE TABLE IF NOT EXISTS devices(user_id INTEGER,device_id TEXT,token TEXT,platform TEXT,bundle_id TEXT,environment TEXT,created INTEGER,PRIMARY KEY(user_id,device_id));
-    CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY,user_id INTEGER,accepted INTEGER,lease_until INTEGER);`);
+    CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY,user_id INTEGER,accepted INTEGER,lease_until INTEGER);
+    CREATE TABLE IF NOT EXISTS text_tokens(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),name TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER);
+    CREATE INDEX IF NOT EXISTS text_tokens_user ON text_tokens(user_id);
+    CREATE TABLE IF NOT EXISTS text_imports(user_id INTEGER NOT NULL REFERENCES users(id),idempotency_key TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,idempotency_key));`);
   const email = adminEmail.trim().toLowerCase();
   if (!db.prepare('SELECT id FROM users WHERE email=?').get(email)) {
     const salt = randomBytes(16).toString('hex'), hash = scryptSync(adminPassword, salt, 64);
@@ -155,6 +160,31 @@ export function createNativeServer(configuration) {
   const passkeyApps = (configuration.passkeyApps ?? '67WBP6S5QL.com.guangyi.workspace.native.ios,67WBP6S5QL.com.guangyi.workspace.native.mac').split(',').filter(Boolean);
   const parsedOrigin = new URL(passkeyOrigin);
   if (parsedOrigin.hostname !== rpID || parsedOrigin.origin !== passkeyOrigin || (parsedOrigin.protocol !== 'https:' && !(rpID === 'localhost' && parsedOrigin.protocol === 'http:'))) throw new Error('INVALID_PASSKEY_ORIGIN');
+  const textEndpoint = passkeyOrigin + textImportPath;
+  const textNow = configuration.textNow ?? Date.now;
+  const textAttempts = new Map();
+  function textRateLimit(key, window, limit) {
+    const now = textNow();
+    for (const [entryKey, entry] of textAttempts) if (now >= entry.until) textAttempts.delete(entryKey);
+    const prior = textAttempts.get(key);
+    if (!prior && textAttempts.size >= 10000) throw new APIError(429, 'RATE_LIMITED');
+    const entry = prior ?? { until: now + window, count: 0 };
+    textAttempts.set(key, entry);
+    if (++entry.count > limit) throw new APIError(429, 'RATE_LIMITED');
+  }
+  function textPeer(request) {
+    const peer = request.socket.remoteAddress ?? 'unknown', forwarded = request.headers['x-real-ip'];
+    const local = peer === '127.0.0.1' || peer === '::1' || peer === '::ffff:127.0.0.1';
+    return local && typeof forwarded === 'string' && isIP(forwarded) ? forwarded : peer;
+  }
+  function textCredential(request) {
+    const header = request.headers.authorization;
+    if (typeof header !== 'string' || !/^Bearer wsi_[A-Za-z0-9_-]{43}$/.test(header)) throw new APIError(401, 'INVALID_TEXT_TOKEN');
+    const credential = db.prepare('SELECT * FROM text_tokens WHERE hash=? AND expires>?').get(sha(header.slice(7)), textNow());
+    if (!credential) throw new APIError(401, 'INVALID_TEXT_TOKEN');
+    return credential;
+  }
+  const textCredentialInfo = row => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...(row.last_used != null ? { lastUsed: row.last_used } : {}) });
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_users(user_id INTEGER PRIMARY KEY REFERENCES users(id),handle TEXT UNIQUE NOT NULL);
     CREATE TABLE IF NOT EXISTS passkeys(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),public_key BLOB NOT NULL,counter INTEGER NOT NULL,created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
@@ -317,6 +347,28 @@ export function createNativeServer(configuration) {
     for await (const chunk of request) { size += chunk.length; if (size > limit) throw new APIError(413, 'TOO_LARGE'); chunks.push(chunk); }
     try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new APIError(400, 'INVALID_JSON'); }
   }
+  async function textBody(request) {
+    if (request.headers['content-encoding'] != null && request.headers['content-encoding'] !== 'identity') throw new APIError(415, 'TEXT_ENCODING_UNSUPPORTED');
+    if (!/^text\/plain(?:\s*;\s*charset\s*=\s*(?:utf-8|"utf-8"))?\s*$/i.test(request.headers['content-type'] ?? '')) throw new APIError(415, 'UTF8_TEXT_REQUIRED');
+    if (Number(request.headers['content-length']) > textImportLimit) { request.resume(); throw new APIError(413, 'TOO_LARGE'); }
+    const bytes = await new Promise((resolve, reject) => {
+      let size = 0, chunks = [], done = false;
+      const fail = error => { if (!done) { done = true; chunks = []; reject(error); } };
+      request.on('data', chunk => {
+        if (done) return;
+        size += chunk.length;
+        if (size > textImportLimit) return fail(new APIError(413, 'TOO_LARGE'));
+        chunks.push(chunk);
+      });
+      request.once('end', () => { if (!done) { done = true; resolve(Buffer.concat(chunks)); } });
+      request.once('aborted', () => fail(new APIError(400, 'INVALID_TEXT_BODY')));
+      request.once('error', () => fail(new APIError(400, 'INVALID_TEXT_BODY')));
+    });
+    let text;
+    try { text = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(bytes); }
+    catch { throw new APIError(422, 'INVALID_TEXT_UTF8'); }
+    return { bytes, text };
+  }
   function respond(response, status, data) {
     response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' });
     response.end(JSON.stringify(data));
@@ -459,7 +511,76 @@ export function createNativeServer(configuration) {
           return respond(response, 200, { data: session });
         } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
+      if (path === textImportPath && request.method === 'POST') {
+        sameWebOrigin(request);
+        textRateLimit('ip:' + textPeer(request), 60000, 60);
+        textCredential(request);
+        const requestID = request.headers['idempotency-key'];
+        if (typeof requestID !== 'string' || !uuid.test(requestID)) throw new APIError(400, 'IDEMPOTENCY_KEY_REQUIRED');
+        const { bytes, text } = await textBody(request);
+        const digest = sha(bytes), key = requestID.toLowerCase();
+        let result, owner, repeated = false;
+        // No await may appear between this refreshed authorization, snapshot
+        // read and append. An old native PUT then fails its If-Match normally.
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          const credential = textCredential(request); owner = credential.user_id;
+          textRateLimit('account:' + owner, 3600000, 120);
+          const prior = db.prepare('SELECT body_hash,result FROM text_imports WHERE user_id=? AND idempotency_key=?').get(owner, key);
+          if (prior) {
+            if (prior.body_hash !== digest) throw new APIError(409, 'IDEMPOTENCY_CONFLICT');
+            result = JSON.parse(prior.result); repeated = true;
+          } else {
+            const old = db.prepare('SELECT revision,snapshot FROM workspaces WHERE user_id=?').get(owner);
+            const snapshot = JSON.parse(old.snapshot), additions = parseCalendarText(text, snapshot, textNow());
+            snapshot.records.push(...additions.records); snapshot.series.push(...additions.series);
+            validateSnapshot(snapshot);
+            db.prepare('INSERT INTO history(user_id,revision,snapshot,created) VALUES(?,?,?,?)').run(owner, old.revision, old.snapshot, textNow());
+            db.prepare('UPDATE workspaces SET revision=revision+1,snapshot=? WHERE user_id=?').run(JSON.stringify(snapshot), owner);
+            db.prepare('DELETE FROM history WHERE user_id=? AND revision<?').run(owner, Math.max(0, old.revision - 4));
+            result = { revision: old.revision + 1, created: additions.records.length, recordIDs: additions.records.map(item => item.id), seriesIDs: additions.series.map(item => item.id) };
+            db.prepare('INSERT INTO text_imports(user_id,idempotency_key,body_hash,result,created) VALUES(?,?,?,?,?)').run(owner, key, digest, JSON.stringify(result), textNow());
+          }
+          db.prepare('UPDATE text_tokens SET last_used=? WHERE id=?').run(textNow(), credential.id);
+          db.exec('COMMIT');
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+        respond(response, repeated ? 200 : 201, { data: { ...result, replayed: repeated } });
+        if (!repeated) queuePush(() => notifyWorkspaceChanged(owner, result.revision));
+        return;
+      }
       const userID = userFor(request);
+      if (path === '/api/native/v1/integrations/text-tokens' && request.method === 'GET') {
+        sameWebOrigin(request);
+        const credentials = db.prepare('SELECT * FROM text_tokens WHERE user_id=? AND expires>? ORDER BY created,id').all(userID, textNow()).map(textCredentialInfo);
+        return respond(response, 200, { data: { credentials, endpoint: textEndpoint, protocol: textImportProtocol, prompt: calendarTextPrompt(textEndpoint) } });
+      }
+      if (path === '/api/native/v1/integrations/text-tokens' && ['POST', 'DELETE'].includes(request.method)) {
+        sameWebOrigin(request); requireJSON(request);
+        const value = await body(request, 1024);
+        if (!value || Array.isArray(value) || typeof value !== 'object') throw new APIError(422, 'INVALID_TEXT_TOKEN_REQUEST');
+        const creating = request.method === 'POST';
+        if (creating ? Object.keys(value).some(key => key !== 'name') : Object.keys(value).length !== 1 || !uuid.test(value.id)) throw new APIError(422, 'INVALID_TEXT_TOKEN_REQUEST');
+        const name = value.name === undefined ? 'AI日程写入' : typeof value.name === 'string' ? value.name.trim() : '';
+        if (creating && (!name || name.length > 60)) throw new APIError(422, 'INVALID_TEXT_TOKEN_NAME');
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          const owner = userFor(request);
+          if (creating) {
+            const now = textNow();
+            db.prepare('DELETE FROM text_tokens WHERE user_id=? AND expires<=?').run(owner, now);
+            if (db.prepare('SELECT COUNT(*) AS total FROM text_tokens WHERE user_id=?').get(owner).total >= 10) throw new APIError(422, 'TEXT_TOKEN_LIMIT');
+            const accessToken = 'wsi_' + randomBytes(32).toString('base64url');
+            const credential = { id: randomUUID(), name, created: now, expires: now + 365 * 86400000 };
+            db.prepare('INSERT INTO text_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)').run(credential.id, sha(accessToken), owner, name, credential.created, credential.expires);
+            db.exec('COMMIT');
+            return respond(response, 201, { data: { credential, accessToken, endpoint: textEndpoint, protocol: textImportProtocol } });
+          }
+          const removed = db.prepare('DELETE FROM text_tokens WHERE id=? AND user_id=?').run(value.id.toLowerCase(), owner);
+          if (removed.changes !== 1) throw new APIError(404, 'TEXT_TOKEN_NOT_FOUND');
+          db.exec('COMMIT');
+          return respond(response, 200, { data: { revoked: true } });
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+      }
       if (path === '/api/native/v1/web-auth/authorize' && request.method === 'POST') {
         sameWebOrigin(request); webAuthRateLimit(request); requireJSON(request);
         const value = await body(request, 2048);
@@ -592,7 +713,10 @@ export function createNativeServer(configuration) {
         return respond(response, 200, { data: { removed: true } });
       }
       throw new APIError(404, 'NOT_FOUND');
-    } catch (error) { respond(response, error instanceof APIError ? error.status : 500, { error: { code: error instanceof APIError ? error.message : 'INTERNAL_ERROR' } }); }
+    } catch (error) {
+      if (error instanceof TextImportError) return respond(response, error.status, { error: { code: error.message, ...(error.line ? { line: error.line } : {}), ...(error.field ? { field: error.field } : {}) } });
+      respond(response, error instanceof APIError ? error.status : 500, { error: { code: error instanceof APIError ? error.message : 'INTERNAL_ERROR' } });
+    }
   });
   server.requestTimeout = 60000;
   let sweeping = false;

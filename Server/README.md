@@ -8,6 +8,8 @@ for the authentication API and remaining Apple/domain acceptance steps.
 The existing initial-install instructions below are historical; do not rerun
 initial installation on the already deployed service.
 
+纯文本日程写入接口、账户专用追加密钥、AI 提示词和幂等规则见 [TEXT-IMPORT.md](../TEXT-IMPORT.md)。`text-ingress.mjs` 在构建时一并打入 `server.mjs`，不增加发布包运行时文件。
+
 # 自建后端初版
 
 此目录提供与原生客户端契约一致的后端。真实服务器已经完成首次安装、专用 HTTPS、证书续期和 GitHub Actions 自动发布验收。运行时需要 Node.js 24，使用系统内置 HTTP、HTTP/2、crypto 和 SQLite，不需要 npm install；不要重新运行下面保留的历史首装步骤。

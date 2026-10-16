@@ -445,7 +445,7 @@ function __addDisposableResource(env, value, async) {
   return value;
 }
 function __disposeResources(env) {
-  function fail(e) {
+  function fail2(e) {
     env.error = env.hasError ? new _SuppressedError(e, env.error, "An error was suppressed during disposal.") : e;
     env.hasError = true;
   }
@@ -457,12 +457,12 @@ function __disposeResources(env) {
         if (r.dispose) {
           var result = r.dispose.call(r.value);
           if (r.async) return s |= 2, Promise.resolve(result).then(next, function(e) {
-            fail(e);
+            fail2(e);
             return next();
           });
         } else s |= 1;
       } catch (e) {
-        fail(e);
+        fail2(e);
       }
     }
     if (s === 1) return env.hasError ? Promise.reject(env.error) : Promise.resolve();
@@ -23096,7 +23096,7 @@ async function verifyAuthenticationResponse(options) {
 import http from "node:http";
 import http2 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
-import { randomBytes, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
+import { randomBytes, randomUUID as randomUUID2, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -23392,8 +23392,8 @@ function effectiveDeadline(record) {
       hourCycle: "h23"
     });
   }
-  const fields = Object.fromEntries(formatter.formatToParts(new Date(parsed)).filter((part) => part.type !== "literal").map((part) => [part.type, Number(part.value)]));
-  const wallTarget = Date.UTC(fields.year, fields.month - 1, fields.day + 1, 0, 0, 0);
+  const fields2 = Object.fromEntries(formatter.formatToParts(new Date(parsed)).filter((part) => part.type !== "literal").map((part) => [part.type, Number(part.value)]));
+  const wallTarget = Date.UTC(fields2.year, fields2.month - 1, fields2.day + 1, 0, 0, 0);
   let estimate = wallTarget;
   for (let index = 0; index < 4; index += 1) {
     const current = Object.fromEntries(formatter.formatToParts(new Date(estimate)).filter((part) => part.type !== "literal").map((part) => [part.type, Number(part.value)]));
@@ -24272,6 +24272,331 @@ function webAsset(path) {
   return asset ? { body: asset.body, headers: { ...headers, "Content-Type": asset.type } } : void 0;
 }
 
+// Server/text-ingress.mjs
+import { randomUUID } from "node:crypto";
+var textImportPath = "/api/integrations/v1/calendar-text";
+var textImportProtocol = "WORKSHOP/1";
+var textImportLimit = 64 * 1024;
+var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var fields = /* @__PURE__ */ new Set(["\u7C7B\u578B", "\u6807\u9898", "\u8BA1\u5212", "\u622A\u6B62", "\u63D0\u9192", "\u65F6\u533A", "\u9879\u76EE", "\u5907\u6CE8", "\u91CD\u590D", "\u661F\u671F", "\u7B2C1\u5468", "\u91CD\u590D\u7ED3\u675F"]);
+var TextImportError = class extends Error {
+  constructor(code, line, field) {
+    super(code);
+    this.status = 422;
+    this.line = line;
+    this.field = fields.has(field) ? field : void 0;
+  }
+};
+var fail = (code, line, field) => {
+  throw new TextImportError(code, line, field);
+};
+function civil(year, month, day, hour = 0, minute = 0, second = 0) {
+  if (year < 1 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59 || second > 59) return null;
+  const date = /* @__PURE__ */ new Date(0);
+  date.setUTCFullYear(year, month - 1, day);
+  date.setUTCHours(hour, minute, second, 0);
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day ? date : null;
+}
+function zoneFormatter(zone, line) {
+  if (typeof zone !== "string" || zone.length > 100 || !(zone === "UTC" || /^[A-Za-z_+-]+(?:\/[A-Za-z0-9_+.-]+)+$/.test(zone))) fail("INVALID_TEXT_TIMEZONE", line, "\u65F6\u533A");
+  try {
+    return new Intl.DateTimeFormat("en-US-u-ca-gregory-nu-latn", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+  } catch {
+    fail("INVALID_TEXT_TIMEZONE", line, "\u65F6\u533A");
+  }
+}
+var wallParts = (date, formatter) => Object.fromEntries(formatter.formatToParts(date).filter((p) => p.type !== "literal").map((p) => [p.type, Number(p.value)]));
+function sameWall(parts, components) {
+  return ["year", "month", "day", "hour", "minute", "second"].every((key, index) => parts[key] === components[index]);
+}
+function localInstant(values, formatter, line, field) {
+  const components = [...values, ...Array(6 - values.length).fill(0)], target = civil(...components);
+  if (!target) fail("INVALID_TEXT_DATE", line, field);
+  let estimate = target.getTime();
+  for (let i = 0; i < 4; i++) {
+    const parts = wallParts(new Date(estimate), formatter);
+    const represented = civil(parts.year, parts.month, parts.day, parts.hour, parts.minute, parts.second);
+    if (!represented) fail("INVALID_TEXT_DATE", line, field);
+    estimate += target.getTime() - represented.getTime();
+  }
+  if (!sameWall(wallParts(new Date(estimate), formatter), components)) fail("INVALID_TEXT_LOCAL_DATE", line, field);
+  return new Date(estimate);
+}
+function parseDate(value, field, line, formatter, allowDateOnly = false) {
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+  if (dateOnly && allowDateOnly) {
+    const instant2 = localInstant(dateOnly.slice(1).map(Number), formatter, line, field);
+    return { iso: instant2.toISOString(), day: value, dateOnly: true };
+  }
+  const timed = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?(Z|[+-]\d{2}:\d{2})$/.exec(value);
+  if (!timed) fail("ABSOLUTE_TEXT_DATE_REQUIRED", line, field);
+  const components = timed.slice(1, 7).map((part) => Number(part ?? 0));
+  const wall = civil(...components);
+  if (!wall) fail("INVALID_TEXT_DATE", line, field);
+  const offset = timed[7];
+  let offsetMinutes = 0;
+  if (offset !== "Z") {
+    const hours = Number(offset.slice(1, 3)), minutes = Number(offset.slice(4));
+    if (hours > 14 || minutes > 59 || hours === 14 && minutes !== 0) fail("INVALID_TEXT_DATE", line, field);
+    offsetMinutes = (hours * 60 + minutes) * (offset[0] === "-" ? -1 : 1);
+  }
+  const instant = new Date(wall.getTime() - offsetMinutes * 6e4);
+  if (!sameWall(wallParts(instant, formatter), components)) fail("TEXT_DATE_TIMEZONE_MISMATCH", line, field);
+  return { iso: instant.toISOString(), day: value.slice(0, 10), dateOnly: false };
+}
+var dayNumber = (value) => civil(...value.split("-").map(Number)).getTime() / 864e5;
+var isoWeekday = (value) => (new Date(dayNumber(value) * 864e5).getUTCDay() + 6) % 7 + 1;
+var monday = (value) => dayNumber(value) - (isoWeekday(value) - 1);
+var holidayRanges = [
+  ["2025-01-01", "2025-01-01"],
+  ["2025-01-28", "2025-02-04"],
+  ["2025-04-04", "2025-04-06"],
+  ["2025-05-01", "2025-05-05"],
+  ["2025-05-31", "2025-06-02"],
+  ["2025-10-01", "2025-10-08"],
+  ["2026-01-01", "2026-01-03"],
+  ["2026-02-15", "2026-02-23"],
+  ["2026-04-04", "2026-04-06"],
+  ["2026-05-01", "2026-05-05"],
+  ["2026-06-19", "2026-06-21"],
+  ["2026-09-25", "2026-09-27"],
+  ["2026-10-01", "2026-10-07"]
+];
+var workingWeekends = /* @__PURE__ */ new Set([
+  "2025-01-26",
+  "2025-02-08",
+  "2025-04-27",
+  "2025-09-28",
+  "2025-10-11",
+  "2026-01-04",
+  "2026-02-14",
+  "2026-02-28",
+  "2026-05-09",
+  "2026-09-20",
+  "2026-10-10"
+]);
+var workday = (day) => workingWeekends.has(day) || !holidayRanges.some(([start, end]) => day >= start && day <= end) && isoWeekday(day) <= 5;
+var repeatKinds = {
+  "\u6BCF\u5929": ["DAILY", 1],
+  "\u6BCF\u5468": ["WEEKLY", 1],
+  "\u6BCF2\u5468": ["WEEKLY", 2],
+  "\u6BCF\u6708": ["MONTHLY", 1],
+  "\u5468\u4E00\u81F3\u5468\u4E94": ["WEEKDAYS", 1],
+  "\u5DE5\u4F5C\u65E5\uFF08\u542B\u8C03\u4F11\uFF09": ["CHINA_WORKDAYS", 1],
+  "\u5355\u5468": ["ODD_WEEKS", 1],
+  "\u53CC\u5468": ["EVEN_WEEKS", 1]
+};
+function recurrence(block, dates, formatter, record) {
+  const value = block.values, at = (key) => block.lines[key] ?? block.line;
+  if (value["\u91CD\u590D"] === void 0) {
+    for (const key of ["\u661F\u671F", "\u7B2C1\u5468", "\u91CD\u590D\u7ED3\u675F"]) if (value[key] !== void 0) fail("TEXT_REPEAT_REQUIRED", at(key), key);
+    return null;
+  }
+  const spec = Object.hasOwn(repeatKinds, value["\u91CD\u590D"]) ? repeatKinds[value["\u91CD\u590D"]] : null;
+  if (!spec) fail("INVALID_TEXT_REPEAT", at("\u91CD\u590D"), "\u91CD\u590D");
+  const [frequency, interval] = spec;
+  const anchor = dates["\u8BA1\u5212"] ?? dates["\u622A\u6B62"] ?? dates["\u63D0\u9192"];
+  const effectiveAnchor = record.kind === "DEADLINE" ? dates["\u622A\u6B62"] : anchor;
+  if (!effectiveAnchor) fail("TEXT_REPEAT_DATE_REQUIRED", at("\u91CD\u590D"), "\u91CD\u590D");
+  const weekdaysAllowed = ["WEEKLY", "ODD_WEEKS", "EVEN_WEEKS"].includes(frequency), parity = frequency === "ODD_WEEKS" || frequency === "EVEN_WEEKS";
+  let weekdays = [];
+  if (value["\u661F\u671F"] !== void 0) {
+    if (!weekdaysAllowed || !/^[1-7](?:,[1-7])*$/.test(value["\u661F\u671F"])) fail("INVALID_TEXT_WEEKDAYS", at("\u661F\u671F"), "\u661F\u671F");
+    weekdays = value["\u661F\u671F"].split(",").map(Number);
+    if (new Set(weekdays).size !== weekdays.length) fail("INVALID_TEXT_WEEKDAYS", at("\u661F\u671F"), "\u661F\u671F");
+    weekdays.sort();
+  }
+  const rule = { frequency, interval, weekdays };
+  if (parity) {
+    if (value["\u7B2C1\u5468"] === void 0) fail("TEXT_WEEK_ONE_REQUIRED", at("\u91CD\u590D"), "\u7B2C1\u5468");
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value["\u7B2C1\u5468"])) fail("INVALID_TEXT_DATE", at("\u7B2C1\u5468"), "\u7B2C1\u5468");
+    const first = parseDate(value["\u7B2C1\u5468"], "\u7B2C1\u5468", at("\u7B2C1\u5468"), formatter, true);
+    if (isoWeekday(first.day) !== 1 || monday(first.day) > monday(effectiveAnchor.day)) fail("INVALID_TEXT_WEEK_ONE", at("\u7B2C1\u5468"), "\u7B2C1\u5468");
+    rule.weekOneStart = first.iso;
+  } else if (value["\u7B2C1\u5468"] !== void 0) fail("INVALID_TEXT_WEEK_ONE", at("\u7B2C1\u5468"), "\u7B2C1\u5468");
+  if (value["\u91CD\u590D\u7ED3\u675F"] !== void 0) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value["\u91CD\u590D\u7ED3\u675F"])) fail("INVALID_TEXT_DATE", at("\u91CD\u590D\u7ED3\u675F"), "\u91CD\u590D\u7ED3\u675F");
+    const until = parseDate(value["\u91CD\u590D\u7ED3\u675F"], "\u91CD\u590D\u7ED3\u675F", at("\u91CD\u590D\u7ED3\u675F"), formatter, true);
+    if (until.day < effectiveAnchor.day) fail("TEXT_REPEAT_END_BEFORE_START", at("\u91CD\u590D\u7ED3\u675F"), "\u91CD\u590D\u7ED3\u675F");
+    rule.until = until.iso;
+  }
+  if (frequency === "CHINA_WORKDAYS" && !["2025", "2026"].includes(effectiveAnchor.day.slice(0, 4))) fail("TEXT_WORKDAY_YEAR_UNSUPPORTED", at("\u91CD\u590D"), "\u91CD\u590D");
+  const selected = weekdays.length ? weekdays : [isoWeekday(effectiveAnchor.day)];
+  const exception = frequency === "WEEKDAYS" ? isoWeekday(effectiveAnchor.day) > 5 : frequency === "CHINA_WORKDAYS" ? !workday(effectiveAnchor.day) : parity ? !selected.includes(isoWeekday(effectiveAnchor.day)) || (monday(effectiveAnchor.day) - monday(value["\u7B2C1\u5468"])) / 7 % 2 !== (frequency === "ODD_WEEKS" ? 0 : 1) : false;
+  return { rule, anchor: effectiveAnchor, exception };
+}
+function parseBlocks(text) {
+  if (typeof text !== "string" || Buffer.byteLength(text, "utf8") > textImportLimit) fail("INVALID_TEXT_SIZE", 1);
+  if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(text)) fail("INVALID_TEXT_CHARACTER", 1);
+  const lines = text.replaceAll("\r\n", "\n").split("\n");
+  if (lines[0] !== textImportProtocol || text.replaceAll("\r\n", "").includes("\r")) fail("INVALID_TEXT_PROTOCOL", 1);
+  const blocks = [];
+  let block = { values: {}, lines: {}, line: 2 }, previous;
+  function finish(line) {
+    if (!Object.keys(block.values).length) fail("EMPTY_TEXT_ITEM", line);
+    blocks.push(block);
+    if (blocks.length > 50) fail("TEXT_BATCH_LIMIT", line);
+    block = { values: {}, lines: {}, line: line + 1 };
+    previous = void 0;
+  }
+  for (let index = 1; index < lines.length; index++) {
+    const line = index + 1, raw = lines[index];
+    if (raw === "---") {
+      finish(line);
+      continue;
+    }
+    if (/^[ \t]/.test(raw) && raw.trim()) {
+      if (previous !== "\u5907\u6CE8") fail("INVALID_TEXT_CONTINUATION", line);
+      block.values["\u5907\u6CE8"] += "\n" + raw.replace(/^(?:\t| {1,2})/, "");
+      continue;
+    }
+    if (!raw.trim()) continue;
+    const match = /^([^:：]+)[:：][ \t]*(.*)$/.exec(raw);
+    if (!match) fail("INVALID_TEXT_FIELD", line);
+    const key = match[1].trim();
+    if (!fields.has(key)) fail("UNKNOWN_TEXT_FIELD", line);
+    if (Object.hasOwn(block.values, key)) fail("DUPLICATE_TEXT_FIELD", line, key);
+    if (key !== "\u5907\u6CE8" && !match[2].trim()) fail("EMPTY_TEXT_FIELD", line, key);
+    block.values[key] = match[2].trim();
+    block.lines[key] = line;
+    previous = key;
+  }
+  finish(lines.length);
+  return blocks;
+}
+function visibleProjectIDs(records) {
+  const ids = new Set(records.map((record) => record.id)), children = /* @__PURE__ */ new Map(), hidden = /* @__PURE__ */ new Set();
+  for (const record of records) {
+    if (record.deletedAt || record.archivedAt) hidden.add(record.id);
+    for (const parent of [record.projectID, record.areaID].filter(Boolean)) {
+      if (!children.has(parent)) children.set(parent, []);
+      children.get(parent).push(record.id);
+      if (!ids.has(parent)) hidden.add(record.id);
+    }
+  }
+  const queue = [...hidden];
+  for (let cursor = 0; cursor < queue.length; cursor++) for (const child of children.get(queue[cursor]) ?? []) {
+    if (!hidden.has(child)) {
+      hidden.add(child);
+      queue.push(child);
+    }
+  }
+  return new Set(records.filter((record) => ["PROJECT", "AREA"].includes(record.kind) && !hidden.has(record.id)).map((record) => record.id));
+}
+function parseCalendarText(text, snapshot, now = Date.now()) {
+  const blocks = parseBlocks(text), records = [], series = [];
+  const stamp = new Date(now).toISOString(), projectsVisible = blocks.some((block) => block.values["\u9879\u76EE"] !== void 0) ? visibleProjectIDs(snapshot.records) : null;
+  for (const block of blocks) {
+    const value = block.values, at = (key) => block.lines[key] ?? block.line;
+    const kind = value["\u7C7B\u578B"] === "\u4E8B\u9879" ? "TASK" : value["\u7C7B\u578B"] === "\u622A\u6B62\u4E8B\u9879" ? "DEADLINE" : value["\u7C7B\u578B"] === "\u63D0\u9192" ? "REMINDER" : null;
+    if (!kind) fail("INVALID_TEXT_KIND", at("\u7C7B\u578B"), "\u7C7B\u578B");
+    if (!value["\u6807\u9898"] || value["\u6807\u9898"].length > 240) fail("INVALID_TEXT_TITLE", at("\u6807\u9898"), "\u6807\u9898");
+    const timezone = value["\u65F6\u533A"] ?? snapshot.profile?.timezone ?? "Asia/Shanghai";
+    const formatter = zoneFormatter(timezone, at("\u65F6\u533A"));
+    const dates = {};
+    for (const key of ["\u8BA1\u5212", "\u622A\u6B62", "\u63D0\u9192"]) if (value[key] !== void 0) dates[key] = parseDate(value[key], key, at(key), formatter, key === "\u622A\u6B62");
+    if (kind === "DEADLINE" && !dates["\u622A\u6B62"]) fail("TEXT_DUE_REQUIRED", at("\u7C7B\u578B"), "\u622A\u6B62");
+    if (kind === "REMINDER" && !dates["\u63D0\u9192"]) fail("TEXT_REMINDER_REQUIRED", at("\u7C7B\u578B"), "\u63D0\u9192");
+    const record = {
+      id: randomUUID(),
+      kind,
+      title: value["\u6807\u9898"],
+      version: 1,
+      createdAt: stamp,
+      updatedAt: stamp,
+      status: kind === "TASK" ? "TODO" : "OPEN",
+      summary: "",
+      body: value["\u5907\u6CE8"] ?? "",
+      category: "\u7B14\u8BB0",
+      tags: [],
+      pinned: false,
+      projectKind: "RESEARCH",
+      dateOnly: dates["\u622A\u6B62"]?.dateOnly ?? true,
+      timezone,
+      notificationsEnabled: !!dates["\u63D0\u9192"] || kind === "DEADLINE",
+      notificationLeadMinutes: 0,
+      isException: false
+    };
+    if (dates["\u8BA1\u5212"]) record.scheduledAt = dates["\u8BA1\u5212"].iso;
+    if (dates["\u622A\u6B62"]) record.dueDate = dates["\u622A\u6B62"].iso;
+    if (dates["\u63D0\u9192"]) record.remindAt = dates["\u63D0\u9192"].iso;
+    if (kind === "DEADLINE" && dates["\u63D0\u9192"]) {
+      const base = dates["\u622A\u6B62"].dateOnly ? localInstant([...dates["\u622A\u6B62"].day.split("-").map(Number), 9], formatter, at("\u622A\u6B62"), "\u622A\u6B62").getTime() : Date.parse(dates["\u622A\u6B62"].iso);
+      const lead = (base - Date.parse(dates["\u63D0\u9192"].iso)) / 6e4;
+      if (!Number.isSafeInteger(lead) || lead < 0) fail("INVALID_TEXT_DEADLINE_REMINDER", at("\u63D0\u9192"), "\u63D0\u9192");
+      record.notificationLeadMinutes = lead;
+    }
+    if (value["\u9879\u76EE"] !== void 0) {
+      const projects = snapshot.records.filter((item) => projectsVisible.has(item.id));
+      const matches = uuid.test(value["\u9879\u76EE"]) ? projects.filter((item) => item.id.toLowerCase() === value["\u9879\u76EE"].toLowerCase()) : projects.filter((item) => item.title === value["\u9879\u76EE"]);
+      if (matches.length !== 1) fail(matches.length ? "AMBIGUOUS_TEXT_PROJECT" : "TEXT_PROJECT_NOT_FOUND", at("\u9879\u76EE"), "\u9879\u76EE");
+      if (matches[0].kind === "AREA") record.areaID = matches[0].id;
+      else record.projectID = matches[0].id;
+    }
+    const repeating = recurrence(block, dates, formatter, record);
+    if (repeating) {
+      const group = { id: randomUUID(), template: structuredClone(record), rule: repeating.rule };
+      record.recurrenceSeriesID = group.id;
+      record.occurrenceDate = repeating.anchor.day;
+      record.isException = repeating.exception;
+      record.version = 2;
+      series.push(group);
+    }
+    records.push(record);
+  }
+  return { records, series };
+}
+function calendarTextPrompt(endpoint) {
+  return `\u4F60\u53EF\u4EE5\u901A\u8FC7\u5DE5\u4F5C\u574A\u7684\u7EAF\u6587\u672C API\uFF0C\u628A\u7ECF\u8FC7\u7528\u6237\u786E\u8BA4\u7684\u65E5\u7A0B\u6DFB\u52A0\u5230\u5DF2\u7ED1\u5B9A\u8D26\u6237\u3002\u4EC5\u6267\u884C\u7528\u6237\u8981\u6C42\u7684\u65B0\u589E\uFF1B\u4E0D\u8981\u8986\u76D6\u3001\u5220\u9664\u6216\u8BFB\u53D6\u65E5\u7A0B\u3002\u8D26\u6237\u7531\u4E13\u7528\u5BC6\u94A5\u786E\u5B9A\uFF0C\u4E0D\u4F20\u90AE\u7BB1\u3001\u5BC6\u7801\u6216\u7528\u6237 ID\u3002\u5BC6\u94A5\u4EC5\u7528\u4E8E\u6B64 API\uFF0C\u4E0D\u53D1\u5230\u5176\u4ED6\u5730\u5740\uFF0C\u4E5F\u4E0D\u8981\u653E\u5728\u7F51\u5740\u3001\u6B63\u6587\u6216\u65E5\u5FD7\u4E2D\u3002
+
+\u63A5\u53E3\uFF1APOST ${endpoint}
+\u8BF7\u6C42\u5934\uFF08\u540D\u79F0\u4F7F\u7528 ASCII\uFF09\uFF1A
+Authorization: Bearer {{API_KEY}}
+Content-Type: text/plain; charset=utf-8
+Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u4E00\u4E2A UUID\uFF1B\u8D85\u65F6\u6216\u91CD\u8BD5\u5FC5\u987B\u590D\u7528\u540C\u4E00\u4E2A UUID \u548C\u5B8C\u5168\u76F8\u540C\u7684 UTF-8 \u6B63\u6587\u3002
+
+\u6B63\u6587\u7B2C\u4E00\u884C\u5FC5\u987B\u662F WORKSHOP/1\u3002\u540E\u9762\u6BCF\u884C\u4E00\u4E2A\u5B57\u6BB5\uFF0C\u683C\u5F0F\u201C\u5B57\u6BB5: \u503C\u201D\uFF08\u4E5F\u63A5\u53D7\u4E2D\u6587\u5192\u53F7\uFF09\u3002\u591A\u6761\u4E8B\u9879\u4E4B\u95F4\u5355\u72EC\u4E00\u884C ---\u3002\u4E00\u6B21\u6700\u591A 50 \u6761\uFF0C\u6574\u4E2A\u6B63\u6587\u6700\u591A 64 KiB\u3002\u4E0D\u652F\u6301 JSON\u3001Markdown \u4EE3\u7801\u56F4\u680F\u6216\u81EA\u7136\u8BED\u8A00\u65E5\u671F\u3002\u4E0D\u5141\u8BB8\u672A\u77E5\u5B57\u6BB5\u3001\u91CD\u590D\u5B57\u6BB5\u3001\u8D26\u6237/\u7528\u6237\u5B57\u6BB5\u3002\u53EF\u7528\u5B57\u6BB5\u53EA\u6709\uFF1A\u7C7B\u578B\u3001\u6807\u9898\u3001\u8BA1\u5212\u3001\u622A\u6B62\u3001\u63D0\u9192\u3001\u65F6\u533A\u3001\u9879\u76EE\u3001\u5907\u6CE8\u3001\u91CD\u590D\u3001\u661F\u671F\u3001\u7B2C1\u5468\u3001\u91CD\u590D\u7ED3\u675F\u3002
+
+\u7C7B\u578B\u5FC5\u586B\uFF1A\u4E8B\u9879 / \u622A\u6B62\u4E8B\u9879 / \u63D0\u9192\u3002\u6807\u9898\u5FC5\u586B\uFF0C\u6700\u591A 240 \u5B57\u7B26\uFF08\u6309 UTF-16 \u957F\u5EA6\u8BA1\uFF0C\u517C\u5BB9 App\uFF09\u3002\u622A\u6B62\u4E8B\u9879\u5FC5\u987B\u6709\u622A\u6B62\uFF1B\u63D0\u9192\u5FC5\u987B\u6709\u63D0\u9192\uFF1B\u666E\u901A\u4E8B\u9879\u53EF\u4EE5\u4E0D\u8BBE\u7F6E\u65F6\u95F4\u3002
+\u8BA1\u5212\u3001\u63D0\u9192\u5FC5\u987B\u4F7F\u7528\u5E26\u65F6\u533A\u504F\u79FB\u7684 ISO 8601 \u7EDD\u5BF9\u65F6\u95F4\uFF0C\u4F8B\u5982 2026-10-20T09:00:00+08:00\uFF1B\u79D2\u53EF\u7701\u7565\uFF0C\u4E5F\u53EF\u4F7F\u7528 Z\uFF08\u8BE5\u65F6\u523B\u7684\u504F\u79FB\u5FC5\u987B\u5339\u914D\u6240\u9009\u65F6\u533A\uFF09\u3002\u622A\u6B62\u4E5F\u53EF\u4F7F\u7528 YYYY-MM-DD\uFF0C\u8868\u793A\u5F53\u5730\u5168\u5929\u622A\u6B62\u3002\u65F6\u533A\u4E3A IANA \u540D\u79F0\uFF0C\u4F8B\u5982 Asia/Shanghai\uFF1B\u7701\u7565\u65F6\u4F7F\u7528\u8D26\u6237\u65F6\u533A\u3002\u622A\u6B62\u4E8B\u9879\u9ED8\u8BA4\u5728\u622A\u6B62\u65F6\u523B\u63D0\u9192\uFF0C\u65E5\u671F\u578B\u9ED8\u8BA4\u4E3A\u5F53\u5730 09:00\uFF1B\u586B\u5199\u5176\u63D0\u9192\u65F6\uFF0C\u987B\u4E0D\u665A\u4E8E\u8BE5\u57FA\u51C6\uFF0C\u4E14\u4E0E\u57FA\u51C6\u76F8\u5DEE\u6574\u6570\u5206\u949F\uFF0C\u5426\u5219\u62D2\u7EDD\u3002\u666E\u901A\u4E8B\u9879\u6CA1\u6709\u63D0\u9192\u5B57\u6BB5\u5C31\u4E0D\u5F00\u542F\u901A\u77E5\u3002\u6240\u6709\u65E5\u671F\u5FC5\u987B\u771F\u5B9E\u6709\u6548\uFF1B\u4E0D\u731C\u6D4B\u201C\u660E\u5929\u201D\u201C\u4E0B\u5468\u201D\u7B49\u65E5\u671F\uFF0C\u4E5F\u4E0D\u731C\u7528\u6237\u672A\u7ED9\u5B9A\u7684\u5730\u70B9\u548C\u65F6\u533A\u3002
+\u9879\u76EE\u53EF\u7701\u7565\uFF1B\u586B\u5199\u73B0\u6709\u9879\u76EE\u7EC4\u7684 UUID \u6216\u5B8C\u5168\u76F8\u540C\u4E14\u552F\u4E00\u7684\u540D\u79F0\uFF1B\u4E0D\u81EA\u52A8\u65B0\u5EFA\u9879\u76EE\uFF0C\u627E\u4E0D\u5230\u6216\u540C\u540D\u65F6\u6574\u6279\u62D2\u7EDD\u3002\u5907\u6CE8\u53EF\u7701\u7565\uFF1B\u7EED\u884C\u4EE5\u4E24\u4E2A\u7A7A\u683C\u7F29\u8FDB\u3002
+\u91CD\u590D\u53EF\u7701\u7565\uFF0C\u5141\u8BB8\uFF1A\u6BCF\u5929 / \u6BCF\u5468 / \u6BCF2\u5468 / \u6BCF\u6708 / \u5468\u4E00\u81F3\u5468\u4E94 / \u5DE5\u4F5C\u65E5\uFF08\u542B\u8C03\u4F11\uFF09 / \u5355\u5468 / \u53CC\u5468\u3002\u91CD\u590D\u5FC5\u987B\u6709\u8BA1\u5212\u3001\u622A\u6B62\u6216\u63D0\u9192\u65F6\u95F4\u3002\u661F\u671F\u4EC5\u7528\u4E8E\u6BCF\u5468\u3001\u6BCF2\u5468\u3001\u5355\u5468\u3001\u53CC\u5468\uFF0C\u4EE5\u82F1\u6587\u9017\u53F7\u8FDE\u63A5 1 \u81F3 7\uFF08\u5468\u4E00\u4E3A 1\uFF09\uFF0C\u4E0D\u91CD\u590D\uFF1B\u7701\u7565\u65F6\u4F7F\u7528\u9996\u6B21\u65E5\u671F\u7684\u661F\u671F\u3002\u5355\u5468/\u53CC\u5468\u5FC5\u987B\u63D0\u4F9B\u7B2C1\u5468: YYYY-MM-DD\uFF08\u5468\u4E00\uFF0C\u4E0D\u80FD\u665A\u4E8E\u9996\u6B21\u4E8B\u9879\u6240\u5728\u5468\uFF09\u3002\u91CD\u590D\u7ED3\u675F\u53EF\u7701\u7565\u6216\u586B\u5199 YYYY-MM-DD\uFF08\u5305\u542B\u5F53\u5929\u4E14\u4E0D\u80FD\u65E9\u4E8E\u9996\u6B21\u65E5\u671F\uFF09\uFF1B\u661F\u671F\u3001\u7B2C1\u5468\u548C\u91CD\u590D\u7ED3\u675F\u4E0D\u80FD\u8131\u79BB\u91CD\u590D\u5355\u72EC\u4F7F\u7528\u3002\u5DE5\u4F5C\u65E5\u8C03\u4F11\u65E5\u5386\u4EC5\u652F\u6301 2025\u20142026 \u5E74\u9996\u6B21\u65E5\u671F\uFF0C\u540E\u7EED\u5E74\u4EFD\u5728\u65E5\u5386\u66F4\u65B0\u524D\u4E0D\u4F1A\u63A8\u7B97\u3002\u670D\u52A1\u7AEF\u53EA\u4FDD\u5B58\u9996\u6B21\u4E8B\u9879\u4E0E\u91CD\u590D\u89C4\u5219\uFF0C\u4E0D\u65E0\u9650\u751F\u6210\u672A\u6765\u526F\u672C\u3002
+
+\u5355\u6761\u793A\u4F8B\uFF1A
+WORKSHOP/1
+\u7C7B\u578B: \u4E8B\u9879
+\u6807\u9898: \u53BB\u56FE\u4E66\u9986\u8FD8\u4E66
+\u8BA1\u5212: 2026-10-20T09:00:00+08:00
+\u63D0\u9192: 2026-10-20T08:45:00+08:00
+\u65F6\u533A: Asia/Shanghai
+\u5907\u6CE8: \u5E26\u4E0A\u501F\u9605\u5361
+
+\u6279\u91CF\u793A\u4F8B\uFF1A
+WORKSHOP/1
+\u7C7B\u578B: \u4E8B\u9879
+\u6807\u9898: \u6668\u95F4\u6574\u7406
+\u8BA1\u5212: 2026-10-20T08:00:00+08:00
+\u91CD\u590D: \u5468\u4E00\u81F3\u5468\u4E94
+\u91CD\u590D\u7ED3\u675F: 2026-12-31
+---
+\u7C7B\u578B: \u622A\u6B62\u4E8B\u9879
+\u6807\u9898: \u63D0\u4EA4\u8BFE\u7A0B\u62A5\u544A
+\u622A\u6B62: 2026-10-23
+\u65F6\u533A: Asia/Shanghai
+\u5907\u6CE8: \u68C0\u67E5\u53C2\u8003\u6587\u732E
+  \u5BFC\u51FA PDF \u540E\u63D0\u4EA4
+
+curl \u793A\u4F8B\uFF08\u5148\u628A\u539F\u6587\u4FDD\u5B58\u4E3A UTF-8 \u7684 calendar.txt\uFF0C\u5E76\u5728\u5B89\u5168\u73AF\u5883\u8BBE\u7F6E WORKSHOP_API_KEY\uFF09\uFF1A
+curl --fail-with-body -X POST '${endpoint}' \\
+  -H "Authorization: Bearer $WORKSHOP_API_KEY" \\
+  -H 'Content-Type: text/plain; charset=utf-8' \\
+  -H "Idempotency-Key: $(uuidgen)" \\
+  --data-binary @calendar.txt
+\u5B9E\u9645\u91CD\u8BD5\u65F6\u4FDD\u5B58\u5E76\u590D\u7528\u9996\u6B21\u751F\u6210\u7684 UUID\uFF1B\u4E0D\u8981\u91CD\u590D\u8FD0\u884C uuidgen \u751F\u6210\u65B0\u952E\u3002
+
+\u6210\u529F\u65B0\u589E\u8FD4\u56DE 201\uFF0Cdata \u4E2D\u542B revision\u3001created\u3001recordIDs\u3001seriesIDs\u3001replayed:false\u3002\u540C\u4E00\u8D26\u6237\u7684\u540C\u4E00\u5E42\u7B49\u952E\u548C\u76F8\u540C\u539F\u6587\u91CD\u8BD5\u8FD4\u56DE 200\u3001\u76F8\u540C ID/\u9996\u6B21 revision\u3001replayed:true\uFF0C\u4E0D\u91CD\u590D\u65B0\u589E\uFF1B\u540C\u952E\u4E0D\u540C\u539F\u6587\u8FD4\u56DE 409\u3002\u6574\u6279\u539F\u5B50\u63D0\u4EA4\uFF0C\u4E00\u6761\u9519\u8BEF\u5219\u5168\u90E8\u4E0D\u5199\u5165\u3002401 \u8868\u793A\u5BC6\u94A5\u65E0\u6548/\u8FC7\u671F/\u64A4\u9500\uFF0C413 \u8868\u793A\u6B63\u6587\u8FC7\u5927\uFF0C415 \u8868\u793A\u7C7B\u578B\u9519\u8BEF\uFF0C422 \u8868\u793A\u683C\u5F0F/\u5B57\u6BB5/\u65E5\u671F\u9519\u8BEF\uFF08error.line\u3001error.field\uFF09\uFF0C429 \u8868\u793A\u9650\u6D41\uFF1B\u9519\u8BEF\u65F6\u5148\u66F4\u6B63\uFF0C\u4E0D\u76F2\u76EE\u6362\u952E\u91CD\u8BD5\u3002\u6BCF IP \u6BCF\u5206\u949F\u6700\u591A 60 \u6B21\u3001\u6BCF\u8D26\u6237\u6BCF\u5C0F\u65F6\u6700\u591A 120 \u6B21\uFF1B\u5BC6\u94A5\u6700\u957F\u4E00\u5E74\uFF0C\u53EF\u968F\u65F6\u5728\u8D26\u6237\u8BBE\u7F6E\u64A4\u9500\u3002`;
+}
+
 // Server/server.source.mjs
 var deploymentRevision = "unversioned";
 try {
@@ -24319,7 +24644,7 @@ var pkceVerifier = /^[A-Za-z0-9._~-]{43,128}$/;
 function validWebAuthRequest(value) {
   return value && !Array.isArray(value) && typeof value === "object" && Object.keys(value).length === 2 && typeof value.codeChallenge === "string" && webAuthValue.test(value.codeChallenge) && Buffer.from(value.codeChallenge, "base64url").toString("base64url") === value.codeChallenge && typeof value.state === "string" && webAuthValue.test(value.state);
 }
-var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var uuid2 = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var emptyWorkspace = (name) => ({ format: "guangyi-native", schemaVersion: 1, records: [], series: [], activities: [], revisions: [], assets: [], trash: [], profile: { name, timezone: "Asia/Shanghai" } });
 var APIError = class extends Error {
   constructor(status, code) {
@@ -24376,7 +24701,7 @@ function validateSnapshot(snapshot) {
     REMINDER: ["OPEN", "DONE"]
   };
   for (const record of snapshot.records) {
-    if (!uuid.test(record.id) || ids.has(record.id) || !states[record.kind]?.includes(record.status) || typeof record.title !== "string" || !record.title.trim() || record.title.length > 480 || !Number.isSafeInteger(record.version) || record.version < 1 || typeof record.body !== "string" || record.body.length > 5e5)
+    if (!uuid2.test(record.id) || ids.has(record.id) || !states[record.kind]?.includes(record.status) || typeof record.title !== "string" || !record.title.trim() || record.title.length > 480 || !Number.isSafeInteger(record.version) || record.version < 1 || typeof record.body !== "string" || record.body.length > 5e5)
       throw new APIError(422, "INVALID_RECORD");
     ids.add(record.id);
     for (const field of ["createdAt", "updatedAt", "dueDate", "remindAt", "scheduledAt", "snoozedUntil"]) {
@@ -24393,7 +24718,7 @@ function validateSnapshot(snapshot) {
   }
   const assetIDs = /* @__PURE__ */ new Set(), noteIDs = new Set(snapshot.records.filter((r) => r.kind === "KNOWLEDGE").map((r) => r.id));
   for (const asset of snapshot.assets) {
-    if (!uuid.test(asset.id) || assetIDs.has(asset.id) || !noteIDs.has(asset.ownerID) || typeof asset.data !== "string" || asset.data.length > 14 * 1024 * 1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(asset.data)) throw new APIError(422, "INVALID_ASSET");
+    if (!uuid2.test(asset.id) || assetIDs.has(asset.id) || !noteIDs.has(asset.ownerID) || typeof asset.data !== "string" || asset.data.length > 14 * 1024 * 1024 || !/^[A-Za-z0-9+/]*={0,2}$/.test(asset.data)) throw new APIError(422, "INVALID_ASSET");
     const data = Buffer.from(asset.data, "base64");
     if (data.length > 10 * 1024 * 1024 || data.subarray(0, 5).toString() !== "%PDF-") throw new APIError(422, "INVALID_ASSET");
     assetIDs.add(asset.id);
@@ -24401,7 +24726,8 @@ function validateSnapshot(snapshot) {
 }
 function moment(record) {
   if (record.snoozedUntil) return Date.parse(record.snoozedUntil);
-  let at = record.kind === "REMINDER" ? record.remindAt : record.dueDate ?? record.scheduledAt;
+  if (["TASK", "MILESTONE", "REMINDER"].includes(record.kind) && record.remindAt) return Date.parse(record.remindAt);
+  let at = record.dueDate ?? record.scheduledAt;
   if (!at) return NaN;
   if (record.kind !== "REMINDER" && record.dueDate && record.dateOnly) {
     const formatter = new Intl.DateTimeFormat("en-CA", { timeZone: record.timezone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
@@ -24429,7 +24755,10 @@ function createNativeServer(configuration) {
     CREATE TABLE IF NOT EXISTS workspaces(user_id INTEGER PRIMARY KEY REFERENCES users(id),revision INTEGER,snapshot TEXT);
     CREATE TABLE IF NOT EXISTS history(user_id INTEGER,revision INTEGER,snapshot TEXT,created INTEGER,PRIMARY KEY(user_id,revision));
     CREATE TABLE IF NOT EXISTS devices(user_id INTEGER,device_id TEXT,token TEXT,platform TEXT,bundle_id TEXT,environment TEXT,created INTEGER,PRIMARY KEY(user_id,device_id));
-    CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY,user_id INTEGER,accepted INTEGER,lease_until INTEGER);`);
+    CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY,user_id INTEGER,accepted INTEGER,lease_until INTEGER);
+    CREATE TABLE IF NOT EXISTS text_tokens(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),name TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER);
+    CREATE INDEX IF NOT EXISTS text_tokens_user ON text_tokens(user_id);
+    CREATE TABLE IF NOT EXISTS text_imports(user_id INTEGER NOT NULL REFERENCES users(id),idempotency_key TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,idempotency_key));`);
   const email = adminEmail.trim().toLowerCase();
   if (!db.prepare("SELECT id FROM users WHERE email=?").get(email)) {
     const salt = randomBytes(16).toString("hex"), hash = scryptSync(adminPassword, salt, 64);
@@ -24441,6 +24770,31 @@ function createNativeServer(configuration) {
   const passkeyApps = (configuration.passkeyApps ?? "67WBP6S5QL.com.guangyi.workspace.native.ios,67WBP6S5QL.com.guangyi.workspace.native.mac").split(",").filter(Boolean);
   const parsedOrigin = new URL(passkeyOrigin);
   if (parsedOrigin.hostname !== rpID || parsedOrigin.origin !== passkeyOrigin || parsedOrigin.protocol !== "https:" && !(rpID === "localhost" && parsedOrigin.protocol === "http:")) throw new Error("INVALID_PASSKEY_ORIGIN");
+  const textEndpoint = passkeyOrigin + textImportPath;
+  const textNow = configuration.textNow ?? Date.now;
+  const textAttempts = /* @__PURE__ */ new Map();
+  function textRateLimit(key, window, limit) {
+    const now = textNow();
+    for (const [entryKey, entry2] of textAttempts) if (now >= entry2.until) textAttempts.delete(entryKey);
+    const prior = textAttempts.get(key);
+    if (!prior && textAttempts.size >= 1e4) throw new APIError(429, "RATE_LIMITED");
+    const entry = prior ?? { until: now + window, count: 0 };
+    textAttempts.set(key, entry);
+    if (++entry.count > limit) throw new APIError(429, "RATE_LIMITED");
+  }
+  function textPeer(request) {
+    const peer = request.socket.remoteAddress ?? "unknown", forwarded = request.headers["x-real-ip"];
+    const local = peer === "127.0.0.1" || peer === "::1" || peer === "::ffff:127.0.0.1";
+    return local && typeof forwarded === "string" && isIP(forwarded) ? forwarded : peer;
+  }
+  function textCredential(request) {
+    const header = request.headers.authorization;
+    if (typeof header !== "string" || !/^Bearer wsi_[A-Za-z0-9_-]{43}$/.test(header)) throw new APIError(401, "INVALID_TEXT_TOKEN");
+    const credential = db.prepare("SELECT * FROM text_tokens WHERE hash=? AND expires>?").get(sha(header.slice(7)), textNow());
+    if (!credential) throw new APIError(401, "INVALID_TEXT_TOKEN");
+    return credential;
+  }
+  const textCredentialInfo = (row) => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...row.last_used != null ? { lastUsed: row.last_used } : {} });
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_users(user_id INTEGER PRIMARY KEY REFERENCES users(id),handle TEXT UNIQUE NOT NULL);
     CREATE TABLE IF NOT EXISTS passkeys(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),public_key BLOB NOT NULL,counter INTEGER NOT NULL,created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
@@ -24627,6 +24981,45 @@ function createNativeServer(configuration) {
       throw new APIError(400, "INVALID_JSON");
     }
   }
+  async function textBody(request) {
+    if (request.headers["content-encoding"] != null && request.headers["content-encoding"] !== "identity") throw new APIError(415, "TEXT_ENCODING_UNSUPPORTED");
+    if (!/^text\/plain(?:\s*;\s*charset\s*=\s*(?:utf-8|"utf-8"))?\s*$/i.test(request.headers["content-type"] ?? "")) throw new APIError(415, "UTF8_TEXT_REQUIRED");
+    if (Number(request.headers["content-length"]) > textImportLimit) {
+      request.resume();
+      throw new APIError(413, "TOO_LARGE");
+    }
+    const bytes = await new Promise((resolve, reject) => {
+      let size = 0, chunks = [], done = false;
+      const fail2 = (error) => {
+        if (!done) {
+          done = true;
+          chunks = [];
+          reject(error);
+        }
+      };
+      request.on("data", (chunk) => {
+        if (done) return;
+        size += chunk.length;
+        if (size > textImportLimit) return fail2(new APIError(413, "TOO_LARGE"));
+        chunks.push(chunk);
+      });
+      request.once("end", () => {
+        if (!done) {
+          done = true;
+          resolve(Buffer.concat(chunks));
+        }
+      });
+      request.once("aborted", () => fail2(new APIError(400, "INVALID_TEXT_BODY")));
+      request.once("error", () => fail2(new APIError(400, "INVALID_TEXT_BODY")));
+    });
+    let text;
+    try {
+      text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+    } catch {
+      throw new APIError(422, "INVALID_TEXT_UTF8");
+    }
+    return { bytes, text };
+  }
   function respond(response, status, data) {
     response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" });
     response.end(JSON.stringify(data));
@@ -24790,7 +25183,84 @@ function createNativeServer(configuration) {
           throw error;
         }
       }
+      if (path === textImportPath && request.method === "POST") {
+        sameWebOrigin(request);
+        textRateLimit("ip:" + textPeer(request), 6e4, 60);
+        textCredential(request);
+        const requestID = request.headers["idempotency-key"];
+        if (typeof requestID !== "string" || !uuid2.test(requestID)) throw new APIError(400, "IDEMPOTENCY_KEY_REQUIRED");
+        const { bytes, text } = await textBody(request);
+        const digest2 = sha(bytes), key = requestID.toLowerCase();
+        let result, owner, repeated = false;
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          const credential = textCredential(request);
+          owner = credential.user_id;
+          textRateLimit("account:" + owner, 36e5, 120);
+          const prior = db.prepare("SELECT body_hash,result FROM text_imports WHERE user_id=? AND idempotency_key=?").get(owner, key);
+          if (prior) {
+            if (prior.body_hash !== digest2) throw new APIError(409, "IDEMPOTENCY_CONFLICT");
+            result = JSON.parse(prior.result);
+            repeated = true;
+          } else {
+            const old = db.prepare("SELECT revision,snapshot FROM workspaces WHERE user_id=?").get(owner);
+            const snapshot = JSON.parse(old.snapshot), additions = parseCalendarText(text, snapshot, textNow());
+            snapshot.records.push(...additions.records);
+            snapshot.series.push(...additions.series);
+            validateSnapshot(snapshot);
+            db.prepare("INSERT INTO history(user_id,revision,snapshot,created) VALUES(?,?,?,?)").run(owner, old.revision, old.snapshot, textNow());
+            db.prepare("UPDATE workspaces SET revision=revision+1,snapshot=? WHERE user_id=?").run(JSON.stringify(snapshot), owner);
+            db.prepare("DELETE FROM history WHERE user_id=? AND revision<?").run(owner, Math.max(0, old.revision - 4));
+            result = { revision: old.revision + 1, created: additions.records.length, recordIDs: additions.records.map((item) => item.id), seriesIDs: additions.series.map((item) => item.id) };
+            db.prepare("INSERT INTO text_imports(user_id,idempotency_key,body_hash,result,created) VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result), textNow());
+          }
+          db.prepare("UPDATE text_tokens SET last_used=? WHERE id=?").run(textNow(), credential.id);
+          db.exec("COMMIT");
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+        respond(response, repeated ? 200 : 201, { data: { ...result, replayed: repeated } });
+        if (!repeated) queuePush(() => notifyWorkspaceChanged(owner, result.revision));
+        return;
+      }
       const userID = userFor(request);
+      if (path === "/api/native/v1/integrations/text-tokens" && request.method === "GET") {
+        sameWebOrigin(request);
+        const credentials = db.prepare("SELECT * FROM text_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(userID, textNow()).map(textCredentialInfo);
+        return respond(response, 200, { data: { credentials, endpoint: textEndpoint, protocol: textImportProtocol, prompt: calendarTextPrompt(textEndpoint) } });
+      }
+      if (path === "/api/native/v1/integrations/text-tokens" && ["POST", "DELETE"].includes(request.method)) {
+        sameWebOrigin(request);
+        requireJSON(request);
+        const value = await body(request, 1024);
+        if (!value || Array.isArray(value) || typeof value !== "object") throw new APIError(422, "INVALID_TEXT_TOKEN_REQUEST");
+        const creating = request.method === "POST";
+        if (creating ? Object.keys(value).some((key) => key !== "name") : Object.keys(value).length !== 1 || !uuid2.test(value.id)) throw new APIError(422, "INVALID_TEXT_TOKEN_REQUEST");
+        const name = value.name === void 0 ? "AI\u65E5\u7A0B\u5199\u5165" : typeof value.name === "string" ? value.name.trim() : "";
+        if (creating && (!name || name.length > 60)) throw new APIError(422, "INVALID_TEXT_TOKEN_NAME");
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          const owner = userFor(request);
+          if (creating) {
+            const now = textNow();
+            db.prepare("DELETE FROM text_tokens WHERE user_id=? AND expires<=?").run(owner, now);
+            if (db.prepare("SELECT COUNT(*) AS total FROM text_tokens WHERE user_id=?").get(owner).total >= 10) throw new APIError(422, "TEXT_TOKEN_LIMIT");
+            const accessToken = "wsi_" + randomBytes(32).toString("base64url");
+            const credential = { id: randomUUID2(), name, created: now, expires: now + 365 * 864e5 };
+            db.prepare("INSERT INTO text_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)").run(credential.id, sha(accessToken), owner, name, credential.created, credential.expires);
+            db.exec("COMMIT");
+            return respond(response, 201, { data: { credential, accessToken, endpoint: textEndpoint, protocol: textImportProtocol } });
+          }
+          const removed = db.prepare("DELETE FROM text_tokens WHERE id=? AND user_id=?").run(value.id.toLowerCase(), owner);
+          if (removed.changes !== 1) throw new APIError(404, "TEXT_TOKEN_NOT_FOUND");
+          db.exec("COMMIT");
+          return respond(response, 200, { data: { revoked: true } });
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      }
       if (path === "/api/native/v1/web-auth/authorize" && request.method === "POST") {
         sameWebOrigin(request);
         webAuthRateLimit(request);
@@ -24900,7 +25370,7 @@ function createNativeServer(configuration) {
       }
       if (path === "/api/native/v1/workspace" && request.method === "PUT") {
         const sourceDeviceID = request.headers["x-workspace-device-id"];
-        if (sourceDeviceID != null && (typeof sourceDeviceID !== "string" || !uuid.test(sourceDeviceID))) throw new APIError(422, "INVALID_DEVICE");
+        if (sourceDeviceID != null && (typeof sourceDeviceID !== "string" || !uuid2.test(sourceDeviceID))) throw new APIError(422, "INVALID_DEVICE");
         const match = request.headers["if-match"];
         if (typeof match !== "string" || !/^"\d+"$/.test(match)) throw new APIError(428, "VERSION_REQUIRED");
         const revision = Number(match.slice(1, -1));
@@ -24927,7 +25397,7 @@ function createNativeServer(configuration) {
       }
       if (path === "/api/native/v1/devices" && request.method === "PUT") {
         const device = await body(request, 8192);
-        if (!uuid.test(device.deviceID) || !["iOS", "macOS"].includes(device.platform) || !["sandbox", "production"].includes(device.environment) || !allowedBundles.has(device.bundleID) || typeof device.token !== "string" || !/^[a-f0-9]{32,512}$/i.test(device.token)) throw new APIError(422, "INVALID_DEVICE");
+        if (!uuid2.test(device.deviceID) || !["iOS", "macOS"].includes(device.platform) || !["sandbox", "production"].includes(device.environment) || !allowedBundles.has(device.bundleID) || typeof device.token !== "string" || !/^[a-f0-9]{32,512}$/i.test(device.token)) throw new APIError(422, "INVALID_DEVICE");
         const old = db.prepare("SELECT created FROM devices WHERE user_id=? AND device_id=?").get(userID, device.deviceID);
         db.prepare(`INSERT INTO devices(user_id,device_id,token,platform,bundle_id,environment,created) VALUES(?,?,?,?,?,?,?)
           ON CONFLICT(user_id,device_id) DO UPDATE SET token=excluded.token,platform=excluded.platform,bundle_id=excluded.bundle_id,environment=excluded.environment`).run(userID, device.deviceID, device.token, device.platform, device.bundleID, device.environment, old?.created ?? Date.now());
@@ -24940,6 +25410,7 @@ function createNativeServer(configuration) {
       }
       throw new APIError(404, "NOT_FOUND");
     } catch (error) {
+      if (error instanceof TextImportError) return respond(response, error.status, { error: { code: error.message, ...error.line ? { line: error.line } : {}, ...error.field ? { field: error.field } : {} } });
       respond(response, error instanceof APIError ? error.status : 500, { error: { code: error instanceof APIError ? error.message : "INTERNAL_ERROR" } });
     }
   });
