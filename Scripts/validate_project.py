@@ -90,6 +90,16 @@ assert len(apps) == 4
 assert any(native[file]['fileRef'] == widget['productReference'] for phase in host['buildPhases'] if native[phase]['isa'] == 'PBXCopyFilesBuildPhase' and native[phase].get('dstSubfolderSpec') == '13' for file in native[phase]['files'])
 def configurations(target):
     return {native[key]['name']: native[key]['buildSettings'] for key in native[target['buildConfigurationList']]['buildConfigurations']}
+for app in [host, apps['GuangyiWorkSpace-Mac']]:
+    resources = [native[native[file]['fileRef']] for phase in app['buildPhases'] if native[phase]['isa'] == 'PBXResourcesBuildPhase' for file in native[phase]['files']]
+    for settings in configurations(app).values():
+        name = settings['ASSETCATALOG_COMPILER_APPICON_NAME']
+        assert any(
+            resource.get('lastKnownFileType') == 'folder.iconcomposer.icon' and Path(resource['path']).stem == name and (root / resource['path'] / 'icon.json').is_file()
+            or resource.get('lastKnownFileType') == 'folder.assetcatalog' and any((root / resource['path']).rglob(name + '.appiconset'))
+            for resource in resources
+        ), 'Primary app icon is missing from resources: ' + app['name']
+print('Primary app icons resolve through each application resource phase.')
 for mode, settings in configurations(host).items():
     extension = configurations(widget)[mode]
     assert extension['PRODUCT_BUNDLE_IDENTIFIER'] == settings['PRODUCT_BUNDLE_IDENTIFIER'] + '.liveactivity'

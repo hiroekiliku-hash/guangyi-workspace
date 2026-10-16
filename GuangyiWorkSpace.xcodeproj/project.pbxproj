@@ -5,6 +5,34 @@
 	"objectVersion" = "56";
 	"archiveVersion" = "1";
 	"objects" = {
+		"0A9D9DCF82088B36C2842B75" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "folder.iconcomposer.icon";
+			"path" = "Shared/AppIcon.icon";
+			"sourceTree" = "<group>";
+		};
+		"34248C56F116B6940F5ADB54" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0A9D9DCF82088B36C2842B75";
+		};
+		"71D52138DAD3D41FFBE8C724" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "0A9D9DCF82088B36C2842B75";
+		};
+		"2379467F9C7A95B05B4B2E69" = {
+			"isa" = "PBXFileReference";
+			"lastKnownFileType" = "sourcecode.swift";
+			"path" = "Shared/Views/GettingStartedView.swift";
+			"sourceTree" = "<group>";
+		};
+		"4D40EC7C663A2B864CE318A0" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2379467F9C7A95B05B4B2E69";
+		};
+		"2BC01BFAFFDDCE79E5C4B5E6" = {
+			"isa" = "PBXBuildFile";
+			"fileRef" = "2379467F9C7A95B05B4B2E69";
+		};
 		"42DEFD2A8E79680AB5041A90" = {
 			"isa" = "XCConfigurationList";
 			"defaultConfigurationIsVisible" = "0";
@@ -107,6 +135,7 @@
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
+				"34248C56F116B6940F5ADB54",
 				"86647C2D1C8F3A07AECD64E3",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
@@ -466,6 +495,7 @@
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
+				"4D40EC7C663A2B864CE318A0",
 				"27160F51E8FF6895550B0253",
 				"73317302BF0C14ABC32E1BC3",
 				"AB21CAB36FD72B383F9FDC96",
@@ -570,6 +600,7 @@
 			"isa" = "PBXResourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
+				"71D52138DAD3D41FFBE8C724",
 				"EC28E62787B1B37C8D20116B",
 			);
 			"runOnlyForDeploymentPostprocessing" = "0";
@@ -1075,6 +1106,8 @@
 			"isa" = "PBXGroup";
 			"name" = "Shared";
 			"children" = (
+				"0A9D9DCF82088B36C2842B75",
+				"2379467F9C7A95B05B4B2E69",
 				"BA680F17CAAFA6C39E5EAB41",
 				"CFC3B9377B5F39E70F9D45C6",
 				"EB3BF0034033FB8984AFBAD7",
@@ -1131,6 +1164,7 @@
 			"isa" = "PBXSourcesBuildPhase";
 			"buildActionMask" = "2147483647";
 			"files" = (
+				"2BC01BFAFFDDCE79E5C4B5E6",
 				"0E07B198C733A03E1EB5DDB1",
 				"9323061C57395596CBF43923",
 				"D8B91AA3C0B4E187A8DEC710",

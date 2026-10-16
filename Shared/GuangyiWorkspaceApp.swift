@@ -82,6 +82,8 @@ import SwiftUI
             #if DEBUG
             if ProcessInfo.processInfo.arguments.contains("--ui-smoke-backend") {
                 NavigationStack { BackendSettingsView() }.environment(store).nativeWindowSize()
+            } else if ProcessInfo.processInfo.arguments.contains("--ui-smoke-settings") {
+                NavigationStack { SettingsView() }.environment(store).nativeWindowSize()
             } else {
                 WorkspaceRootView().environment(store).nativeWindowSize()
             }

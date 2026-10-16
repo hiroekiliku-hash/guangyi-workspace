@@ -44,6 +44,8 @@ struct RecordRoute: Identifiable { var id: UUID }
 struct WorkspaceRootView: View {
     @Environment(WorkspaceStore.self) private var store
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("hasCompletedGettingStarted") private var completedGettingStarted = false
+    @State private var showGettingStarted = false
     var body: some View {
         @Bindable var store = store
         platformNavigation
@@ -69,7 +71,9 @@ struct WorkspaceRootView: View {
                 Button("好") { store.information = nil }
             } message: { Text(store.information ?? "") }
             .modifier(WorkspaceFeedbackModifier())
+            .gettingStarted(isPresented: $showGettingStarted)
             .task {
+                if !completedGettingStarted { showGettingStarted = true }
                 store.refresh(); store.scheduleSync()
                 while !Task.isCancelled {
                     do { try await Task.sleep(for: .seconds(30)) } catch { break }
