@@ -1,5 +1,28 @@
 # Native passkeys
 
+Native passkeys are paused in the default Personal Team test configuration.
+Both application Info.plists set `NativePasskeysEnabled` to false; the login UI
+and native service entry points respect this switch. Password login remains
+available. The default iOS entitlements request neither Associated Domains nor
+APNs. Web passkeys and backend endpoints remain enabled.
+
+The Personal Team build can also use the dedicated `/native-login` page through
+the system web authentication session. That page supports password login and
+existing web passkeys without requiring the application's Associated Domains
+entitlement. It holds credentials only in memory and never shares the regular
+website's sessionStorage. On success it requests a 90-second, single-use code
+bound to S256 PKCE and the native client's random state, revokes its temporary
+browser bearer, and offers a button to return to
+`guangyi-workspace://auth/callback`. This callback contains only a code and state.
+The native client validates state and exchanges the code plus its verifier over
+HTTPS for its own account session. No passkey private key enters the App or the
+callback URL. Details and error behavior are in `API-CONTRACT.md`.
+
+To re-enable native passkeys later with a capable signing team, use
+`Config/iOS-Passkeys.entitlements` (or `Config/Mac-Passkeys.entitlements`), obtain
+matching provisioning, and set the application's `NativePasskeysEnabled` to true.
+Keep the current defaults for Personal Team testing.
+
 The canonical backend source is `Server/server.source.mjs`. `npm ci && npm test`
 locks SimpleWebAuthn 14.0.0 and esbuild 0.28.2, generates the single-file
 `Server/server.mjs` artifact, and tests that exact artifact. The release gateway
@@ -51,7 +74,7 @@ as the native clients. The bearer session remains in tab-scoped sessionStorage;
 the page never receives or stores authenticator private-key material.
 
 Database changes are additive tables: passkey_users, passkeys,
-passkey_challenges and passkey_recoveries. Existing accounts, sessions and
+passkey_challenges, passkey_recoveries and web_auth_codes. Existing accounts, sessions and
 workspace rows are retained.
 An older release can still read the database after a code rollback; rollback
 continues not to restore the database.

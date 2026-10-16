@@ -2,6 +2,25 @@ import XCTest
 import Foundation
 
 final class ArchiveAndPersistenceTests: XCTestCase {
+    @MainActor func testRepeatingItemAndNewRulePersistWithoutProductionStorage() throws {
+        let repository = try SwiftDataRepository(inMemory: true)
+        var item = WorkspaceRecord(kind: .task, title: "周期事项持久化")
+        item.scheduledAt = WorkspaceDates.parse("2026-10-16T09:00:00+08:00")
+        var state = WorkspaceState(records: [item])
+        let rule = RecurrenceRule(frequency: .oddWeeks, weekdays: [5], until: WorkspaceDates.parse("2026-11-20"),
+            weekOneStart: WorkspaceDates.parse("2026-09-07"))
+        try RecurrenceEngine.start(item.id, rule: rule, in: &state, now: WorkspaceDates.parse("2026-10-16")!)
+        try repository.save(state)
+        func canonical(_ value: WorkspaceState) throws -> WorkspaceState {
+            var sorted = value
+            sorted.records.sort { $0.id.uuidString < $1.id.uuidString }
+            // SwiftData fetch order is unspecified; wire/archive dates have millisecond precision.
+            return try WorkspaceCoding.decoder().decode(WorkspaceState.self, from: WorkspaceCoding.encoder().encode(sorted))
+        }
+        XCTAssertEqual(try canonical(repository.load()), try canonical(state))
+        let bytes = try ArchiveService.encode(state, password: "周期事项归档验收123")
+        XCTAssertEqual(try canonical(ArchiveService.decode(bytes, password: "周期事项归档验收123")), try canonical(state))
+    }
     func testEncryptedBackupAuthenticatesAndRejectsWrongPassword() throws {
         let state = WorkspaceState(records: [WorkspaceRecord(kind: .knowledge, title: "私有笔记")])
         let bytes = try ArchiveService.encode(state, password: "测试归档密码123")

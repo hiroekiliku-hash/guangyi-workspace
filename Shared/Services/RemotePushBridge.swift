@@ -59,16 +59,8 @@ fileprivate enum WorkspaceRemoteSyncResult { case newData, noData, failed }
     static let shared = RemotePushBridge()
     private let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "com.guangyi.workspace", category: "RemoteSync")
     weak var store: WorkspaceStore?
-    static var isSmokeTesting: Bool {
-        #if DEBUG
-        ProcessInfo.processInfo.arguments.contains("--ui-smoke-remote-push")
-        #else
-        false
-        #endif
-    }
     static var isEnabled: Bool {
-        if Bundle.main.object(forInfoDictionaryKey: "RemotePushEnabled") as? Bool == true { return true }
-        return isSmokeTesting
+        Bundle.main.object(forInfoDictionaryKey: "RemotePushEnabled") as? Bool == true
     }
     static func registerWithApple() throws {
         guard isEnabled else {

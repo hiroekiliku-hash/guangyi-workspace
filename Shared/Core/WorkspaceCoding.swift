@@ -1,4 +1,58 @@
 import Foundation
+import CryptoKit
+
+struct WebLoginRequest {
+    let state: String
+    let codeVerifier: String
+    var codeChallenge: String { Self.base64URL(Data(SHA256.hash(data: Data(codeVerifier.utf8)))) }
+
+    init() {
+        state = Self.randomValue()
+        codeVerifier = Self.randomValue()
+    }
+    init(state: String, codeVerifier: String) throws {
+        guard Self.validCode(state), codeVerifier.range(of: "^[A-Za-z0-9._~-]{43,128}$", options: .regularExpression) != nil else {
+            throw WorkspaceFailure.invalid("登录请求无效，请重试。")
+        }
+        self.state = state; self.codeVerifier = codeVerifier
+    }
+    func authorizationURL(server: URL) throws -> URL {
+        guard var components = URLComponents(url: server, resolvingAgainstBaseURL: false),
+              components.scheme == "https", components.host?.isEmpty == false,
+              components.user == nil, components.password == nil, components.query == nil, components.fragment == nil,
+              components.path.isEmpty || components.path == "/" else {
+            throw WorkspaceFailure.invalid("网页登录需要有效的 HTTPS 服务器地址。")
+        }
+        components.path = "/native-login"
+        components.queryItems = [URLQueryItem(name: "code_challenge", value: codeChallenge),
+            URLQueryItem(name: "code_challenge_method", value: "S256"), URLQueryItem(name: "state", value: state)]
+        guard let url = components.url else { throw WorkspaceFailure.invalid("无法创建登录请求。") }
+        return url
+    }
+    func authorizationCode(from callback: URL) throws -> String {
+        guard let components = URLComponents(url: callback, resolvingAgainstBaseURL: false),
+              components.scheme == "guangyi-workspace", components.host == "auth", components.path == "/callback",
+              components.port == nil, components.user == nil, components.password == nil, components.fragment == nil,
+              let items = components.queryItems, items.count == 2,
+              items.filter({ $0.name == "state" }).count == 1,
+              items.filter({ $0.name == "code" }).count == 1,
+              items.first(where: { $0.name == "state" })?.value == state,
+              let code = items.first(where: { $0.name == "code" })?.value, Self.validCode(code) else {
+            throw WorkspaceFailure.invalid("网页登录返回信息不匹配，请重新登录。")
+        }
+        return code
+    }
+    private static func validCode(_ value: String) -> Bool {
+        value.range(of: "^[A-Za-z0-9_-]{43}$", options: .regularExpression) != nil
+    }
+    private static func randomValue() -> String {
+        SymmetricKey(size: .bits256).withUnsafeBytes { base64URL(Data($0)) }
+    }
+    private static func base64URL(_ data: Data) -> String {
+        data.base64EncodedString().replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_").replacingOccurrences(of: "=", with: "")
+    }
+}
 
 enum WorkspaceCoding {
     static func encoder() -> JSONEncoder {

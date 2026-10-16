@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>zh-Hans</string>
 	<key>CFBundleDisplayName</key>
-	<string>广益 WorkSpace</string>
+	<string>工作坊</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -13,7 +13,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>工作坊</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,9 +27,10 @@
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
-		<string>remote-notification</string>
 	</array>
 	<key>RemotePushEnabled</key>
+	<false/>
+	<key>NativePasskeysEnabled</key>
 	<false/>
 	<key>NSCalendarsFullAccessUsageDescription</key>
 	<string>将你选择的工作事项加入系统日历。</string>
@@ -52,7 +53,7 @@
 			<key>UTTypeIdentifier</key>
 			<string>com.guangyi.workspace.archive</string>
 			<key>UTTypeDescription</key>
-			<string>广益 WorkSpace 加密归档</string>
+			<string>工作坊加密归档</string>
 			<key>UTTypeConformsTo</key>
 			<array>
 				<string>public.data</string>
@@ -70,7 +71,7 @@
 	<array>
 		<dict>
 			<key>CFBundleTypeName</key>
-			<string>WorkSpace归档</string>
+			<string>工作坊归档</string>
 			<key>CFBundleTypeRole</key>
 			<string>Viewer</string>
 			<key>LSHandlerRank</key>

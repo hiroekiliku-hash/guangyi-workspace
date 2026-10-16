@@ -6,23 +6,21 @@ enum ItemKind: String, Codable, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .area: "领域"
-        case .project: "行动组"
-        case .milestone: "里程碑"
-        case .task: "行动"
+        case .area, .project: "项目组"
+        case .milestone, .task, .reminder: "事项"
         case .deadline: "截止事项"
-        case .reminder: "提醒"
         case .knowledge: "知识笔记"
         }
     }
+    // Preserve wire values for existing archives and clients; expose one category in the UI.
+    var isProjectGroup: Bool { self == .area || self == .project }
+    var isItem: Bool { [.task, .reminder, .milestone].contains(self) }
+    var creationKind: ItemKind { isProjectGroup ? .project : isItem ? .task : self }
     var symbol: String {
         switch self {
-        case .area: "square.grid.2x2"
-        case .project: "folder"
-        case .milestone: "flag"
-        case .task: "checkmark.circle"
+        case .area, .project: "folder"
+        case .milestone, .task, .reminder: "checkmark.circle"
         case .deadline: "hourglass"
-        case .reminder: "bell"
         case .knowledge: "book.closed"
         }
     }
@@ -41,7 +39,7 @@ enum ItemKind: String, Codable, CaseIterable, Identifiable {
 enum StateLabels {
     static func title(_ status: String) -> String {
         ["PLANNED": "计划中", "ACTIVE": "进行中", "WAITING": "等待中", "PAUSED": "已暂停",
-         "COMPLETED": "已完成", "TODO": "待行动", "IN_PROGRESS": "进行中", "DONE": "已完成",
+         "COMPLETED": "已完成", "TODO": "待处理", "IN_PROGRESS": "进行中", "DONE": "已完成",
          "CANCELLED": "已取消", "OPEN": "待处理"][status] ?? status
     }
 }
@@ -89,6 +87,7 @@ struct WorkspaceRecord: Identifiable, Codable, Hashable {
         notificationsEnabled = kind == .reminder || kind == .deadline
     }
     var isFinished: Bool { ["DONE", "COMPLETED", "CANCELLED"].contains(status) }
+    var isKeyItem: Bool { kind.isItem && pinned }
     var isLive: Bool { deletedAt == nil && archivedAt == nil }
     var isOverdue: Bool { !isFinished && dueDate.map { effectiveDueDate($0) < Date() } == true }
     var calendar: Calendar { WorkspaceDates.calendar(timezone) }
@@ -97,14 +96,24 @@ struct WorkspaceRecord: Identifiable, Codable, Hashable {
         return calendar.date(byAdding: .second, value: -1,
             to: calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: value)) ?? value) ?? value
     }
+    var recurrenceAnchor: Date? {
+        kind.isItem ? scheduledAt ?? dueDate ?? remindAt : kind == .deadline ? dueDate : nil
+    }
+    var recurrenceEffectiveDate: Date? {
+        if kind.isItem, let scheduledAt { return scheduledAt }
+        if let dueDate { return effectiveDueDate(dueDate) }
+        return kind.isItem ? remindAt : nil
+    }
     var notificationDate: Date? {
         guard notificationsEnabled, isLive, !isFinished else { return nil }
+        if let snoozedUntil { return snoozedUntil }
+        // An explicit reminder is already the exact notification time.
+        if kind.isItem, let remindAt { return remindAt }
         let date: Date?
-        if kind == .reminder { date = remindAt }
-        else if let dueDate {
+        if let dueDate {
             date = dateOnly ? calendar.date(bySettingHour: 9, minute: 0, second: 0, of: dueDate) : dueDate
         } else { date = scheduledAt }
-        return snoozedUntil ?? date?.addingTimeInterval(-Double(notificationLeadMinutes) * 60)
+        return date?.addingTimeInterval(-Double(notificationLeadMinutes) * 60)
     }
 }
 
@@ -123,16 +132,30 @@ enum WorkspaceNotificationPolicy {
 struct RecurrenceRule: Codable, Hashable {
     enum Frequency: String, Codable, CaseIterable, Identifiable {
         case daily = "DAILY", weekly = "WEEKLY", monthly = "MONTHLY"
+        case oddWeeks = "ODD_WEEKS", evenWeeks = "EVEN_WEEKS"
+        case weekdays = "WEEKDAYS", workdays = "CHINA_WORKDAYS"
+        static let allCases: [Frequency] = [.daily, .weekly, .oddWeeks, .evenWeeks, .weekdays, .workdays, .monthly]
         var id: String { rawValue }
-        var title: String { switch self { case .daily: "天"; case .weekly: "周"; case .monthly: "月" } }
+        var title: String {
+            switch self {
+            case .daily: "每天"; case .weekly: "每周"; case .monthly: "每月"
+            case .oddWeeks: "单周"; case .evenWeeks: "双周"
+            case .weekdays: "周一至周五"; case .workdays: "工作日（含调休）"
+            }
+        }
+        var intervalUnit: String { self == .daily ? "天" : self == .monthly ? "月" : "周" }
+        var supportsInterval: Bool { [.daily, .weekly, .monthly].contains(self) }
+        var usesWeekParity: Bool { self == .oddWeeks || self == .evenWeeks }
+        var usesWeekdays: Bool { self == .weekly || usesWeekParity }
     }
     var frequency: Frequency = .weekly
     var interval = 1
     var weekdays: [Int] = [] // ISO: Monday = 1, Sunday = 7.
     var until: Date?
+    var weekOneStart: Date?
     var label: String {
-        "每\(interval == 1 ? "" : String(interval))\(frequency.title)" +
-        (frequency == .weekly && !weekdays.isEmpty ? " · " + weekdays.sorted().map { WorkspaceDates.weekdayName($0) }.joined(separator: "、") : "")
+        let base = frequency.supportsInterval && interval > 1 ? "每\(interval)\(frequency.intervalUnit)" : frequency.title
+        return base + (frequency.usesWeekdays && !weekdays.isEmpty ? " · " + weekdays.sorted().map { WorkspaceDates.weekdayName($0) }.joined(separator: "、") : "")
     }
 }
 
@@ -200,10 +223,10 @@ enum WorkspaceFailure: LocalizedError {
         switch self {
         case .invalid(let message): message
         case .conflict: "内容已在其他窗口修改。请关闭编辑器，重新打开后比较。"
-        case .missingParent: "关联项目或里程碑不可用，请先恢复或重新选择。"
+        case .missingParent: "关联项目组或事项不可用，请先恢复或重新选择。"
         case .stalePreview: "关联内容已变化，请重新确认删除范围。"
         case .expiredTrash: "此删除批次已超过 30 天恢复期限。"
-        case .remainingTasks(let count): "项目还有 \(count) 项未完成行动，请先确认是否同时完成项目。"
+        case .remainingTasks(let count): "项目组还有 \(count) 项未完成事项，请先确认。"
         case .tooLarge: "文件过大，或内容超过支持的上限。"
         }
     }

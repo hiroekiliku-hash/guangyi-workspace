@@ -16,22 +16,35 @@ struct RecordDetailView: View {
         Group {
             if let record = store.record(id), record.deletedAt == nil {
                 detail(record)
-                    .navigationTitle(record.title)
+                    .navigationTitle(record.kind.title)
+                    .workspaceInlineTitle()
                     .toolbar {
                         ToolbarItem(placement: .primaryAction) { Button("编辑", systemImage: "pencil") { editing = true }.disabled(record.archivedAt != nil) }
+                        if record.kind.isItem {
+                            ToolbarItem {
+                                Button(record.pinned ? "取消标星" : "标为关键事项", systemImage: record.pinned ? "star.fill" : "star") {
+                                    store.perform { try store.toggleKeyItem(record.id) }
+                                }.tint(record.pinned ? .orange : .indigo).disabled(record.archivedAt != nil)
+                            }
+                        }
                         ToolbarItem { actions(record) }
                     }
                     .sheet(isPresented: $editing) { NavigationStack { RecordEditorView(kind: record.kind, record: record) }.nativeEditorPresentation() }
+                    .workspaceSelectionFeedback(trigger: editing)
+                    .workspaceSelectionFeedback(trigger: recurrence)
+                    .workspaceSelectionFeedback(trigger: childKind)
                     .sheet(isPresented: $recurrence) { NavigationStack { RecurrenceEditorView(record: record) }.nativeSheetSize() }
-                    .sheet(item: $childKind) { kind in NavigationStack { RecordEditorView(kind: kind, projectID: record.id) }.nativeEditorPresentation() }
+                    .sheet(item: $childKind) { kind in NavigationStack {
+                        RecordEditorView(kind: kind, projectID: record.kind == .project ? record.id : nil, areaID: record.kind == .area ? record.id : nil)
+                    }.nativeEditorPresentation() }
                     .sheet(item: $preview) { preview in
                         NavigationStack { DeleteReviewView(preview: preview, onDeleted: { if !embedded { dismiss() } }) }.nativeSheetSize()
                     }
                     .fileImporter(isPresented: $pickingPDF, allowedContentTypes: [.pdf]) { result in
                         store.perform { try store.attachPDF(result.get(), to: id) }
                     }
-                    .confirmationDialog("停止后续循环？", isPresented: $stoppingSeries, titleVisibility: .visible) {
-                        Button("停止并取消未来未完成实例", role: .destructive) {
+                    .confirmationDialog("停止后续重复？", isPresented: $stoppingSeries, titleVisibility: .visible) {
+                        Button("停止并关闭未来未完成事项", role: .destructive) {
                             if let series = record.recurrenceSeriesID { store.perform { try store.stopRecurrence(series) } }
                         }
                     }
@@ -41,51 +54,75 @@ struct RecordDetailView: View {
     private func detail(_ record: WorkspaceRecord) -> some View {
         List {
             Section {
-                Text(record.title).font(.title2.bold()).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
-                if record.kind != .knowledge && record.kind != .area { LabeledContent("状态", value: StateLabels.title(record.status)) }
+                VStack(alignment: .leading, spacing: 12) {
+                    if record.kind != .knowledge && record.kind != .area {
+                        Label(StateLabels.title(record.status), systemImage: record.isFinished ? "checkmark.circle.fill" : record.isOverdue ? "exclamationmark.circle.fill" : "circle.dotted")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(record.isFinished ? Color.green : record.isOverdue ? .red : .indigo)
+                            .padding(.horizontal, 10).padding(.vertical, 5)
+                            .background(.quaternary, in: Capsule())
+                    }
+                    Text(record.title).font(.title2.bold()).textSelection(.enabled).fixedSize(horizontal: false, vertical: true)
+                    if record.isKeyItem { Label("关键事项", systemImage: "star.fill").font(.subheadline.weight(.semibold)).foregroundStyle(.orange) }
+                }.padding(.vertical, 6)
                 if let due = record.dueDate { LabeledContent("截止", value: formatted(due, record: record)) }
-                if let reminder = record.remindAt { LabeledContent("提醒", value: formatted(reminder, record: record, time: true)) }
-                if let scheduled = record.scheduledAt { LabeledContent("安排", value: formatted(scheduled, record: record, time: true)) }
+                if let scheduled = record.scheduledAt { LabeledContent("计划时间", value: formatted(scheduled, record: record, time: true)) }
+                if let reminder = record.notificationDate { LabeledContent("通知时间", value: formatted(reminder, record: record, time: true)) }
                 if let project = record.projectID.flatMap(store.record) {
-                    NavigationLink { RecordDetailView(id: project.id) } label: { LabeledContent("行动组", value: project.title) }
+                    NavigationLink { RecordDetailView(id: project.id) } label: { LabeledContent("项目组", value: project.title) }
                 }
-                if let area = record.areaID.flatMap(store.record) { LabeledContent("领域", value: area.title) }
-                if let milestone = record.milestoneID.flatMap(store.record) { LabeledContent("里程碑", value: milestone.title) }
-                if record.kind == .project {
+                if record.projectID == nil, let area = record.areaID.flatMap(store.record) {
+                    NavigationLink { RecordDetailView(id: area.id) } label: { LabeledContent("项目组", value: area.title) }
+                }
+                if let milestone = record.milestoneID.flatMap(store.record) { LabeledContent("关联事项", value: milestone.title) }
+                if record.kind.isProjectGroup {
                     LabeledContent("类型", value: projectKindLabel(record.projectKind))
                     if let date = record.startDate { LabeledContent("开始", value: formatted(date, record: record)) }
                     if let date = record.targetDate { LabeledContent("目标", value: formatted(date, record: record)) }
                 }
                 if record.archivedAt != nil { Label("已归档", systemImage: "archivebox").foregroundStyle(.secondary) }
-                if !record.isFinished && [.task, .deadline, .reminder].contains(record.kind) && record.archivedAt == nil {
-                    Button("标记完成", systemImage: "checkmark.circle") { store.perform { try store.setStatus(id, "DONE") } }.buttonStyle(.borderedProminent)
+            }
+            if record.kind == .deadline, let due = record.dueDate, !record.isFinished {
+                Section {
+                    DeadlineCountdownView(target: record.effectiveDueDate(due))
+                }.listRowBackground(Color.clear).listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
+            }
+            if !record.isFinished && (record.kind.isItem || record.kind == .deadline) && record.archivedAt == nil {
+                Section {
+                    Button { store.perform { try store.setStatus(id, "DONE") } } label: {
+                        Label("标记完成", systemImage: "checkmark")
+                    }.buttonStyle(WorkspacePrimaryButtonStyle())
                 }
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
             }
             #if os(iOS)
-            if [.task, .deadline].contains(record.kind) { DeadlineLiveActivitySection(record: record) }
+            if record.kind.isItem || record.kind == .deadline { DeadlineLiveActivitySection(record: record) }
             #endif
-            if record.kind == .deadline, let due = record.dueDate, !record.isFinished {
-                Section("倒计时") {
-                    DeadlineCountdownView(target: record.effectiveDueDate(due))
-                }
-            }
             if !record.summary.isEmpty { Section("说明") { Text(record.summary).textSelection(.enabled) } }
             if !record.body.isEmpty { Section(record.kind == .knowledge ? "正文" : "备注") { MarkdownDocumentView(source: record.body) } }
             if record.kind == .knowledge { knowledgeSections(record) }
-            if record.kind == .project { projectSections(record) }
+            if record.kind.isProjectGroup { projectSections(record) }
             if let seriesID = record.recurrenceSeriesID,
                let series = store.state.series.first(where: { $0.id == seriesID }) {
-                Section("循环") {
+                Section("重复") {
                     LabeledContent("规则", value: series.rule.label)
+                    if series.rule.frequency.usesWeekParity, let first = series.rule.weekOneStart {
+                        LabeledContent("第1周起始日", value: formatted(first, record: record))
+                    }
                     if record.isException { Label("已单独修改的实例", systemImage: "pencil.circle") }
-                    if series.stoppedAt != nil { Text("后续循环已停止").foregroundStyle(.secondary) }
-                    ForEach(store.records(.deadline).filter { $0.recurrenceSeriesID == seriesID }.prefix(8)) { occurrence in
+                    if series.stoppedAt != nil { Text("后续重复已停止").foregroundStyle(.secondary) }
+                    if series.rule.frequency == .workdays { Text("调休日历覆盖2025—2026年；后续年份需更新日历后继续生成。")
+                        .font(.caption).foregroundStyle(.secondary) }
+                    ForEach(store.state.records.filter { $0.recurrenceSeriesID == seriesID && $0.id != record.id && $0.isLive &&
+                        ($0.occurrenceDate ?? "") > (record.occurrenceDate ?? "") }
+                        .sorted { ($0.occurrenceDate ?? "") < ($1.occurrenceDate ?? "") }.prefix(8)) { occurrence in
                         NavigationLink { RecordDetailView(id: occurrence.id) } label: { RecordRow(record: occurrence) }
                     }
                 }
             }
             Section("历史记录") {
-                ForEach(store.state.activities.filter { $0.entityID == id || (record.kind == .project && $0.projectID == id) }.sorted { $0.date > $1.date }.prefix(100)) { activity in
+                ForEach(recordHistory(record).prefix(100)) { activity in
                     VStack(alignment: .leading, spacing: 4) {
                         Text(activity.message)
                         Text(activity.date, format: .dateTime.month().day().hour().minute()).font(.caption).foregroundStyle(.secondary)
@@ -94,6 +131,14 @@ struct RecordDetailView: View {
                 LabeledContent("版本", value: "\(record.version)")
             }
         }
+    }
+    private func recordHistory(_ record: WorkspaceRecord) -> [ActivityEntry] {
+        let memberIDs: Set<UUID> = record.kind.isProjectGroup ? Set(store.state.records.filter {
+            $0.projectID == id || $0.areaID == id
+        }.map(\.id)) : []
+        return store.state.activities.filter {
+            $0.entityID == id || (record.kind.isProjectGroup && ($0.projectID == id || memberIDs.contains($0.entityID)))
+        }.sorted { $0.date > $1.date }
     }
     @ViewBuilder private func knowledgeSections(_ record: WorkspaceRecord) -> some View {
         Section("分类与标签") {
@@ -117,20 +162,22 @@ struct RecordDetailView: View {
         }
     }
     @ViewBuilder private func projectSections(_ record: WorkspaceRecord) -> some View {
-        Section("里程碑") {
-            ForEach(store.records(.milestone).filter { $0.projectID == id }) { milestone in
-                NavigationLink { RecordDetailView(id: milestone.id) } label: { RecordRow(record: milestone) }
+        let members = WorkspaceLogic.members(of: record, in: store.state)
+        if members.contains(where: { $0.kind.isProjectGroup }) {
+            Section("下属项目组") {
+                ForEach(members.filter { $0.kind.isProjectGroup }) { group in
+                    NavigationLink { RecordDetailView(id: group.id) } label: { RecordRow(record: group) }
+                }
             }
-            Button("添加里程碑", systemImage: "plus") { childKind = .milestone }.disabled(record.archivedAt != nil)
         }
-        Section("行动") {
-            ForEach(store.records(.task).filter { $0.projectID == id }) { task in
+        Section("事项") {
+            ForEach(members.filter { $0.kind.isItem }) { task in
                 NavigationLink { RecordDetailView(id: task.id) } label: { RecordRow(record: task) }
             }
-            Button("添加行动", systemImage: "plus") { childKind = .task }.disabled(record.archivedAt != nil)
+            Button("添加事项", systemImage: "plus") { childKind = .task }.disabled(record.archivedAt != nil)
         }
         Section("截止事项") {
-            ForEach(store.records(.deadline).filter { $0.projectID == id }.prefix(30)) { deadline in
+            ForEach(members.filter { $0.kind == .deadline }.prefix(30)) { deadline in
                 NavigationLink { RecordDetailView(id: deadline.id) } label: { RecordRow(record: deadline) }
             }
             Button("添加截止事项", systemImage: "plus") { childKind = .deadline }.disabled(record.archivedAt != nil)
@@ -138,13 +185,19 @@ struct RecordDetailView: View {
     }
     private func actions(_ record: WorkspaceRecord) -> some View {
         Menu {
-            if record.isFinished && [.task, .deadline, .reminder].contains(record.kind) {
-                Button("重新打开", systemImage: "arrow.counterclockwise") { store.perform { try store.setStatus(id, record.kind == .task ? "TODO" : "OPEN") } }
+            if record.isFinished && (record.kind.isItem || record.kind == .deadline) {
+                Button("重新打开", systemImage: "arrow.counterclockwise") { store.perform { try store.setStatus(id, record.kind.states.first ?? "OPEN") } }
             }
             if record.kind == .deadline && record.status == "OPEN" {
                 Button("取消此次截止事项", systemImage: "xmark.circle") { store.perform { try store.setStatus(id, "CANCELLED") } }
-                if record.recurrenceSeriesID == nil { Button("设置循环", systemImage: "repeat") { recurrence = true } }
-                else { Button("停止后续循环", systemImage: "repeat.circle") { stoppingSeries = true } }
+            }
+            if (record.kind.isItem || record.kind == .deadline), record.isLive {
+                if record.recurrenceSeriesID == nil && !record.isFinished {
+                    Button("设置重复", systemImage: "repeat") { recurrence = true }
+                } else if let seriesID = record.recurrenceSeriesID,
+                          store.state.series.first(where: { $0.id == seriesID })?.stoppedAt == nil {
+                    Button("停止后续重复", systemImage: "repeat.circle") { stoppingSeries = true }
+                }
             }
             if record.kind == .knowledge {
                 Button(record.pinned ? "取消置顶" : "置顶", systemImage: "pin") {
@@ -215,34 +268,127 @@ struct RecurrenceEditorView: View {
     @Environment(\.dismiss) private var dismiss
     let record: WorkspaceRecord
     @State private var rule = RecurrenceRule()
+    @State private var localError: String?
     var body: some View {
         Form {
-            Section("循环规则") {
-                Picker("频率", selection: $rule.frequency) { ForEach(RecurrenceRule.Frequency.allCases) { Text("每\($0.title)").tag($0) } }
-                Stepper("每 \(rule.interval) \(rule.frequency.title)", value: $rule.interval, in: 1...365)
-                if rule.frequency == .weekly {
+            RecurrenceRuleFields(rule: $rule, record: record)
+            if let localError { Section { Text(localError).foregroundStyle(.red) } }
+        }.formStyle(.grouped).navigationTitle("设置重复")
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
+                ToolbarItem(placement: .confirmationAction) { Button("保存") {
+                    do { try store.createRecurrence(record.id, rule: rule); dismiss() }
+                    catch { localError = error.localizedDescription }
+                }.disabled(RecurrenceEngine.validationError(record: record, rule: rule) != nil) }
+            }
+            .nativeEditorPresentation()
+    }
+}
+
+struct RecurrenceRuleFields: View {
+    @Binding var rule: RecurrenceRule
+    let record: WorkspaceRecord
+    private var anchor: Date { record.recurrenceAnchor ?? Date() }
+    private var firstMonday: Date { RecurrenceEngine.monday(containing: anchor, calendar: record.calendar) }
+    private var previewDayStyle: Date.FormatStyle {
+        var style = Date.FormatStyle.dateTime.year().month().day().weekday()
+        style.timeZone = record.calendar.timeZone
+        return style
+    }
+    private var previewTimeStyle: Date.FormatStyle {
+        var style = Date.FormatStyle.dateTime.year().month().day().hour().minute()
+        style.timeZone = record.calendar.timeZone
+        return style
+    }
+    private var nextDates: [Date] {
+        let from = max(record.calendar.startOfDay(for: anchor), record.calendar.startOfDay(for: Date()))
+        let through = record.calendar.date(byAdding: .year, value: 3, to: from) ?? from
+        return RecurrenceEngine.dates(anchor: anchor, rule: rule, from: from, through: through, timezone: record.timezone, limit: 5)
+    }
+    var body: some View {
+        Group {
+            Section("重复规则") {
+                if let first = record.recurrenceAnchor {
+                    LabeledContent("重复依据", value: record.kind.isItem && record.scheduledAt != nil ? "计划时间" : record.dueDate != nil ? "截止日期" : "自定义提醒时间")
+                    LabeledContent("首次时间") {
+                        Text(first, format: previewTimeStyle)
+                    }
+                }
+                Picker("频率", selection: $rule.frequency) {
+                    ForEach(RecurrenceRule.Frequency.allCases) { Text($0.title).tag($0) }
+                }
+                if rule.frequency.supportsInterval {
+                    Stepper("每 \(rule.interval) \(rule.frequency.intervalUnit)", value: $rule.interval, in: 1...365)
+                    if rule.frequency == .weekly && rule.interval == 2 {
+                        Text("隔周重复，以首次日期所在周为起点。").font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                if rule.frequency.usesWeekdays {
                     ForEach(1...7, id: \.self) { day in
                         Toggle(WorkspaceDates.weekdayName(day), isOn: Binding(get: { rule.weekdays.contains(day) }, set: { enabled in
                             rule.weekdays.removeAll { $0 == day }; if enabled { rule.weekdays.append(day) }
                         }))
                     }
+                    if rule.weekdays.isEmpty {
+                        Text("未选择星期时，沿用首次日期的星期。").font(.caption).foregroundStyle(.secondary)
+                    }
                 }
-                Toggle("设置结束日期", isOn: Binding(get: { rule.until != nil }, set: { rule.until = $0 ? Date().addingTimeInterval(86400 * 90) : nil }))
-                if rule.until != nil { DatePicker("结束", selection: Binding(get: { rule.until ?? Date() }, set: { rule.until = $0 }), displayedComponents: .date).environment(\.timeZone, record.calendar.timeZone) }
+            }
+            if rule.frequency.usesWeekParity {
+                Section("单双周基准") {
+                    DatePicker("第1周起始日", selection: Binding(
+                        get: { rule.weekOneStart ?? firstMonday },
+                        set: { rule.weekOneStart = RecurrenceEngine.monday(containing: $0, calendar: record.calendar) }),
+                        in: ...anchor, displayedComponents: .date)
+                        .environment(\.timeZone, record.calendar.timeZone)
+                    Text("以所选日期所在周的周一为第1周，连续计算，不在跨年时重置。按教学周使用时，请选择学期第1周。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            Section("结束") {
+                Toggle("设置结束日期", isOn: Binding(get: { rule.until != nil }, set: { enabled in
+                    rule.until = enabled ? record.calendar.date(byAdding: .month, value: 3, to: anchor) : nil
+                }))
+                if rule.until != nil {
+                    DatePicker("最后一天", selection: Binding(get: { rule.until ?? anchor }, set: { rule.until = $0 }),
+                        in: record.calendar.startOfDay(for: anchor)..., displayedComponents: .date)
+                        .environment(\.timeZone, record.calendar.timeZone)
+                }
+            }
+            if let message = RecurrenceEngine.validationError(record: record, rule: rule) {
+                Section { Text(message).foregroundStyle(.red) }
+            } else {
+                Section("接下来的重复日期") {
+                    if nextDates.isEmpty { Text("所选范围内暂无重复日期。").foregroundStyle(.secondary) }
+                    ForEach(nextDates, id: \.self) { day in
+                        Text(day, format: previewDayStyle)
+                    }
+                }
             }
             Section {
-                Text("循环实例预生成到未来三年。每次打开应用会补齐窗口。每个实例可单独改期、完成或取消；月末日期会自动适应短月份。")
-                    .foregroundStyle(.secondary)
+                Text("当前事项保留。每次重复沿用原有时刻，计划、截止和自定义提醒会随日期一起移动；每次可以单独完成、改期或取消。")
+                    .font(.caption).foregroundStyle(.secondary)
+                if rule.frequency == .workdays {
+                    Text("按中国大陆法定放假和调休，包含补班周末。内置日历覆盖2025—2026年；未覆盖年份暂停生成，更新调休日历后继续。学校另行调整的安排可单独修改实例。")
+                        .font(.caption).foregroundStyle(.secondary)
+                    Link("查看2026年官方调休安排", destination: URL(string: ChinaWorkCalendar.source2026)!)
+                } else if rule.frequency == .weekdays {
+                    Text("仅周一至周五，不调整法定节假日和周末补班。").font(.caption).foregroundStyle(.secondary)
+                }
             }
-        }.formStyle(.grouped).navigationTitle("设置循环")
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) { Button("取消") { dismiss() } }
-                ToolbarItem(placement: .confirmationAction) { Button("保存") {
-                    do { try store.createRecurrence(record.id, rule: rule); dismiss() } catch { store.errorMessage = error.localizedDescription }
-                }.disabled(rule.frequency == .weekly && rule.weekdays.isEmpty) }
-            }
-            .onAppear {
-                if let due = record.dueDate { rule.weekdays = [(record.calendar.component(.weekday, from: due) + 5) % 7 + 1] }
-            }
+        }
+        .onAppear { prepareWeekSelection() }
+        .onChange(of: rule.frequency) { _, _ in
+            if !rule.frequency.supportsInterval { rule.interval = 1 }
+            prepareWeekSelection()
+        }
+        .workspaceSelectionFeedback(trigger: rule.frequency)
+        .workspaceSelectionFeedback(trigger: rule.weekdays)
+    }
+    private func prepareWeekSelection() {
+        if rule.frequency.usesWeekdays && rule.weekdays.isEmpty {
+            rule.weekdays = [(record.calendar.component(.weekday, from: anchor) + 5) % 7 + 1]
+        }
+        if rule.frequency.usesWeekParity && rule.weekOneStart == nil { rule.weekOneStart = firstMonday }
     }
 }

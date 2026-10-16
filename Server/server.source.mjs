@@ -15,6 +15,15 @@ try { deploymentRevision = readFileSync(join(dirname(new URL(import.meta.url).pa
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = 'unversioned';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
+const nativeCallbackURL = 'guangyi-workspace://auth/callback';
+const webAuthValue = /^[A-Za-z0-9_-]{43}$/;
+const pkceVerifier = /^[A-Za-z0-9._~-]{43,128}$/;
+function validWebAuthRequest(value) {
+  return value && !Array.isArray(value) && typeof value === 'object' &&
+    Object.keys(value).length === 2 && typeof value.codeChallenge === 'string' && webAuthValue.test(value.codeChallenge) &&
+    Buffer.from(value.codeChallenge, 'base64url').toString('base64url') === value.codeChallenge &&
+    typeof value.state === 'string' && webAuthValue.test(value.state);
+}
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const emptyWorkspace = name => ({ format: 'guangyi-native', schemaVersion: 1, records: [], series: [], activities: [], revisions: [], assets: [], trash: [], profile: { name, timezone: 'Asia/Shanghai' } });
 class APIError extends Error { constructor(status, code) { super(code); this.status = status; } }
@@ -127,7 +136,23 @@ export function createNativeServer(configuration) {
     CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
   passkeyRecoveryTable(db);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
+  const webAuthNow = configuration.webAuthNow ?? Date.now;
+  db.exec(`CREATE TABLE IF NOT EXISTS web_auth_codes(
+    hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),challenge TEXT NOT NULL,state TEXT NOT NULL,expires INTEGER NOT NULL);`);
   const attempts = new Map();
+  function webAuthRateLimit(request) {
+    const key = 'web-auth:' + (request.socket.remoteAddress ?? 'unknown'), now = Date.now(), old = attempts.get(key);
+    const entry = old && now - old.start < 600000 ? old : { start: now, count: 0 };
+    attempts.set(key, entry);
+    if (++entry.count > 60) throw new APIError(429, 'RATE_LIMITED');
+  }
+  function sameWebOrigin(request) {
+    if (request.headers.origin != null && request.headers.origin !== passkeyOrigin) throw new APIError(403, 'INVALID_ORIGIN');
+    if (request.headers['sec-fetch-site'] === 'cross-site') throw new APIError(403, 'INVALID_ORIGIN');
+  }
+  function requireJSON(request) {
+    if (!/^application\/json(?:\s*;|$)/i.test(request.headers['content-type'] ?? '')) throw new APIError(415, 'JSON_REQUIRED');
+  }
   function passkeyRateLimit(request) {
     const key = 'passkey:' + (request.socket.remoteAddress ?? 'unknown'), now = Date.now(), old = attempts.get(key);
     const entry = old && now - old.start < 600000 ? old : { start: now, count: 0 };
@@ -216,7 +241,7 @@ export function createNativeServer(configuration) {
     try { return JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch { throw new APIError(400, 'INVALID_JSON'); }
   }
   function respond(response, status, data) {
-    response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' });
+    response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'Referrer-Policy': 'no-referrer', 'X-Content-Type-Options': 'nosniff' });
     response.end(JSON.stringify(data));
   }
   function respondWeb(response, asset, headOnly) {
@@ -225,18 +250,28 @@ export function createNativeServer(configuration) {
   }
   const server = http.createServer(async (request, response) => {
     try {
-      const path = new URL(request.url, 'http://localhost').pathname;
+      const url = new URL(request.url, 'http://localhost'), path = url.pathname;
+      if (path === '/native-login' && (request.method === 'GET' || request.method === 'HEAD')) {
+        sameWebOrigin(request);
+        const parameters = url.searchParams, expected = ['code_challenge', 'code_challenge_method', 'state'];
+        if ([...parameters.keys()].length !== 3 || expected.some(key => parameters.getAll(key).length !== 1) ||
+          parameters.get('code_challenge_method') !== 'S256' || !validWebAuthRequest({ codeChallenge: parameters.get('code_challenge'), state: parameters.get('state') }))
+          throw new APIError(400, 'INVALID_WEB_AUTH_REQUEST');
+        return respondWeb(response, webAsset(path), request.method === 'HEAD');
+      }
       if (request.method === 'GET' || request.method === 'HEAD') {
-        const asset = webAsset(path);
+        const asset = path === '/native-login' ? undefined : webAsset(path);
         if (asset) return respondWeb(response, asset, request.method === 'HEAD');
       }
       if (path === '/.well-known/apple-app-site-association' && request.method === 'GET') return respond(response, 200, { webcredentials: { apps: passkeyApps } });
       if (path === '/api/native/v1/passkeys/login/options' && request.method === 'POST') {
+        sameWebOrigin(request);
         passkeyRateLimit(request);
         const options = await generateAuthenticationOptions({ rpID, userVerification: 'required' });
         return respond(response, 200, { data: { challengeID: issueChallenge('login', options.challenge), options } });
       }
       if (path === '/api/native/v1/passkeys/login/verify' && request.method === 'POST') {
+        sameWebOrigin(request);
         passkeyRateLimit(request);
         const value = await body(request, 65536), challenge = consumeChallenge(value.challengeID, 'login');
         const credential = db.prepare('SELECT * FROM passkeys WHERE id=?').get(typeof value.credential?.id === 'string' ? value.credential.id : '');
@@ -278,6 +313,7 @@ export function createNativeServer(configuration) {
       if (path === '/deploy-revision.json' && request.method === 'GET') return respond(response, 200, { revision: deploymentRevision });
       if (path === '/health' && request.method === 'GET') return respond(response, 200, { status: 'ok' });
       if (path === '/api/native/v1/session' && request.method === 'POST') {
+        sameWebOrigin(request);
         const ip = request.socket.remoteAddress ?? 'unknown', now = Date.now(), prior = attempts.get(ip);
         const counter = prior && now - prior.start < 600000 ? prior : { start: now, count: 0 };
         if (++counter.count > 20) throw new APIError(429, 'RATE_LIMITED');
@@ -290,7 +326,45 @@ export function createNativeServer(configuration) {
         if (!user || !timingSafeEqual(candidate, user.hash)) throw new APIError(401, 'INVALID_CREDENTIALS');
         return respond(response, 200, { data: createSession(user) });
       }
+      if (path === '/api/native/v1/web-auth/token' && request.method === 'POST') {
+        sameWebOrigin(request); webAuthRateLimit(request); requireJSON(request);
+        const value = await body(request, 2048);
+        if (!value || Array.isArray(value) || Object.keys(value).length !== 2 ||
+          typeof value.code !== 'string' || !webAuthValue.test(value.code) ||
+          typeof value.codeVerifier !== 'string' || !pkceVerifier.test(value.codeVerifier)) throw new APIError(400, 'INVALID_WEB_AUTH_REQUEST');
+        const hash = sha(value.code), now = webAuthNow();
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          const code = db.prepare('SELECT * FROM web_auth_codes WHERE hash=? AND expires>?').get(hash, now);
+          const challenge = createHash('sha256').update(value.codeVerifier).digest('base64url');
+          if (!code || !timingSafeEqual(Buffer.from(code.challenge), Buffer.from(challenge))) throw new APIError(401, 'INVALID_AUTHORIZATION_CODE');
+          const user = db.prepare('SELECT * FROM users WHERE id=?').get(code.user_id);
+          if (!user) throw new APIError(401, 'INVALID_AUTHORIZATION_CODE');
+          db.prepare('DELETE FROM web_auth_codes WHERE hash=?').run(hash);
+          const session = createSession(user);
+          db.exec('COMMIT');
+          return respond(response, 200, { data: session });
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+      }
       const userID = userFor(request);
+      if (path === '/api/native/v1/web-auth/authorize' && request.method === 'POST') {
+        sameWebOrigin(request); webAuthRateLimit(request); requireJSON(request);
+        const value = await body(request, 2048);
+        if (!validWebAuthRequest(value)) throw new APIError(400, 'INVALID_WEB_AUTH_REQUEST');
+        const now = webAuthNow(), code = randomBytes(32).toString('base64url');
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          db.prepare('DELETE FROM web_auth_codes WHERE expires<=?').run(now);
+          if (db.prepare('SELECT COUNT(*) AS total FROM web_auth_codes').get().total >= 1000) throw new APIError(429, 'RATE_LIMITED');
+          const revoked = db.prepare('DELETE FROM sessions WHERE hash=? AND user_id=? AND expires>?').run(sha(request.headers.authorization.slice(7)), userID, Date.now());
+          if (revoked.changes !== 1) throw new APIError(401, 'UNAUTHENTICATED');
+          db.prepare('INSERT INTO web_auth_codes VALUES(?,?,?,?,?)').run(sha(code), userID, value.codeChallenge, value.state, now + 90000);
+          db.exec('COMMIT');
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+        const callback = new URL(nativeCallbackURL);
+        callback.searchParams.set('code', code); callback.searchParams.set('state', value.state);
+        return respond(response, 200, { data: { callbackURL: callback.href } });
+      }
       if (path === '/api/native/v1/passkeys/register/options' && request.method === 'POST') {
         passkeyRateLimit(request);
         const { options } = await registrationOptions(userID);
@@ -368,6 +442,7 @@ export function createNativeServer(configuration) {
   async function sweep(now = Date.now()) {
     db.prepare('DELETE FROM sessions WHERE expires<?').run(now);
     db.prepare('DELETE FROM passkey_recoveries WHERE expires<=?').run(now);
+    db.prepare('DELETE FROM web_auth_codes WHERE expires<=?').run(webAuthNow());
     for (const [ip, value] of attempts) if (now - value.start > 600000) attempts.delete(ip);
     if (!sendPush || sweeping) return { accepted: 0 };
     sweeping = true; let accepted = 0;

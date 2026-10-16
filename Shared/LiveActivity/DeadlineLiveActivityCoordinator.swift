@@ -18,7 +18,7 @@ import Foundation
     func start(_ id: UUID, in state: WorkspaceState) {
         latestState = state
         submit {
-            guard self.enabled else { throw WorkspaceFailure.invalid("请在系统设置中允许广益 WorkSpace 的实时活动。") }
+            guard self.enabled else { throw WorkspaceFailure.invalid("请在系统设置中允许工作坊的实时活动。") }
             let now = Date()
             guard let record = self.latestState.records.first(where: { $0.id == id }),
                   let due = DeadlineTrackingPolicy.dueDate(for: record, in: self.latestState, now: now) else {

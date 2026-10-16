@@ -24,7 +24,7 @@ import SwiftUI
                 var action = WorkspaceRecord(kind: .task, title: "整理课程资料并完成下一步行动", id: UUID(uuidString: "10000000-0000-0000-0000-000000000002")!)
                 action.projectID = project.id
                 try store.save(action, expectedVersion: nil)
-                var deadline = WorkspaceRecord(kind: .deadline, title: "提交本周课程报告：完整标题和重要截止内容", id: UUID(uuidString: "10000000-0000-0000-0000-000000000003")!)
+                var deadline = WorkspaceRecord(kind: .deadline, title: "提交本周课程报告：完整标题和重要截止内容，附研究摘要与课程实验记录", id: UUID(uuidString: "10000000-0000-0000-0000-000000000003")!)
                 deadline.dateOnly = false; deadline.dueDate = Date().addingTimeInterval(7200)
                 try store.save(deadline, expectedVersion: nil)
                 var overdue = WorkspaceRecord(kind: .deadline, title: "已逾期事项，优先处理", id: UUID(uuidString: "10000000-0000-0000-0000-000000000004")!)
@@ -116,8 +116,10 @@ extension View {
             }.keyboardShortcut("n")
         }
         CommandMenu("工作空间") {
-            Button("行动") { store.navigation = .actions }.keyboardShortcut("1")
-            Button("DDL") { store.navigation = .deadlines }.keyboardShortcut("2")
+            Button("首页") { store.navigation = .overview }.keyboardShortcut("0")
+            Button("事项") { store.navigation = .actions }.keyboardShortcut("1")
+            Button("截止事项") { store.navigation = .deadlines }.keyboardShortcut("2")
+            Button("项目组") { store.navigation = .projects }.keyboardShortcut("3")
             Button("知识库") { store.navigation = .knowledge }.keyboardShortcut("5")
             Divider()
             Button("日历") { store.navigation = .calendar }
