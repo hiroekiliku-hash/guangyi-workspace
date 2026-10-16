@@ -6,6 +6,7 @@ import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey,
 import { readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { isIP } from 'node:net';
 import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
 
 export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
@@ -140,6 +141,22 @@ export function createNativeServer(configuration) {
   db.exec(`CREATE TABLE IF NOT EXISTS web_auth_codes(
     hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),challenge TEXT NOT NULL,state TEXT NOT NULL,expires INTEGER NOT NULL);`);
   const attempts = new Map();
+  function registrationRateLimit(request) {
+    const peer = request.socket.remoteAddress ?? 'unknown';
+    // The local Nginx proxy overwrites X-Real-IP; never trust it from a remote peer.
+    const forwarded = request.headers['x-real-ip'];
+    const localProxy = peer === '127.0.0.1' || peer === '::1' || peer === '::ffff:127.0.0.1';
+    const address = localProxy && typeof forwarded === 'string' && isIP(forwarded) ? forwarded : peer;
+    const now = Date.now();
+    for (const [key, value] of attempts) if (now - value.start >= 600000) attempts.delete(key);
+    for (const [key, limit] of [['registration:' + address, 6], ['registration:global', 60]]) {
+      const prior = attempts.get(key);
+      if (!prior && attempts.size >= 10000) throw new APIError(429, 'RATE_LIMITED');
+      const counter = prior ?? { start: now, count: 0 };
+      attempts.set(key, counter);
+      if (++counter.count > limit) throw new APIError(429, 'RATE_LIMITED');
+    }
+  }
   function webAuthRateLimit(request) {
     const key = 'web-auth:' + (request.socket.remoteAddress ?? 'unknown'), now = Date.now(), old = attempts.get(key);
     const entry = old && now - old.start < 600000 ? old : { start: now, count: 0 };
@@ -312,6 +329,32 @@ export function createNativeServer(configuration) {
       }
       if (path === '/deploy-revision.json' && request.method === 'GET') return respond(response, 200, { revision: deploymentRevision });
       if (path === '/health' && request.method === 'GET') return respond(response, 200, { status: 'ok' });
+      if (path === '/api/native/v1/accounts' && request.method === 'POST') {
+        sameWebOrigin(request); requireJSON(request); registrationRateLimit(request);
+        const value = await body(request, 4096);
+        if (!value || Array.isArray(value) || typeof value !== 'object' || Object.keys(value).length !== 2 ||
+          !Object.hasOwn(value, 'email') || !Object.hasOwn(value, 'password')) throw new APIError(400, 'INVALID_REGISTRATION');
+        if (typeof value.email !== 'string') throw new APIError(422, 'INVALID_EMAIL');
+        const account = value.email.trim().toLowerCase();
+        const local = account.slice(0, account.indexOf('@'));
+        if (account.length > 254 || local.length > 64 || local.startsWith('.') || local.endsWith('.') || local.includes('..') ||
+          !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(account))
+          throw new APIError(422, 'INVALID_EMAIL');
+        if (typeof value.password !== 'string' || value.password.length < 16 || value.password.length > 1024)
+          throw new APIError(422, 'INVALID_PASSWORD');
+        const name = local;
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          if (db.prepare('SELECT id FROM users WHERE email=?').get(account)) throw new APIError(409, 'ACCOUNT_EXISTS');
+          const salt = randomBytes(16).toString('hex'), hash = scryptSync(value.password, salt, 64);
+          const inserted = db.prepare('INSERT INTO users(email,salt,hash,name) VALUES(?,?,?,?)').run(account, salt, hash, name);
+          const id = Number(inserted.lastInsertRowid);
+          db.prepare('INSERT INTO workspaces(user_id,revision,snapshot) VALUES(?,0,?)').run(id, JSON.stringify(emptyWorkspace(name)));
+          const session = createSession({ id, email: account, name });
+          db.exec('COMMIT');
+          return respond(response, 201, { data: session });
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+      }
       if (path === '/api/native/v1/session' && request.method === 'POST') {
         sameWebOrigin(request);
         const ip = request.socket.remoteAddress ?? 'unknown', now = Date.now(), prior = attempts.get(ip);

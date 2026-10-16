@@ -138,13 +138,18 @@ const webHTML = String.raw`<!doctype html>
           <div id="login-options">
             <form id="password-form">
               <label for="email">账号邮箱</label>
-              <input id="email" name="email" type="email" inputmode="email" autocomplete="username" required>
+              <input id="email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" maxlength="320" required>
               <label for="password">密码</label>
-              <input id="password" name="password" type="password" autocomplete="current-password" required>
-              <button class="primary" type="submit">使用密码登录</button>
+              <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
+              <label id="confirm-password-label" for="confirm-password" hidden>确认密码</label>
+              <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" hidden disabled>
+              <button id="password-submit" class="primary" type="submit">使用密码登录</button>
             </form>
-            <div class="or" aria-hidden="true"><span>或</span></div>
-            <button id="passkey-login" class="secondary" type="button">使用通行密钥登录</button>
+            <div id="passkey-options">
+              <div class="or" aria-hidden="true"><span>或</span></div>
+              <button id="passkey-login" class="secondary" type="button">使用通行密钥登录</button>
+            </div>
+            <button id="registration-toggle" class="quiet full-width recovery-cancel" type="button">注册账号</button>
             <p id="login-status" class="status" role="status" aria-live="polite"></p>
             <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
           </div>
@@ -215,10 +220,15 @@ const nativeLoginHTML = String.raw`<!doctype html>
               <label for="native-password">密码</label>
               <input id="native-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
             </div>
+            <div id="native-confirm-field" class="native-field" hidden>
+              <label for="native-confirm-password">确认</label>
+              <input id="native-confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" disabled>
+            </div>
           </div>
           <button id="native-password-login" class="primary" type="submit">登录</button>
         </form>
         <button id="native-passkey-login" class="native-passkey" type="button">使用通行密钥</button>
+        <button id="native-registration-toggle" class="native-passkey" type="button">注册账号</button>
       </div>
       <section id="native-login-complete" hidden aria-label="登录完成">
         <p id="native-account" class="native-account"></p>
@@ -358,12 +368,12 @@ const webJS = String.raw`(() => {
   const visibleRecord = ${visibleRecordSource};
   const compareActionRecords = ${compareActionRecordsSource};
   const compareDeadlineRecords = ${compareDeadlineRecordsSource};
-  const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '', recoveryToken: '' };
+  const state = { token: '', account: '', displayName: '', workspace: null, revision: null, loadingToken: '', recoveryToken: '', registration: false, authBusy: false };
   const finished = new Set(['DONE', 'COMPLETED', 'CANCELLED']);
   const actionKinds = new Set(['PROJECT', 'TASK', 'MILESTONE', 'REMINDER']);
   const kindNames = { PROJECT: '行动组', TASK: '行动', MILESTONE: '里程碑', REMINDER: '提醒', DEADLINE: 'DDL' };
   const statusNames = { PLANNED: '计划中', ACTIVE: '进行中', WAITING: '等待中', PAUSED: '已暂停', COMPLETED: '已完成', TODO: '待行动', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消', OPEN: '待处理' };
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
+  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 16–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
   const byID = id => document.getElementById(id);
   function saved(key) { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } }
   function save(key, value) { try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch {} }
@@ -432,6 +442,7 @@ const webJS = String.raw`(() => {
     return /^[A-Za-z0-9_-]{43}$/.test(supplied) ? { token: supplied, invalid: false } : { token: '', invalid: true };
   }
   function showLogin(message, error) {
+    if (state.registration && !state.authBusy) setRegistration(false);
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
     byID('recovery-view').hidden = true; byID('login-options').hidden = false;
     setMessage(byID('login-status'), message || '', error); byID('password').value = '';
@@ -509,17 +520,46 @@ const webJS = String.raw`(() => {
       else setMessage(byID('app-status'), error.message, true);
     } finally { if (state.loadingToken === requestedToken) state.loadingToken = ''; }
   }
+  function setRegistration(value) {
+    if (state.authBusy) return;
+    state.registration = value;
+    byID('login-title').textContent = value ? '创建你的工作空间' : '回到你的工作空间';
+    byID('password-submit').textContent = value ? '注册账号' : '使用密码登录';
+    byID('registration-toggle').textContent = value ? '已有账号？登录' : '注册账号';
+    byID('password').autocomplete = value ? 'new-password' : 'current-password';
+    byID('password').minLength = value ? 16 : 0;
+    byID('password').placeholder = value ? '至少 16 个字符' : '';
+    byID('confirm-password-label').hidden = !value;
+    byID('confirm-password').hidden = !value;
+    byID('confirm-password').disabled = !value;
+    byID('confirm-password').required = value;
+    byID('passkey-options').hidden = value;
+    byID('password').value = ''; byID('confirm-password').value = '';
+    setMessage(byID('login-status'), '');
+  }
+  function setAuthBusy(value) {
+    state.authBusy = value;
+    for (const id of ['email', 'password', 'password-submit', 'registration-toggle']) byID(id).disabled = value;
+    byID('confirm-password').disabled = value || !state.registration;
+    byID('passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
+  }
   async function passwordLogin(event) {
-    event.preventDefault(); const button = event.currentTarget.querySelector('button'); button.disabled = true;
-    setMessage(byID('login-status'), '正在登录…');
+    event.preventDefault();
+    if (state.authBusy) return;
+    const email = byID('email').value.trim(), password = byID('password').value;
+    if (state.registration && password !== byID('confirm-password').value) {
+      setMessage(byID('login-status'), '两次输入的密码不一致。', true); return;
+    }
+    setAuthBusy(true);
+    setMessage(byID('login-status'), state.registration ? '正在注册…' : '正在登录…');
     try {
-      const session = await api('session', { method: 'POST', authenticated: false, body: { email: byID('email').value.trim(), password: byID('password').value } });
+      const session = await api(state.registration ? 'accounts' : 'session', { method: 'POST', authenticated: false, body: { email, password } });
       beginSession(session); await loadWorkspace(false);
     } catch (error) { clearSession(); setMessage(byID('login-status'), error.message, true); }
-    finally { button.disabled = false; byID('password').value = ''; }
+    finally { setAuthBusy(false); byID('password').value = ''; byID('confirm-password').value = ''; }
   }
   async function passkeyLogin() {
-    const button = byID('passkey-login'); button.disabled = true; setMessage(byID('login-status'), '正在请求通行密钥…');
+    if (state.authBusy) return; setAuthBusy(true); setMessage(byID('login-status'), '正在请求通行密钥…');
     try {
       if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥。');
       const challenge = await api('passkeys/login/options', { method: 'POST', authenticated: false, body: {} });
@@ -528,7 +568,7 @@ const webJS = String.raw`(() => {
       const session = await api('passkeys/login/verify', { method: 'POST', authenticated: false, body: { challengeID: challenge.challengeID, credential: authenticationCredential(credential) } });
       beginSession(session); await loadWorkspace(false);
     } catch (error) { setMessage(byID('login-status'), error.name === 'NotAllowedError' ? '已取消通行密钥验证。' : error.message, true); }
-    finally { button.disabled = false; }
+    finally { setAuthBusy(false); }
   }
   async function registerPasskey() {
     const button = byID('register-passkey'); button.disabled = true; setMessage(byID('app-status'), '正在创建通行密钥…');
@@ -569,6 +609,7 @@ const webJS = String.raw`(() => {
     byID('actions-tab').tabIndex = deadlines ? -1 : 0; byID('deadlines-tab').tabIndex = deadlines ? 0 : -1;
     byID('actions-panel').hidden = deadlines; byID('deadlines-panel').hidden = !deadlines; save('gw-view', view);
   }
+  byID('registration-toggle').addEventListener('click', () => setRegistration(!state.registration));
   byID('password-form').addEventListener('submit', passwordLogin); byID('passkey-login').addEventListener('click', passkeyLogin);
   byID('recover-passkey').addEventListener('click', recoverPasskey);
   byID('cancel-recovery').addEventListener('click', () => { state.recoveryToken = ''; showLogin('', false); });
@@ -603,18 +644,20 @@ const nativeLoginJS = String.raw`(() => {
   const parameters = new URLSearchParams(location.search);
   const codeChallenge = parameters.get('code_challenge'), requestState = parameters.get('state');
   const valid = /^[A-Za-z0-9_-]{43}$/;
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '验证已失效，请重新登录。',
+  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 16–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '验证已失效，请重新登录。',
     INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。',
     INVALID_WEB_AUTH_REQUEST: '登录请求无效，请返回 App 重新开始。', INVALID_ORIGIN: '请从工作坊打开此登录页。',
     RATE_LIMITED: '尝试次数过多，请稍后再试。' };
-  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0;
+  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0, registration = false;
   function message(text, error = false) { byID('native-login-status').textContent = text; byID('native-login-status').classList.toggle('error', error); }
   function setBusy(value) {
     busy = value;
     byID('native-password-login').disabled = value;
-    byID('native-password-login').textContent = value ? '正在登录…' : '登录';
+    byID('native-password-login').textContent = value ? (registration ? '正在注册…' : '正在登录…') : (registration ? '注册账号' : '登录');
     byID('native-email').disabled = value;
     byID('native-password').disabled = value;
+    byID('native-confirm-password').disabled = value || !registration;
+    byID('native-registration-toggle').disabled = value;
     byID('native-passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
   }
   async function api(path, body, token = '', method = 'POST', keepalive = false) {
@@ -666,13 +709,30 @@ const nativeLoginJS = String.raw`(() => {
     if (busy) return; setBusy(true); message('');
     try { await authorize(await work()); }
     catch (error) { message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true); }
-    finally { byID('native-password').value = ''; await clearTemporarySession(); setBusy(false); }
+    finally { byID('native-password').value = ''; byID('native-confirm-password').value = ''; await clearTemporarySession(); setBusy(false); }
   }
   byID('native-password-form').addEventListener('submit', event => {
     event.preventDefault();
     const email = byID('native-email').value.trim(), password = byID('native-password').value;
-    byID('native-password').value = '';
-    login(() => api('session', { email, password }));
+    if (registration && password !== byID('native-confirm-password').value) {
+      message('两次输入的密码不一致。', true); return;
+    }
+    byID('native-password').value = ''; byID('native-confirm-password').value = '';
+    login(() => api(registration ? 'accounts' : 'session', { email, password }));
+  });
+  byID('native-registration-toggle').addEventListener('click', () => {
+    if (busy) return;
+    registration = !registration;
+    byID('native-login-title').textContent = registration ? '注册账号' : '登录';
+    byID('native-password').autocomplete = registration ? 'new-password' : 'current-password';
+    byID('native-password').minLength = registration ? 16 : 0;
+    byID('native-password').placeholder = registration ? '至少 16 个字符' : '';
+    byID('native-confirm-field').hidden = !registration;
+    byID('native-confirm-password').required = registration;
+    byID('native-passkey-login').hidden = registration;
+    byID('native-registration-toggle').textContent = registration ? '已有账号？登录' : '注册账号';
+    byID('native-password').value = ''; byID('native-confirm-password').value = '';
+    message(''); setBusy(false);
   });
   byID('native-passkey-login').addEventListener('click', () => login(async () => {
     if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥，请使用账号密码。');
@@ -687,7 +747,7 @@ const nativeLoginJS = String.raw`(() => {
     if (!callbackURL || Date.now() >= expiresAt) { callbackURL = ''; byID('native-return').disabled = true; message('登录已过期，请关闭后重试。', true); return; }
     location.assign(callbackURL);
   });
-  window.addEventListener('pagehide', () => { byID('native-password').value = ''; clearTemporarySession(); });
+  window.addEventListener('pagehide', () => { byID('native-password').value = ''; byID('native-confirm-password').value = ''; clearTemporarySession(); });
   setBusy(false);
   if (parameters.get('code_challenge_method') !== 'S256' || !valid.test(codeChallenge || '') || !valid.test(requestState || '') ||
     [...parameters.keys()].length !== 3 || ['code_challenge', 'code_challenge_method', 'state'].some(key => parameters.getAll(key).length !== 1)) {
