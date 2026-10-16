@@ -2,7 +2,7 @@ import { generateRegistrationOptions, verifyRegistrationResponse, generateAuthen
 import http from 'node:http';
 import http2 from 'node:http2';
 import { DatabaseSync } from 'node:sqlite';
-import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
+import { randomBytes, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from 'node:crypto';
 import { readFileSync, mkdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -16,6 +16,29 @@ try { deploymentRevision = readFileSync(join(dirname(new URL(import.meta.url).pa
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = 'unversioned';
 
 const sha = value => createHash('sha256').update(value).digest('hex');
+const base32Alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+function base32Encode(bytes) {
+  let bits = 0, value = 0, encoded = '';
+  for (const byte of bytes) {
+    value = (value << 8) | byte; bits += 8;
+    while (bits >= 5) { encoded += base32Alphabet[(value >>> (bits - 5)) & 31]; bits -= 5; }
+  }
+  if (bits) encoded += base32Alphabet[(value << (5 - bits)) & 31];
+  return encoded;
+}
+export function totpCode(secret, now = Date.now()) {
+  let bits = 0, value = 0; const bytes = [];
+  for (const char of secret) {
+    const digit = base32Alphabet.indexOf(char);
+    if (digit < 0) throw new Error('INVALID_TOTP_SECRET');
+    value = (value << 5) | digit; bits += 5;
+    if (bits >= 8) { bytes.push((value >>> (bits - 8)) & 255); bits -= 8; }
+  }
+  const counter = Buffer.alloc(8); counter.writeBigUInt64BE(BigInt(Math.floor(now / 30000)));
+  const digest = createHmac('sha1', Buffer.from(bytes)).update(counter).digest();
+  const offset = digest[digest.length - 1] & 15;
+  return String((digest.readUInt32BE(offset) & 0x7fffffff) % 1000000).padStart(6, '0');
+}
 const nativeCallbackURL = 'guangyi-workspace://auth/callback';
 const webAuthValue = /^[A-Za-z0-9_-]{43}$/;
 const pkceVerifier = /^[A-Za-z0-9._~-]{43,128}$/;
@@ -138,6 +161,43 @@ export function createNativeServer(configuration) {
   passkeyRecoveryTable(db);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
   const webAuthNow = configuration.webAuthNow ?? Date.now;
+  const totpNow = configuration.totpNow ?? Date.now;
+  db.exec(`CREATE TABLE IF NOT EXISTS totp_credentials(user_id INTEGER PRIMARY KEY REFERENCES users(id),secret TEXT NOT NULL,last_step INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS totp_pending(user_id INTEGER PRIMARY KEY REFERENCES users(id),secret TEXT NOT NULL,expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS totp_recovery_codes(user_id INTEGER NOT NULL REFERENCES users(id),hash TEXT NOT NULL,PRIMARY KEY(user_id,hash));`);
+  function totpStep(secret, code) {
+    if (typeof code !== 'string' || !/^[0-9]{6}$/.test(code)) return null;
+    const now = totpNow(), current = Math.floor(now / 30000);
+    for (const step of [current, current - 1, current + 1]) {
+      if (step >= 0 && timingSafeEqual(Buffer.from(totpCode(secret, step * 30000)), Buffer.from(code))) return step;
+    }
+    return null;
+  }
+  function consumeSecondFactor(userID, code) {
+    const credential = db.prepare('SELECT secret,last_step FROM totp_credentials WHERE user_id=?').get(userID);
+    if (!credential) return false;
+    const step = totpStep(credential.secret, code);
+    if (step !== null && step > credential.last_step) {
+      return db.prepare('UPDATE totp_credentials SET last_step=? WHERE user_id=? AND last_step<?').run(step, userID, step).changes === 1;
+    }
+    if (typeof code !== 'string' || !/^[0-9a-f]{4}(?:-[0-9a-f]{4}){3}$/i.test(code)) return false;
+    return db.prepare('DELETE FROM totp_recovery_codes WHERE user_id=? AND hash=?').run(userID, sha(code.toUpperCase())).changes === 1;
+  }
+  function totpRateLimit(userID) {
+    const key = 'totp:' + userID, now = Date.now(), prior = attempts.get(key);
+    const counter = prior && now - prior.start < 600000 ? prior : { start: now, count: 0 };
+    attempts.set(key, counter);
+    if (++counter.count > 20) throw new APIError(429, 'RATE_LIMITED');
+  }
+  async function totpBody(request, withCode = true) {
+    sameWebOrigin(request); requireJSON(request);
+    const value = await body(request, 512);
+    if (!value || Array.isArray(value) || typeof value !== 'object' ||
+      (withCode ? Object.keys(value).length !== 1 || typeof value.code !== 'string' || value.code.length > 32 : Object.keys(value).length !== 0))
+      throw new APIError(400, 'INVALID_TOTP_REQUEST');
+    return value;
+  }
+
   db.exec(`CREATE TABLE IF NOT EXISTS web_auth_codes(
     hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),challenge TEXT NOT NULL,state TEXT NOT NULL,expires INTEGER NOT NULL);`);
   const attempts = new Map();
@@ -340,7 +400,7 @@ export function createNativeServer(configuration) {
         if (account.length > 254 || local.length > 64 || local.startsWith('.') || local.endsWith('.') || local.includes('..') ||
           !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(account))
           throw new APIError(422, 'INVALID_EMAIL');
-        if (typeof value.password !== 'string' || value.password.length < 16 || value.password.length > 1024)
+        if (typeof value.password !== 'string' || value.password.length < 8 || value.password.length > 1024)
           throw new APIError(422, 'INVALID_PASSWORD');
         const name = local;
         db.exec('BEGIN IMMEDIATE');
@@ -362,11 +422,21 @@ export function createNativeServer(configuration) {
         if (++counter.count > 20) throw new APIError(429, 'RATE_LIMITED');
         attempts.set(ip, counter);
         const value = await body(request, 8192);
-        if (typeof value.email !== 'string' || typeof value.password !== 'string' || value.password.length > 1024) throw new APIError(401, 'INVALID_CREDENTIALS');
+        if (!value || Array.isArray(value) || typeof value.email !== 'string' || typeof value.password !== 'string' || value.password.length > 1024) throw new APIError(401, 'INVALID_CREDENTIALS');
         const user = db.prepare('SELECT * FROM users WHERE email=?').get(value.email.trim().toLowerCase());
         const salt = user?.salt ?? 'invalid-user-constant-salt';
         const candidate = scryptSync(value.password, salt, 64);
         if (!user || !timingSafeEqual(candidate, user.hash)) throw new APIError(401, 'INVALID_CREDENTIALS');
+        if (db.prepare('SELECT user_id FROM totp_credentials WHERE user_id=?').get(user.id)) {
+          if (value.code === undefined || value.code === '') throw new APIError(401, 'SECOND_FACTOR_REQUIRED');
+          totpRateLimit(user.id);
+          db.exec('BEGIN IMMEDIATE');
+          try {
+            if (!consumeSecondFactor(user.id, value.code)) throw new APIError(401, 'INVALID_SECOND_FACTOR');
+            const session = createSession(user); db.exec('COMMIT');
+            return respond(response, 200, { data: session });
+          } catch (error) { db.exec('ROLLBACK'); throw error; }
+        }
         return respond(response, 200, { data: createSession(user) });
       }
       if (path === '/api/native/v1/web-auth/token' && request.method === 'POST') {
@@ -407,6 +477,50 @@ export function createNativeServer(configuration) {
         const callback = new URL(nativeCallbackURL);
         callback.searchParams.set('code', code); callback.searchParams.set('state', value.state);
         return respond(response, 200, { data: { callbackURL: callback.href } });
+      }
+      if (path === '/api/native/v1/totp' && request.method === 'GET') {
+        return respond(response, 200, { data: { enabled: !!db.prepare('SELECT user_id FROM totp_credentials WHERE user_id=?').get(userID) } });
+      }
+      if (path === '/api/native/v1/totp/setup' && request.method === 'POST') {
+        await totpBody(request, false); totpRateLimit(userID);
+        if (db.prepare('SELECT user_id FROM totp_credentials WHERE user_id=?').get(userID)) throw new APIError(409, 'TOTP_ALREADY_ENABLED');
+        const secret = base32Encode(randomBytes(20)), now = totpNow();
+        db.prepare('DELETE FROM totp_pending WHERE expires<=?').run(now);
+        db.prepare('INSERT OR REPLACE INTO totp_pending VALUES(?,?,?)').run(userID, secret, now + 600000);
+        const owner = db.prepare('SELECT email FROM users WHERE id=?').get(userID);
+        const query = new URLSearchParams({ secret, issuer: rpID, algorithm: 'SHA1', digits: '6', period: '30' });
+        const uri = 'otpauth://totp/' + encodeURIComponent('工作坊:' + owner.email) + '?' + query;
+        return respond(response, 200, { data: { secret, uri, appleURI: uri.replace('otpauth:', 'apple-otpauth:') } });
+      }
+      if (path === '/api/native/v1/totp/enable' && request.method === 'POST') {
+        const value = await totpBody(request); totpRateLimit(userID);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          if (db.prepare('SELECT user_id FROM totp_credentials WHERE user_id=?').get(userID)) throw new APIError(409, 'TOTP_ALREADY_ENABLED');
+          const pending = db.prepare('SELECT * FROM totp_pending WHERE user_id=?').get(userID);
+          if (!pending || pending.expires <= totpNow()) throw new APIError(410, 'TOTP_SETUP_EXPIRED');
+          const step = totpStep(pending.secret, value.code);
+          if (step === null) throw new APIError(401, 'INVALID_SECOND_FACTOR');
+          const recoveryCodes = Array.from({ length: 10 }, () => randomBytes(8).toString('hex').toUpperCase().match(/.{4}/g).join('-'));
+          db.prepare('INSERT INTO totp_credentials VALUES(?,?,?)').run(userID, pending.secret, step);
+          db.prepare('DELETE FROM totp_recovery_codes WHERE user_id=?').run(userID);
+          for (const code of recoveryCodes) db.prepare('INSERT INTO totp_recovery_codes VALUES(?,?)').run(userID, sha(code));
+          db.prepare('DELETE FROM totp_pending WHERE user_id=?').run(userID);
+          db.exec('COMMIT');
+          return respond(response, 200, { data: { recoveryCodes } });
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
+      }
+      if (path === '/api/native/v1/totp/disable' && request.method === 'POST') {
+        const value = await totpBody(request); totpRateLimit(userID);
+        db.exec('BEGIN IMMEDIATE');
+        try {
+          if (!consumeSecondFactor(userID, value.code)) throw new APIError(401, 'INVALID_SECOND_FACTOR');
+          db.prepare('DELETE FROM totp_credentials WHERE user_id=?').run(userID);
+          db.prepare('DELETE FROM totp_pending WHERE user_id=?').run(userID);
+          db.prepare('DELETE FROM totp_recovery_codes WHERE user_id=?').run(userID);
+          db.exec('COMMIT');
+          return respond(response, 200, { data: { enabled: false } });
+        } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
       if (path === '/api/native/v1/passkeys/register/options' && request.method === 'POST') {
         passkeyRateLimit(request);
@@ -486,6 +600,7 @@ export function createNativeServer(configuration) {
     db.prepare('DELETE FROM sessions WHERE expires<?').run(now);
     db.prepare('DELETE FROM passkey_recoveries WHERE expires<=?').run(now);
     db.prepare('DELETE FROM web_auth_codes WHERE expires<=?').run(webAuthNow());
+    db.prepare('DELETE FROM totp_pending WHERE expires<=?').run(totpNow());
     for (const [ip, value] of attempts) if (now - value.start > 600000) attempts.delete(ip);
     if (!sendPush || sweeping) return { accepted: 0 };
     sweeping = true; let accepted = 0;

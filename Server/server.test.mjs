@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { createNativeServer, issuePasskeyRecovery, apnsDelivery, effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords } from './server.mjs';
+import { createNativeServer, issuePasskeyRecovery, apnsDelivery, totpCode, effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords } from './server.mjs';
 let app, origin, token;
 const password = 'test-only-password-not-a-production-credential';
 const registeredDeviceID = randomUUID();
@@ -169,7 +169,7 @@ async function withWebAuth(work) {
   let clock = Date.now();
   const expectedOrigin = 'https://native-login.test', account = 'native@test.invalid';
   const instance = createNativeServer({ databasePath: ':memory:', adminEmail: account, adminPassword: password,
-    passkeyRPID: 'native-login.test', passkeyOrigin: expectedOrigin, webAuthNow: () => clock });
+    passkeyRPID: 'native-login.test', passkeyOrigin: expectedOrigin, webAuthNow: () => clock, totpNow: () => clock });
   await new Promise((resolve, reject) => { instance.server.once('error', reject); instance.server.listen(0, '127.0.0.1', resolve); });
   const base = 'http://127.0.0.1:' + instance.server.address().port;
   const verifier = randomBytes(32).toString('base64url'), state = randomBytes(32).toString('base64url');
@@ -186,7 +186,7 @@ async function withWebAuth(work) {
     assert.equal(value.status, 200);
     return new URL(value.value.data.callbackURL);
   }
-  try { await work({ instance, api, base, account, expectedOrigin, verifier, state, codeChallenge, login, authorize, advance: milliseconds => { clock += milliseconds; } }); }
+  try { await work({ instance, api, base, account, expectedOrigin, verifier, state, codeChallenge, login, authorize, now: () => clock, advance: milliseconds => { clock += milliseconds; } }); }
   finally { instance.close(); }
 }
 
@@ -262,7 +262,7 @@ test('registration rejects malformed shapes and unknown fields without creating 
 test('registration validates email and password boundaries without persisting rejected values', async () => {
   for (const [field, values, code] of [
     ['email', ['', 'no-at-sign', 'a@', 'a b@test.invalid', 'a'.repeat(242) + '@test.invalid'], 'INVALID_EMAIL'],
-    ['password', ['', 'x'.repeat(15), 'x'.repeat(1025), 123], 'INVALID_PASSWORD']
+    ['password', ['', 'x'.repeat(7), 'x'.repeat(1025), 123], 'INVALID_PASSWORD']
   ]) {
     await withRegistration(async ({ request, counts }) => {
       for (const value of values) {
@@ -273,7 +273,7 @@ test('registration validates email and password boundaries without persisting re
     });
   }
   await withRegistration(async ({ request }) => {
-    for (const [email, candidate] of [['minimum@test.invalid', 'x'.repeat(16)], ['maximum@test.invalid', 'x'.repeat(1024)]]) {
+    for (const [email, candidate] of [['minimum@test.invalid', 'x'.repeat(8)], ['maximum@test.invalid', 'x'.repeat(1024)]]) {
       assert.equal((await request('accounts', { body: { email, password: candidate } })).status, 201);
       assert.equal((await request('session', { body: { email, password: candidate } })).status, 200);
     }
@@ -587,4 +587,144 @@ test('passkeys register, verify real signatures, reject replay/tampering and rev
     const association=await fetch(url+'/.well-known/apple-app-site-association');
     assert.equal(association.status,200); assert.ok((await association.json()).webcredentials.apps.includes('67WBP6S5QL.com.guangyi.workspace.native.ios'));
   } finally { instance.close(); }
+});
+
+
+test('TOTP matches RFC 6238 SHA-1 vectors at six digits', () => {
+  const secret = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
+  for (const [seconds, expected] of [[59, '287082'], [1111111109, '081804'], [1111111111, '050471'], [1234567890, '005924'], [2000000000, '279037'], [20000000000, '353130']])
+    assert.equal(totpCode(secret, seconds * 1000), expected);
+});
+
+test('TOTP setup requires authenticated same-origin confirmation and expires safely', async () => {
+  await withWebAuth(async ({ instance, api, base, login, expectedOrigin, advance, now }) => {
+    const session = await login();
+    assert.equal((await api('totp', undefined, '', undefined, 'GET')).status, 401);
+    assert.equal((await api('totp/setup', {})).status, 401);
+    assert.equal((await api('totp/setup', {}, session, 'https://evil.test')).status, 403);
+    assert.equal((await api('totp/setup', { extra: true }, session)).value.error.code, 'INVALID_TOTP_REQUEST');
+    assert.equal((await api('totp/setup', [], session)).status, 400);
+    assert.equal((await fetch(base + '/api/native/v1/totp/setup', { method: 'POST', headers: { Authorization: 'Bearer ' + session }, body: '{}' })).status, 415);
+    assert.deepEqual((await api('totp', undefined, session, undefined, 'GET')).value.data, { enabled: false });
+    const first = (await api('totp/setup', {}, session)).value.data;
+    assert.match(first.secret, /^[A-Z2-7]{32}$/);
+    const uri = new URL(first.uri);
+    assert.equal(uri.protocol, 'otpauth:'); assert.equal(uri.searchParams.get('secret'), first.secret);
+    assert.equal(uri.searchParams.get('issuer'), 'native-login.test'); assert.equal(uri.searchParams.get('digits'), '6');
+    assert.equal(first.appleURI, first.uri.replace('otpauth:', 'apple-otpauth:'));
+    assert.equal((await api('totp/enable', { code: 'wrong' }, session)).status, 401);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM totp_credentials').get().n, 0);
+    advance(600000);
+    assert.equal((await api('totp/enable', { code: totpCode(first.secret, now()) }, session)).value.error.code, 'TOTP_SETUP_EXPIRED');
+    const second = (await api('totp/setup', {}, session, expectedOrigin)).value.data;
+    assert.notEqual(first.secret, second.secret);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM totp_pending').get().n, 1);
+  });
+});
+
+test('TOTP gates password sessions, rejects replay, hashes recovery codes and isolates accounts', async () => {
+  await withWebAuth(async ({ instance, api, login, account, advance, now }) => {
+    const session = await login();
+    const setup = (await api('totp/setup', {}, session)).value.data;
+    const code = totpCode(setup.secret, now());
+    const enabled = await api('totp/enable', { code }, session);
+    assert.equal(enabled.status, 200);
+    const recovery = enabled.value.data.recoveryCodes;
+    assert.equal(recovery.length, 10); assert.equal(new Set(recovery).size, 10);
+    for (const item of recovery) assert.match(item, /^[0-9A-F]{4}(?:-[0-9A-F]{4}){3}$/);
+    const saved = instance.db.prepare('SELECT hash FROM totp_recovery_codes').all().map(row => row.hash);
+    assert.deepEqual(new Set(saved), new Set(recovery.map(item => createHash('sha256').update(item).digest('hex'))));
+    assert.deepEqual((await api('totp', undefined, session, undefined, 'GET')).value.data, { enabled: true });
+    assert.equal((await api('totp/setup', {}, session)).value.error.code, 'TOTP_ALREADY_ENABLED');
+    const count = () => instance.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n;
+    const before = count();
+    assert.equal((await api('session', { email: account, password: 'incorrect', code })).value.error.code, 'INVALID_CREDENTIALS');
+    assert.equal((await api('session', { email: account, password })).value.error.code, 'SECOND_FACTOR_REQUIRED');
+    assert.equal((await api('session', { email: account, password, code })).value.error.code, 'INVALID_SECOND_FACTOR');
+    assert.equal((await api('session', { email: account, password, code: {} })).value.error.code, 'INVALID_SECOND_FACTOR');
+    assert.equal(count(), before);
+    advance(30000);
+    const next = totpCode(setup.secret, now());
+    instance.db.exec("CREATE TRIGGER reject_totp_session BEFORE INSERT ON sessions BEGIN SELECT RAISE(ABORT, 'test session insertion'); END;");
+    assert.equal((await api('session', { email: account, password, code: next })).status, 500);
+    instance.db.exec('DROP TRIGGER reject_totp_session');
+    const signedIn = await api('session', { email: account, password, code: next });
+    assert.equal(signedIn.status, 200); assert.equal(signedIn.value.data.account, account);
+    assert.equal((await api('session', { email: account, password, code: next })).value.error.code, 'INVALID_SECOND_FACTOR');
+    const recovered = await api('session', { email: account, password, code: recovery[0].toLowerCase() });
+    assert.equal(recovered.status, 200);
+    assert.equal((await api('session', { email: account, password, code: recovery[0] })).value.error.code, 'INVALID_SECOND_FACTOR');
+    const other = (await api('accounts', { email: 'other@test.invalid', password })).value.data.accessToken;
+    assert.equal((await api('totp/disable', { code: recovery[1] }, other)).status, 401);
+    assert.deepEqual((await api('totp', undefined, session, undefined, 'GET')).value.data, { enabled: true });
+    assert.equal((await api('totp/disable', { code: recovery[1] }, session, 'https://evil.test')).status, 403);
+    assert.equal((await api('totp/disable', { code: recovery[1] }, session)).status, 200);
+    assert.deepEqual((await api('totp', undefined, session, undefined, 'GET')).value.data, { enabled: false });
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM totp_recovery_codes').get().n, 0);
+    assert.equal((await api('session', { email: account, password })).status, 200);
+  });
+});
+
+test('verified passkeys remain usable when TOTP is enabled, and TOTP guessing is limited', async () => {
+  await withWebAuth(async ({ api, login, expectedOrigin, now }) => {
+    const session = await login(), registration = (await api('passkeys/register/options', {}, session)).value.data;
+    const device = authenticator('native-login.test', registration.options.user.id);
+    assert.equal((await api('passkeys/register/verify', { challengeID: registration.challengeID,
+      credential: device.register(registration.options.challenge, expectedOrigin) }, session)).status, 200);
+    const setup = (await api('totp/setup', {}, session)).value.data;
+    assert.equal((await api('totp/enable', { code: totpCode(setup.secret, now()) }, session)).status, 200);
+    const challenge = (await api('passkeys/login/options')).value.data;
+    assert.equal((await api('passkeys/login/verify', { challengeID: challenge.challengeID,
+      credential: device.login(challenge.options.challenge, expectedOrigin) })).status, 200);
+    for (let attempt = 0; attempt < 18; attempt++) assert.equal((await api('totp/disable', { code: 'wrong' }, session)).status, 401);
+    assert.equal((await api('totp/disable', { code: 'wrong' }, session)).status, 429);
+  });
+});
+
+test('native signup revokes a late session after pagehide instead of enrolling or authorizing it', async () => {
+  const { runInNewContext } = await import('node:vm');
+  const { webAsset } = await import('./web.mjs');
+  const nodes = new Map(), windowEvents = new Map(), requests = [];
+  function node(id) {
+    if (id === 'security-panel') return null; // This test needs only the host lifecycle, not authenticator UI.
+    if (!nodes.has(id)) nodes.set(id, { value: '', hidden: id === 'native-login-complete', disabled: false,
+      textContent: '', classList: { toggle() {} }, listeners: new Map(), focus() {},
+      addEventListener(name, listener) { this.listeners.set(name, listener); } });
+    return nodes.get(id);
+  }
+  let releaseSignup;
+  const signup = new Promise(resolve => { releaseSignup = resolve; });
+  const response = data => ({ ok: true, json: async () => ({ data }) });
+  runInNewContext(webAsset('/native-login.js').body, {
+    URL, URLSearchParams, Date,
+    document: { getElementById: node },
+    window: { addEventListener(name, listener) { windowEvents.set(name, listener); } },
+    navigator: {},
+    location: { search: '?code_challenge=' + 'a'.repeat(43) + '&code_challenge_method=S256&state=' + 'b'.repeat(43),
+      assign() { assert.fail('A closed login page must not navigate'); }, reload() {} },
+    fetch: async (url, options) => {
+      requests.push({ url, options });
+      if (url === '/api/native/v1/accounts') return signup;
+      if (url === '/api/native/v1/session' && options.method === 'DELETE') return response({ signedOut: true });
+      assert.fail('Unexpected request from a closed login page: ' + url);
+    }
+  });
+  node('native-registration-toggle').listeners.get('click')();
+  node('native-email').value = 'late@test.invalid';
+  node('native-password').value = 'test-only-registration-password';
+  node('native-confirm-password').value = node('native-password').value;
+  node('native-password-form').listeners.get('submit')({ preventDefault() {} });
+  assert.equal(requests.length, 1);
+  windowEvents.get('pagehide')();
+  const lateToken = 'late-disposable-session-token';
+  releaseSignup(response({ accessToken: lateToken, account: 'late@test.invalid' }));
+  await new Promise(resolve => setImmediate(resolve));
+  assert.deepEqual(requests.map(item => item.url), ['/api/native/v1/accounts', '/api/native/v1/session']);
+  assert.equal(requests[1].options.method, 'DELETE');
+  assert.equal(requests[1].options.headers.Authorization, 'Bearer ' + lateToken);
+  assert.equal(requests[1].options.keepalive, true);
+  assert.equal(node('native-login-complete').hidden, true);
+  assert.equal(node('native-account').textContent, '');
+  assert.equal(node('native-password').value, '');
+  assert.equal(node('native-confirm-password').value, '');
 });

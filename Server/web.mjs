@@ -1,3 +1,6 @@
+import { brandIcon } from './brand-icon.mjs';
+import { accountSecurityHTML, accountSecurityCSS, accountSecurityJS } from './account-security.mjs';
+
 // Browser-compatible and stringified into the client bundle below. Date-only
 // deadlines end at 23:59:59 in the record's timezone, matching the Swift model.
 export function effectiveDeadline(record) {
@@ -108,24 +111,17 @@ const webHTML = String.raw`<!doctype html>
   <a class="skip-link" href="#main">跳到主要内容</a>
   <div class="shell">
     <header class="site-header">
-      <div class="brand-mark" aria-hidden="true">益</div>
+      <img class="brand-mark" src="/app-icon.png" alt="" width="52" height="52">
       <div>
-        <p class="eyebrow">GUANGYI WORKSPACE</p>
-        <h1>行动有序，截止清晰</h1>
+        <p class="eyebrow">WORKSPACE</p>
+        <h1>工作坊</h1>
       </div>
     </header>
 
     <main id="main">
       <section id="login-view" class="login-grid" aria-labelledby="login-title">
-        <div class="hero-card">
-          <p class="eyebrow">同账号资料</p>
-          <h2 id="login-title">回到你的工作空间</h2>
-          <p class="hero-copy">登录后读取服务器上的行动与 DDL。倒计时会在当前页面按秒更新，资料正文不会写入浏览器长期存储。</p>
-          <div class="feature-row">
-            <span>行动 + 行动组</span><span>DDL 秒级倒计时</span><span>通行密钥</span>
-          </div>
-        </div>
         <div class="auth-card">
+          <h2 id="login-title">登录工作坊</h2>
           <section id="recovery-view" hidden aria-labelledby="recovery-title">
             <p class="eyebrow">一次性账号恢复</p>
             <h3 id="recovery-title">创建新的通行密钥</h3>
@@ -143,7 +139,8 @@ const webHTML = String.raw`<!doctype html>
               <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
               <label id="confirm-password-label" for="confirm-password" hidden>确认密码</label>
               <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" hidden disabled>
-              <button id="password-submit" class="primary" type="submit">使用密码登录</button>
+              <div id="login-code-field" hidden><label for="login-code">验证码</label><input id="login-code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="验证码或恢复码"></div>
+              <button id="password-submit" class="primary" type="submit">登录</button>
             </form>
             <div id="passkey-options">
               <div class="or" aria-hidden="true"><span>或</span></div>
@@ -151,7 +148,7 @@ const webHTML = String.raw`<!doctype html>
             </div>
             <button id="registration-toggle" class="quiet full-width recovery-cancel" type="button">注册账号</button>
             <p id="login-status" class="status" role="status" aria-live="polite"></p>
-            <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
+
           </div>
         </div>
       </section>
@@ -169,6 +166,8 @@ const webHTML = String.raw`<!doctype html>
             <button id="logout" class="quiet danger" type="button">退出</button>
           </div>
         </div>
+
+        ${accountSecurityHTML}
 
         <nav class="tabs" role="tablist" aria-label="工作空间主入口">
           <button id="actions-tab" role="tab" aria-selected="true" aria-controls="actions-panel" data-view="actions" type="button">行动 <span id="action-count" class="tab-count">0</span></button>
@@ -208,7 +207,12 @@ const nativeLoginHTML = String.raw`<!doctype html>
 <body class="native-auth-page">
   <main class="native-login-shell">
     <section class="native-login-card" aria-labelledby="native-login-title">
-      <h1 id="native-login-title">登录</h1>
+      <header class="auth-heading">
+        <img class="auth-icon" src="/app-icon.png" alt="工作坊" width="88" height="88">
+        <p class="auth-brand">工作坊</p>
+        <h1 id="native-login-title">欢迎回来</h1>
+        <p id="native-login-subtitle" class="auth-subtitle">让每一步，都有条理。</p>
+      </header>
       <div id="native-login-options">
         <form id="native-password-form">
           <div class="native-fields">
@@ -224,14 +228,20 @@ const nativeLoginHTML = String.raw`<!doctype html>
               <label for="native-confirm-password">确认</label>
               <input id="native-confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" disabled>
             </div>
+            <div id="native-code-field" class="native-field" hidden>
+              <label for="native-code">验证码</label>
+              <input id="native-code" name="code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="验证码或恢复码">
+            </div>
           </div>
           <button id="native-password-login" class="primary" type="submit">登录</button>
         </form>
         <button id="native-passkey-login" class="native-passkey" type="button">使用通行密钥</button>
-        <button id="native-registration-toggle" class="native-passkey" type="button">注册账号</button>
+        <button id="native-registration-toggle" class="auth-text-button" type="button">注册账号</button>
       </div>
       <section id="native-login-complete" hidden aria-label="登录完成">
         <p id="native-account" class="native-account"></p>
+        <button id="native-add-passkey" class="native-passkey" type="button">添加通行密钥</button>
+        ${accountSecurityHTML}
         <button id="native-return" class="primary" type="button">完成</button>
       </section>
       <p id="native-login-status" class="status" role="status" aria-live="polite"></p>
@@ -243,7 +253,7 @@ const nativeLoginHTML = String.raw`<!doctype html>
 const webCSS = String.raw`:root {
   color-scheme: light dark;
   --paper: #f7f4ed; --surface: rgba(255,255,255,.84); --ink: #20211f; --muted: #666861;
-  --line: rgba(32,33,31,.12); --accent: #315b4c; --accent-soft: #dfe9e2;
+  --line: rgba(32,33,31,.12); --accent: #6554ff; --accent-soft: #eeebff;
   --urgent: #a53832; --urgent-soft: #f6dfdc; --shadow: 0 18px 60px rgba(31,39,33,.10);
   font-family: ui-rounded, "SF Pro Rounded", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
@@ -327,8 +337,8 @@ footer { padding: 2.5rem 0 1rem; color: var(--muted); font-size: .75rem; text-al
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
 @media (prefers-color-scheme: dark) {
-  :root { --paper: #171a18; --surface: rgba(33,38,35,.88); --ink: #f0f2ed; --muted: #adb3ac; --line: rgba(240,242,237,.13); --accent: #93c5ad; --accent-soft: #253f34; --urgent: #ffaaa3; --urgent-soft: #4a2928; --shadow: 0 18px 60px rgba(0,0,0,.28); }
-  .primary, .tabs button[aria-selected="true"] { color: #10251d; }
+  :root { --paper: #171a18; --surface: rgba(33,38,35,.88); --ink: #f0f2ed; --muted: #adb3ac; --line: rgba(240,242,237,.13); --accent: #a59aff; --accent-soft: #29253f; --urgent: #ffaaa3; --urgent-soft: #4a2928; --shadow: 0 18px 60px rgba(0,0,0,.28); }
+  .primary, .tabs button[aria-selected="true"] { color: white; background: #6554ff; }
 }
 body.native-auth-page {
   --paper: #f2f2f7; --surface: #fff; --ink: #000; --muted: #8e8e93;
@@ -337,21 +347,36 @@ body.native-auth-page {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
   font-size: 17px; -webkit-text-size-adjust: 100%;
 }
-.native-login-shell { width: min(100%, 440px); margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); }
+.native-login-shell { width: min(100%, 440px); margin: 0 auto; padding: max(32px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }
 .native-login-card { padding: 0; }
-.native-login-card h1 { margin: 4px 0 24px; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: 0; }
+.native-login-card h1 { margin: 0; font-size: 30px; line-height: 1.2; font-weight: 700; letter-spacing: -.04em; }
 .native-fields { padding: 0 16px; border-radius: 16px; background: var(--surface); }
-.native-field { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 12px; align-items: center; min-height: 56px; }
+.native-field { display: grid; grid-template-columns: 52px minmax(0,1fr); gap: 12px; align-items: center; min-height: 56px; }
 .native-field + .native-field { border-top: 1px solid var(--line); }
 .native-field label { margin: 0; font-size: 17px; font-weight: 400; }
 .native-field input { min-width: 0; min-height: 56px; padding: 14px 0; border: 0; border-radius: 0; background: transparent; font-size: 17px; }
 .native-field input:focus-visible { outline: 0; box-shadow: inset 0 -2px var(--accent); }
-.native-login-card .primary { width: 100%; min-height: 50px; margin-top: 20px; border: 0; border-radius: 14px; color: white; background: linear-gradient(135deg, #8978ff, #6050f5); font-size: 17px; font-weight: 600; }
+.native-login-card .primary { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: 20px; padding: 14px 20px; border: 0; border-radius: 999px; color: white; background: #6554ff; font-size: 17px; line-height: 24px; font-weight: 600; }
 .native-login-card button:disabled { opacity: .5; cursor: default; }
-.native-passkey { display: block; width: 100%; min-height: 48px; margin-top: 8px; padding: 10px; border: 0; border-radius: 12px; color: var(--accent); background: transparent; font-size: 16px; }
+.native-passkey { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: 12px; padding: 14px 20px; border: 0; border-radius: 999px; color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-size: 17px; line-height: 24px; font-weight: 600; }
 .native-account { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
 .native-login-card .status { min-height: 0; margin: 16px 0 0; font-size: 14px; line-height: 1.5; font-weight: 400; }
 .native-login-card .status:empty { display: none; }
+
+.auth-heading { text-align: center; margin: 8px 0 32px; }
+.auth-icon { display: block; margin: 0 auto 20px; border-radius: 22px; box-shadow: 0 12px 32px rgba(0,160,255,.16); }
+.auth-brand { color: var(--muted); font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+.auth-subtitle { color: var(--muted); font-size: 15px; margin: 12px 0 0; line-height: 1.5; }
+.auth-text-button { display: block; width: 100%; min-height: 44px; margin-top: 8px; border: 0; padding: 10px; background: transparent; color: var(--accent); font-size: 15px; }
+.login-grid { display: block; max-width: 420px; margin: 0 auto; }
+.auth-card h2 { font-size: 28px; margin: 0 0 24px; text-align: center; }
+.auth-card .primary, .auth-card .secondary { width: 100%; min-height: 52px; border-radius: 999px; line-height: 24px; font-size: 17px; }
+.auth-card .secondary { color: var(--ink); background: var(--surface); border-color: var(--line); }
+.auth-card #registration-toggle { border: 0; background: transparent; color: var(--accent); box-shadow: none; }
+body:has(#login-view:not([hidden])) .site-header { justify-content: center; padding: 16px 0 28px; }
+body:has(#login-view:not([hidden])) .brand-mark { width: 64px; height: 64px; padding: 0; border-radius: 16px; }
+.native-login-card .native-account { text-align: center; margin-bottom: 16px; }
+${accountSecurityCSS}
 @media (prefers-color-scheme: dark) {
   body.native-auth-page { --paper: #000; --surface: #1c1c1e; --ink: #fff; --muted: #98989e; --line: rgba(84,84,88,.65); --accent: #a59aff; --urgent: #ff453a; }
 }`;
@@ -363,6 +388,7 @@ const compareActionRecordsSource = compareActionRecords.toString();
 const compareDeadlineRecordsSource = compareDeadlineRecords.toString();
 const webJS = String.raw`(() => {
   'use strict';
+  ${accountSecurityJS}
   const effectiveDeadline = ${effectiveDeadlineSource};
   const formatCountdown = ${formatCountdownSource};
   const visibleRecord = ${visibleRecordSource};
@@ -373,7 +399,7 @@ const webJS = String.raw`(() => {
   const actionKinds = new Set(['PROJECT', 'TASK', 'MILESTONE', 'REMINDER']);
   const kindNames = { PROJECT: '行动组', TASK: '行动', MILESTONE: '里程碑', REMINDER: '提醒', DEADLINE: 'DDL' };
   const statusNames = { PLANNED: '计划中', ACTIVE: '进行中', WAITING: '等待中', PAUSED: '已暂停', COMPLETED: '已完成', TODO: '待行动', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消', OPEN: '待处理' };
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 16–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
+  const errorNames = { SECOND_FACTOR_REQUIRED: '请输入「密码」中的验证码或恢复码。', INVALID_SECOND_FACTOR: '验证码或恢复码不正确，请重试。', INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 8–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
   const byID = id => document.getElementById(id);
   function saved(key) { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } }
   function save(key, value) { try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch {} }
@@ -426,6 +452,7 @@ const webJS = String.raw`(() => {
     return envelope && envelope.data !== undefined ? envelope.data : envelope;
   }
   function clearSession() {
+    security.reset();
     state.token = ''; state.account = ''; state.displayName = ''; state.workspace = null; state.revision = null;
     save('gw-session', ''); save('gw-account', ''); save('gw-display-name', '');
   }
@@ -433,6 +460,7 @@ const webJS = String.raw`(() => {
     if (!session || typeof session.accessToken !== 'string' || !session.accessToken) throw new Error('服务器没有返回有效会话。');
     state.token = session.accessToken; state.account = session.account || ''; state.displayName = session.displayName || '';
     save('gw-session', state.token); save('gw-account', state.account); save('gw-display-name', state.displayName);
+    security.reset(); security.refresh();
   }
   function recoveryFromLocation() {
     const parameters = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
@@ -523,12 +551,13 @@ const webJS = String.raw`(() => {
   function setRegistration(value) {
     if (state.authBusy) return;
     state.registration = value;
-    byID('login-title').textContent = value ? '创建你的工作空间' : '回到你的工作空间';
-    byID('password-submit').textContent = value ? '注册账号' : '使用密码登录';
+    byID('login-title').textContent = value ? '创建账号' : '登录工作坊';
+    byID('login-code-field').hidden = true; byID('login-code').value = '';
+    byID('password-submit').textContent = value ? '注册账号' : '登录';
     byID('registration-toggle').textContent = value ? '已有账号？登录' : '注册账号';
     byID('password').autocomplete = value ? 'new-password' : 'current-password';
-    byID('password').minLength = value ? 16 : 0;
-    byID('password').placeholder = value ? '至少 16 个字符' : '';
+    byID('password').minLength = value ? 8 : 0;
+    byID('password').placeholder = value ? '至少 8 个字符' : '';
     byID('confirm-password-label').hidden = !value;
     byID('confirm-password').hidden = !value;
     byID('confirm-password').disabled = !value;
@@ -539,24 +568,40 @@ const webJS = String.raw`(() => {
   }
   function setAuthBusy(value) {
     state.authBusy = value;
-    for (const id of ['email', 'password', 'password-submit', 'registration-toggle']) byID(id).disabled = value;
+    for (const id of ['email', 'password', 'login-code', 'password-submit', 'registration-toggle']) byID(id).disabled = value;
     byID('confirm-password').disabled = value || !state.registration;
     byID('passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
   }
+  const security = installAccountSecurity({ api: (path, body, method = 'POST') => api(path, { body, method }),
+    onBusy: value => { byID('logout').disabled = value; byID('register-passkey').disabled = value || !window.PublicKeyCredential; } });
   async function passwordLogin(event) {
     event.preventDefault();
     if (state.authBusy) return;
-    const email = byID('email').value.trim(), password = byID('password').value;
-    if (state.registration && password !== byID('confirm-password').value) {
+    const email = byID('email').value.trim(), password = byID('password').value, registering = state.registration;
+    if (registering && password !== byID('confirm-password').value) {
       setMessage(byID('login-status'), '两次输入的密码不一致。', true); return;
     }
-    setAuthBusy(true);
-    setMessage(byID('login-status'), state.registration ? '正在注册…' : '正在登录…');
+    setAuthBusy(true); let needsCode = false;
+    setMessage(byID('login-status'), registering ? '正在注册…' : '正在登录…');
     try {
-      const session = await api(state.registration ? 'accounts' : 'session', { method: 'POST', authenticated: false, body: { email, password } });
+      const code = byID('login-code').value.trim();
+      const session = await api(registering ? 'accounts' : 'session', { method: 'POST', authenticated: false, body: { email, password, ...(!registering && code ? { code } : {}) } });
       beginSession(session); await loadWorkspace(false);
-    } catch (error) { clearSession(); setMessage(byID('login-status'), error.message, true); }
-    finally { setAuthBusy(false); byID('password').value = ''; byID('confirm-password').value = ''; }
+      if (registering && state.token) {
+        setMessage(byID('app-status'), '账号已创建，可添加通行密钥，或在账户安全中设置验证码。');
+        byID('register-passkey').focus();
+      }
+    } catch (error) {
+      needsCode = ['SECOND_FACTOR_REQUIRED', 'INVALID_SECOND_FACTOR'].includes(error.code);
+      clearSession();
+      if (needsCode) { byID('login-code-field').hidden = false; byID('login-code').value = ''; }
+      setMessage(byID('login-status'), error.message, true);
+    } finally {
+      setAuthBusy(false);
+      if (!needsCode) { byID('password').value = ''; byID('login-code').value = ''; }
+      else byID('login-code').focus();
+      byID('confirm-password').value = '';
+    }
   }
   async function passkeyLogin() {
     if (state.authBusy) return; setAuthBusy(true); setMessage(byID('login-status'), '正在请求通行密钥…');
@@ -640,15 +685,16 @@ const webJS = String.raw`(() => {
 // of the read-only website's tab session and workspace data.
 const nativeLoginJS = String.raw`(() => {
   'use strict';
+  ${accountSecurityJS}
   const byID = id => document.getElementById(id);
   const parameters = new URLSearchParams(location.search);
   const codeChallenge = parameters.get('code_challenge'), requestState = parameters.get('state');
   const valid = /^[A-Za-z0-9_-]{43}$/;
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 16–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '验证已失效，请重新登录。',
+  const errorNames = { SECOND_FACTOR_REQUIRED: '请输入「密码」中的验证码或恢复码。', INVALID_SECOND_FACTOR: '验证码或恢复码不正确，请重试。', INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 8–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '验证已失效，请重新登录。',
     INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。',
     INVALID_WEB_AUTH_REQUEST: '登录请求无效，请返回 App 重新开始。', INVALID_ORIGIN: '请从工作坊打开此登录页。',
     RATE_LIMITED: '尝试次数过多，请稍后再试。' };
-  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0, registration = false;
+  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0, registration = false, pendingSession = null, securityBusy = false, disposed = false;
   function message(text, error = false) { byID('native-login-status').textContent = text; byID('native-login-status').classList.toggle('error', error); }
   function setBusy(value) {
     busy = value;
@@ -656,6 +702,7 @@ const nativeLoginJS = String.raw`(() => {
     byID('native-password-login').textContent = value ? (registration ? '正在注册…' : '正在登录…') : (registration ? '注册账号' : '登录');
     byID('native-email').disabled = value;
     byID('native-password').disabled = value;
+    byID('native-code').disabled = value;
     byID('native-confirm-password').disabled = value || !registration;
     byID('native-registration-toggle').disabled = value;
     byID('native-passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
@@ -665,7 +712,7 @@ const nativeLoginJS = String.raw`(() => {
       headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: 'Bearer ' + token } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body) });
     let envelope; try { envelope = await response.json(); } catch {}
-    if (!response.ok) throw new Error(errorNames[envelope?.error?.code] || '连接暂时不可用，请重试。');
+    if (!response.ok) { const error = new Error(errorNames[envelope?.error?.code] || '连接暂时不可用，请重试。'); error.code = envelope?.error?.code; throw error; }
     return envelope?.data;
   }
   function bytes(value) {
@@ -688,11 +735,13 @@ const nativeLoginJS = String.raw`(() => {
   }
   async function authorize(session) {
     if (!session || typeof session.accessToken !== 'string' || !session.accessToken) throw new Error('服务器未返回有效会话。');
+    if (disposed) { await api('session', undefined, session.accessToken, 'DELETE', true).catch(() => {}); throw new Error('登录页面已关闭。'); }
     temporaryToken = session.accessToken;
     const result = await api('web-auth/authorize', { codeChallenge, state: requestState }, temporaryToken);
     // The server revokes the browser bearer in the same transaction that issues
     // this short-lived code. Never put the bearer into a URL or browser storage.
     temporaryToken = '';
+    if (disposed) throw new Error('登录页面已关闭。');
     const callback = new URL(result.callbackURL);
     if (callback.protocol !== 'guangyi-workspace:' || callback.hostname !== 'auth' || callback.pathname !== '/callback' ||
       callback.username || callback.password || callback.port || callback.hash ||
@@ -701,15 +750,43 @@ const nativeLoginJS = String.raw`(() => {
     callbackURL = callback.href; expiresAt = Date.now() + 90000;
     byID('native-login-options').hidden = true; byID('native-login-complete').hidden = false;
     byID('native-login-title').textContent = '已登录';
+    byID('native-login-subtitle').textContent = '准备好了，继续你的工作坊。';
     byID('native-account').textContent = session.account || session.displayName || '';
     message('');
     byID('native-return').focus();
   }
-  async function login(work) {
-    if (busy) return; setBusy(true); message('');
-    try { await authorize(await work()); }
-    catch (error) { message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true); }
-    finally { byID('native-password').value = ''; byID('native-confirm-password').value = ''; await clearTemporarySession(); setBusy(false); }
+  const security = installAccountSecurity({ api: (path, body, method = 'POST') => api(path, body, temporaryToken, method),
+    onBusy: value => { securityBusy = value; byID('native-return').disabled = value || busy; byID('native-add-passkey').disabled = value || busy || !window.PublicKeyCredential; } });
+  async function showEnrollment(session) {
+    if (!session?.accessToken) throw new Error('服务器未返回有效会话。');
+    temporaryToken = session.accessToken; pendingSession = session;
+    byID('native-login-options').hidden = true; byID('native-login-complete').hidden = false;
+    byID('native-login-title').textContent = registration ? '账号已创建' : '已登录';
+    byID('native-login-subtitle').textContent = '添加通行密钥，下次登录更轻松。';
+    byID('native-account').textContent = session.account;
+    byID('native-add-passkey').hidden = false; byID('security-panel').hidden = false;
+    await security.refresh();
+  }
+  async function login(work, offerSecurity = false) {
+    if (busy) return; setBusy(true); message(''); let needsCode = false;
+    try {
+      const session = await work();
+      if (disposed) { if (session?.accessToken) await api('session', undefined, session.accessToken, 'DELETE', true).catch(() => {}); return; }
+      if (offerSecurity) await showEnrollment(session);
+      else { byID('native-add-passkey').hidden = true; byID('security-panel').hidden = true; await authorize(session); }
+    } catch (error) {
+      needsCode = ['SECOND_FACTOR_REQUIRED', 'INVALID_SECOND_FACTOR'].includes(error.code);
+      if (needsCode) { byID('native-code-field').hidden = false; byID('native-code').value = ''; }
+      message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true);
+    } finally {
+      if (!needsCode) { byID('native-password').value = ''; byID('native-code').value = ''; }
+      byID('native-confirm-password').value = '';
+      if (!pendingSession) await clearTemporarySession();
+      setBusy(false);
+      byID('native-return').disabled = securityBusy;
+      byID('native-add-passkey').disabled = securityBusy || !window.PublicKeyCredential;
+      if (needsCode) byID('native-code').focus();
+    }
   }
   byID('native-password-form').addEventListener('submit', event => {
     event.preventDefault();
@@ -717,16 +794,18 @@ const nativeLoginJS = String.raw`(() => {
     if (registration && password !== byID('native-confirm-password').value) {
       message('两次输入的密码不一致。', true); return;
     }
-    byID('native-password').value = ''; byID('native-confirm-password').value = '';
-    login(() => api(registration ? 'accounts' : 'session', { email, password }));
+    const code = byID('native-code').value.trim();
+    login(() => api(registration ? 'accounts' : 'session', { email, password, ...(!registration && code ? { code } : {}) }), true);
   });
   byID('native-registration-toggle').addEventListener('click', () => {
     if (busy) return;
     registration = !registration;
-    byID('native-login-title').textContent = registration ? '注册账号' : '登录';
+    byID('native-login-title').textContent = registration ? '开始你的工作坊' : '欢迎回来';
+    byID('native-login-subtitle').textContent = registration ? '从这里，开始有条理的每一天。' : '让每一步，都有条理。';
+    byID('native-code-field').hidden = true; byID('native-code').value = '';
     byID('native-password').autocomplete = registration ? 'new-password' : 'current-password';
-    byID('native-password').minLength = registration ? 16 : 0;
-    byID('native-password').placeholder = registration ? '至少 16 个字符' : '';
+    byID('native-password').minLength = registration ? 8 : 0;
+    byID('native-password').placeholder = registration ? '至少 8 个字符' : '';
     byID('native-confirm-field').hidden = !registration;
     byID('native-confirm-password').required = registration;
     byID('native-passkey-login').hidden = registration;
@@ -743,11 +822,37 @@ const nativeLoginJS = String.raw`(() => {
     if (!credential) throw new Error('未取得通行密钥，请重试。');
     return api('passkeys/login/verify', { challengeID: challenge.challengeID, credential: assertion(credential) });
   }));
-  byID('native-return').addEventListener('click', () => {
+  byID('native-add-passkey').addEventListener('click', async () => {
+    if (busy || securityBusy || !temporaryToken) return;
+    busy = true; byID('security-panel').inert = true; byID('native-add-passkey').disabled = true; byID('native-return').disabled = true; message('');
+    try {
+      const challenge = await api('passkeys/register/options', {}, temporaryToken);
+      const options = { ...challenge.options, challenge: bytes(challenge.options.challenge), user: { ...challenge.options.user, id: bytes(challenge.options.user.id) },
+        excludeCredentials: (challenge.options.excludeCredentials || []).map(value => ({ ...value, id: bytes(value.id) })) };
+      const credential = await navigator.credentials.create({ publicKey: options });
+      if (!credential) throw new Error('未创建通行密钥，请重试。');
+      const proof = { id: credential.id, rawId: base64url(credential.rawId), type: credential.type,
+        authenticatorAttachment: credential.authenticatorAttachment || undefined, clientExtensionResults: credential.getClientExtensionResults(),
+        response: { clientDataJSON: base64url(credential.response.clientDataJSON), attestationObject: base64url(credential.response.attestationObject),
+          transports: typeof credential.response.getTransports === 'function' ? credential.response.getTransports() : undefined } };
+      await api('passkeys/register/verify', { challengeID: challenge.challengeID, credential: proof }, temporaryToken);
+      byID('native-add-passkey').textContent = '通行密钥已添加'; message('下次可使用通行密钥登录。');
+    } catch (error) { message(error.name === 'NotAllowedError' ? '已取消添加，可继续完成注册。' : error.message, true); }
+    finally { busy = false; byID('security-panel').inert = false; byID('native-add-passkey').disabled = securityBusy; byID('native-return').disabled = securityBusy; }
+  });
+  byID('native-return').addEventListener('click', async () => {
+    if (busy || securityBusy) return;
+    if (pendingSession) {
+      busy = true; byID('native-return').disabled = true;
+      try { await authorize(pendingSession); pendingSession = null; security.reset(); }
+      catch (error) { message(error.message, true); return; }
+      finally { busy = false; byID('native-return').disabled = securityBusy; }
+    }
     if (!callbackURL || Date.now() >= expiresAt) { callbackURL = ''; byID('native-return').disabled = true; message('登录已过期，请关闭后重试。', true); return; }
     location.assign(callbackURL);
   });
-  window.addEventListener('pagehide', () => { byID('native-password').value = ''; byID('native-confirm-password').value = ''; clearTemporarySession(); });
+  window.addEventListener('pagehide', () => { disposed = true; byID('native-password').value = ''; byID('native-confirm-password').value = ''; byID('native-code').value = ''; security.reset(); pendingSession = null; clearTemporarySession(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
   setBusy(false);
   if (parameters.get('code_challenge_method') !== 'S256' || !valid.test(codeChallenge || '') || !valid.test(requestState || '') ||
     [...parameters.keys()].length !== 3 || ['code_challenge', 'code_challenge_method', 'state'].some(key => parameters.getAll(key).length !== 1)) {
@@ -755,7 +860,7 @@ const nativeLoginJS = String.raw`(() => {
   }
 })();`;
 
-const favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#315b4c"/><path d="M20 14h24v7c0 7-4 10-8 12 4 2 8 5 8 12v6H20v-6c0-7 4-10 8-12-4-2-8-5-8-12zm6 7c0 5 3 7 6 9 3-2 6-4 6-9zm6 15c-3 2-6 4-6 9h12c0-5-3-7-6-9z" fill="#fff"/></svg>`;
+const favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#00fdff"/><stop offset="1" stop-color="#0096ff"/></linearGradient></defs><rect width="120" height="120" rx="28" fill="url(#b)"/><g fill="white"><rect x="21" y="43" width="20" height="52" rx="10"/><rect x="51" y="24" width="20" height="71" rx="10"/><rect x="81" y="53" width="20" height="42" rx="10"/></g></svg>`;
 
 const headers = Object.freeze({
   'Cache-Control': 'no-store',
@@ -769,6 +874,7 @@ const headers = Object.freeze({
 });
 
 const assets = new Map([
+  ['/app-icon.png', { type: 'image/png', body: brandIcon }],
   ['/', { type: 'text/html; charset=utf-8', body: webHTML }],
   ['/index.html', { type: 'text/html; charset=utf-8', body: webHTML }],
   ['/native-login', { type: 'text/html; charset=utf-8', body: nativeLoginHTML }],
