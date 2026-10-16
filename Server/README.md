@@ -102,3 +102,11 @@ APNS_ALLOWED_BUNDLE_IDS=你实际使用的iOSBundleID,你实际使用的MacBundl
 `POST /totp/disable` 需要已有会话及 `{code}`（验证码或未使用恢复码），成功清除验证码与恢复码。设置、确认、关闭要求同源 JSON；这些操作与密码登录的验证码验证共用每账号每 10 分钟 20 次限流，密码登录另有既有的 IP 请求限流。通行密钥的服务端验证始终要求用户验证，可独立登录，不叠加 TOTP。已有会话不会因启用 TOTP 自动退出。
 
 TOTP 是可选功能，邮箱仍只是登录标识，不代表已验证邮箱归属。验证码密钥和未确认密钥保存在 SQLite 中（恢复码仅有哈希），不依赖额外生产密钥；数据库及备份应视为敏感凭据，仅管理员/服务用户可读取。日志、版本包和 UI 错误均不应包含设置密钥或恢复码。
+
+## 关联账户
+
+`GET /api/native/v1/sharing` 返回当前账户的邀请、成员与可访问空间。账户邮箱发送邀请（需已注册），有效期 7 天；`POST sharing/invitations` 使用 `{email, role}`，role 为 `viewer` 或 `editor`。`POST sharing/accept`、`sharing/decline` 使用 `{id}`；`POST sharing/permission` 使用 `{id, role}`；`DELETE sharing/member` 解除关联，`DELETE sharing/invitation` 撤回邀请。均需正常登录会话，权限更改仅允许空间所有者，成员可自行退出。
+
+接受时把双方现有记录、周期规则、附件、历史与回收站原子合并到邀请者空间，保留邀请者资料与接受者个人空间原副本。同 ID 内容不同返回 `409 SHARING_MERGE_CONFLICT`，不写入任何内容；已有自己共享成员的账户需先解除关联，避免第三方数据自动并入。客户端接受前先同步个人空间。
+
+共享读取/写入沿用 workspace 接口，携带 `X-Workspace-ID`（sharing 返回的 id），未携带时访问自己的空间。返回包含 `workspaceID` 与 `accessRole`；只读成员 PUT 返回 403，撤权后 GET/PUT 均返回 403，写入事务内重新鉴权，仍需 If-Match。空间切换使用隔离的本机缓存与同步基线；首次加入不把个人空间再合并一次。前台沿用自动同步，未启用 APNs 时不保证关闭 App 后即时刷新。纯文本 API 密钥仍只写入所属账户的个人空间。
