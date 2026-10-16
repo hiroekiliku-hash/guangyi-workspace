@@ -33,14 +33,14 @@ enum NativeBackendError: LocalizedError {
     case configuration, authentication, conflict, status(Int), malformed, insecureURL, passkeysUnavailable
     var errorDescription: String? {
         switch self {
-        case .configuration: "请先配置自建服务器并登录。"
+        case .configuration: "请先登录工作坊。"
         case .authentication: "登录已失效，请重新登录。"
-        case .conflict: "服务器数据已被其他设备修改。请先下载并审阅，避免覆盖。"
-        case .status(404): "服务器暂未启用此功能，请使用密码登录或稍后重试。"
-        case .status(let status): "服务器暂时无法完成此操作（\(status)），请稍后重试。"
-        case .malformed: "服务器返回的数据格式无效。"
-        case .insecureURL: "服务器地址必须使用 HTTPS，不能包含用户名、密码或查询参数。"
-        case .passkeysUnavailable: "当前测试版已暂停原生通行密钥，请使用账号密码登录。"
+        case .conflict: "其他设备更新了内容，请同步后再试。"
+        case .status(404): "此功能暂时不可用，请稍后重试。"
+        case .status: "暂时无法完成操作，请稍后重试。"
+        case .malformed: "暂时无法读取内容，请稍后重试。"
+        case .insecureURL: "暂时无法连接工作坊，请稍后重试。"
+        case .passkeysUnavailable: "请使用网页登录或账号密码登录。"
         }
     }
 }
@@ -115,14 +115,14 @@ enum SecureCredentials {
         let update: [String: Any] = [kSecValueData as String: Data(value.utf8)]
         let status = SecItemUpdate(query as CFDictionary, update as CFDictionary)
         if status == errSecSuccess { return }
-        guard status == errSecItemNotFound else { throw WorkspaceFailure.invalid("无法更新 Keychain 凭据。") }
+        guard status == errSecItemNotFound else { throw WorkspaceFailure.invalid("无法保存登录状态，请重试。") }
         var attributes = query
         attributes[kSecValueData as String] = Data(value.utf8)
         #if os(iOS)
         attributes[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly
         #endif
         guard SecItemAdd(attributes as CFDictionary, nil) == errSecSuccess else {
-            throw WorkspaceFailure.invalid("无法将登录凭据保存到 Keychain。")
+            throw WorkspaceFailure.invalid("无法保存登录状态，请重试。")
         }
     }
     static func read(_ key: String) -> String? {
@@ -147,13 +147,8 @@ enum SecureCredentials {
         guard let value = SecureCredentials.read("session") else { return nil }
         return try? JSONDecoder().decode(Credentials.self, from: Data(value.utf8))
     }
-    var address: String {
-        didSet {
-            UserDefaults.standard.set(address, forKey: "backendAddress")
-            signedIn = Self.storedCredentials()?.serverOrigin == address
-            revision = nil
-        }
-    }
+    static let serviceURL = URL(string: "https://workspace.kdfz.com.cn")!
+    let address: String
     private(set) var signedIn: Bool
     private(set) var displayName: String
     private(set) var revision: Int?
@@ -162,8 +157,7 @@ enum SecureCredentials {
     private let transport: NativeBackendTransport
     init(transport: NativeBackendTransport = URLSessionBackend()) {
         self.transport = transport
-        let configured = UserDefaults.standard.string(forKey: "backendAddress") ?? ""
-        let savedAddress = configured.isEmpty ? "https://workspace.kdfz.com.cn" : configured
+        let savedAddress = Self.serviceURL.absoluteString
         address = savedAddress
         signedIn = Self.storedCredentials()?.serverOrigin == savedAddress
         displayName = UserDefaults.standard.string(forKey: "backendDisplayName") ?? ""
@@ -173,7 +167,7 @@ enum SecureCredentials {
               url.scheme == "https", url.host != nil, url.user == nil, url.password == nil, url.query == nil, url.fragment == nil else {
             throw NativeBackendError.insecureURL
         }
-        // Tokens are host-bound, so changing the address never sends an old token elsewhere.
+        // Credentials remain bound to the application's fixed service origin.
         return url
     }
     private func credentials() throws -> (URL, String) {
@@ -213,7 +207,6 @@ enum SecureCredentials {
         let encoded = try JSONEncoder().encode(credentials)
         guard let value = String(data: encoded, encoding: .utf8) else { throw NativeBackendError.malformed }
         try SecureCredentials.save(value, key: "session")
-        address = url.absoluteString
         signedIn = true; displayName = result.displayName; revision = nil
         UserDefaults.standard.set(displayName, forKey: "backendDisplayName")
     }

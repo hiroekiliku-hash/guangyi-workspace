@@ -23311,40 +23311,39 @@ var nativeLoginHTML = String.raw`<!doctype html>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <meta name="referrer" content="no-referrer">
   <title>登录工作坊</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/app.css">
   <script type="module" src="/native-login.js"></script>
 </head>
-<body>
-  <main class="shell native-login-shell">
-    <header class="site-header">
-      <div class="brand-mark" aria-hidden="true">坊</div>
-      <div><p class="eyebrow">WORKSPACE</p><h1>工作坊</h1></div>
-    </header>
-    <section class="auth-card native-login-card" aria-labelledby="native-login-title">
-      <p class="eyebrow">安全连接你的账号</p>
-      <h2 id="native-login-title">登录后，接着做。</h2>
-      <p class="recovery-copy">完成验证后返回工作坊，自动合并本机与云端内容。</p>
+<body class="native-auth-page">
+  <main class="native-login-shell">
+    <section class="native-login-card" aria-labelledby="native-login-title">
+      <h1 id="native-login-title">登录</h1>
       <div id="native-login-options">
         <form id="native-password-form">
-          <label for="native-email">账号邮箱</label>
-          <input id="native-email" name="email" type="email" inputmode="email" autocomplete="username" maxlength="320" required>
-          <label for="native-password">密码</label>
-          <input id="native-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
-          <button id="native-password-login" class="primary" type="submit">使用账号密码登录</button>
+          <div class="native-fields">
+            <div class="native-field">
+              <label for="native-email">邮箱</label>
+              <input id="native-email" name="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" maxlength="320" required>
+            </div>
+            <div class="native-field">
+              <label for="native-password">密码</label>
+              <input id="native-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
+            </div>
+          </div>
+          <button id="native-password-login" class="primary" type="submit">登录</button>
         </form>
-        <div class="or" aria-hidden="true"><span>或</span></div>
-        <button id="native-passkey-login" class="secondary" type="button">使用已有通行密钥</button>
+        <button id="native-passkey-login" class="native-passkey" type="button">使用通行密钥</button>
       </div>
       <section id="native-login-complete" hidden aria-label="登录完成">
-        <p id="native-account" class="recovery-copy"></p>
-        <button id="native-return" class="primary full-width" type="button">返回工作坊并合并</button>
-        <p class="privacy-note">请在 90 秒内返回。如果未能返回，请关闭此页，从 App 重新开始登录。</p>
+        <p id="native-account" class="native-account"></p>
+        <button id="native-return" class="primary" type="button">完成</button>
       </section>
       <p id="native-login-status" class="status" role="status" aria-live="polite"></p>
-      <p class="privacy-note">密码仅用于此次验证。返回链接只携带一次性授权码，账号会话由 App 安全保存。</p>
     </section>
   </main>
 </body>
@@ -23399,10 +23398,6 @@ input { width: 100%; padding: .85rem .9rem; border: 1px solid var(--line); borde
 .privacy-note { margin: 1rem 0 0; font-size: .76rem; line-height: 1.5; }
 .recovery-copy { color: var(--muted); line-height: 1.65; }
 .recovery-cancel { margin-top: .55rem; }
-.native-login-shell { width: min(30rem, calc(100% - 2rem)); padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
-.native-login-shell .site-header { padding-top: .8rem; padding-bottom: 1.3rem; }
-.native-login-card { padding: clamp(1.4rem, 5vw, 2rem); }
-.native-login-card h2 { font-size: clamp(1.8rem, 7vw, 2.3rem); line-height: 1.15; }
 .workspace-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; padding: 1.3rem 1.4rem; border-radius: 1.4rem; }
 .workspace-header h2 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.8rem); }
 .toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; }
@@ -23442,6 +23437,31 @@ footer { padding: 2.5rem 0 1rem; color: var(--muted); font-size: .75rem; text-al
 @media (prefers-color-scheme: dark) {
   :root { --paper: #171a18; --surface: rgba(33,38,35,.88); --ink: #f0f2ed; --muted: #adb3ac; --line: rgba(240,242,237,.13); --accent: #93c5ad; --accent-soft: #253f34; --urgent: #ffaaa3; --urgent-soft: #4a2928; --shadow: 0 18px 60px rgba(0,0,0,.28); }
   .primary, .tabs button[aria-selected="true"] { color: #10251d; }
+}
+body.native-auth-page {
+  --paper: #f2f2f7; --surface: #fff; --ink: #000; --muted: #8e8e93;
+  --line: rgba(60,60,67,.16); --accent: #6554ff; --urgent: #ff3b30;
+  min-height: 100svh; background: var(--paper);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
+  font-size: 17px; -webkit-text-size-adjust: 100%;
+}
+.native-login-shell { width: min(100%, 440px); margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); }
+.native-login-card { padding: 0; }
+.native-login-card h1 { margin: 4px 0 24px; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: 0; }
+.native-fields { padding: 0 16px; border-radius: 16px; background: var(--surface); }
+.native-field { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 12px; align-items: center; min-height: 56px; }
+.native-field + .native-field { border-top: 1px solid var(--line); }
+.native-field label { margin: 0; font-size: 17px; font-weight: 400; }
+.native-field input { min-width: 0; min-height: 56px; padding: 14px 0; border: 0; border-radius: 0; background: transparent; font-size: 17px; }
+.native-field input:focus-visible { outline: 0; box-shadow: inset 0 -2px var(--accent); }
+.native-login-card .primary { width: 100%; min-height: 50px; margin-top: 20px; border: 0; border-radius: 14px; color: white; background: linear-gradient(135deg, #8978ff, #6050f5); font-size: 17px; font-weight: 600; }
+.native-login-card button:disabled { opacity: .5; cursor: default; }
+.native-passkey { display: block; width: 100%; min-height: 48px; margin-top: 8px; padding: 10px; border: 0; border-radius: 12px; color: var(--accent); background: transparent; font-size: 16px; }
+.native-account { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
+.native-login-card .status { min-height: 0; margin: 16px 0 0; font-size: 14px; line-height: 1.5; font-weight: 400; }
+.native-login-card .status:empty { display: none; }
+@media (prefers-color-scheme: dark) {
+  body.native-auth-page { --paper: #000; --surface: #1c1c1e; --ink: #fff; --muted: #98989e; --line: rgba(84,84,88,.65); --accent: #a59aff; --urgent: #ff453a; }
 }`;
 var effectiveDeadlineSource = effectiveDeadline.toString();
 var formatCountdownSource = formatCountdown.toString();
@@ -23706,6 +23726,9 @@ var nativeLoginJS = String.raw`(() => {
   function setBusy(value) {
     busy = value;
     byID('native-password-login').disabled = value;
+    byID('native-password-login').textContent = value ? '正在登录…' : '登录';
+    byID('native-email').disabled = value;
+    byID('native-password').disabled = value;
     byID('native-passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
   }
   async function api(path, body, token = '', method = 'POST', keepalive = false) {
@@ -23748,14 +23771,15 @@ var nativeLoginJS = String.raw`(() => {
       !valid.test(callback.searchParams.get('code') || '') || callback.searchParams.get('state') !== requestState) throw new Error('返回链接无效，请返回 App 重新开始。');
     callbackURL = callback.href; expiresAt = Date.now() + 90000;
     byID('native-login-options').hidden = true; byID('native-login-complete').hidden = false;
-    byID('native-account').textContent = '已验证账号：' + (session.account || session.displayName || '你的账号');
-    message('验证完成，点击下方按钮返回 App。');
+    byID('native-login-title').textContent = '已登录';
+    byID('native-account').textContent = session.account || session.displayName || '';
+    message('');
     byID('native-return').focus();
   }
   async function login(work) {
-    if (busy) return; setBusy(true); message('正在验证…');
+    if (busy) return; setBusy(true); message('');
     try { await authorize(await work()); }
-    catch (error) { message(error.name === 'NotAllowedError' ? '已取消通行密钥验证，可以重新选择登录方式。' : error.message, true); }
+    catch (error) { message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true); }
     finally { byID('native-password').value = ''; await clearTemporarySession(); setBusy(false); }
   }
   byID('native-password-form').addEventListener('submit', event => {
@@ -23774,7 +23798,7 @@ var nativeLoginJS = String.raw`(() => {
     return api('passkeys/login/verify', { challengeID: challenge.challengeID, credential: assertion(credential) });
   }));
   byID('native-return').addEventListener('click', () => {
-    if (!callbackURL || Date.now() >= expiresAt) { callbackURL = ''; byID('native-return').disabled = true; message('返回链接已过期，请关闭此页，从 App 重新开始登录。', true); return; }
+    if (!callbackURL || Date.now() >= expiresAt) { callbackURL = ''; byID('native-return').disabled = true; message('登录已过期，请关闭后重试。', true); return; }
     location.assign(callbackURL);
   });
   window.addEventListener('pagehide', () => { byID('native-password').value = ''; clearTemporarySession(); });
