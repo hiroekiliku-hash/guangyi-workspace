@@ -44,6 +44,8 @@ refs = {}
 for path in shared + tests:
     refs[path] = obj('file:' + path, isa='PBXFileReference', lastKnownFileType='sourcecode.swift', path=path, sourceTree='<group>')
 assets = obj('assets', isa='PBXFileReference', lastKnownFileType='folder.assetcatalog', path='Shared/Assets.xcassets', sourceTree='<group>')
+composer_icons = sorted(p.relative_to(ROOT).as_posix() for p in (ROOT / 'Shared').glob('*.icon') if p.is_dir())
+composer_refs = {path: obj('file:' + path, isa='PBXFileReference', lastKnownFileType='folder.iconcomposer.icon', path=path, sourceTree='<group>') for path in composer_icons}
 config_refs = []
 for name in ['iOS-Info.plist', 'Mac-Info.plist', 'iOS.entitlements', 'Mac.entitlements', 'Push-iOS.entitlements.example', 'Push-Mac.entitlements.example']:
     config_refs.append(obj('config:' + name, isa='PBXFileReference', lastKnownFileType='text.plist.xml', path='Config/' + name, sourceTree='<group>'))
@@ -59,6 +61,8 @@ for platform, name in target_names:
     source_files = [obj('build:' + platform + ':' + path, isa='PBXBuildFile', fileRef=refs[path]) for path in sources]
     source_phase = obj('sources:' + platform, isa='PBXSourcesBuildPhase', buildActionMask='2147483647', files=source_files, runOnlyForDeploymentPostprocessing='0')
     resource_files = [] if test_target else [obj('resource:' + platform, isa='PBXBuildFile', fileRef=assets)]
+    if not test_target:
+        resource_files += [obj('resource:' + platform + ':' + path, isa='PBXBuildFile', fileRef=composer_refs[path]) for path in composer_icons]
     resource_phase = obj('resources:' + platform, isa='PBXResourcesBuildPhase', buildActionMask='2147483647', files=resource_files, runOnlyForDeploymentPostprocessing='0')
     framework_phase = obj('frameworks:' + platform, isa='PBXFrameworksBuildPhase', buildActionMask='2147483647', files=[], runOnlyForDeploymentPostprocessing='0')
     extension = '.xctest' if test_target else '.app'
@@ -93,7 +97,7 @@ for platform, name in target_names:
         buildPhases=[source_phase, framework_phase, resource_phase], buildRules=[], dependencies=[], name=name,
         productName=name, productReference=product, productType='com.apple.product-type.bundle.unit-test' if test_target else 'com.apple.product-type.application')
     targets.append(target)
-shared_group = obj('shared-group', isa='PBXGroup', children=[refs[p] for p in shared] + [assets], name='Shared', sourceTree='<group>')
+shared_group = obj('shared-group', isa='PBXGroup', children=[refs[p] for p in shared] + [assets] + list(composer_refs.values()), name='Shared', sourceTree='<group>')
 test_group = obj('test-group', isa='PBXGroup', children=[refs[p] for p in tests], name='Tests', sourceTree='<group>')
 config_group = obj('config-group', isa='PBXGroup', children=config_refs, name='Config', sourceTree='<group>')
 products_group = obj('products-group', isa='PBXGroup', children=products, name='Products', sourceTree='<group>')

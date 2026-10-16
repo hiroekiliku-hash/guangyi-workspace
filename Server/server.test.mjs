@@ -190,6 +190,148 @@ async function withWebAuth(work) {
   finally { instance.close(); }
 }
 
+async function withRegistration(work) {
+  await withWebAuth(async context => {
+    async function request(path, { method = 'POST', body, rawBody, auth = '', headers = {} } = {}) {
+      const response = await fetch(context.base + '/api/native/v1/' + path, { method,
+        headers: { ...(body !== undefined || rawBody !== undefined ? { 'Content-Type': 'application/json' } : {}),
+          ...(auth ? { Authorization: 'Bearer ' + auth } : {}), ...headers },
+        body: rawBody ?? (body === undefined ? undefined : JSON.stringify(body)) });
+      return { status: response.status, value: await response.json() };
+    }
+    const counts = () => ['users', 'workspaces', 'sessions'].map(table => context.instance.db.prepare('SELECT COUNT(*) AS n FROM ' + table).get().n);
+    await work({ ...context, request, counts });
+  });
+}
+
+test('registration normalizes email, returns a session and keeps new accounts isolated', async () => {
+  await withRegistration(async ({ instance, request, account, expectedOrigin, verifier, state, codeChallenge, counts }) => {
+    const signup = await request('accounts', { body: { email: '  First@TEST.invalid  ', password } });
+    assert.equal(signup.status, 201); assert.equal(signup.value.data.account, 'first@test.invalid');
+    assert.match(signup.value.data.accessToken, /^[A-Za-z0-9_-]{43}$/);
+    assert.deepEqual(counts(), [2, 2, 1]);
+    const firstToken = signup.value.data.accessToken;
+    const initial = await request('workspace', { method: 'GET', auth: firstToken });
+    assert.equal(initial.status, 200); assert.equal(initial.value.data.revision, 0);
+    for (const key of ['records', 'series', 'activities', 'revisions', 'assets', 'trash']) assert.deepEqual(initial.value.data.snapshot[key], []);
+    assert.notEqual(initial.value.data.snapshot.profile.name, instance.db.prepare('SELECT name FROM users WHERE email=?').get(account).name);
+    const second = await request('accounts', { body: { email: 'second@test.invalid', password: password + '-second' } });
+    assert.equal(second.status, 201); const secondToken = second.value.data.accessToken;
+    const secondBefore = (await request('workspace', { method: 'GET', auth: secondToken })).value.data;
+    const record = { id: randomUUID(), kind: 'TASK', title: 'Only first account', version: 1, status: 'TODO', body: '', timezone: 'Asia/Shanghai',
+      notificationsEnabled: false, dateOnly: false, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    initial.value.data.snapshot.records.push(record);
+    const written = await request('workspace', { method: 'PUT', auth: firstToken, body: { snapshot: initial.value.data.snapshot }, headers: { 'If-Match': '"0"' } });
+    assert.equal(written.status, 200);
+    assert.deepEqual((await request('workspace', { method: 'GET', auth: secondToken })).value.data, secondBefore);
+    secondBefore.snapshot.profile.name = 'Second account';
+    assert.equal((await request('workspace', { method: 'PUT', auth: secondToken, body: { snapshot: secondBefore.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    const firstAfter = (await request('workspace', { method: 'GET', auth: firstToken })).value.data;
+    assert.equal(firstAfter.revision, 1); assert.deepEqual(firstAfter.snapshot.records, [record]);
+    assert.notEqual(firstAfter.snapshot.profile.name, 'Second account');
+    const stored = instance.db.prepare('SELECT * FROM users WHERE email=?').get('first@test.invalid');
+    const duplicate = await request('accounts', { body: { email: ' FIRST@Test.Invalid ', password: password + '-replacement' } });
+    assert.equal(duplicate.status, 409); assert.equal(duplicate.value.error.code, 'ACCOUNT_EXISTS');
+    assert.deepEqual(instance.db.prepare('SELECT * FROM users WHERE email=?').get('first@test.invalid'), stored);
+    assert.deepEqual((await request('workspace', { method: 'GET', auth: firstToken })).value.data, firstAfter);
+    const login = await request('session', { body: { email: 'first@test.invalid', password } });
+    assert.equal(login.status, 200); assert.equal(login.value.data.account, 'first@test.invalid');
+    assert.equal((await request('session', { body: { email: 'first@test.invalid', password: password + '-replacement' } })).status, 401);
+    const authorized = await request('web-auth/authorize', { auth: firstToken, body: { codeChallenge, state }, headers: { Origin: expectedOrigin } });
+    assert.equal(authorized.status, 200); const callback = new URL(authorized.value.data.callbackURL);
+    assert.equal(callback.searchParams.get('state'), state);
+    assert.equal((await request('workspace', { method: 'GET', auth: firstToken })).status, 401);
+    const native = await request('web-auth/token', { body: { code: callback.searchParams.get('code'), codeVerifier: verifier } });
+    assert.equal(native.status, 200); assert.equal(native.value.data.account, 'first@test.invalid');
+    assert.deepEqual((await request('workspace', { method: 'GET', auth: native.value.data.accessToken })).value.data, firstAfter);
+  });
+});
+
+test('registration rejects malformed shapes and unknown fields without creating accounts', async () => {
+  await withRegistration(async ({ request, counts }) => {
+    for (const body of [null, [], {}, { email: 'new@test.invalid' }, { email: 'new@test.invalid', password, role: 'admin' }]) {
+      const response = await request('accounts', { body });
+      assert.equal(response.status, 400); assert.equal(response.value.error.code, 'INVALID_REGISTRATION');
+    }
+    const malformed = await request('accounts', { rawBody: '{"email":' });
+    assert.equal(malformed.status, 400); assert.equal(malformed.value.error.code, 'INVALID_JSON');
+    assert.deepEqual(counts(), [1, 1, 0]);
+  });
+});
+
+test('registration validates email and password boundaries without persisting rejected values', async () => {
+  for (const [field, values, code] of [
+    ['email', ['', 'no-at-sign', 'a@', 'a b@test.invalid', 'a'.repeat(242) + '@test.invalid'], 'INVALID_EMAIL'],
+    ['password', ['', 'x'.repeat(15), 'x'.repeat(1025), 123], 'INVALID_PASSWORD']
+  ]) {
+    await withRegistration(async ({ request, counts }) => {
+      for (const value of values) {
+        const result = await request('accounts', { body: { email: 'valid@test.invalid', password, [field]: value } });
+        assert.equal(result.status, 422); assert.equal(result.value.error.code, code);
+      }
+      assert.deepEqual(counts(), [1, 1, 0]);
+    });
+  }
+  await withRegistration(async ({ request }) => {
+    for (const [email, candidate] of [['minimum@test.invalid', 'x'.repeat(16)], ['maximum@test.invalid', 'x'.repeat(1024)]]) {
+      assert.equal((await request('accounts', { body: { email, password: candidate } })).status, 201);
+      assert.equal((await request('session', { body: { email, password: candidate } })).status, 200);
+    }
+  });
+});
+
+test('registration enforces trusted origin, JSON content type and a 4 KiB body limit', async () => {
+  await withRegistration(async ({ request, expectedOrigin, counts }) => {
+    const body = { email: 'new@test.invalid', password };
+    for (const headers of [{ Origin: 'https://evil.test' }, { Origin: 'null' }, { Origin: expectedOrigin, 'Sec-Fetch-Site': 'cross-site' }]) {
+      assert.equal((await request('accounts', { body, headers })).status, 403);
+    }
+    assert.equal((await request('accounts', { body, headers: { 'Content-Type': 'text/plain' } })).status, 415);
+    assert.equal((await request('accounts', { body: { ...body, password: 'x'.repeat(5000) } })).status, 413);
+    assert.deepEqual(counts(), [1, 1, 0]);
+    assert.equal((await request('accounts', { body, headers: { Origin: expectedOrigin } })).status, 201);
+  });
+});
+
+test('registration rolls back account, workspace and session together after insertion failures', async () => {
+  await withRegistration(async ({ instance, request, counts }) => {
+    for (const table of ['workspaces', 'sessions']) {
+      instance.db.exec(`CREATE TRIGGER reject_signup BEFORE INSERT ON ${table} BEGIN SELECT RAISE(ABORT, 'test signup insert failure'); END;`);
+      const body = { email: table + '@test.invalid', password };
+      assert.equal((await request('accounts', { body })).status, 500);
+      assert.deepEqual(counts(), [1, 1, 0]);
+      assert.equal((await request('session', { body })).status, 401);
+      instance.db.exec('DROP TRIGGER reject_signup');
+    }
+    assert.equal((await request('accounts', { body: { email: 'workspaces@test.invalid', password } })).status, 201);
+    assert.deepEqual(counts(), [2, 2, 1]);
+  });
+});
+
+test('registration limits attempts per direct peer and ignores forged forwarding headers', async () => {
+  await withRegistration(async ({ request, counts }) => {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const result = await request('accounts', { body: { email: 'invalid', password }, headers: { 'X-Forwarded-For': '192.0.2.' + (attempt + 1) } });
+      assert.equal(result.status, 422);
+    }
+    const limited = await request('accounts', { body: { email: 'new@test.invalid', password }, headers: { 'X-Forwarded-For': '198.51.100.1' } });
+    assert.equal(limited.status, 429); assert.equal(limited.value.error.code, 'RATE_LIMITED');
+    assert.deepEqual(counts(), [1, 1, 0]);
+  });
+});
+
+test('registration uses separate validated client IP buckets behind the trusted local proxy', async () => {
+  await withRegistration(async ({ request }) => {
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const invalid = await request('accounts', { body: { email: 'invalid', password }, headers: { 'X-Real-IP': '192.0.2.10' } });
+      assert.equal(invalid.status, 422);
+    }
+    const body = { email: 'proxied@test.invalid', password };
+    assert.equal((await request('accounts', { body, headers: { 'X-Real-IP': '192.0.2.10' } })).status, 429);
+    assert.equal((await request('accounts', { body, headers: { 'X-Real-IP': '192.0.2.11' } })).status, 201);
+  });
+});
+
 test('web auth exchanges a hashed, fixed-callback code and revokes the browser session', async () => {
   await withWebAuth(async ({ instance, api, account, expectedOrigin, verifier, state, codeChallenge, login, authorize }) => {
     const browserToken = await login(), callback = await authorize(browserToken);

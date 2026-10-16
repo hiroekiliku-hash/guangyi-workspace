@@ -9,9 +9,7 @@ import UIKit
 
 struct SettingsView: View {
     @Environment(WorkspaceStore.self) private var store
-    @State private var showExport = false
-    @State private var showImport = false
-    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
+    @State private var showGettingStarted = false
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         Form {
@@ -28,45 +26,140 @@ struct SettingsView: View {
                     }.padding(.vertical, 6)
                 }
             }
-            Section("外观") {
-                Picker("主题", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
-            }
-            #if os(iOS)
-            Section("触感") { Toggle("操作触感反馈", isOn: $hapticsEnabled) }
-            #endif
-            NotificationSettingsSection()
-            Section("导入与导出") {
-                LabeledContent("本机记录", value: "\(store.state.records.count) 项")
-                LabeledContent("PDF 附件", value: "\(store.state.assets.count) 个")
-                Button("导出归档", systemImage: "square.and.arrow.up") { showExport = true }
-                Button("导入归档", systemImage: "square.and.arrow.down") { showImport = true }
-                Text("备份你的内容，或从其他设备导入。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            #if os(iOS)
-            Section("工作空间") {
-                ForEach([AppDestination.knowledge, .calendar, .timeline, .archives, .trash]) { destination in
-                    NavigationLink { DestinationView(destination: destination) } label: { Label(destination.title, systemImage: destination.symbol) }
+            Section {
+                NavigationLink { AppearancePreferencesView() } label: {
+                    SettingsEntry(title: AppearancePreferencesView.title, symbol: "paintpalette", color: .indigo)
+                }
+                NavigationLink { ReminderPreferencesView() } label: {
+                    SettingsEntry(title: "提醒", symbol: "bell", color: .orange)
                 }
             }
-            #endif
-            Section("关于") {
-                LabeledContent("应用", value: "工作坊")
-                LabeledContent("英文名称", value: "WorkSpace")
-                LabeledContent("版本", value: "1.0")
-                Link("打开网页版", destination: BackendService.serviceURL)
+            Section {
+                #if os(iOS)
+                NavigationLink { WorkspaceLibraryView() } label: {
+                    SettingsEntry(title: "工作空间", symbol: "square.grid.2x2", color: .blue)
+                }
+                #endif
+                NavigationLink { BackupPreferencesView() } label: {
+                    SettingsEntry(title: "数据与备份", symbol: "externaldrive", color: .teal)
+                }
+            }
+            Section {
+                Button { showGettingStarted = true } label: {
+                    SettingsEntry(title: "使用教程", symbol: "play", color: .indigo)
+                }
+                NavigationLink { AboutWorkspaceView() } label: {
+                    SettingsEntry(title: "关于工作坊", symbol: "info", color: .gray)
+                }
             }
         }.formStyle(.grouped).navigationTitle("设置")
-            .workspaceSelectionFeedback(trigger: appearance)
-            .workspaceSelectionFeedback(trigger: showExport)
-            .workspaceSelectionFeedback(trigger: showImport)
+            #if os(iOS)
+            .toolbar(.hidden, for: .tabBar)
+            #endif
             .environment(\.locale, Locale(identifier: "zh_CN"))
             .environment(\.timeZone, WorkspaceDates.calendar(store.state.profile.timezone).timeZone)
             .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
+            .gettingStarted(isPresented: $showGettingStarted, isReplay: true)
+    }
+}
+
+private struct SettingsEntry: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: symbol).font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white).frame(width: 30, height: 30)
+                .background(color.gradient, in: RoundedRectangle(cornerRadius: 8))
+                .accessibilityHidden(true)
+            Text(title).foregroundStyle(.primary)
+        }.padding(.vertical, 3)
+    }
+}
+
+private struct AppearancePreferencesView: View {
+    @AppStorage("appearance") private var appearance = "system"
+    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
+    static var title: String {
+        #if os(iOS)
+        "外观与触感"
+        #else
+        "外观"
+        #endif
+    }
+    var body: some View {
+        Form {
+            Section("主题") {
+                Picker("主题", selection: $appearance) {
+                    Text("跟随系统").tag("system")
+                    Text("浅色").tag("light")
+                    Text("深色").tag("dark")
+                }.pickerStyle(.segmented)
+            }
+            #if os(iOS)
+            Section { Toggle("操作触感反馈", isOn: $hapticsEnabled) }
+            #endif
+        }.formStyle(.grouped).navigationTitle(Self.title).workspaceInlineTitle()
+            .workspaceSelectionFeedback(trigger: appearance)
+    }
+}
+
+private struct ReminderPreferencesView: View {
+    var body: some View {
+        Form { NotificationSettingsSection() }
+            .formStyle(.grouped).navigationTitle("提醒").workspaceInlineTitle()
+    }
+}
+
+private struct BackupPreferencesView: View {
+    @State private var showExport = false
+    @State private var showImport = false
+    var body: some View {
+        Form {
+            Section {
+                Button("导出备份", systemImage: "square.and.arrow.up") { showExport = true }
+                Button("导入备份", systemImage: "square.and.arrow.down") { showImport = true }
+            }
+        }.formStyle(.grouped).navigationTitle("数据与备份").workspaceInlineTitle()
+            .workspaceSelectionFeedback(trigger: showExport)
+            .workspaceSelectionFeedback(trigger: showImport)
             .sheet(isPresented: $showExport) { NavigationStack { ExportArchiveView() }.nativeSheetSize() }
             .sheet(isPresented: $showImport) { NavigationStack { ImportArchiveView() }.nativeSheetSize() }
     }
 }
+
+#if os(iOS)
+private struct WorkspaceLibraryView: View {
+    var body: some View {
+        Form {
+            Section {
+                ForEach([AppDestination.knowledge, .calendar, .timeline, .archives, .trash]) { destination in
+                    NavigationLink { DestinationView(destination: destination) } label: {
+                        Label(destination.title, systemImage: destination.symbol)
+                    }
+                }
+            }
+        }.formStyle(.grouped).navigationTitle("工作空间").workspaceInlineTitle()
+    }
+}
+#endif
+
+private struct AboutWorkspaceView: View {
+    private var version: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0" }
+    var body: some View {
+        Form {
+            Section {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("工作坊").font(.title2.bold())
+                    Text("WorkSpace · \(version)").font(.subheadline).foregroundStyle(.secondary)
+                }.padding(.vertical, 12)
+            }
+            Section { Link("打开网页版", destination: BackendService.serviceURL) }
+        }.formStyle(.grouped).navigationTitle("关于工作坊").workspaceInlineTitle()
+    }
+}
+
 struct ProfileSettingsSection: View {
     @Environment(WorkspaceStore.self) private var store
     @State private var name = ""
@@ -153,27 +246,34 @@ struct AvatarView: View {
 struct NotificationSettingsSection: View {
     @Environment(WorkspaceStore.self) private var store
     var body: some View {
-        Section("系统通知") {
-            LabeledContent("系统权限", value: authorizationLabel)
-            Toggle("本机到期提醒", isOn: Binding(get: { store.notifications.enabled }, set: { enabled in
+        Section {
+            Toggle("到期提醒", isOn: Binding(get: { store.notifications.enabled }, set: { enabled in
                 if enabled {
                     Task { do { try await store.notifications.requestAuthorization() } catch { store.errorMessage = error.localizedDescription } }
                 } else { store.notifications.enabled = false; store.notifications.reschedule(store.state) }
             }))
-            LabeledContent("已安排", value: "\(store.notifications.pendingCount) 条")
-            if store.notifications.unscheduledCount > 0 {
-                Text("还有 \(store.notifications.unscheduledCount) 条后续提醒，打开应用后会继续安排。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Button("发送测试通知", systemImage: "bell.badge") {
-                Task {
-                    do { try await store.notifications.requestAuthorization(); try await store.notifications.sendTest(); store.information = "三秒后发送测试通知，请查看通知中心。" }
-                    catch { store.errorMessage = error.localizedDescription }
+            Button(action: openNotificationSettings) {
+                HStack {
+                    Text("系统通知")
+                    Spacer()
+                    Text(authorizationLabel).foregroundStyle(.secondary)
+                }
+            }.foregroundStyle(.primary)
+        }
+        Section {
+            DisclosureGroup("检查提醒") {
+                LabeledContent("已安排", value: "\(store.notifications.pendingCount) 条")
+                if store.notifications.unscheduledCount > 0 {
+                    Text("还有 \(store.notifications.unscheduledCount) 条后续提醒，打开应用后会继续安排。")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Button("测试提醒", systemImage: "bell.badge") {
+                    Task {
+                        do { try await store.notifications.requestAuthorization(); try await store.notifications.sendTest(); store.information = "三秒后发送测试通知，请查看通知中心。" }
+                        catch { store.errorMessage = error.localizedDescription }
+                    }
                 }
             }
-            Button("打开系统通知设置", systemImage: "gearshape") { openNotificationSettings() }
-            Text("关闭应用后仍会提醒。其他设备的更改会在同步后更新。")
-                .font(.caption).foregroundStyle(.secondary)
         }.task { await store.notifications.refreshAuthorization() }
     }
     private var authorizationLabel: String {

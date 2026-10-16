@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Rebuild the original vector-style app mark (Pillow needed only for regeneration)."""
+"""Rebuild the legacy raster mark without shadowing an Icon Composer icon."""
 from pathlib import Path
 import json
 from PIL import Image, ImageDraw
 
 root = Path(__file__).resolve().parents[1] / 'Shared/Assets.xcassets'
-icon = root / 'AppIcon.appiconset'; icon.mkdir(parents=True, exist_ok=True)
+icon = root / ('LegacyAppIcon.appiconset' if (root.parent / 'AppIcon.icon').is_dir() else 'AppIcon.appiconset')
+icon.mkdir(parents=True, exist_ok=True)
 canvas = Image.new('RGB', (1024, 1024), '#F6F7F2')
 draw = ImageDraw.Draw(canvas)
 draw.rounded_rectangle((168, 160, 856, 864), radius=160, fill='#304A40')

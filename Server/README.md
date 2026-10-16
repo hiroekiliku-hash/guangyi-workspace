@@ -38,7 +38,11 @@ runuser -u guangyi-workspace -- /opt/guangyi-workspace/runtime/bin/node --preser
 
 上述运行用户和数据库路径已在 2026-10-15 对当前生产 systemd 单元与文件权限只读核验。命令只在本机直接打开 SQLite，不提供签发链接的公网 API。链接十分钟后失效、成功一次后失效，同账号新链接会废止旧链接；数据库只保存令牌哈希。不要通过 `source` 执行 EnvironmentFile，也不要把链接写入持久日志。若部署路径以后改变，应先用 `systemctl cat guangyi-workspace.service` 与只读文件检查重新确认，不要猜测或新建空数据库。
 
-网页支持现有账号的密码和 discoverable passkey 登录；登录后可为同一账号创建新通行密钥。页面只调用 GET workspace，不提供编辑或 PUT，以免浏览器用旧快照覆盖原生客户端的合并结果。Bearer token 只进入当前标签页的 `sessionStorage`，页面关闭后清除；用户内容只通过 `textContent` 渲染。响应设置 self-only CSP、防嵌入、no-referrer、no-store 与 WebAuthn 权限策略。
+网页及 App 打开的登录页支持邮箱注册、密码和 discoverable passkey 登录；登录后可为同一账号创建新通行密钥。页面只调用 GET workspace，不提供编辑或 PUT，以免浏览器用旧快照覆盖原生客户端的合并结果。Bearer token 只进入当前标签页的 `sessionStorage`，页面关闭后清除；用户内容只通过 `textContent` 渲染。响应设置 self-only CSP、防嵌入、no-referrer、no-store 与 WebAuthn 权限策略。
+
+`POST /api/native/v1/accounts` 接受 JSON `{email,password}`，成功返回 201 和普通登录相同的会话。密码为 16–1024 个字符，仅保存独立随机 salt 和 scrypt 哈希；邮箱去除首尾空格并转为小写。账号、空工作空间和会话在同一事务中创建，重复账号不会重置原密码或内容。每个账号从 revision 0 开始，数据按 user_id 隔离。App 注册后沿用 PKCE 回传及本机/云端合并流程。
+
+邮箱目前用作登录标识，不发送验证邮件，也不代表邮箱归属已验证。注册接口要求同源 JSON、请求体至多 4 KiB；每个客户端地址十分钟最多尝试六次，全站最多六十次。只有来自回环地址的本机代理可通过 `X-Real-IP` 提供经校验的客户端地址，现有 Nginx 配置会覆盖该头；不信任外部连接的转发头。后续若更换代理，应保留这一边界。
 
 日期型 DDL 以记录自身时区的 23:59:59 为截止，包含夏令时转换；带时刻 DDL 使用原始绝对时间。倒计时每秒更新，页面可见时每 30 秒重新读取服务器 revision。旧 Sites 项目没有在当前账号或仓库中找到，因此本实现按现有 API 与原生模型重建。
 
