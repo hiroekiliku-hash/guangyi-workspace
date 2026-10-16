@@ -32,3 +32,8 @@ jobs:
       - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-iOS -configuration Debug -destination 'generic/platform=iOS Simulator' -derivedDataPath /tmp/guangyi-ios CODE_SIGNING_ALLOWED=NO build
       - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme GuangyiWorkSpace-Mac -configuration Debug -destination 'platform=macOS' -derivedDataPath /tmp/guangyi-mac CODE_SIGNING_ALLOWED=NO build
       - run: xcodebuild -project GuangyiWorkSpace.xcodeproj -scheme WorkspaceCoreTests -destination 'platform=macOS' -derivedDataPath /tmp/guangyi-tests test
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '24.21.0'
+      - name: Exercise native HTTP transport against the isolated API
+        run: python3 Scripts/Acceptance/run-native-server-sync.py --output /tmp/guangyi-native-server-sync.json

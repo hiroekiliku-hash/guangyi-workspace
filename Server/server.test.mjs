@@ -165,6 +165,155 @@ test('logout revokes the session server-side', async () => {
   assert.equal((await call('workspace')).status, 401);
 });
 
+async function withWebAuth(work) {
+  let clock = Date.now();
+  const expectedOrigin = 'https://native-login.test', account = 'native@test.invalid';
+  const instance = createNativeServer({ databasePath: ':memory:', adminEmail: account, adminPassword: password,
+    passkeyRPID: 'native-login.test', passkeyOrigin: expectedOrigin, webAuthNow: () => clock });
+  await new Promise((resolve, reject) => { instance.server.once('error', reject); instance.server.listen(0, '127.0.0.1', resolve); });
+  const base = 'http://127.0.0.1:' + instance.server.address().port;
+  const verifier = randomBytes(32).toString('base64url'), state = randomBytes(32).toString('base64url');
+  const codeChallenge = createHash('sha256').update(verifier).digest('base64url');
+  async function api(path, body, auth = '', requestOrigin, method = 'POST') {
+    const response = await fetch(base + '/api/native/v1/' + path, { method,
+      headers: { ...(body !== undefined ? { 'Content-Type': 'application/json' } : {}), ...(auth ? { Authorization: 'Bearer ' + auth } : {}),
+        ...(requestOrigin !== undefined ? { Origin: requestOrigin } : {}) }, body: body === undefined ? undefined : JSON.stringify(body) });
+    return { status: response.status, value: await response.json() };
+  }
+  async function login() { const value = await api('session', { email: account, password }, '', expectedOrigin); assert.equal(value.status, 200); return value.value.data.accessToken; }
+  async function authorize(auth) {
+    const value = await api('web-auth/authorize', { codeChallenge, state }, auth ?? await login(), expectedOrigin);
+    assert.equal(value.status, 200);
+    return new URL(value.value.data.callbackURL);
+  }
+  try { await work({ instance, api, base, account, expectedOrigin, verifier, state, codeChallenge, login, authorize, advance: milliseconds => { clock += milliseconds; } }); }
+  finally { instance.close(); }
+}
+
+test('web auth exchanges a hashed, fixed-callback code and revokes the browser session', async () => {
+  await withWebAuth(async ({ instance, api, account, expectedOrigin, verifier, state, codeChallenge, login, authorize }) => {
+    const browserToken = await login(), callback = await authorize(browserToken);
+    assert.equal(callback.protocol, 'guangyi-workspace:'); assert.equal(callback.hostname, 'auth'); assert.equal(callback.pathname, '/callback');
+    assert.equal(callback.searchParams.get('state'), state); assert.deepEqual([...callback.searchParams.keys()].sort(), ['code', 'state']);
+    const code = callback.searchParams.get('code'); assert.match(code, /^[A-Za-z0-9_-]{43}$/);
+    assert.equal(callback.href.includes(browserToken), false);
+    assert.equal((await api('workspace', undefined, browserToken, undefined, 'GET')).status, 401);
+    const row = instance.db.prepare('SELECT * FROM web_auth_codes').get();
+    assert.equal(row.hash, createHash('sha256').update(code).digest('hex')); assert.notEqual(row.hash, code);
+    assert.equal(row.challenge, codeChallenge); assert.equal(row.state, state); assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n, 0);
+    const exchanged = await api('web-auth/token', { code, codeVerifier: verifier });
+    assert.equal(exchanged.status, 200); assert.equal(exchanged.value.data.account, account); assert.match(exchanged.value.data.accessToken, /^[A-Za-z0-9_-]{43}$/);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM web_auth_codes').get().n, 0);
+    const workspace = await api('workspace', undefined, exchanged.value.data.accessToken, undefined, 'GET');
+    assert.equal(workspace.status, 200); assert.equal(workspace.value.data.revision, 0); assert.deepEqual(workspace.value.data.snapshot.records, []);
+    assert.equal((await api('session', { email: account, password: 'wrong-password' }, '', expectedOrigin)).status, 401);
+  });
+});
+
+test('web auth rejects wrong PKCE, malformed exchange bodies and code replay without issuing sessions', async () => {
+  await withWebAuth(async ({ instance, api, verifier, authorize }) => {
+    const code = (await authorize()).searchParams.get('code');
+    const count = () => instance.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n;
+    assert.equal((await api('web-auth/token', { code, codeVerifier: randomBytes(32).toString('base64url') })).status, 401);
+    assert.equal(count(), 0); assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM web_auth_codes').get().n, 1);
+    for (const body of [null, { code, codeVerifier: 'short' }, { code: '../' + code, codeVerifier: verifier }, { code, codeVerifier: verifier, redirect_uri: 'https://evil.test' }]) {
+      assert.equal((await api('web-auth/token', body)).status, 400); assert.equal(count(), 0);
+    }
+    assert.equal((await api('web-auth/token', { code, codeVerifier: verifier })).status, 200); assert.equal(count(), 1);
+    assert.equal((await api('web-auth/token', { code, codeVerifier: verifier })).status, 401); assert.equal(count(), 1);
+  });
+});
+
+test('web auth authorization codes expire at 90 seconds and repeated invalid attempts are limited', async () => {
+  await withWebAuth(async ({ instance, api, verifier, authorize, advance }) => {
+    const code = (await authorize()).searchParams.get('code');
+    advance(90000);
+    const body = { code, codeVerifier: verifier };
+    assert.equal((await api('web-auth/token', body)).status, 401);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n, 0);
+    await instance.sweep(); assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM web_auth_codes').get().n, 0);
+    let rateLimited = false;
+    for (let attempt = 0; attempt < 61; attempt++) {
+      const result = await api('web-auth/token', body);
+      if (result.status === 429) { rateLimited = true; break; }
+      assert.equal(result.status, 401);
+    }
+    assert.equal(rateLimited, true); assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n, 0);
+  });
+});
+
+test('web auth rejects untrusted origins, redirect overrides and malformed authorization without revoking valid sessions', async () => {
+  await withWebAuth(async ({ instance, api, base, account, expectedOrigin, state, codeChallenge, login }) => {
+    assert.equal((await api('session', { email: account, password }, '', 'https://evil.test')).status, 403);
+    assert.equal((await api('passkeys/login/options', {}, '', 'https://evil.test')).status, 403);
+    const browserToken = await login(), body = { codeChallenge, state };
+    assert.equal((await api('web-auth/authorize', body, browserToken, 'https://evil.test')).status, 403);
+    assert.equal((await api('web-auth/authorize', body, browserToken, 'null')).status, 403);
+    for (const bad of [null, {}, { ...body, redirect_uri: 'https://evil.test' }, { ...body, codeChallenge: 'x'.repeat(43) }, { ...body, state: '<script>' }, { codeChallenge, state: 123 }]) {
+      assert.equal((await api('web-auth/authorize', bad, browserToken, expectedOrigin)).status, 400);
+    }
+    const plain = await fetch(base + '/api/native/v1/web-auth/authorize', { method: 'POST', headers: { Authorization: 'Bearer ' + browserToken, 'Content-Type': 'text/plain' }, body: JSON.stringify(body) });
+    assert.equal(plain.status, 415);
+    const large = await api('web-auth/authorize', { ...body, state: 'a'.repeat(3000) }, browserToken, expectedOrigin); assert.equal(large.status, 413);
+    assert.equal((await api('web-auth/authorize', body, '', expectedOrigin)).status, 401);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM web_auth_codes').get().n, 0);
+    assert.equal((await api('workspace', undefined, browserToken, undefined, 'GET')).status, 200);
+  });
+});
+
+test('web auth issuance and redemption roll back atomically on database failure', async () => {
+  await withWebAuth(async ({ instance, api, expectedOrigin, verifier, state, codeChallenge, login, authorize }) => {
+    const browserToken = await login();
+    instance.db.exec("CREATE TRIGGER reject_web_code BEFORE INSERT ON web_auth_codes BEGIN SELECT RAISE(ABORT, 'test code insert failure'); END;");
+    assert.equal((await api('web-auth/authorize', { codeChallenge, state }, browserToken, expectedOrigin)).status, 500);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM web_auth_codes').get().n, 0);
+    assert.equal((await api('workspace', undefined, browserToken, undefined, 'GET')).status, 200);
+    instance.db.exec('DROP TRIGGER reject_web_code');
+    const code = (await authorize(browserToken)).searchParams.get('code');
+    instance.db.exec("CREATE TRIGGER reject_web_session BEFORE INSERT ON sessions BEGIN SELECT RAISE(ABORT, 'test session insert failure'); END;");
+    assert.equal((await api('web-auth/token', { code, codeVerifier: verifier })).status, 500);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM web_auth_codes').get().n, 1);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n, 0);
+    instance.db.exec('DROP TRIGGER reject_web_session');
+    assert.equal((await api('web-auth/token', { code, codeVerifier: verifier })).status, 200);
+  });
+});
+
+test('web auth dedicated page rejects malicious parameters and keeps credentials out of storage and callback URLs', async () => {
+  await withWebAuth(async ({ base, state, codeChallenge }) => {
+    const query = new URLSearchParams({ code_challenge: codeChallenge, code_challenge_method: 'S256', state });
+    const page = await fetch(base + '/native-login?' + query);
+    assert.equal(page.status, 200); assert.equal(page.headers.get('cache-control'), 'no-store'); assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
+    assert.match(page.headers.get('content-security-policy'), /script-src 'self'/); assert.equal(page.headers.get('x-frame-options'), 'DENY');
+    const html = await page.text(); assert.match(html, /使用账号密码登录/); assert.match(html, /使用已有通行密钥/); assert.match(html, /自动合并本机与云端内容/);
+    assert.equal(html.includes(state), false); assert.equal(html.includes(codeChallenge), false);
+    const head = await fetch(base + '/native-login?' + query, { method: 'HEAD' }); assert.equal(head.status, 200); assert.equal(await head.text(), '');
+    for (const bad of ['', '?' + query + '&state=' + state, '?' + query + '&redirect_uri=https://evil.test', '?' + query.toString().replace('S256', 'plain'), '?code_challenge=bad&code_challenge_method=S256&state=' + state]) {
+      assert.equal((await fetch(base + '/native-login' + bad)).status, 400);
+    }
+    const script = await fetch(base + '/native-login.js'); assert.equal(script.status, 200);
+    const source = await script.text(); assert.doesNotThrow(() => new Function(source));
+    assert.doesNotMatch(source, /sessionStorage|localStorage|document\.cookie/); assert.match(source, /navigator\.credentials\.get/);
+    assert.match(source, /web-auth\/authorize/); assert.match(source, /callback\.searchParams\.get\('state'\) !== requestState/);
+    assert.doesNotMatch(source, /searchParams\.set\([^\n]*(?:accessToken|token)/); assert.doesNotMatch(source, /innerHTML/);
+  });
+});
+
+test('web auth accepts an existing browser passkey session and exchanges it for the same native account', async () => {
+  await withWebAuth(async ({ instance, api, account, expectedOrigin, verifier, login, authorize }) => {
+    const ownerToken = await login(), registration = (await api('passkeys/register/options', {}, ownerToken)).value.data;
+    const device = authenticator('native-login.test', registration.options.user.id);
+    assert.equal((await api('passkeys/register/verify', { challengeID: registration.challengeID, credential: device.register(registration.options.challenge, expectedOrigin) }, ownerToken)).status, 200);
+    const challenge = (await api('passkeys/login/options', {}, '', expectedOrigin)).value.data;
+    const browser = await api('passkeys/login/verify', { challengeID: challenge.challengeID, credential: device.login(challenge.options.challenge, expectedOrigin) }, '', expectedOrigin);
+    assert.equal(browser.status, 200);
+    const code = (await authorize(browser.value.data.accessToken)).searchParams.get('code');
+    assert.equal((await api('workspace', undefined, browser.value.data.accessToken, undefined, 'GET')).status, 401);
+    const native = await api('web-auth/token', { code, codeVerifier: verifier }); assert.equal(native.status, 200); assert.equal(native.value.data.account, account);
+    assert.equal(instance.db.prepare('SELECT revision FROM workspaces').get().revision, 0);
+  });
+});
+
 test('operator recovery helper stores only a short-lived token hash', () => {
   const directory=mkdtempSync(join(tmpdir(),'guangyi-passkey-recovery-')), databasePath=join(directory,'workspace.sqlite');
   try {

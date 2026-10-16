@@ -1,9 +1,62 @@
 import Foundation
 
+struct DeadlineCountdownGroup: Identifiable {
+    private(set) var records: [WorkspaceRecord]
+    private(set) var dueDates: [Date]
+    var id: UUID { records[0].id }
+
+    fileprivate init(record: WorkspaceRecord, due: Date) {
+        records = [record]; dueDates = [due]
+    }
+    fileprivate mutating func append(_ group: Self) {
+        records.append(contentsOf: group.records)
+        dueDates.append(contentsOf: group.dueDates)
+    }
+    func countdownDate(at now: Date) -> Date {
+        dueDates.first { $0 > now } ?? dueDates[dueDates.count - 1]
+    }
+}
+
 enum WorkspaceLogic {
+    static func deadlineCountdownGroups(_ records: [WorkspaceRecord], now: Date = Date(), timezone: String = "Asia/Shanghai") -> [DeadlineCountdownGroup] {
+        let calendar = WorkspaceDates.calendar(timezone)
+        let today = calendar.startOfDay(for: now)
+        let dated = records.compactMap { record -> (record: WorkspaceRecord, due: Date)? in
+            guard record.kind == .deadline, record.isLive, !record.isFinished, let due = record.dueDate else { return nil }
+            return (record, record.effectiveDueDate(due))
+        }.sorted {
+            $0.due == $1.due ? $0.record.id.uuidString < $1.record.id.uuidString : $0.due < $1.due
+        }
+        var dayGroups: [DeadlineCountdownGroup] = []
+        for entry in dated {
+            let group = DeadlineCountdownGroup(record: entry.record, due: entry.due)
+            if let first = dayGroups.last?.dueDates.first,
+               calendar.isDate(first, inSameDayAs: entry.due),
+               first >= today || entry.due.timeIntervalSince(first) <= 3600 {
+                // Keep today's and future calendar days intact before merging across midnight.
+                dayGroups[dayGroups.count - 1].append(group)
+                continue
+            }
+            dayGroups.append(group)
+        }
+        var groups: [DeadlineCountdownGroup] = []
+        for group in dayGroups {
+            if let first = groups.last?.dueDates.first, let last = group.dueDates.last,
+               last.timeIntervalSince(first) <= 3600 {
+                groups[groups.count - 1].append(group)
+            } else { groups.append(group) }
+        }
+        return groups
+    }
     static func actionRecords(in state: WorkspaceState) -> [WorkspaceRecord] {
-        let kinds: Set<ItemKind> = [.task, .project, .reminder, .milestone]
-        return state.records.filter { kinds.contains($0.kind) && visible($0, in: state) }
+        return state.records.filter { $0.kind.isItem && visible($0, in: state) }
+            .sorted(by: actionPrecedes)
+    }
+    static func projectGroupRecords(in state: WorkspaceState) -> [WorkspaceRecord] {
+        state.records.filter { $0.kind.isProjectGroup && visible($0, in: state) }.sorted(by: actionPrecedes)
+    }
+    static func members(of group: WorkspaceRecord, in state: WorkspaceState) -> [WorkspaceRecord] {
+        state.records.filter { $0.id != group.id && ($0.projectID == group.id || $0.areaID == group.id) && visible($0, in: state) }
             .sorted(by: actionPrecedes)
     }
     private static func actionPrecedes(_ left: WorkspaceRecord, _ right: WorkspaceRecord) -> Bool {
@@ -17,8 +70,17 @@ enum WorkspaceLogic {
         return left.id.uuidString < right.id.uuidString
     }
     static func visible(_ record: WorkspaceRecord, in state: WorkspaceState) -> Bool {
-        guard record.isLive else { return false }
-        return record.projectID.map { parent in state.records.contains { $0.id == parent && $0.isLive } } ?? true
+        var pending = [record]
+        var visited: Set<UUID> = []
+        while let current = pending.popLast() {
+            guard current.isLive else { return false }
+            guard visited.insert(current.id).inserted else { continue }
+            for parentID in [current.projectID, current.areaID].compactMap({ $0 }) {
+                guard let parent = state.records.first(where: { $0.id == parentID }) else { return false }
+                pending.append(parent)
+            }
+        }
+        return true
     }
     static func descendants(of root: WorkspaceRecord, in state: WorkspaceState) -> [WorkspaceRecord] {
         state.records.filter { record in
@@ -27,10 +89,10 @@ enum WorkspaceLogic {
     }
     static func preview(_ root: WorkspaceRecord, in state: WorkspaceState) throws -> DeletionPreview {
         if root.kind == .area && state.records.contains(where: { $0.areaID == root.id && $0.deletedAt == nil }) {
-            throw WorkspaceFailure.invalid("此领域仍有关联项目，请先迁移这些项目。")
+            throw WorkspaceFailure.invalid("此项目组仍有关联记录，请先调整它们的归属。")
         }
         if root.kind == .milestone && state.records.contains(where: { $0.milestoneID == root.id && $0.deletedAt == nil }) {
-            throw WorkspaceFailure.invalid("此里程碑仍有关联行动，请先迁移这些行动。")
+            throw WorkspaceFailure.invalid("此事项仍有关联事项，请先解除这些关联。")
         }
         return DeletionPreview(root: root, records: descendants(of: root, in: state))
     }
@@ -98,7 +160,7 @@ enum WorkspaceLogic {
             if let id = record.recurrenceSeriesID, !series.contains(id) { throw WorkspaceFailure.invalid("循环系列缺失。") }
             if let id = record.trashBatchID, !batches.contains(id) { throw WorkspaceFailure.invalid("删除批次缺失。") }
             if let start = record.startDate, let target = record.targetDate, target < start {
-                throw WorkspaceFailure.invalid("项目目标日期不能早于开始日期。")
+                throw WorkspaceFailure.invalid("项目组目标日期不能早于开始日期。")
             }
         }
         for asset in state.assets {
@@ -106,13 +168,8 @@ enum WorkspaceLogic {
                   asset.data.starts(with: Data("%PDF-".utf8)) else { throw WorkspaceFailure.invalid("PDF 附件无效或超过 10 MB。") }
         }
         for series in state.series {
-            guard series.template.kind == .deadline, series.template.dueDate != nil,
-                  (1...365).contains(series.rule.interval), series.rule.weekdays.allSatisfy({ (1...7).contains($0) }) else {
-                throw WorkspaceFailure.invalid("循环规则无效。")
-            }
-            if let until = series.rule.until, let anchor = series.template.dueDate,
-               series.template.calendar.startOfDay(for: until) < series.template.calendar.startOfDay(for: anchor) {
-                throw WorkspaceFailure.invalid("循环结束日期不能早于首个截止日期。")
+            if let error = RecurrenceEngine.validationError(record: series.template, rule: series.rule) {
+                throw WorkspaceFailure.invalid(error)
             }
         }
     }
@@ -135,7 +192,18 @@ enum WorkspaceSyncMerge {
         let base = try base.map(normalized)
         var result = remote
         result.records = try entities(base?.records ?? [], local.records, remote.records, label: "记录", resolution: resolution)
-        result.series = try entities(base?.series ?? [], local.series, remote.series, label: "循环规则", resolution: resolution)
+        // Rolling generation progress is cache metadata, not a conflicting user edit.
+        func withoutProgress(_ values: [DeadlineSeries]) -> [DeadlineSeries] {
+            values.map { var value = $0; value.generatedThrough = nil; return value }
+        }
+        result.series = try entities(withoutProgress(base?.series ?? []), withoutProgress(local.series), withoutProgress(remote.series), label: "循环规则", resolution: resolution)
+        for index in result.series.indices {
+            let selected = result.series[index]
+            result.series[index].generatedThrough = (local.series + remote.series).compactMap { candidate in
+                var comparable = candidate; comparable.generatedThrough = nil
+                return comparable == selected ? candidate.generatedThrough : nil
+            }.max()
+        }
         result.assets = try entities(base?.assets ?? [], local.assets, remote.assets, label: "附件", resolution: resolution)
         result.activities = try entities(base?.activities ?? [], local.activities, remote.activities, label: "历史", resolution: resolution)
         result.revisions = try entities(base?.revisions ?? [], local.revisions, remote.revisions, label: "笔记版本", resolution: resolution)
@@ -147,6 +215,7 @@ enum WorkspaceSyncMerge {
         else { throw WorkspaceFailure.invalid("两台设备都修改了个人资料，请比较后选择要保留的版本。") }
         // Restoring a record on either side must remove an obsolete trash batch.
         result.trash = result.trash.filter { batch in result.records.contains { $0.trashBatchID == batch.id } }
+        RecurrenceEngine.reconcileStoppedSeries(in: &result)
         try WorkspaceLogic.validate(result)
         return result
     }

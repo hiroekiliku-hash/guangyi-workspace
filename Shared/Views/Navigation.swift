@@ -5,23 +5,23 @@ enum AppDestination: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .overview: "概览"
-        case .projects: "行动"
-        case .actions: "行动"
-        case .deadlines: "DDL"
+        case .overview: "首页"
+        case .projects: "项目组"
+        case .actions: "事项"
+        case .deadlines: "截止事项"
         case .more: "更多"
         case .knowledge: "知识库"
         case .calendar: "日历"
         case .timeline: "时间线"
         case .archives: "归档"
-        case .areas: "领域"
+        case .areas: "项目组"
         case .settings: "设置"
         case .trash: "回收站"
         }
     }
     var symbol: String {
         switch self {
-        case .overview: "square.grid.2x2"
+        case .overview: "house"
         case .projects: "folder"
         case .actions: "checklist"
         case .deadlines: "hourglass"
@@ -36,7 +36,7 @@ enum AppDestination: String, CaseIterable, Identifiable {
         }
     }
     var creationKind: ItemKind {
-        switch self { case .projects: .task; case .deadlines: .deadline; case .knowledge: .knowledge; case .areas: .area; default: .task }
+        switch self { case .projects, .areas: .project; case .deadlines: .deadline; case .knowledge: .knowledge; default: .task }
     }
 }
 struct RecordRoute: Identifiable { var id: UUID }
@@ -65,12 +65,10 @@ struct WorkspaceRootView: View {
             .alert("操作未完成", isPresented: Binding(get: { store.errorMessage != nil }, set: { if !$0 { store.errorMessage = nil } })) {
                 Button("好") { store.errorMessage = nil }
             } message: { Text(store.errorMessage ?? "") }
-            .alert("广益 WorkSpace", isPresented: Binding(get: { store.information != nil }, set: { if !$0 { store.information = nil } })) {
+            .alert("工作坊", isPresented: Binding(get: { store.information != nil }, set: { if !$0 { store.information = nil } })) {
                 Button("好") { store.information = nil }
             } message: { Text(store.information ?? "") }
-            .sensoryFeedback(.selection, trigger: store.navigation) { _, _ in hapticsEnabled }
-            .sensoryFeedback(.success, trigger: store.feedbackSequence) { _, _ in hapticsEnabled }
-            .sensoryFeedback(.error, trigger: store.errorMessage) { _, newValue in hapticsEnabled && newValue != nil }
+            .modifier(WorkspaceFeedbackModifier())
             .task {
                 store.refresh(); store.scheduleSync()
                 while !Task.isCancelled {
@@ -98,7 +96,6 @@ struct WorkspaceRootView: View {
                 }
             }
     }
-    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("appearance") private var appearanceRaw = "system"
     private var appearance: ColorScheme? { appearanceRaw == "light" ? .light : appearanceRaw == "dark" ? .dark : nil }
     private var route: Binding<RecordRoute?> {
@@ -109,11 +106,15 @@ struct WorkspaceRootView: View {
         MacWorkspaceNavigation()
         #else
         TabView(selection: Binding(get: {
-            store.navigation == .deadlines ? .deadlines : .actions
+            switch store.navigation {
+            case .overview, .projects, .actions, .deadlines: store.navigation
+            case .areas: .projects
+            default: .overview
+            }
         }, set: { store.navigation = $0 })) {
-            ForEach([AppDestination.actions, .deadlines]) { destination in
+            ForEach([AppDestination.overview, .projects, .actions, .deadlines]) { destination in
                 NavigationStack { DestinationView(destination: destination)
-                    .toolbar { ToolbarItem { NavigationLink { MoreView() } label: { Label("工作空间与设置", systemImage: "gearshape") } } }
+                    .toolbar { ToolbarItem { NavigationLink { SettingsView() } label: { Label("设置", systemImage: "gearshape") } } }
                 }
                     .tabItem { Label(destination.title, systemImage: destination.symbol) }.tag(destination)
                     .badge(destination == .deadlines ? store.records(.deadline).filter { $0.isOverdue }.count : 0)
@@ -128,51 +129,84 @@ struct DestinationView: View {
     @ViewBuilder var body: some View {
         switch destination {
         case .overview: OverviewView()
-        case .projects: ActionsView()
+        case .projects: ProjectGroupsView()
         case .actions: ActionsView()
         case .deadlines: RecordListView(kind: .deadline)
         case .knowledge: RecordListView(kind: .knowledge)
         case .calendar: WorkspaceCalendarView()
         case .timeline: ProjectTimelineView()
-        case .areas: RecordListView(kind: .area)
+        case .areas: ProjectGroupsView()
         case .archives: ArchivesView()
-        case .settings: SettingsView()
+        case .settings, .more: SettingsView()
         case .trash: TrashView()
-        case .more: MoreView()
         }
     }
 }
-struct MoreView: View {
-    @Environment(WorkspaceStore.self) private var store
-    var body: some View {
-        List {
-            Section("个人资料") {
-                NavigationLink { SettingsView() } label: {
-                    HStack {
-                        AvatarView(data: store.state.profile.avatar).frame(width: 40, height: 40).clipShape(Circle())
-                        VStack(alignment: .leading) { Text(store.state.profile.name); Text("个人资料与设置").font(.caption).foregroundStyle(.secondary) }
-                    }
-                }
-            }
-            Section("工作空间") {
-                ForEach([AppDestination.knowledge, .calendar, .timeline, .areas, .archives]) { destination in
-                    NavigationLink { DestinationView(destination: destination) } label: { Label(destination.title, systemImage: destination.symbol) }
-                }
-            }
-            Section {
-                NavigationLink { SettingsView() } label: { Label("设置", systemImage: "gearshape") }
-                NavigationLink { TrashView() } label: { Label("回收站", systemImage: "trash") }
-            }
-        }.navigationTitle("更多")
-    }
-}
 extension View {
+    @ViewBuilder func workspaceInlineTitle() -> some View {
+        #if os(iOS)
+        self.navigationBarTitleDisplayMode(.inline)
+        #else
+        self
+        #endif
+    }
+    func workspaceSelectionFeedback<T: Equatable>(trigger: T) -> some View {
+        modifier(WorkspaceSelectionFeedback(trigger: trigger))
+    }
     @ViewBuilder func nativeSheetSize() -> some View {
         #if os(macOS)
         self.frame(minWidth: 580, idealWidth: 640, minHeight: 520, idealHeight: 680)
         #else
         self
         #endif
+    }
+}
+
+private struct WorkspaceFeedbackModifier: ViewModifier {
+    @Environment(WorkspaceStore.self) private var store
+    @AppStorage("hapticsEnabled") private var enabled = true
+    func body(content: Content) -> some View {
+        content
+            .sensoryFeedback(.selection, trigger: store.navigation) { _, _ in enabled }
+            .sensoryFeedback(.success, trigger: store.feedbackSequence) { _, _ in enabled }
+            .sensoryFeedback(.error, trigger: store.errorMessage) { _, value in enabled && value != nil }
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.55), trigger: store.createKind) { _, value in enabled && value != nil }
+            .sensoryFeedback(.selection, trigger: store.openedRecordID) { _, value in enabled && value != nil }
+            .sensoryFeedback(.success, trigger: store.information) { _, value in enabled && value != nil }
+    }
+}
+
+private struct WorkspaceSelectionFeedback<T: Equatable>: ViewModifier {
+    @AppStorage("hapticsEnabled") private var enabled = true
+    let trigger: T
+    func body(content: Content) -> some View {
+        content.sensoryFeedback(.selection, trigger: trigger) { _, _ in enabled }
+    }
+}
+
+/// Full-width in-content actions keep a readable label even inside a List or Form.
+struct WorkspacePrimaryButtonStyle: ButtonStyle {
+    @Environment(\.isEnabled) private var enabled
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("hapticsEnabled") private var hapticsEnabled = true
+    var tint: Color = .indigo
+    var prominent = true
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .labelStyle(.titleAndIcon)
+            .font(.body.weight(.semibold))
+            .multilineTextAlignment(.center)
+            .frame(maxWidth: .infinity, minHeight: 24)
+            .padding(.horizontal, 18).padding(.vertical, 13)
+            .foregroundStyle(prominent ? Color.white : tint)
+            .background(prominent ? AnyShapeStyle(tint.gradient) : AnyShapeStyle(tint.opacity(0.08)), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay { RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(tint.opacity(prominent ? 0 : 0.14), lineWidth: 1) }
+            .opacity(enabled ? (configuration.isPressed ? 0.82 : 1) : 0.4)
+            .scaleEffect(configuration.isPressed && !reduceMotion ? 0.98 : 1)
+            .animation(reduceMotion ? nil : .easeOut(duration: 0.16), value: configuration.isPressed)
+            .sensoryFeedback(.impact(weight: .light, intensity: 0.55), trigger: configuration.isPressed) { _, pressed in
+                hapticsEnabled && enabled && pressed
+            }
     }
 }
 
@@ -195,11 +229,11 @@ struct MacWorkspaceNavigation: View {
     @State private var selection: UUID?
     private var listKind: ItemKind? {
         switch store.navigation {
-        case .projects: .task
+        case .projects: .project
         case .actions: .task
         case .deadlines: .deadline
         case .knowledge: .knowledge
-        case .areas: .area
+        case .areas: .project
         default: nil
         }
     }
@@ -210,8 +244,10 @@ struct MacWorkspaceNavigation: View {
                     sidebar
                 } content: {
                     VStack(spacing: 0) {
-                        if store.navigation == .actions || store.navigation == .projects {
+                        if store.navigation == .actions {
                             ActionsView(selection: $selection)
+                        } else if store.navigation == .projects || store.navigation == .areas {
+                            ProjectGroupsView(selection: $selection)
                         } else { RecordListView(kind: kind, selection: $selection).id(kind) }
                     }.navigationSplitViewColumnWidth(min: 260, ideal: 340, max: 500)
                 } detail: {
@@ -234,13 +270,13 @@ struct MacWorkspaceNavigation: View {
     }
     private var sidebar: some View {
         List(selection: Binding(get: { Optional(store.navigation) }, set: { if let value = $0 { store.navigation = value } })) {
-            Section("广益 WorkSpace") {
-                ForEach([AppDestination.actions, .deadlines]) { destination in
+            Section("工作坊") {
+                ForEach([AppDestination.overview, .projects, .actions, .deadlines]) { destination in
                     Label(destination.title, systemImage: destination.symbol).tag(destination)
                 }
             }
             Section("安排") {
-                ForEach([AppDestination.overview, .knowledge, .calendar, .timeline, .areas, .archives]) { destination in
+                ForEach([AppDestination.knowledge, .calendar, .timeline, .archives]) { destination in
                     Label(destination.title, systemImage: destination.symbol).tag(destination)
                 }
             }

@@ -6,9 +6,13 @@
 | --- | --- | --- |
 | `/`、`/index.html` | GET/HEAD | 同账号只读网页版 |
 | `/app.js`、`/app.css`、`/favicon.svg` | GET/HEAD | 同源网页资源 |
+| `/native-login` | GET/HEAD | 原生 App 专用账号密码／通行密钥认证页，必须带有效 S256 请求 |
+| `/native-login.js` | GET/HEAD | 专用认证页资源；不写浏览器 storage |
 | `/health` | GET | 无鉴权运行检查 |
 | `/api/native/v1/session` | POST | 邮箱/密码登录 |
 | `/api/native/v1/session` | DELETE | 撤销当前会话 |
+| `/api/native/v1/web-auth/authorize` | POST | Bearer 认证后签发一次性 App 授权码并撤销本次浏览器会话 |
+| `/api/native/v1/web-auth/token` | POST | 以 PKCE verifier 兑换原生会话，无需 Bearer |
 | `/api/native/v1/passkeys/login/options` | POST | 开始 discoverable 通行密钥登录 |
 | `/api/native/v1/passkeys/login/verify` | POST | 验证通行密钥并建立会话 |
 | `/api/native/v1/passkeys/register/options` | POST | 已登录账号开始新增通行密钥 |
@@ -21,7 +25,7 @@
 | `/api/native/v1/devices` | PUT | 登记本账号的 APNs 设备 |
 | `/api/native/v1/devices` | DELETE | 注销本账号设备 |
 
-网页资源、健康检查、AASA、部署 revision 和登录入口不要求 Bearer；工作空间、设备、通行密钥注册/管理及退出均要求 `Authorization: Bearer <accessToken>`。成功响应使用 `{ "data": ... }`；失败使用 `{ "error": { "code": "..." } }`。会话过期返回 401；版本冲突返回 409；缺少 If-Match 返回 428；校验失败返回 422。
+网页资源、健康检查、AASA、部署 revision、登录入口和一次性授权码兑换不要求 Bearer；工作空间、设备、通行密钥注册/管理、网页登录授权及退出均要求 `Authorization: Bearer <accessToken>`。成功响应使用 `{ "data": ... }`；失败使用 `{ "error": { "code": "..." } }`。会话过期返回 401；版本冲突返回 409；缺少 If-Match 返回 428；校验失败返回 422。
 
 ## 只读网页版
 
@@ -34,6 +38,16 @@
 请求 `{ "email": "你配置的邮箱", "password": "你配置的密码" }`，响应 `data` 包含 `accessToken`、`displayName`，可选 `refreshToken`。原生客户端将服务器地址和令牌以一个 Keychain 项原子保存，不写入 UserDefaults、日志或备份文件。
 
 初版后端会话有效期为 30 天，没有实现 refresh endpoint；失效后重新登录。登录限流按连接 IP；生产环境应结合反向代理配置精确客户端 IP 和更完善的账号限流。
+
+### 网页认证后返回 App
+
+Personal Team 测试版可通过系统网页认证会话打开同源 `/native-login`。原生客户端用系统随机数生成 verifier 和独立 state，将 verifier 的 SHA-256 base64url 值放入 `code_challenge`，同时传入 `code_challenge_method=S256` 与 `state`。challenge、state 均须为 43 字符 base64url；拒绝缺失、重复或额外 query 参数，包括任意 `redirect_uri`。生产 origin 使用配置的 HTTPS `PASSKEY_ORIGIN`。
+
+专用页复用密码／已有通行密钥登录 API；密码与临时 Bearer 仅保存在内存，不读取或写入普通网页版的 `sessionStorage`。认证后 POST `/api/native/v1/web-auth/authorize`，发送 `Authorization: Bearer <临时会话>` 和 JSON `{ "codeChallenge": "...", "state": "..." }`，返回 `{ "data": { "callbackURL": "guangyi-workspace://auth/callback?code=...&state=..." } }`。回调 scheme、host、path 固定，禁止自定义跳转目标。服务器在同一事务中保存授权码哈希并撤销该临时会话；其他已登录设备不受影响。
+
+用户点击“返回工作坊并合并”后，原生客户端校验完整回调目标与 state，再向同源 POST `/api/native/v1/web-auth/token`，发送 JSON `{ "code": "...", "codeVerifier": "..." }`，不带 Bearer。verifier 遵循 PKCE 的 43–128 字符 unreserved 格式。成功后返回常规 `data: { accessToken, displayName, account }`，由 App 保存至 Keychain，并按账号合并本地与云端内容；网页自身不读取或上传工作空间快照。
+
+授权码为 32 随机字节，数据库只保存 SHA-256 哈希、账号 ID、challenge、state 与过期时间；有效期 90 秒，只能成功兑换一次。PKCE 不匹配、过期或重放返回 401 `INVALID_AUTHORIZATION_CODE`，不签发会话。错误 verifier 不消费合法授权码，所有授权／兑换按连接 IP 共用每十分钟 60 次限流。兑换与建立会话在一个事务中完成；数据库错误不丢失有效授权码。授权／兑换 body 上限 2048 字节，仅接受 JSON。带 Origin 的请求必须与配置 origin 完全一致，跨站请求被拒绝；原生兑换可不带 Origin。认证页和 JSON 响应设置 no-store 与 no-referrer，返回链接禁止包含长效 accessToken。
 
 ### 忘记密码且尚无通行密钥
 
@@ -67,7 +81,7 @@ snapshot 与原生导出 JSON 一致：
 
 UUID 是字符串；Date 使用带时区的 ISO 8601 字符串，导出含毫秒；Data 使用 base64。字段与可选值以 `Shared/Core/WorkspaceModels.swift` 为准。记录 kind 使用 AREA/PROJECT/MILESTONE/TASK/DEADLINE/REMINDER/KNOWLEDGE。服务器可存储该结构，不能将 body Markdown 当作 HTML 执行。
 
-接口仍以完整快照和单调 revision 为边界。客户端首次绑定账号时明确确认合并；之后以本机保存的账号专属远程基线做三方合并，并用 If-Match 上传。同一记录两端并发修改时暂停自动同步，要求用户逐项审阅；不会把当前 PUT 当作无条件定期覆盖。若后续改成操作日志式增量协议，还应增加 operationID 幂等、变更游标与附件单独传输。
+接口仍以完整快照和单调 revision 为边界。客户端登录成功后自动合并本地与云端内容；之后以本机保存的账号专属远程基线做三方合并，并用 If-Match 上传。同一记录两端并发修改时暂停自动同步，要求用户逐项审阅；不会把当前 PUT 当作无条件定期覆盖。若后续改成操作日志式增量协议，还应增加 operationID 幂等、变更游标与附件单独传输。
 
 原生客户端在 PUT 时附带 `X-Workspace-Device-ID`（UUID）。服务器只用它跳过向来源设备发送静默 revision 提示；它不是身份凭据，鉴权仍完全依赖 Bearer 会话。旧客户端可以省略此头。
 

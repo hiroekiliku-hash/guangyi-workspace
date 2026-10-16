@@ -30,7 +30,7 @@ import UserNotifications
         enabled = allowed
         await refreshAuthorization()
         if allowed, let store { reschedule(store.state) }
-        if !allowed { throw WorkspaceFailure.invalid("系统未允许通知。请在系统通知设置中开启广益 WorkSpace。") }
+        if !allowed { throw WorkspaceFailure.invalid("系统未允许通知。请在系统通知设置中开启工作坊。") }
     }
     func reschedule(_ state: WorkspaceState) {
         let previous = scheduling
@@ -70,11 +70,11 @@ import UserNotifications
         for (record, date) in candidates.prefix(60) {
             guard !Task.isCancelled else { return }
             let content = UNMutableNotificationContent()
-            content.title = "广益 WorkSpace · \(record.kind.title)"
+            content.title = "工作坊 · \(record.kind.title)"
             content.body = record.title
             content.sound = .default
             content.threadIdentifier = record.projectID?.uuidString ?? "workspace-\(record.kind.rawValue)"
-            if [.task, .deadline, .reminder].contains(record.kind) { content.categoryIdentifier = "WORKSPACE_REMINDER" }
+            if record.kind.isItem || record.kind == .deadline { content.categoryIdentifier = "WORKSPACE_REMINDER" }
             if let due = record.dueDate {
                 let formatter = DateFormatter(); formatter.locale = Locale(identifier: "zh_CN"); formatter.timeZone = record.calendar.timeZone
                 formatter.dateFormat = record.dateOnly ? "M月d日截止" : "M月d日 HH:mm截止"
@@ -91,7 +91,7 @@ import UserNotifications
     }
     func sendTest() async throws {
         let content = UNMutableNotificationContent()
-        content.title = "广益 WorkSpace · 通知测试"
+        content.title = "工作坊 · 通知测试"
         content.body = "系统通知已接通。提醒安排后，关闭应用也可以收到通知。"
         content.sound = .default
         try await UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: "workspace-test",
@@ -123,7 +123,7 @@ import UserNotifications
         }
         if action == "COMPLETE" || action == "SNOOZE" {
             guard WorkspaceLogic.visible(record, in: store.state), !record.isFinished,
-                  [.task, .deadline, .reminder].contains(record.kind),
+                  (record.kind.isItem || record.kind == .deadline),
                   WorkspaceNotificationPolicy.isCurrentAction(for: record, scheduledAtMilliseconds: scheduledAt) else {
                 store.information = "这项提醒已经完成、关闭或改期，旧通知没有修改当前记录。"
                 return

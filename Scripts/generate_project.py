@@ -131,21 +131,21 @@ for platform, name in target_names:
 workspace = PROJECT / 'project.xcworkspace'; workspace.mkdir(exist_ok=True)
 (workspace / 'contents.xcworkspacedata').write_text('<?xml version="1.0" encoding="UTF-8"?><Workspace version="1.0"><FileRef location="self:"></FileRef></Workspace>\n')
 
-base_info = {'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundleDisplayName': '广益 WorkSpace', 'CFBundleExecutable': '$(EXECUTABLE_NAME)',
-    'CFBundleIdentifier': '$(PRODUCT_BUNDLE_IDENTIFIER)', 'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleName': '$(PRODUCT_NAME)',
+base_info = {'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundleDisplayName': '工作坊', 'CFBundleExecutable': '$(EXECUTABLE_NAME)',
+    'CFBundleIdentifier': '$(PRODUCT_BUNDLE_IDENTIFIER)', 'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleName': '工作坊',
     'CFBundlePackageType': 'APPL', 'CFBundleShortVersionString': '$(MARKETING_VERSION)', 'CFBundleVersion': '$(CURRENT_PROJECT_VERSION)',
-    'RemotePushEnabled': False,
+    'RemotePushEnabled': False, 'NativePasskeysEnabled': False,
     'NSCalendarsFullAccessUsageDescription': '将你选择的工作事项加入系统日历。',
     'NSCalendarsUsageDescription': '将你选择的工作事项加入系统日历。',
     'CFBundleURLTypes': [{'CFBundleURLName': 'workspace', 'CFBundleURLSchemes': ['guangyi-workspace']}],
-    'UTExportedTypeDeclarations': [{'UTTypeIdentifier': 'com.guangyi.workspace.archive', 'UTTypeDescription': '广益 WorkSpace 加密归档',
+    'UTExportedTypeDeclarations': [{'UTTypeIdentifier': 'com.guangyi.workspace.archive', 'UTTypeDescription': '工作坊加密归档',
         'UTTypeConformsTo': ['public.data'], 'UTTypeTagSpecification': {'public.filename-extension': ['gwspace']}}],
-    'CFBundleDocumentTypes': [{'CFBundleTypeName': 'WorkSpace归档', 'CFBundleTypeRole': 'Viewer', 'LSHandlerRank': 'Owner', 'LSItemContentTypes': ['com.guangyi.workspace.archive']}]}
+    'CFBundleDocumentTypes': [{'CFBundleTypeName': '工作坊归档', 'CFBundleTypeRole': 'Viewer', 'LSHandlerRank': 'Owner', 'LSItemContentTypes': ['com.guangyi.workspace.archive']}]}
 for platform in ['iOS', 'Mac']:
     info = dict(base_info)
     if platform == 'iOS': info.update({'LSRequiresIPhoneOS': True, 'LSSupportsOpeningDocumentsInPlace': False, 'UILaunchScreen': {},
         'BGTaskSchedulerPermittedIdentifiers': ['com.guangyi.workspace.native.ios.refresh'],
-        'UIBackgroundModes': ['fetch', 'remote-notification'],
+        'UIBackgroundModes': ['fetch'],
         'UISupportedInterfaceOrientations': ['UIInterfaceOrientationPortrait', 'UIInterfaceOrientationLandscapeLeft', 'UIInterfaceOrientationLandscapeRight'],
         'UIApplicationSupportsIndirectInputEvents': True})
     else: info.update({'LSMinimumSystemVersion': '$(MACOSX_DEPLOYMENT_TARGET)', 'LSApplicationCategoryType': 'public.app-category.productivity', 'NSHighResolutionCapable': True})
@@ -156,6 +156,8 @@ if not (ROOT / 'Config/Mac.entitlements').exists():
     (ROOT / 'Config/Mac.entitlements').write_bytes(plistlib.dumps({'com.apple.security.app-sandbox': True,
     'com.apple.security.files.user-selected.read-write': True, 'com.apple.security.network.client': True,
     'com.apple.security.personal-information.calendars': True}))
+if not (ROOT / 'Config/iOS.entitlements').exists():
+    (ROOT / 'Config/iOS.entitlements').write_bytes(plistlib.dumps({}))
 (ROOT / 'Config/Push-iOS.entitlements.example').write_bytes(plistlib.dumps({'aps-environment': 'development'}))
 (ROOT / 'Config/Push-Mac.entitlements.example').write_bytes(plistlib.dumps({'com.apple.security.app-sandbox': True,
     'com.apple.security.files.user-selected.read-write': True, 'com.apple.security.network.client': True,

@@ -34,7 +34,7 @@ struct SettingsView: View {
                         try store.commit { $0.profile.name = name.trimmingCharacters(in: .whitespacesAndNewlines); $0.profile.timezone = zone }
                         store.information = "个人资料已保存。"
                     }
-                }
+                }.buttonStyle(WorkspacePrimaryButtonStyle())
             }
             Section("外观") {
                 Picker("主题", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
@@ -56,12 +56,23 @@ struct SettingsView: View {
                 Text("服务器地址由你提供。配置前所有功能仍可离线使用；登录凭据只保存在本机 Keychain 中。")
                     .font(.caption).foregroundStyle(.secondary)
             }
+            #if os(iOS)
+            Section("工作空间") {
+                ForEach([AppDestination.knowledge, .calendar, .timeline, .archives, .trash]) { destination in
+                    NavigationLink { DestinationView(destination: destination) } label: { Label(destination.title, systemImage: destination.symbol) }
+                }
+            }
+            #endif
             Section("关于") {
-                LabeledContent("应用", value: "广益 WorkSpace")
+                LabeledContent("应用", value: "工作坊")
+                LabeledContent("英文名称", value: "WorkSpace")
                 LabeledContent("版本", value: "1.0")
                 Link("打开网页版", destination: URL(string: "https://workspace.kdfz.com.cn")!)
             }
         }.formStyle(.grouped).navigationTitle("设置")
+            .workspaceSelectionFeedback(trigger: appearance)
+            .workspaceSelectionFeedback(trigger: showExport)
+            .workspaceSelectionFeedback(trigger: showImport)
             .environment(\.locale, Locale(identifier: "zh_CN"))
             .environment(\.timeZone, WorkspaceDates.calendar(store.state.profile.timezone).timeZone)
             .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
@@ -158,7 +169,7 @@ struct ExportArchiveView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Section {
-                Text("包含项目、行动、截止事项、循环规则、提醒、知识笔记、历史记录、PDF 和个人资料。登录凭据与通知授权不导出。")
+                Text("包含项目组、事项、截止事项、循环规则、提醒设置、知识笔记、历史记录、PDF 和个人资料。登录凭据与通知授权不导出。")
                 Button(preparing ? "正在准备…" : "选择保存位置", systemImage: "square.and.arrow.up") {
                     preparing = true
                     let snapshot = store.state, pass = encrypted ? password : nil
@@ -173,7 +184,7 @@ struct ExportArchiveView: View {
         }.formStyle(.grouped).navigationTitle("导出归档")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("关闭") { dismiss() } } }
             .fileExporter(isPresented: $exporting, document: document, contentType: encrypted ? .workspaceArchive : .json,
-                defaultFilename: "广益WorkSpace-\(WorkspaceDates.dayKey(Date(), timezone: store.state.profile.timezone))") { result in
+                defaultFilename: "工作坊-\(WorkspaceDates.dayKey(Date(), timezone: store.state.profile.timezone))") { result in
                 switch result {
                 case .success: password = ""; confirmation = ""; document = nil; dismiss()
                 case .failure(let failure): error = failure.localizedDescription
@@ -234,7 +245,7 @@ struct ImportReviewView: View {
                 Button("确认合并", systemImage: "arrow.triangle.merge") {
                     do { try store.importState(incoming, preferIncoming: preferIncoming); store.pendingImport = nil; dismiss(); store.information = "归档已合并。" }
                     catch { store.errorMessage = error.localizedDescription }
-                }.buttonStyle(.borderedProminent)
+                }.buttonStyle(WorkspacePrimaryButtonStyle())
             }
         }.formStyle(.grouped).navigationTitle("确认导入")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("取消") { store.cancelSyncReview(); dismiss() } } }

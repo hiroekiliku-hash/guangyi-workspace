@@ -71,10 +71,20 @@ assert any(native[key].get('dstSubfolderSpec') == '13' for key in host['buildPha
 ios_info = plistlib.loads((root/'Config/iOS-Info.plist').read_bytes())
 assert ios_info['NSSupportsLiveActivities']
 assert 'fetch' in ios_info['UIBackgroundModes']
-assert 'remote-notification' in ios_info['UIBackgroundModes']
+assert not ios_info['RemotePushEnabled']
+assert not ios_info['NativePasskeysEnabled']
+assert 'remote-notification' not in ios_info['UIBackgroundModes']
+for platform in ['iOS', 'Mac']:
+    entitlements = plistlib.loads((root / f'Config/{platform}.entitlements').read_bytes())
+    assert 'com.apple.developer.associated-domains' not in entitlements
+    assert 'aps-environment' not in entitlements
+    assert 'com.apple.developer.aps-environment' not in entitlements
+    info = plistlib.loads((root / f'Config/{platform}-Info.plist').read_bytes())
+    assert not info['NativePasskeysEnabled'] and not info['RemotePushEnabled']
 assert 'com.guangyi.workspace.native.ios.refresh' in ios_info['BGTaskSchedulerPermittedIdentifiers']
 assert plistlib.loads((root/'Config/LiveActivity-Info.plist').read_bytes())['NSExtension']['NSExtensionPointIdentifier'] == 'com.apple.widgetkit-extension'
 print('Live Activity and background refresh declarations checked.')
+print('Default Personal Team configuration: native passkeys and APNs disabled.')
 
 assert len(apps) == 4
 assert any(native[file]['fileRef'] == widget['productReference'] for phase in host['buildPhases'] if native[phase]['isa'] == 'PBXCopyFilesBuildPhase' and native[phase].get('dstSubfolderSpec') == '13' for file in native[phase]['files'])

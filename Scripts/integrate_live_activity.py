@@ -71,8 +71,8 @@ path.write_text('// !$*UTF8*$!\n'+encode(project)+'\n')
 plist_path=ROOT/'Config/iOS-Info.plist'
 info=plistlib.loads(plist_path.read_bytes()); info['NSSupportsLiveActivities']=True
 plist_path.write_bytes(plistlib.dumps(info, sort_keys=False))
-widget_info={'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundleDisplayName': '广益 DDL', 'CFBundleExecutable': '$(EXECUTABLE_NAME)',
-             'CFBundleIdentifier': '$(PRODUCT_BUNDLE_IDENTIFIER)', 'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleName': '$(PRODUCT_NAME)',
+widget_info={'CFBundleDevelopmentRegion': 'zh-Hans', 'CFBundleDisplayName': '工作坊 DDL', 'CFBundleExecutable': '$(EXECUTABLE_NAME)',
+             'CFBundleIdentifier': '$(PRODUCT_BUNDLE_IDENTIFIER)', 'CFBundleInfoDictionaryVersion': '6.0', 'CFBundleName': '工作坊 DDL',
              'CFBundlePackageType': 'XPC!', 'CFBundleShortVersionString': '$(MARKETING_VERSION)', 'CFBundleVersion': '$(CURRENT_PROJECT_VERSION)',
              'NSExtension': {'NSExtensionPointIdentifier': 'com.apple.widgetkit-extension'}}
 (ROOT/'Config/LiveActivity-Info.plist').write_bytes(plistlib.dumps(widget_info, sort_keys=False))

@@ -7,7 +7,7 @@ import PDFKit
     var feedbackSequence = 0
     var errorMessage: String?
     var information: String?
-    var navigation = AppDestination.actions
+    var navigation = AppDestination.overview
     var openedRecordID: UUID?
     var createKind: ItemKind?
     var pendingImport: WorkspaceState?
@@ -19,6 +19,7 @@ import PDFKit
     #endif
     private(set) var syncing = false
     private(set) var syncStatus = "尚未同步"
+    private(set) var syncNeedsRetry = false
     var pendingSyncReview: WorkspaceSyncCheckpoint?
     private(set) var syncReviewBase: WorkspaceState?
     private(set) var syncReviewLocal: WorkspaceState?
@@ -65,6 +66,29 @@ import PDFKit
     var canAutomaticallySync: Bool {
         automaticSyncCheckpoint() != nil
     }
+    var hasAccountSyncBaseline: Bool {
+        guard let scope = backend.accountScope else { return false }
+        return (try? repository.syncCheckpoint())?.scope == scope
+    }
+    func accountSessionChanged() {
+        syncTask?.cancel()
+        syncTask = nil
+        if let review = pendingSyncReview, review.scope != backend.accountScope { cancelSyncReview() }
+    }
+    /// Signing in authorizes the first merge. A missing or different-account
+    /// checkpoint uses a nil base, so local-only and cloud-only records survive.
+    func completeAccountSignIn() async throws {
+        guard !syncing else { throw WorkspaceFailure.invalid("同步正在进行，请稍后重试。") }
+        guard let scope = backend.accountScope else { throw NativeBackendError.configuration }
+        accountSessionChanged()
+        if pendingSyncReview?.scope == scope {
+            automaticSync = true
+            syncStatus = "请比较并解决同步冲突"
+            return
+        }
+        try await synchronize(bindAccount: true)
+        if pendingSyncReview == nil { information = "已登录，并合并本机与云端内容。自动同步已开启。" }
+    }
     func shouldAutomaticallySync(remoteRevision: Int) -> Bool {
         guard let checkpoint = automaticSyncCheckpoint() else { return false }
         return checkpoint.remote.revision < remoteRevision
@@ -100,19 +124,28 @@ import PDFKit
     }
     func synchronize(bindAccount: Bool = false) async throws {
         guard !syncing else { return }
-        guard pendingSyncReview == nil else { throw WorkspaceFailure.invalid("请先完成或取消冲突比较。") }
         guard let scope = backend.accountScope else { throw WorkspaceFailure.invalid("请重新登录以确认同步账号。") }
+        if let review = pendingSyncReview, review.scope != scope { cancelSyncReview() }
+        guard pendingSyncReview == nil else { throw WorkspaceFailure.invalid("请先完成或取消冲突比较。") }
         let saved = try repository.syncCheckpoint()
-        guard bindAccount || saved?.scope == scope else {
-            throw WorkspaceFailure.invalid("首次同步或切换账号时，请在设置中确认将本机资料与此账号合并。")
-        }
-        syncing = true; syncStatus = "正在同步…"
+        let base = saved?.scope == scope ? saved?.remote.snapshot : nil
+        syncing = true; syncStatus = "正在合并本机与云端…"; syncNeedsRetry = false
+        if bindAccount || saved?.scope != scope { automaticSync = true }
         defer { syncing = false }
+        var latestRemote: VersionedWorkspace?
         do {
-            try await WorkspaceSyncDriver.run(base: saved?.scope == scope ? saved?.remote.snapshot : nil,
+            try await WorkspaceSyncDriver.run(base: base,
                 readLocal: { self.state }, isCurrentAccount: { self.backend.accountScope == scope },
-                download: { try await self.backend.downloadForSync(scope: scope) },
-                upload: { try await self.backend.uploadForSync($0, revision: $1, scope: scope) },
+                download: {
+                    let remote = try await self.backend.downloadForSync(scope: scope)
+                    latestRemote = remote
+                    return remote
+                },
+                upload: { snapshot, revision in
+                    let remote = try await self.backend.uploadForSync(snapshot, revision: revision, scope: scope)
+                    latestRemote = remote
+                    return remote
+                },
                 apply: { current, remote in
                     try self.repository.save(current, checkpoint: WorkspaceSyncCheckpoint(scope: scope, remote: remote))
                     self.state = current
@@ -123,9 +156,26 @@ import PDFKit
                     self.backend.acknowledgeSync(remote)
                 })
             syncStatus = "已同步"
-            if bindAccount { automaticSync = true }
+            #if os(iOS)
+            WorkspaceBackgroundSync.updateSchedule(for: self)
+            #endif
         } catch {
+            guard backend.accountScope == scope else {
+                syncStatus = "账号已更改，请重新同步。"
+                throw WorkspaceSyncError.accountChanged
+            }
+            // Only a resolvable three-way conflict opens comparison. Transport,
+            // authentication and invalid-data errors remain retryable failures.
+            if let remote = latestRemote,
+               (try? WorkspaceSyncMerge.reconcile(base: base, local: state, remote: remote.snapshot)) == nil,
+               (try? WorkspaceSyncMerge.reconcile(base: base, local: state, remote: remote.snapshot, resolution: .local)) != nil,
+               (try? WorkspaceSyncMerge.reconcile(base: base, local: state, remote: remote.snapshot, resolution: .remote)) != nil {
+                presentSyncReview(remote, scope: scope, base: base)
+                syncStatus = "发现同步冲突，请比较后选择。双方内容均已保留。"
+                return
+            }
             syncStatus = error.localizedDescription
+            syncNeedsRetry = true
             throw error
         }
     }
@@ -134,8 +184,12 @@ import PDFKit
         syncing = true; syncTask?.cancel()
         defer { syncing = false }
         let remote = try await backend.downloadForSync(scope: scope)
+        guard backend.accountScope == scope else { throw WorkspaceSyncError.accountChanged }
         let saved = try repository.syncCheckpoint()
-        syncReviewBase = saved?.scope == scope ? saved?.remote.snapshot : nil
+        presentSyncReview(remote, scope: scope, base: saved?.scope == scope ? saved?.remote.snapshot : nil)
+    }
+    private func presentSyncReview(_ remote: VersionedWorkspace, scope: String, base: WorkspaceState?) {
+        syncReviewBase = base
         syncReviewLocal = state
         pendingSyncReview = WorkspaceSyncCheckpoint(scope: scope, remote: remote)
         importDescription = "比较本机与服务器的冲突版本"
@@ -168,13 +222,13 @@ import PDFKit
         draft.activities.append(ActivityEntry(entityID: record.id, projectID: record.kind == .project ? record.id : record.projectID,
             title: record.title, message: message))
     }
-    func save(_ value: WorkspaceRecord, expectedVersion: Int?, confirmRemaining: Bool = false) throws {
+    func save(_ value: WorkspaceRecord, expectedVersion: Int?, confirmRemaining: Bool = false, recurrenceRule: RecurrenceRule? = nil) throws {
         var value = value
         value.title = value.title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !value.title.isEmpty else { throw WorkspaceFailure.invalid("请填写标题。") }
         if value.kind == .deadline && value.dueDate == nil { throw WorkspaceFailure.invalid("请选择截止日期。") }
         if value.kind == .project && value.status == "COMPLETED" && record(value.id)?.status != "COMPLETED" && !confirmRemaining {
-            let count = state.records.filter { $0.kind == .task && $0.projectID == value.id && $0.isLive && !$0.isFinished }.count
+            let count = state.records.filter { $0.kind.isItem && $0.projectID == value.id && $0.isLive && !$0.isFinished }.count
             if count > 0 { throw WorkspaceFailure.remainingTasks(count) }
         }
         try commit { draft in
@@ -209,13 +263,24 @@ import PDFKit
                 draft.records[index].cancelledAt = value.status == "CANCELLED" ? value.cancelledAt ?? Date() : nil
             }
             log(value, index == nil ? "创建\(value.kind.title)" : "修改\(value.kind.title)", in: &draft)
+            if let recurrenceRule {
+                try RecurrenceEngine.start(value.id, rule: recurrenceRule, in: &draft)
+                log(value, "设置重复：\(recurrenceRule.label)", in: &draft)
+            }
         }
         feedbackSequence += 1
+    }
+    func toggleKeyItem(_ id: UUID) throws {
+        guard var value = record(id), value.kind.isItem, WorkspaceLogic.visible(value, in: state) else {
+            throw WorkspaceFailure.invalid("只有可编辑的事项可以标星。")
+        }
+        value.pinned.toggle()
+        try save(value, expectedVersion: value.version)
     }
     func setStatus(_ id: UUID, _ status: String) throws {
         guard var value = record(id) else { return }
         guard WorkspaceLogic.visible(value, in: state) else {
-            throw WorkspaceFailure.invalid("请先恢复此记录或所属项目的归档状态。")
+            throw WorkspaceFailure.invalid("请先恢复此记录或所属项目组的归档状态。")
         }
         value.status = status
         try save(value, expectedVersion: value.version)
@@ -246,35 +311,23 @@ import PDFKit
             try WorkspaceLogic.restore(batch, in: &draft)
             if let root = draft.records.first(where: { $0.id == batch.rootID }) { log(root, "从回收站恢复", in: &draft) }
         }
+        feedbackSequence += 1
     }
     func createRecurrence(_ id: UUID, rule: RecurrenceRule) throws {
         try commit { draft in
-            guard let index = draft.records.firstIndex(where: { $0.id == id }),
-                  draft.records[index].kind == .deadline, draft.records[index].isLive,
-                  draft.records[index].status == "OPEN", draft.records[index].dueDate != nil,
-                  draft.records[index].recurrenceSeriesID == nil else {
-                throw WorkspaceFailure.invalid("只能为未完成的独立截止事项设置循环。")
-            }
-            let series = DeadlineSeries(template: draft.records[index], rule: rule)
-            draft.series.append(series)
-            draft.records[index].recurrenceSeriesID = series.id
-            draft.records[index].occurrenceDate = WorkspaceDates.dayKey(draft.records[index].dueDate!, timezone: draft.records[index].timezone)
-            draft.records[index].version += 1; draft.records[index].updatedAt = Date()
-            RecurrenceEngine.materialize(&draft)
-            log(draft.records[index], "设置循环：\(rule.label)", in: &draft)
+            try RecurrenceEngine.start(id, rule: rule, in: &draft)
+            if let record = draft.records.first(where: { $0.id == id }) { log(record, "设置重复：\(rule.label)", in: &draft) }
         }
+        feedbackSequence += 1
     }
     func stopRecurrence(_ seriesID: UUID) throws {
         try commit { draft in
-            guard let series = draft.series.firstIndex(where: { $0.id == seriesID }) else { return }
-            draft.series[series].stoppedAt = Date()
-            for index in draft.records.indices where draft.records[index].recurrenceSeriesID == seriesID &&
-                draft.records[index].status == "OPEN" && draft.records[index].dueDate.map({ draft.records[index].effectiveDueDate($0) >= Date() }) == true {
-                draft.records[index].status = "CANCELLED"; draft.records[index].cancelledAt = Date()
-                draft.records[index].version += 1; draft.records[index].updatedAt = Date()
-                log(draft.records[index], "停止后续循环", in: &draft)
+            let changed = RecurrenceEngine.stop(seriesID, in: &draft)
+            for id in changed {
+                if let record = draft.records.first(where: { $0.id == id }) { log(record, "停止后续重复", in: &draft) }
             }
         }
+        feedbackSequence += 1
     }
     func restoreRevision(_ revision: KnowledgeRevision) throws {
         guard var current = record(revision.record.id) else { return }
@@ -294,6 +347,7 @@ import PDFKit
             guard draft.records.contains(where: { $0.id == id && $0.kind == .knowledge && $0.deletedAt == nil }) else { throw WorkspaceFailure.missingParent }
             draft.assets.append(WorkspaceAsset(ownerID: id, name: url.lastPathComponent, data: bytes))
         }
+        feedbackSequence += 1
     }
     func importState(_ incoming: WorkspaceState, preferIncoming: Bool) throws {
         try WorkspaceLogic.validate(incoming)
@@ -320,7 +374,7 @@ import PDFKit
     func refresh() {
         perform { try commit { RecurrenceEngine.materialize(&$0) } }
         Task { await notifications.refreshAuthorization() }
-        if RemotePushBridge.isEnabled && (backend.signedIn || RemotePushBridge.isSmokeTesting) {
+        if RemotePushBridge.isEnabled && backend.signedIn {
             do { try RemotePushBridge.registerWithApple() } catch { errorMessage = error.localizedDescription }
         }
     }

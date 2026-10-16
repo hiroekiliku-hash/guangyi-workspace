@@ -23305,6 +23305,50 @@ var webHTML = String.raw`<!doctype html>
   </div>
 </body>
 </html>`;
+var nativeLoginHTML = String.raw`<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="referrer" content="no-referrer">
+  <title>登录工作坊</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/app.css">
+  <script type="module" src="/native-login.js"></script>
+</head>
+<body>
+  <main class="shell native-login-shell">
+    <header class="site-header">
+      <div class="brand-mark" aria-hidden="true">坊</div>
+      <div><p class="eyebrow">WORKSPACE</p><h1>工作坊</h1></div>
+    </header>
+    <section class="auth-card native-login-card" aria-labelledby="native-login-title">
+      <p class="eyebrow">安全连接你的账号</p>
+      <h2 id="native-login-title">登录后，接着做。</h2>
+      <p class="recovery-copy">完成验证后返回工作坊，自动合并本机与云端内容。</p>
+      <div id="native-login-options">
+        <form id="native-password-form">
+          <label for="native-email">账号邮箱</label>
+          <input id="native-email" name="email" type="email" inputmode="email" autocomplete="username" maxlength="320" required>
+          <label for="native-password">密码</label>
+          <input id="native-password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
+          <button id="native-password-login" class="primary" type="submit">使用账号密码登录</button>
+        </form>
+        <div class="or" aria-hidden="true"><span>或</span></div>
+        <button id="native-passkey-login" class="secondary" type="button">使用已有通行密钥</button>
+      </div>
+      <section id="native-login-complete" hidden aria-label="登录完成">
+        <p id="native-account" class="recovery-copy"></p>
+        <button id="native-return" class="primary full-width" type="button">返回工作坊并合并</button>
+        <p class="privacy-note">请在 90 秒内返回。如果未能返回，请关闭此页，从 App 重新开始登录。</p>
+      </section>
+      <p id="native-login-status" class="status" role="status" aria-live="polite"></p>
+      <p class="privacy-note">密码仅用于此次验证。返回链接只携带一次性授权码，账号会话由 App 安全保存。</p>
+    </section>
+  </main>
+</body>
+</html>`;
 var webCSS = String.raw`:root {
   color-scheme: light dark;
   --paper: #f7f4ed; --surface: rgba(255,255,255,.84); --ink: #20211f; --muted: #666861;
@@ -23355,6 +23399,10 @@ input { width: 100%; padding: .85rem .9rem; border: 1px solid var(--line); borde
 .privacy-note { margin: 1rem 0 0; font-size: .76rem; line-height: 1.5; }
 .recovery-copy { color: var(--muted); line-height: 1.65; }
 .recovery-cancel { margin-top: .55rem; }
+.native-login-shell { width: min(30rem, calc(100% - 2rem)); padding-bottom: max(2rem, env(safe-area-inset-bottom)); }
+.native-login-shell .site-header { padding-top: .8rem; padding-bottom: 1.3rem; }
+.native-login-card { padding: clamp(1.4rem, 5vw, 2rem); }
+.native-login-card h2 { font-size: clamp(1.8rem, 7vw, 2.3rem); line-height: 1.15; }
 .workspace-header { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; padding: 1.3rem 1.4rem; border-radius: 1.4rem; }
 .workspace-header h2 { margin: 0; font-size: clamp(1.7rem, 4vw, 2.8rem); }
 .toolbar { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; }
@@ -23643,6 +23691,99 @@ var webJS = String.raw`(() => {
   else if (recovery.invalid) showLogin('一次性恢复链接格式无效。', true);
   else if (state.token) loadWorkspace(false); else showLogin('', false);
 })();`;
+var nativeLoginJS = String.raw`(() => {
+  'use strict';
+  const byID = id => document.getElementById(id);
+  const parameters = new URLSearchParams(location.search);
+  const codeChallenge = parameters.get('code_challenge'), requestState = parameters.get('state');
+  const valid = /^[A-Za-z0-9_-]{43}$/;
+  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', UNAUTHENTICATED: '验证已失效，请重新登录。',
+    INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。',
+    INVALID_WEB_AUTH_REQUEST: '登录请求无效，请返回 App 重新开始。', INVALID_ORIGIN: '请从工作坊打开此登录页。',
+    RATE_LIMITED: '尝试次数过多，请稍后再试。' };
+  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0;
+  function message(text, error = false) { byID('native-login-status').textContent = text; byID('native-login-status').classList.toggle('error', error); }
+  function setBusy(value) {
+    busy = value;
+    byID('native-password-login').disabled = value;
+    byID('native-passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
+  }
+  async function api(path, body, token = '', method = 'POST', keepalive = false) {
+    const response = await fetch('/api/native/v1/' + path, { method, cache: 'no-store', credentials: 'omit', redirect: 'error', keepalive,
+      headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: 'Bearer ' + token } : {}) },
+      body: body === undefined ? undefined : JSON.stringify(body) });
+    let envelope; try { envelope = await response.json(); } catch {}
+    if (!response.ok) throw new Error(errorNames[envelope?.error?.code] || '连接暂时不可用，请重试。');
+    return envelope?.data;
+  }
+  function bytes(value) {
+    const binary = atob(value.replaceAll('-', '+').replaceAll('_', '/') + '='.repeat((4 - value.length % 4) % 4));
+    return Uint8Array.from(binary, character => character.charCodeAt(0));
+  }
+  function base64url(value) {
+    let binary = ''; for (const byte of new Uint8Array(value)) binary += String.fromCharCode(byte);
+    return btoa(binary).replaceAll('+', '-').replaceAll('/', '_').replace(/=+$/g, '');
+  }
+  function assertion(credential) {
+    return { id: credential.id, rawId: base64url(credential.rawId), type: credential.type,
+      authenticatorAttachment: credential.authenticatorAttachment || undefined, clientExtensionResults: credential.getClientExtensionResults(),
+      response: { clientDataJSON: base64url(credential.response.clientDataJSON), authenticatorData: base64url(credential.response.authenticatorData),
+        signature: base64url(credential.response.signature), userHandle: credential.response.userHandle ? base64url(credential.response.userHandle) : null } };
+  }
+  async function clearTemporarySession() {
+    const token = temporaryToken; temporaryToken = '';
+    if (token) { try { await api('session', undefined, token, 'DELETE', true); } catch {} }
+  }
+  async function authorize(session) {
+    if (!session || typeof session.accessToken !== 'string' || !session.accessToken) throw new Error('服务器未返回有效会话。');
+    temporaryToken = session.accessToken;
+    const result = await api('web-auth/authorize', { codeChallenge, state: requestState }, temporaryToken);
+    // The server revokes the browser bearer in the same transaction that issues
+    // this short-lived code. Never put the bearer into a URL or browser storage.
+    temporaryToken = '';
+    const callback = new URL(result.callbackURL);
+    if (callback.protocol !== 'guangyi-workspace:' || callback.hostname !== 'auth' || callback.pathname !== '/callback' ||
+      callback.username || callback.password || callback.port || callback.hash ||
+      [...callback.searchParams.keys()].length !== 2 || callback.searchParams.getAll('code').length !== 1 || callback.searchParams.getAll('state').length !== 1 ||
+      !valid.test(callback.searchParams.get('code') || '') || callback.searchParams.get('state') !== requestState) throw new Error('返回链接无效，请返回 App 重新开始。');
+    callbackURL = callback.href; expiresAt = Date.now() + 90000;
+    byID('native-login-options').hidden = true; byID('native-login-complete').hidden = false;
+    byID('native-account').textContent = '已验证账号：' + (session.account || session.displayName || '你的账号');
+    message('验证完成，点击下方按钮返回 App。');
+    byID('native-return').focus();
+  }
+  async function login(work) {
+    if (busy) return; setBusy(true); message('正在验证…');
+    try { await authorize(await work()); }
+    catch (error) { message(error.name === 'NotAllowedError' ? '已取消通行密钥验证，可以重新选择登录方式。' : error.message, true); }
+    finally { byID('native-password').value = ''; await clearTemporarySession(); setBusy(false); }
+  }
+  byID('native-password-form').addEventListener('submit', event => {
+    event.preventDefault();
+    const email = byID('native-email').value.trim(), password = byID('native-password').value;
+    byID('native-password').value = '';
+    login(() => api('session', { email, password }));
+  });
+  byID('native-passkey-login').addEventListener('click', () => login(async () => {
+    if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥，请使用账号密码。');
+    const challenge = await api('passkeys/login/options', {});
+    const options = { ...challenge.options, challenge: bytes(challenge.options.challenge),
+      allowCredentials: (challenge.options.allowCredentials || []).map(value => ({ ...value, id: bytes(value.id) })) };
+    const credential = await navigator.credentials.get({ publicKey: options });
+    if (!credential) throw new Error('未取得通行密钥，请重试。');
+    return api('passkeys/login/verify', { challengeID: challenge.challengeID, credential: assertion(credential) });
+  }));
+  byID('native-return').addEventListener('click', () => {
+    if (!callbackURL || Date.now() >= expiresAt) { callbackURL = ''; byID('native-return').disabled = true; message('返回链接已过期，请关闭此页，从 App 重新开始登录。', true); return; }
+    location.assign(callbackURL);
+  });
+  window.addEventListener('pagehide', () => { byID('native-password').value = ''; clearTemporarySession(); });
+  setBusy(false);
+  if (parameters.get('code_challenge_method') !== 'S256' || !valid.test(codeChallenge || '') || !valid.test(requestState || '') ||
+    [...parameters.keys()].length !== 3 || ['code_challenge', 'code_challenge_method', 'state'].some(key => parameters.getAll(key).length !== 1)) {
+    byID('native-login-options').hidden = true; message('登录请求无效，请返回 App 重新开始。', true);
+  }
+})();`;
 var favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#315b4c"/><path d="M20 14h24v7c0 7-4 10-8 12 4 2 8 5 8 12v6H20v-6c0-7 4-10 8-12-4-2-8-5-8-12zm6 7c0 5 3 7 6 9 3-2 6-4 6-9zm6 15c-3 2-6 4-6 9h12c0-5-3-7-6-9z" fill="#fff"/></svg>`;
 var headers = Object.freeze({
   "Cache-Control": "no-store",
@@ -23657,6 +23798,8 @@ var headers = Object.freeze({
 var assets = /* @__PURE__ */ new Map([
   ["/", { type: "text/html; charset=utf-8", body: webHTML }],
   ["/index.html", { type: "text/html; charset=utf-8", body: webHTML }],
+  ["/native-login", { type: "text/html; charset=utf-8", body: nativeLoginHTML }],
+  ["/native-login.js", { type: "text/javascript; charset=utf-8", body: nativeLoginJS }],
   ["/app.css", { type: "text/css; charset=utf-8", body: webCSS }],
   ["/app.js", { type: "text/javascript; charset=utf-8", body: webJS }],
   ["/favicon.svg", { type: "image/svg+xml; charset=utf-8", body: favicon }]
@@ -23674,6 +23817,12 @@ try {
 }
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = "unversioned";
 var sha = (value) => createHash("sha256").update(value).digest("hex");
+var nativeCallbackURL = "guangyi-workspace://auth/callback";
+var webAuthValue = /^[A-Za-z0-9_-]{43}$/;
+var pkceVerifier = /^[A-Za-z0-9._~-]{43,128}$/;
+function validWebAuthRequest(value) {
+  return value && !Array.isArray(value) && typeof value === "object" && Object.keys(value).length === 2 && typeof value.codeChallenge === "string" && webAuthValue.test(value.codeChallenge) && Buffer.from(value.codeChallenge, "base64url").toString("base64url") === value.codeChallenge && typeof value.state === "string" && webAuthValue.test(value.state);
+}
 var uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var emptyWorkspace = (name) => ({ format: "guangyi-native", schemaVersion: 1, records: [], series: [], activities: [], revisions: [], assets: [], trash: [], profile: { name, timezone: "Asia/Shanghai" } });
 var APIError = class extends Error {
@@ -23801,7 +23950,23 @@ function createNativeServer(configuration) {
     CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
   passkeyRecoveryTable(db);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
+  const webAuthNow = configuration.webAuthNow ?? Date.now;
+  db.exec(`CREATE TABLE IF NOT EXISTS web_auth_codes(
+    hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),challenge TEXT NOT NULL,state TEXT NOT NULL,expires INTEGER NOT NULL);`);
   const attempts = /* @__PURE__ */ new Map();
+  function webAuthRateLimit(request) {
+    const key = "web-auth:" + (request.socket.remoteAddress ?? "unknown"), now = Date.now(), old = attempts.get(key);
+    const entry = old && now - old.start < 6e5 ? old : { start: now, count: 0 };
+    attempts.set(key, entry);
+    if (++entry.count > 60) throw new APIError(429, "RATE_LIMITED");
+  }
+  function sameWebOrigin(request) {
+    if (request.headers.origin != null && request.headers.origin !== passkeyOrigin) throw new APIError(403, "INVALID_ORIGIN");
+    if (request.headers["sec-fetch-site"] === "cross-site") throw new APIError(403, "INVALID_ORIGIN");
+  }
+  function requireJSON(request) {
+    if (!/^application\/json(?:\s*;|$)/i.test(request.headers["content-type"] ?? "")) throw new APIError(415, "JSON_REQUIRED");
+  }
   function passkeyRateLimit(request) {
     const key = "passkey:" + (request.socket.remoteAddress ?? "unknown"), now = Date.now(), old = attempts.get(key);
     const entry = old && now - old.start < 6e5 ? old : { start: now, count: 0 };
@@ -23916,7 +24081,7 @@ function createNativeServer(configuration) {
     }
   }
   function respond(response, status, data) {
-    response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" });
+    response.writeHead(status, { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff" });
     response.end(JSON.stringify(data));
   }
   function respondWeb(response, asset, headOnly) {
@@ -23925,18 +24090,27 @@ function createNativeServer(configuration) {
   }
   const server = http.createServer(async (request, response) => {
     try {
-      const path = new URL(request.url, "http://localhost").pathname;
+      const url = new URL(request.url, "http://localhost"), path = url.pathname;
+      if (path === "/native-login" && (request.method === "GET" || request.method === "HEAD")) {
+        sameWebOrigin(request);
+        const parameters = url.searchParams, expected = ["code_challenge", "code_challenge_method", "state"];
+        if ([...parameters.keys()].length !== 3 || expected.some((key) => parameters.getAll(key).length !== 1) || parameters.get("code_challenge_method") !== "S256" || !validWebAuthRequest({ codeChallenge: parameters.get("code_challenge"), state: parameters.get("state") }))
+          throw new APIError(400, "INVALID_WEB_AUTH_REQUEST");
+        return respondWeb(response, webAsset(path), request.method === "HEAD");
+      }
       if (request.method === "GET" || request.method === "HEAD") {
-        const asset = webAsset(path);
+        const asset = path === "/native-login" ? void 0 : webAsset(path);
         if (asset) return respondWeb(response, asset, request.method === "HEAD");
       }
       if (path === "/.well-known/apple-app-site-association" && request.method === "GET") return respond(response, 200, { webcredentials: { apps: passkeyApps } });
       if (path === "/api/native/v1/passkeys/login/options" && request.method === "POST") {
+        sameWebOrigin(request);
         passkeyRateLimit(request);
         const options = await generateAuthenticationOptions({ rpID, userVerification: "required" });
         return respond(response, 200, { data: { challengeID: issueChallenge("login", options.challenge), options } });
       }
       if (path === "/api/native/v1/passkeys/login/verify" && request.method === "POST") {
+        sameWebOrigin(request);
         passkeyRateLimit(request);
         const value = await body(request, 65536), challenge = consumeChallenge(value.challengeID, "login");
         const credential = db.prepare("SELECT * FROM passkeys WHERE id=?").get(typeof value.credential?.id === "string" ? value.credential.id : "");
@@ -23990,6 +24164,7 @@ function createNativeServer(configuration) {
       if (path === "/deploy-revision.json" && request.method === "GET") return respond(response, 200, { revision: deploymentRevision });
       if (path === "/health" && request.method === "GET") return respond(response, 200, { status: "ok" });
       if (path === "/api/native/v1/session" && request.method === "POST") {
+        sameWebOrigin(request);
         const ip = request.socket.remoteAddress ?? "unknown", now = Date.now(), prior = attempts.get(ip);
         const counter = prior && now - prior.start < 6e5 ? prior : { start: now, count: 0 };
         if (++counter.count > 20) throw new APIError(429, "RATE_LIMITED");
@@ -24002,7 +24177,54 @@ function createNativeServer(configuration) {
         if (!user || !timingSafeEqual(candidate, user.hash)) throw new APIError(401, "INVALID_CREDENTIALS");
         return respond(response, 200, { data: createSession(user) });
       }
+      if (path === "/api/native/v1/web-auth/token" && request.method === "POST") {
+        sameWebOrigin(request);
+        webAuthRateLimit(request);
+        requireJSON(request);
+        const value = await body(request, 2048);
+        if (!value || Array.isArray(value) || Object.keys(value).length !== 2 || typeof value.code !== "string" || !webAuthValue.test(value.code) || typeof value.codeVerifier !== "string" || !pkceVerifier.test(value.codeVerifier)) throw new APIError(400, "INVALID_WEB_AUTH_REQUEST");
+        const hash = sha(value.code), now = webAuthNow();
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          const code = db.prepare("SELECT * FROM web_auth_codes WHERE hash=? AND expires>?").get(hash, now);
+          const challenge = createHash("sha256").update(value.codeVerifier).digest("base64url");
+          if (!code || !timingSafeEqual(Buffer.from(code.challenge), Buffer.from(challenge))) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
+          const user = db.prepare("SELECT * FROM users WHERE id=?").get(code.user_id);
+          if (!user) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
+          db.prepare("DELETE FROM web_auth_codes WHERE hash=?").run(hash);
+          const session = createSession(user);
+          db.exec("COMMIT");
+          return respond(response, 200, { data: session });
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      }
       const userID = userFor(request);
+      if (path === "/api/native/v1/web-auth/authorize" && request.method === "POST") {
+        sameWebOrigin(request);
+        webAuthRateLimit(request);
+        requireJSON(request);
+        const value = await body(request, 2048);
+        if (!validWebAuthRequest(value)) throw new APIError(400, "INVALID_WEB_AUTH_REQUEST");
+        const now = webAuthNow(), code = randomBytes(32).toString("base64url");
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          db.prepare("DELETE FROM web_auth_codes WHERE expires<=?").run(now);
+          if (db.prepare("SELECT COUNT(*) AS total FROM web_auth_codes").get().total >= 1e3) throw new APIError(429, "RATE_LIMITED");
+          const revoked = db.prepare("DELETE FROM sessions WHERE hash=? AND user_id=? AND expires>?").run(sha(request.headers.authorization.slice(7)), userID, Date.now());
+          if (revoked.changes !== 1) throw new APIError(401, "UNAUTHENTICATED");
+          db.prepare("INSERT INTO web_auth_codes VALUES(?,?,?,?,?)").run(sha(code), userID, value.codeChallenge, value.state, now + 9e4);
+          db.exec("COMMIT");
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+        const callback = new URL(nativeCallbackURL);
+        callback.searchParams.set("code", code);
+        callback.searchParams.set("state", value.state);
+        return respond(response, 200, { data: { callbackURL: callback.href } });
+      }
       if (path === "/api/native/v1/passkeys/register/options" && request.method === "POST") {
         passkeyRateLimit(request);
         const { options } = await registrationOptions(userID);
@@ -24083,6 +24305,7 @@ function createNativeServer(configuration) {
   async function sweep(now = Date.now()) {
     db.prepare("DELETE FROM sessions WHERE expires<?").run(now);
     db.prepare("DELETE FROM passkey_recoveries WHERE expires<=?").run(now);
+    db.prepare("DELETE FROM web_auth_codes WHERE expires<=?").run(webAuthNow());
     for (const [ip, value] of attempts) if (now - value.start > 6e5) attempts.delete(ip);
     if (!sendPush || sweeping) return { accepted: 0 };
     sweeping = true;
