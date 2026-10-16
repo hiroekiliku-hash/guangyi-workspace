@@ -40,7 +40,7 @@ runuser -u guangyi-workspace -- /opt/guangyi-workspace/runtime/bin/node --preser
 
 网页及 App 打开的登录页支持邮箱注册、密码和 discoverable passkey 登录；登录后可为同一账号创建新通行密钥。页面只调用 GET workspace，不提供编辑或 PUT，以免浏览器用旧快照覆盖原生客户端的合并结果。Bearer token 只进入当前标签页的 `sessionStorage`，页面关闭后清除；用户内容只通过 `textContent` 渲染。响应设置 self-only CSP、防嵌入、no-referrer、no-store 与 WebAuthn 权限策略。
 
-`POST /api/native/v1/accounts` 接受 JSON `{email,password}`，成功返回 201 和普通登录相同的会话。密码为 16–1024 个字符，仅保存独立随机 salt 和 scrypt 哈希；邮箱去除首尾空格并转为小写。账号、空工作空间和会话在同一事务中创建，重复账号不会重置原密码或内容。每个账号从 revision 0 开始，数据按 user_id 隔离。App 注册后沿用 PKCE 回传及本机/云端合并流程。
+`POST /api/native/v1/accounts` 接受 JSON `{email,password}`，成功返回 201 和普通登录相同的会话。密码为 8–1024 个字符，仅保存独立随机 salt 和 scrypt 哈希；邮箱去除首尾空格并转为小写。账号、空工作空间和会话在同一事务中创建，重复账号不会重置原密码或内容。每个账号从 revision 0 开始，数据按 user_id 隔离。App 注册后沿用 PKCE 回传及本机/云端合并流程。
 
 邮箱目前用作登录标识，不发送验证邮件，也不代表邮箱归属已验证。注册接口要求同源 JSON、请求体至多 4 KiB；每个客户端地址十分钟最多尝试六次，全站最多六十次。只有来自回环地址的本机代理可通过 `X-Real-IP` 提供经校验的客户端地址，现有 Nginx 配置会覆盖该头；不信任外部连接的转发头。后续若更换代理，应保留这一边界。
 
@@ -89,3 +89,14 @@ APNS_ALLOWED_BUNDLE_IDS=你实际使用的iOSBundleID,你实际使用的MacBundl
 - 首次账号绑定需明确确认；之后客户端使用完整快照、If-Match 与三方合并自动同步。静默 APNs 只负责提示拉取，不能代替版本检查或冲突审阅。
 
 测试：在仓库根目录执行 `npm test`；测试只使用内存 SQLite、本机随机端口与模拟推送服务，并验证生成后的单文件发布包。
+
+
+### 可选验证码验证（Apple「密码」）
+
+已登录账号可启用 RFC 6238 TOTP：`GET /api/native/v1/totp` 返回 `{data:{enabled}}`；`POST /totp/setup`（完整前缀同前，JSON `{}`）返回仅本次设置所需的 `{data:{secret,uri,appleURI}}`。标准 `otpauth://` URI 可加入兼容验证器；`apple-otpauth://` 可在 Apple「密码」中设置验证码，issuer 使用当前站点域名。密钥为随机 160 位、SHA-1、6 位数字、30 秒周期。待确认设置 10 分钟过期，重复设置替换未确认密钥，不替换已经启用的配置。
+
+`POST /totp/enable` 以 `{code}` 确认首个验证码后才启用，返回十个一次性恢复码 `{data:{recoveryCodes}}`，前端必须提示用户保存；服务端仅保存恢复码的 SHA-256 哈希。启用后，密码登录在正确校验密码之后要求额外的 `code`；未提供时返回 `SECOND_FACTOR_REQUIRED`，无效或重复使用时返回 `INVALID_SECOND_FACTOR`，不会提前签发会话。可使用当前验证码或恢复码；允许前后一个 30 秒窗口，每个已接受时间步只允许使用一次，包含设置确认。恢复码也只能使用一次。消费凭据与签发会话在同一事务中，失败时一起回滚。
+
+`POST /totp/disable` 需要已有会话及 `{code}`（验证码或未使用恢复码），成功清除验证码与恢复码。设置、确认、关闭要求同源 JSON；这些操作与密码登录的验证码验证共用每账号每 10 分钟 20 次限流，密码登录另有既有的 IP 请求限流。通行密钥的服务端验证始终要求用户验证，可独立登录，不叠加 TOTP。已有会话不会因启用 TOTP 自动退出。
+
+TOTP 是可选功能，邮箱仍只是登录标识，不代表已验证邮箱归属。验证码密钥和未确认密钥保存在 SQLite 中（恢复码仅有哈希），不依赖额外生产密钥；数据库及备份应视为敏感凭据，仅管理员/服务用户可读取。日志、版本包和 UI 错误均不应包含设置密钥或恢复码。

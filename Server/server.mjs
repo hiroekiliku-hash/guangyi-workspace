@@ -23096,11 +23096,272 @@ async function verifyAuthenticationResponse(options) {
 import http from "node:http";
 import http2 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
-import { randomBytes, createHash, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
+import { randomBytes, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { isIP } from "node:net";
+
+// Server/brand-icon.mjs
+var brandIcon = Buffer.from("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", "base64");
+
+// Server/account-security.mjs
+var accountSecurityHTML = String.raw`
+<details id="security-panel" class="account-security">
+  <summary>账户安全<span id="security-state"></span></summary>
+  <div class="security-content">
+    <div id="security-off" hidden>
+      <p>用「密码」或其他验证器生成登录验证码。</p>
+      <button id="security-setup" type="button" class="security-primary">设置验证码</button>
+    </div>
+    <div id="security-setup-view" hidden>
+      <p>保存到验证器后，输入生成的六位验证码。</p>
+      <a id="security-apple" class="security-button security-primary" aria-disabled="true">添加到「密码」</a>
+      <details class="security-manual"><summary>手动添加</summary><code id="security-secret" tabindex="0"></code></details>
+      <label for="security-confirm-code">验证码</label>
+      <input id="security-confirm-code" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="6 位验证码" aria-label="验证码" required>
+      <button id="security-enable" type="button" class="security-primary">确认开启</button>
+      <button id="security-cancel" type="button" class="security-secondary">取消</button>
+    </div>
+    <div id="security-recovery-view" hidden>
+      <p>保存这些恢复码。无法获取验证码时，每个恢复码可用于登录一次。</p>
+      <div id="security-recovery-codes" class="security-recovery-codes"></div>
+      <button id="security-saved" type="button" class="security-primary">已保存恢复码</button>
+    </div>
+    <div id="security-on" hidden>
+      <p>验证码已开启</p>
+      <details id="security-disable-details"><summary>关闭验证码</summary>
+        <label for="security-disable-code">验证码或恢复码</label>
+        <input id="security-disable-code" type="text" autocomplete="one-time-code" autocapitalize="characters" spellcheck="false" maxlength="64" placeholder="验证码或恢复码">
+        <button id="security-disable" type="button" class="security-secondary">确认关闭</button>
+      </details>
+    </div>
+    <p id="security-message" class="security-message" role="status" aria-live="polite"></p>
+  </div>
+</details>`;
+var accountSecurityCSS = String.raw`
+.account-security { margin: 20px 0 0; color: var(--ink, #17171b); text-align: left; }
+.account-security > summary { display: flex; align-items: center; justify-content: space-between; gap: 12px; cursor: pointer; padding: 12px 0; font-size: 15px; font-weight: 600; }
+.account-security > summary::after { content: '+'; color: var(--muted, #77777d); font-size: 20px; font-weight: 400; }
+.account-security[open] > summary::after { content: '−'; }
+.account-security > summary::-webkit-details-marker { display: none; }
+#security-state { margin-left: auto; color: var(--muted, #77777d); font-size: 13px; font-weight: 400; }
+.security-content { padding: 0 0 4px; }
+.account-security p { margin: 8px 0 14px; color: var(--muted, #77777d); font-size: 14px; line-height: 1.6; }
+.account-security button, .account-security .security-button { box-sizing: border-box; display: flex; width: 100%; min-height: 50px; align-items: center; justify-content: center; margin: 10px 0 0; padding: 12px 18px; border: 0; border-radius: 999px; font: inherit; font-size: 15px; font-weight: 600; text-align: center; text-decoration: none; cursor: pointer; }
+.account-security .security-primary { background: var(--accent, #6554ff); color: #fff; }
+.account-security .security-secondary { background: rgba(120,120,128,.12); color: var(--ink, #17171b); }
+.account-security button:disabled, .account-security a[aria-disabled="true"] { opacity: .5; cursor: default; }
+.account-security a[aria-disabled="true"] { pointer-events: none; }
+.account-security label { display: block; margin: 16px 0 6px; font-size: 14px; }
+.account-security input { box-sizing: border-box; width: 100%; min-height: 50px; padding: 12px 16px; border: 1px solid var(--line, rgba(60,60,67,.16)); border-radius: 14px; background: var(--surface, #fff); color: var(--ink, #17171b); font: inherit; font-size: 16px; }
+.account-security input:focus-visible, .account-security a:focus-visible, .account-security summary:focus-visible { outline: 3px solid var(--accent, #6554ff); outline-offset: 3px; }
+.account-security input[aria-invalid="true"] { border-color: var(--urgent, #d93933); }
+.security-manual, #security-disable-details { margin-top: 16px; font-size: 14px; }
+.security-manual summary, #security-disable-details > summary { cursor: pointer; color: var(--muted, #77777d); }
+.security-manual code, .security-recovery-codes code { display: block; padding: 12px; border-radius: 12px; background: rgba(120,120,128,.09); color: var(--ink, #17171b); font: 14px/1.7 ui-monospace, monospace; overflow-wrap: anywhere; user-select: all; -webkit-user-select: all; }
+.security-manual code { margin-top: 10px; }
+.security-recovery-codes { display: grid; gap: 6px; margin: 14px 0; }
+.security-recovery-codes code { padding: 6px 12px; text-align: center; }
+.account-security .security-message { min-height: 0; margin: 12px 0 0; }
+.account-security .security-message:empty { display: none; }
+.account-security .security-message[data-error="true"] { color: var(--urgent, #d93933); }
+.account-security [hidden] { display: none !important; }
+@media (prefers-color-scheme: dark) {
+  .account-security .security-primary { color: #fff; background: #7563ff; }
+}`;
+function installAccountSecurity({ api, message = () => {
+}, onBusy = () => {
+} }) {
+  const find = (id) => document.getElementById("security-" + id);
+  const panel = find("panel");
+  if (!panel) return { reset() {
+  }, async refresh() {
+  } };
+  const state = find("state"), note = find("message");
+  const off = find("off"), setup = find("setup-view"), recovery = find("recovery-view"), on = find("on");
+  const confirmCode = find("confirm-code"), disableCode = find("disable-code");
+  const apple = find("apple"), secret = find("secret"), codes = find("recovery-codes");
+  let enabled = null, mode = "idle", appleURI = "", busy = false, generation = 0, reportedBusy = false;
+  function notify(text = "", error = false) {
+    note.textContent = text;
+    note.dataset.error = String(error);
+    message(text, error);
+  }
+  function render() {
+    off.hidden = enabled !== false || mode !== "idle";
+    setup.hidden = mode !== "setup";
+    recovery.hidden = mode !== "recovery";
+    on.hidden = enabled !== true || mode !== "idle";
+    state.textContent = enabled === true ? "\u5DF2\u5F00\u542F" : "";
+    for (const control of panel.querySelectorAll("button, input")) control.disabled = busy;
+    const canOpen = !busy && mode === "setup" && Boolean(appleURI);
+    apple.setAttribute("aria-disabled", String(!canOpen));
+    apple.tabIndex = canOpen ? 0 : -1;
+    if (canOpen) apple.setAttribute("href", appleURI);
+    else apple.removeAttribute("href");
+    const shouldHold = busy || mode === "recovery";
+    if (shouldHold !== reportedBusy) {
+      reportedBusy = shouldHold;
+      onBusy(shouldHold);
+    }
+  }
+  function clearSetup() {
+    appleURI = "";
+    secret.textContent = "";
+    confirmCode.value = "";
+    confirmCode.removeAttribute("aria-invalid");
+    panel.querySelector(".security-manual").open = false;
+    apple.removeAttribute("href");
+  }
+  function clearRecovery() {
+    codes.replaceChildren();
+  }
+  function errorMessage(error) {
+    const names = {
+      INVALID_SECOND_FACTOR: "\u9A8C\u8BC1\u7801\u6216\u6062\u590D\u7801\u4E0D\u6B63\u786E\uFF0C\u8BF7\u91CD\u8BD5\u3002",
+      INVALID_TOTP_CODE: "\u8BF7\u8F93\u5165\u516D\u4F4D\u9A8C\u8BC1\u7801\u3002",
+      INVALID_TOTP_REQUEST: "\u8BF7\u68C0\u67E5\u9A8C\u8BC1\u7801\u540E\u91CD\u8BD5\u3002",
+      SECOND_FACTOR_REQUIRED: "\u8BF7\u8F93\u5165\u9A8C\u8BC1\u7801\u6216\u6062\u590D\u7801\u3002",
+      TOTP_SETUP_EXPIRED: "\u8BBE\u7F6E\u5DF2\u8FC7\u671F\uFF0C\u8BF7\u91CD\u65B0\u5F00\u59CB\u3002",
+      TOTP_ALREADY_ENABLED: "\u9A8C\u8BC1\u7801\u5DF2\u5F00\u542F\uFF0C\u8BF7\u5237\u65B0\u540E\u91CD\u8BD5\u3002",
+      RATE_LIMITED: "\u5C1D\u8BD5\u6B21\u6570\u8F83\u591A\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002",
+      UNAUTHENTICATED: "\u8BF7\u91CD\u65B0\u767B\u5F55\u3002"
+    };
+    return names[error?.code] || error?.message || "\u64CD\u4F5C\u672A\u5B8C\u6210\uFF0C\u8BF7\u7A0D\u540E\u518D\u8BD5\u3002";
+  }
+  async function perform(action) {
+    if (busy) return;
+    const ticket = generation;
+    busy = true;
+    render();
+    notify();
+    try {
+      await action(() => ticket === generation);
+    } catch (error) {
+      if (ticket === generation) {
+        if (error?.code === "TOTP_SETUP_EXPIRED") {
+          clearSetup();
+          mode = "idle";
+        }
+        notify(errorMessage(error), true);
+      }
+    } finally {
+      if (ticket === generation) {
+        busy = false;
+        render();
+      }
+    }
+  }
+  find("setup").addEventListener("click", () => perform(async (current) => {
+    const result = await api("totp/setup", {});
+    if (!current()) return;
+    const uri = new URL(result.appleURI);
+    if (typeof result.secret !== "string" || !/^[A-Z2-7]+$/.test(result.secret) || uri.protocol !== "apple-otpauth:" || uri.hostname !== "totp") {
+      throw new Error("\u65E0\u6CD5\u8BFB\u53D6\u8BBE\u7F6E\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+    }
+    clearSetup();
+    clearRecovery();
+    secret.textContent = result.secret;
+    appleURI = uri.href;
+    mode = "setup";
+    render();
+  }));
+  find("enable").addEventListener("click", () => {
+    const code = confirmCode.value.trim();
+    if (!/^[0-9]{6}$/.test(code)) {
+      confirmCode.setAttribute("aria-invalid", "true");
+      notify("\u8BF7\u8F93\u5165\u516D\u4F4D\u9A8C\u8BC1\u7801\u3002", true);
+      confirmCode.focus();
+      return;
+    }
+    confirmCode.removeAttribute("aria-invalid");
+    perform(async (current) => {
+      const result = await api("totp/enable", { code });
+      if (!current()) return;
+      clearSetup();
+      clearRecovery();
+      enabled = true;
+      mode = "recovery";
+      for (const value of result.recoveryCodes || []) {
+        const row = document.createElement("code");
+        row.textContent = String(value);
+        row.tabIndex = 0;
+        codes.append(row);
+      }
+    });
+  });
+  find("cancel").addEventListener("click", () => {
+    if (busy) return;
+    clearSetup();
+    mode = "idle";
+    notify();
+    render();
+  });
+  find("saved").addEventListener("click", () => {
+    if (busy) return;
+    clearSetup();
+    clearRecovery();
+    mode = "idle";
+    notify("\u9A8C\u8BC1\u7801\u5DF2\u5F00\u542F\u3002");
+    render();
+  });
+  find("disable").addEventListener("click", () => {
+    const code = disableCode.value.trim();
+    if (!code) {
+      notify("\u8BF7\u8F93\u5165\u9A8C\u8BC1\u7801\u6216\u6062\u590D\u7801\u3002", true);
+      disableCode.focus();
+      return;
+    }
+    perform(async (current) => {
+      try {
+        await api("totp/disable", { code });
+      } finally {
+        if (current()) disableCode.value = "";
+      }
+      if (!current()) return;
+      enabled = false;
+      mode = "idle";
+      find("disable-details").open = false;
+      clearSetup();
+      clearRecovery();
+      notify("\u9A8C\u8BC1\u7801\u5DF2\u5173\u95ED\u3002");
+    });
+  });
+  panel.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" || event.target.tagName !== "INPUT") return;
+    event.preventDefault();
+    if (!busy) find(mode === "setup" ? "enable" : "disable").click();
+  });
+  function reset() {
+    generation += 1;
+    busy = false;
+    enabled = null;
+    mode = "idle";
+    clearSetup();
+    clearRecovery();
+    disableCode.value = "";
+    find("disable-details").open = false;
+    panel.open = false;
+    note.textContent = "";
+    note.dataset.error = "false";
+    render();
+  }
+  async function refresh() {
+    await perform(async (current) => {
+      const result = await api("totp", void 0, "GET");
+      if (!current()) return;
+      enabled = result.enabled === true;
+      if (mode !== "recovery") {
+        clearSetup();
+        mode = "idle";
+      }
+    });
+  }
+  reset();
+  return { reset, refresh };
+}
+var accountSecurityJS = installAccountSecurity.toString();
 
 // Server/web.mjs
 function effectiveDeadline(record) {
@@ -23229,24 +23490,17 @@ var webHTML = String.raw`<!doctype html>
   <a class="skip-link" href="#main">跳到主要内容</a>
   <div class="shell">
     <header class="site-header">
-      <div class="brand-mark" aria-hidden="true">益</div>
+      <img class="brand-mark" src="/app-icon.png" alt="" width="52" height="52">
       <div>
-        <p class="eyebrow">GUANGYI WORKSPACE</p>
-        <h1>行动有序，截止清晰</h1>
+        <p class="eyebrow">WORKSPACE</p>
+        <h1>工作坊</h1>
       </div>
     </header>
 
     <main id="main">
       <section id="login-view" class="login-grid" aria-labelledby="login-title">
-        <div class="hero-card">
-          <p class="eyebrow">同账号资料</p>
-          <h2 id="login-title">回到你的工作空间</h2>
-          <p class="hero-copy">登录后读取服务器上的行动与 DDL。倒计时会在当前页面按秒更新，资料正文不会写入浏览器长期存储。</p>
-          <div class="feature-row">
-            <span>行动 + 行动组</span><span>DDL 秒级倒计时</span><span>通行密钥</span>
-          </div>
-        </div>
         <div class="auth-card">
+          <h2 id="login-title">登录工作坊</h2>
           <section id="recovery-view" hidden aria-labelledby="recovery-title">
             <p class="eyebrow">一次性账号恢复</p>
             <h3 id="recovery-title">创建新的通行密钥</h3>
@@ -23264,7 +23518,8 @@ var webHTML = String.raw`<!doctype html>
               <input id="password" name="password" type="password" autocomplete="current-password" maxlength="1024" required>
               <label id="confirm-password-label" for="confirm-password" hidden>确认密码</label>
               <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" hidden disabled>
-              <button id="password-submit" class="primary" type="submit">使用密码登录</button>
+              <div id="login-code-field" hidden><label for="login-code">验证码</label><input id="login-code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="6 位验证码"><button id="recovery-code-toggle" class="auth-text-button" type="button">使用恢复码</button></div>
+              <button id="password-submit" class="primary" type="submit">登录</button>
             </form>
             <div id="passkey-options">
               <div class="or" aria-hidden="true"><span>或</span></div>
@@ -23272,7 +23527,7 @@ var webHTML = String.raw`<!doctype html>
             </div>
             <button id="registration-toggle" class="quiet full-width recovery-cancel" type="button">注册账号</button>
             <p id="login-status" class="status" role="status" aria-live="polite"></p>
-            <p class="privacy-note">会话令牌只保存在此浏览器标签页；关闭标签页后自动清除。</p>
+
           </div>
         </div>
       </section>
@@ -23290,6 +23545,8 @@ var webHTML = String.raw`<!doctype html>
             <button id="logout" class="quiet danger" type="button">退出</button>
           </div>
         </div>
+
+        ${accountSecurityHTML}
 
         <nav class="tabs" role="tablist" aria-label="工作空间主入口">
           <button id="actions-tab" role="tab" aria-selected="true" aria-controls="actions-panel" data-view="actions" type="button">行动 <span id="action-count" class="tab-count">0</span></button>
@@ -23328,7 +23585,12 @@ var nativeLoginHTML = String.raw`<!doctype html>
 <body class="native-auth-page">
   <main class="native-login-shell">
     <section class="native-login-card" aria-labelledby="native-login-title">
-      <h1 id="native-login-title">登录</h1>
+      <header class="auth-heading">
+        <img class="auth-icon" src="/app-icon.png" alt="工作坊" width="88" height="88">
+        <p class="auth-brand">工作坊</p>
+        <h1 id="native-login-title">欢迎回来</h1>
+        <p id="native-login-subtitle" class="auth-subtitle">让每一步，都有条理。</p>
+      </header>
       <div id="native-login-options">
         <form id="native-password-form">
           <div class="native-fields">
@@ -23344,14 +23606,21 @@ var nativeLoginHTML = String.raw`<!doctype html>
               <label for="native-confirm-password">确认</label>
               <input id="native-confirm-password" name="confirm-password" type="password" autocomplete="new-password" maxlength="1024" disabled>
             </div>
+            <div id="native-code-field" class="native-field" hidden>
+              <label for="native-code">验证码</label>
+              <input id="native-code" name="code" autocomplete="one-time-code" inputmode="numeric" maxlength="32" placeholder="6 位验证码">
+            </div>
           </div>
+          <button id="native-recovery-code-toggle" class="auth-text-button" type="button" hidden>使用恢复码</button>
           <button id="native-password-login" class="primary" type="submit">登录</button>
         </form>
         <button id="native-passkey-login" class="native-passkey" type="button">使用通行密钥</button>
-        <button id="native-registration-toggle" class="native-passkey" type="button">注册账号</button>
+        <button id="native-registration-toggle" class="auth-text-button" type="button">注册账号</button>
       </div>
       <section id="native-login-complete" hidden aria-label="登录完成">
         <p id="native-account" class="native-account"></p>
+        <button id="native-add-passkey" class="native-passkey" type="button">添加通行密钥</button>
+        ${accountSecurityHTML}
         <button id="native-return" class="primary" type="button">完成</button>
       </section>
       <p id="native-login-status" class="status" role="status" aria-live="polite"></p>
@@ -23362,7 +23631,7 @@ var nativeLoginHTML = String.raw`<!doctype html>
 var webCSS = String.raw`:root {
   color-scheme: light dark;
   --paper: #f7f4ed; --surface: rgba(255,255,255,.84); --ink: #20211f; --muted: #666861;
-  --line: rgba(32,33,31,.12); --accent: #315b4c; --accent-soft: #dfe9e2;
+  --line: rgba(32,33,31,.12); --accent: #6554ff; --accent-soft: #eeebff;
   --urgent: #a53832; --urgent-soft: #f6dfdc; --shadow: 0 18px 60px rgba(31,39,33,.10);
   font-family: ui-rounded, "SF Pro Rounded", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
@@ -23446,8 +23715,8 @@ footer { padding: 2.5rem 0 1rem; color: var(--muted); font-size: .75rem; text-al
 }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition: none !important; } }
 @media (prefers-color-scheme: dark) {
-  :root { --paper: #171a18; --surface: rgba(33,38,35,.88); --ink: #f0f2ed; --muted: #adb3ac; --line: rgba(240,242,237,.13); --accent: #93c5ad; --accent-soft: #253f34; --urgent: #ffaaa3; --urgent-soft: #4a2928; --shadow: 0 18px 60px rgba(0,0,0,.28); }
-  .primary, .tabs button[aria-selected="true"] { color: #10251d; }
+  :root { --paper: #171a18; --surface: rgba(33,38,35,.88); --ink: #f0f2ed; --muted: #adb3ac; --line: rgba(240,242,237,.13); --accent: #a59aff; --accent-soft: #29253f; --urgent: #ffaaa3; --urgent-soft: #4a2928; --shadow: 0 18px 60px rgba(0,0,0,.28); }
+  .primary, .tabs button[aria-selected="true"] { color: white; background: #6554ff; }
 }
 body.native-auth-page {
   --paper: #f2f2f7; --surface: #fff; --ink: #000; --muted: #8e8e93;
@@ -23456,21 +23725,36 @@ body.native-auth-page {
   font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", system-ui, sans-serif;
   font-size: 17px; -webkit-text-size-adjust: 100%;
 }
-.native-login-shell { width: min(100%, 440px); margin: 0 auto; padding: max(24px, env(safe-area-inset-top)) 20px max(24px, env(safe-area-inset-bottom)); }
+.native-login-shell { width: min(100%, 440px); margin: 0 auto; padding: max(32px, env(safe-area-inset-top)) 24px max(24px, env(safe-area-inset-bottom)); }
 .native-login-card { padding: 0; }
-.native-login-card h1 { margin: 4px 0 24px; font-size: 28px; line-height: 1.2; font-weight: 700; letter-spacing: 0; }
+.native-login-card h1 { margin: 0; font-size: 30px; line-height: 1.2; font-weight: 700; letter-spacing: -.04em; }
 .native-fields { padding: 0 16px; border-radius: 16px; background: var(--surface); }
-.native-field { display: grid; grid-template-columns: 42px minmax(0,1fr); gap: 12px; align-items: center; min-height: 56px; }
+.native-field { display: grid; grid-template-columns: 52px minmax(0,1fr); gap: 12px; align-items: center; min-height: 56px; }
 .native-field + .native-field { border-top: 1px solid var(--line); }
 .native-field label { margin: 0; font-size: 17px; font-weight: 400; }
 .native-field input { min-width: 0; min-height: 56px; padding: 14px 0; border: 0; border-radius: 0; background: transparent; font-size: 17px; }
 .native-field input:focus-visible { outline: 0; box-shadow: inset 0 -2px var(--accent); }
-.native-login-card .primary { width: 100%; min-height: 50px; margin-top: 20px; border: 0; border-radius: 14px; color: white; background: linear-gradient(135deg, #8978ff, #6050f5); font-size: 17px; font-weight: 600; }
+.native-login-card .primary { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: 20px; padding: 14px 20px; border: 0; border-radius: 999px; color: white; background: #6554ff; font-size: 17px; line-height: 24px; font-weight: 600; }
 .native-login-card button:disabled { opacity: .5; cursor: default; }
-.native-passkey { display: block; width: 100%; min-height: 48px; margin-top: 8px; padding: 10px; border: 0; border-radius: 12px; color: var(--accent); background: transparent; font-size: 16px; }
+.native-passkey { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: 12px; padding: 14px 20px; border: 0; border-radius: 999px; color: var(--ink); background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); font-size: 17px; line-height: 24px; font-weight: 600; }
 .native-account { margin: 0; color: var(--muted); line-height: 1.5; overflow-wrap: anywhere; }
 .native-login-card .status { min-height: 0; margin: 16px 0 0; font-size: 14px; line-height: 1.5; font-weight: 400; }
 .native-login-card .status:empty { display: none; }
+
+.auth-heading { text-align: center; margin: 8px 0 32px; }
+.auth-icon { display: block; margin: 0 auto 20px; border-radius: 22px; box-shadow: 0 12px 32px rgba(0,160,255,.16); }
+.auth-brand { color: var(--muted); font-size: 14px; font-weight: 600; margin: 0 0 8px; }
+.auth-subtitle { color: var(--muted); font-size: 15px; margin: 12px 0 0; line-height: 1.5; }
+.auth-text-button { display: block; width: 100%; min-height: 44px; margin-top: 8px; border: 0; padding: 10px; background: transparent; color: var(--accent); font-size: 15px; }
+.login-grid { display: block; max-width: 420px; margin: 0 auto; }
+.auth-card h2 { font-size: 28px; margin: 0 0 24px; text-align: center; }
+.auth-card .primary, .auth-card .secondary { width: 100%; min-height: 52px; border-radius: 999px; line-height: 24px; font-size: 17px; }
+.auth-card .secondary { color: var(--ink); background: var(--surface); border-color: var(--line); }
+.auth-card #registration-toggle { border: 0; background: transparent; color: var(--accent); box-shadow: none; }
+body:has(#login-view:not([hidden])) .site-header { justify-content: center; padding: 16px 0 28px; }
+body:has(#login-view:not([hidden])) .brand-mark { width: 64px; height: 64px; padding: 0; border-radius: 16px; }
+.native-login-card .native-account { text-align: center; margin-bottom: 16px; }
+${accountSecurityCSS}
 @media (prefers-color-scheme: dark) {
   body.native-auth-page { --paper: #000; --surface: #1c1c1e; --ink: #fff; --muted: #98989e; --line: rgba(84,84,88,.65); --accent: #a59aff; --urgent: #ff453a; }
 }`;
@@ -23481,6 +23765,7 @@ var compareActionRecordsSource = compareActionRecords.toString();
 var compareDeadlineRecordsSource = compareDeadlineRecords.toString();
 var webJS = String.raw`(() => {
   'use strict';
+  ${accountSecurityJS}
   const effectiveDeadline = ${effectiveDeadlineSource};
   const formatCountdown = ${formatCountdownSource};
   const visibleRecord = ${visibleRecordSource};
@@ -23491,7 +23776,7 @@ var webJS = String.raw`(() => {
   const actionKinds = new Set(['PROJECT', 'TASK', 'MILESTONE', 'REMINDER']);
   const kindNames = { PROJECT: '行动组', TASK: '行动', MILESTONE: '里程碑', REMINDER: '提醒', DEADLINE: 'DDL' };
   const statusNames = { PLANNED: '计划中', ACTIVE: '进行中', WAITING: '等待中', PAUSED: '已暂停', COMPLETED: '已完成', TODO: '待行动', IN_PROGRESS: '进行中', DONE: '已完成', CANCELLED: '已取消', OPEN: '待处理' };
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 16–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
+  const errorNames = { SECOND_FACTOR_REQUIRED: '请输入「密码」中的验证码或恢复码。', INVALID_SECOND_FACTOR: '验证码或恢复码不正确，请重试。', INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 8–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '会话已失效，请重新登录。', INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。', INVALID_RECOVERY_TOKEN: '一次性恢复链接无效或已经过期。', PASSKEY_LIMIT: '此账号已达到通行密钥数量上限。', PASSKEY_EXISTS: '这枚通行密钥已经注册。', RATE_LIMITED: '尝试次数过多，请稍后再试。' };
   const byID = id => document.getElementById(id);
   function saved(key) { try { return sessionStorage.getItem(key) || ''; } catch { return ''; } }
   function save(key, value) { try { if (value) sessionStorage.setItem(key, value); else sessionStorage.removeItem(key); } catch {} }
@@ -23544,6 +23829,7 @@ var webJS = String.raw`(() => {
     return envelope && envelope.data !== undefined ? envelope.data : envelope;
   }
   function clearSession() {
+    security.reset();
     state.token = ''; state.account = ''; state.displayName = ''; state.workspace = null; state.revision = null;
     save('gw-session', ''); save('gw-account', ''); save('gw-display-name', '');
   }
@@ -23551,6 +23837,7 @@ var webJS = String.raw`(() => {
     if (!session || typeof session.accessToken !== 'string' || !session.accessToken) throw new Error('服务器没有返回有效会话。');
     state.token = session.accessToken; state.account = session.account || ''; state.displayName = session.displayName || '';
     save('gw-session', state.token); save('gw-account', state.account); save('gw-display-name', state.displayName);
+    security.reset(); security.refresh();
   }
   function recoveryFromLocation() {
     const parameters = new URLSearchParams(location.hash.startsWith('#') ? location.hash.slice(1) : location.hash);
@@ -23564,6 +23851,7 @@ var webJS = String.raw`(() => {
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
     byID('recovery-view').hidden = true; byID('login-options').hidden = false;
     setMessage(byID('login-status'), message || '', error); byID('password').value = '';
+    byID('login-code-field').hidden = true; byID('login-code').value = '';
   }
   function showRecovery(message, error) {
     byID('workspace-view').hidden = true; byID('login-view').hidden = false;
@@ -23641,12 +23929,13 @@ var webJS = String.raw`(() => {
   function setRegistration(value) {
     if (state.authBusy) return;
     state.registration = value;
-    byID('login-title').textContent = value ? '创建你的工作空间' : '回到你的工作空间';
-    byID('password-submit').textContent = value ? '注册账号' : '使用密码登录';
+    byID('login-title').textContent = value ? '创建账号' : '登录工作坊';
+    byID('login-code-field').hidden = true; byID('login-code').value = '';
+    byID('password-submit').textContent = value ? '注册账号' : '登录';
     byID('registration-toggle').textContent = value ? '已有账号？登录' : '注册账号';
     byID('password').autocomplete = value ? 'new-password' : 'current-password';
-    byID('password').minLength = value ? 16 : 0;
-    byID('password').placeholder = value ? '至少 16 个字符' : '';
+    byID('password').minLength = value ? 8 : 0;
+    byID('password').placeholder = value ? '至少 8 个字符' : '';
     byID('confirm-password-label').hidden = !value;
     byID('confirm-password').hidden = !value;
     byID('confirm-password').disabled = !value;
@@ -23657,24 +23946,40 @@ var webJS = String.raw`(() => {
   }
   function setAuthBusy(value) {
     state.authBusy = value;
-    for (const id of ['email', 'password', 'password-submit', 'registration-toggle']) byID(id).disabled = value;
+    for (const id of ['email', 'password', 'login-code', 'password-submit', 'registration-toggle']) byID(id).disabled = value;
     byID('confirm-password').disabled = value || !state.registration;
     byID('passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
   }
+  const security = installAccountSecurity({ api: (path, body, method = 'POST') => api(path, { body, method }),
+    onBusy: value => { byID('logout').disabled = value; byID('register-passkey').disabled = value || !window.PublicKeyCredential; } });
   async function passwordLogin(event) {
     event.preventDefault();
     if (state.authBusy) return;
-    const email = byID('email').value.trim(), password = byID('password').value;
-    if (state.registration && password !== byID('confirm-password').value) {
+    const email = byID('email').value.trim(), password = byID('password').value, registering = state.registration;
+    if (registering && password !== byID('confirm-password').value) {
       setMessage(byID('login-status'), '两次输入的密码不一致。', true); return;
     }
-    setAuthBusy(true);
-    setMessage(byID('login-status'), state.registration ? '正在注册…' : '正在登录…');
+    setAuthBusy(true); let needsCode = false;
+    setMessage(byID('login-status'), registering ? '正在注册…' : '正在登录…');
     try {
-      const session = await api(state.registration ? 'accounts' : 'session', { method: 'POST', authenticated: false, body: { email, password } });
+      const code = byID('login-code').value.trim();
+      const session = await api(registering ? 'accounts' : 'session', { method: 'POST', authenticated: false, body: { email, password, ...(!registering && code ? { code } : {}) } });
       beginSession(session); await loadWorkspace(false);
-    } catch (error) { clearSession(); setMessage(byID('login-status'), error.message, true); }
-    finally { setAuthBusy(false); byID('password').value = ''; byID('confirm-password').value = ''; }
+      if (registering && state.token) {
+        setMessage(byID('app-status'), '账号已创建，可添加通行密钥，或在账户安全中设置验证码。');
+        byID('register-passkey').focus();
+      }
+    } catch (error) {
+      needsCode = ['SECOND_FACTOR_REQUIRED', 'INVALID_SECOND_FACTOR'].includes(error.code);
+      clearSession();
+      if (needsCode) { byID('login-code-field').hidden = false; byID('login-code').value = ''; }
+      setMessage(byID('login-status'), error.message, true);
+    } finally {
+      setAuthBusy(false);
+      if (!needsCode) { byID('password').value = ''; byID('login-code').value = ''; }
+      else byID('login-code').focus();
+      byID('confirm-password').value = '';
+    }
   }
   async function passkeyLogin() {
     if (state.authBusy) return; setAuthBusy(true); setMessage(byID('login-status'), '正在请求通行密钥…');
@@ -23689,7 +23994,7 @@ var webJS = String.raw`(() => {
     finally { setAuthBusy(false); }
   }
   async function registerPasskey() {
-    const button = byID('register-passkey'); button.disabled = true; setMessage(byID('app-status'), '正在创建通行密钥…');
+    const button = byID('register-passkey'); button.disabled = true; byID('security-panel').inert = true; setMessage(byID('app-status'), '正在创建通行密钥…');
     try {
       if (!window.PublicKeyCredential || !navigator.credentials) throw new Error('此浏览器不支持通行密钥。');
       const challenge = await api('passkeys/register/options', { method: 'POST', body: {} });
@@ -23698,7 +24003,7 @@ var webJS = String.raw`(() => {
       await api('passkeys/register/verify', { method: 'POST', body: { challengeID: challenge.challengeID, credential: registrationCredential(credential) } });
       setMessage(byID('app-status'), '新通行密钥已保存，可以在下次登录时使用。');
     } catch (error) { setMessage(byID('app-status'), error.name === 'NotAllowedError' ? '已取消创建通行密钥。' : error.message, true); }
-    finally { button.disabled = false; }
+    finally { button.disabled = false; byID('security-panel').inert = false; }
   }
   async function recoverPasskey() {
     const button = byID('recover-passkey'); button.disabled = true; setMessage(byID('recovery-status'), '正在准备系统验证…');
@@ -23727,6 +24032,12 @@ var webJS = String.raw`(() => {
     byID('actions-tab').tabIndex = deadlines ? -1 : 0; byID('deadlines-tab').tabIndex = deadlines ? 0 : -1;
     byID('actions-panel').hidden = deadlines; byID('deadlines-panel').hidden = !deadlines; save('gw-view', view);
   }
+  byID('recovery-code-toggle').addEventListener('click', () => {
+    const input = byID('login-code'), recovery = input.inputMode !== 'text';
+    input.inputMode = recovery ? 'text' : 'numeric'; input.autocomplete = recovery ? 'off' : 'one-time-code';
+    input.placeholder = recovery ? 'XXXX-XXXX-XXXX-XXXX' : '6 位验证码'; input.value = '';
+    byID('recovery-code-toggle').textContent = recovery ? '使用验证码' : '使用恢复码'; input.focus();
+  });
   byID('registration-toggle').addEventListener('click', () => setRegistration(!state.registration));
   byID('password-form').addEventListener('submit', passwordLogin); byID('passkey-login').addEventListener('click', passkeyLogin);
   byID('recover-passkey').addEventListener('click', recoverPasskey);
@@ -23755,15 +24066,16 @@ var webJS = String.raw`(() => {
 })();`;
 var nativeLoginJS = String.raw`(() => {
   'use strict';
+  ${accountSecurityJS}
   const byID = id => document.getElementById(id);
   const parameters = new URLSearchParams(location.search);
   const codeChallenge = parameters.get('code_challenge'), requestState = parameters.get('state');
   const valid = /^[A-Za-z0-9_-]{43}$/;
-  const errorNames = { INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 16–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '验证已失效，请重新登录。',
+  const errorNames = { SECOND_FACTOR_REQUIRED: '请输入「密码」中的验证码或恢复码。', INVALID_SECOND_FACTOR: '验证码或恢复码不正确，请重试。', INVALID_CREDENTIALS: '账号或密码不正确。', INVALID_EMAIL: '请输入有效的邮箱。', INVALID_PASSWORD: '密码需要 8–1024 个字符。', ACCOUNT_EXISTS: '此邮箱已注册，请登录。', INVALID_REGISTRATION: '请检查邮箱和密码。', UNAUTHENTICATED: '验证已失效，请重新登录。',
     INVALID_PASSKEY: '通行密钥验证失败。', INVALID_CHALLENGE: '验证请求已过期，请重试。',
     INVALID_WEB_AUTH_REQUEST: '登录请求无效，请返回 App 重新开始。', INVALID_ORIGIN: '请从工作坊打开此登录页。',
     RATE_LIMITED: '尝试次数过多，请稍后再试。' };
-  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0, registration = false;
+  let temporaryToken = '', callbackURL = '', busy = false, expiresAt = 0, registration = false, pendingSession = null, securityBusy = false, disposed = false;
   function message(text, error = false) { byID('native-login-status').textContent = text; byID('native-login-status').classList.toggle('error', error); }
   function setBusy(value) {
     busy = value;
@@ -23771,6 +24083,7 @@ var nativeLoginJS = String.raw`(() => {
     byID('native-password-login').textContent = value ? (registration ? '正在注册…' : '正在登录…') : (registration ? '注册账号' : '登录');
     byID('native-email').disabled = value;
     byID('native-password').disabled = value;
+    byID('native-code').disabled = value;
     byID('native-confirm-password').disabled = value || !registration;
     byID('native-registration-toggle').disabled = value;
     byID('native-passkey-login').disabled = value || !window.PublicKeyCredential || !navigator.credentials;
@@ -23780,7 +24093,7 @@ var nativeLoginJS = String.raw`(() => {
       headers: { Accept: 'application/json', ...(body === undefined ? {} : { 'Content-Type': 'application/json' }), ...(token ? { Authorization: 'Bearer ' + token } : {}) },
       body: body === undefined ? undefined : JSON.stringify(body) });
     let envelope; try { envelope = await response.json(); } catch {}
-    if (!response.ok) throw new Error(errorNames[envelope?.error?.code] || '连接暂时不可用，请重试。');
+    if (!response.ok) { const error = new Error(errorNames[envelope?.error?.code] || '连接暂时不可用，请重试。'); error.code = envelope?.error?.code; throw error; }
     return envelope?.data;
   }
   function bytes(value) {
@@ -23803,11 +24116,13 @@ var nativeLoginJS = String.raw`(() => {
   }
   async function authorize(session) {
     if (!session || typeof session.accessToken !== 'string' || !session.accessToken) throw new Error('服务器未返回有效会话。');
+    if (disposed) { await api('session', undefined, session.accessToken, 'DELETE', true).catch(() => {}); throw new Error('登录页面已关闭。'); }
     temporaryToken = session.accessToken;
     const result = await api('web-auth/authorize', { codeChallenge, state: requestState }, temporaryToken);
     // The server revokes the browser bearer in the same transaction that issues
     // this short-lived code. Never put the bearer into a URL or browser storage.
     temporaryToken = '';
+    if (disposed) throw new Error('登录页面已关闭。');
     const callback = new URL(result.callbackURL);
     if (callback.protocol !== 'guangyi-workspace:' || callback.hostname !== 'auth' || callback.pathname !== '/callback' ||
       callback.username || callback.password || callback.port || callback.hash ||
@@ -23816,15 +24131,43 @@ var nativeLoginJS = String.raw`(() => {
     callbackURL = callback.href; expiresAt = Date.now() + 90000;
     byID('native-login-options').hidden = true; byID('native-login-complete').hidden = false;
     byID('native-login-title').textContent = '已登录';
+    byID('native-login-subtitle').textContent = '准备好了，继续你的工作坊。';
     byID('native-account').textContent = session.account || session.displayName || '';
     message('');
     byID('native-return').focus();
   }
-  async function login(work) {
-    if (busy) return; setBusy(true); message('');
-    try { await authorize(await work()); }
-    catch (error) { message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true); }
-    finally { byID('native-password').value = ''; byID('native-confirm-password').value = ''; await clearTemporarySession(); setBusy(false); }
+  const security = installAccountSecurity({ api: (path, body, method = 'POST') => api(path, body, temporaryToken, method),
+    onBusy: value => { securityBusy = value; byID('native-return').disabled = value || busy; byID('native-add-passkey').disabled = value || busy || !window.PublicKeyCredential; } });
+  async function showEnrollment(session) {
+    if (!session?.accessToken) throw new Error('服务器未返回有效会话。');
+    temporaryToken = session.accessToken; pendingSession = session;
+    byID('native-login-options').hidden = true; byID('native-login-complete').hidden = false;
+    byID('native-login-title').textContent = registration ? '账号已创建' : '已登录';
+    byID('native-login-subtitle').textContent = '添加通行密钥，下次登录更轻松。';
+    byID('native-account').textContent = session.account;
+    byID('native-add-passkey').hidden = false; byID('security-panel').hidden = false;
+    await security.refresh();
+  }
+  async function login(work, offerSecurity = false) {
+    if (busy) return; setBusy(true); message(''); let needsCode = false;
+    try {
+      const session = await work();
+      if (disposed) { if (session?.accessToken) await api('session', undefined, session.accessToken, 'DELETE', true).catch(() => {}); return; }
+      if (offerSecurity) await showEnrollment(session);
+      else { byID('native-add-passkey').hidden = true; byID('security-panel').hidden = true; await authorize(session); }
+    } catch (error) {
+      needsCode = ['SECOND_FACTOR_REQUIRED', 'INVALID_SECOND_FACTOR'].includes(error.code);
+      if (needsCode) { byID('native-code-field').hidden = false; byID('native-recovery-code-toggle').hidden = false; byID('native-code').value = ''; }
+      message(error.name === 'NotAllowedError' ? '已取消登录。' : error.message, true);
+    } finally {
+      if (!needsCode) { byID('native-password').value = ''; byID('native-code').value = ''; }
+      byID('native-confirm-password').value = '';
+      if (!pendingSession) await clearTemporarySession();
+      setBusy(false);
+      byID('native-return').disabled = securityBusy;
+      byID('native-add-passkey').disabled = securityBusy || !window.PublicKeyCredential;
+      if (needsCode) byID('native-code').focus();
+    }
   }
   byID('native-password-form').addEventListener('submit', event => {
     event.preventDefault();
@@ -23832,16 +24175,24 @@ var nativeLoginJS = String.raw`(() => {
     if (registration && password !== byID('native-confirm-password').value) {
       message('两次输入的密码不一致。', true); return;
     }
-    byID('native-password').value = ''; byID('native-confirm-password').value = '';
-    login(() => api(registration ? 'accounts' : 'session', { email, password }));
+    const code = byID('native-code').value.trim();
+    login(() => api(registration ? 'accounts' : 'session', { email, password, ...(!registration && code ? { code } : {}) }), true);
+  });
+  byID('native-recovery-code-toggle').addEventListener('click', () => {
+    const input = byID('native-code'), recovery = input.inputMode !== 'text';
+    input.inputMode = recovery ? 'text' : 'numeric'; input.autocomplete = recovery ? 'off' : 'one-time-code';
+    input.placeholder = recovery ? 'XXXX-XXXX-XXXX-XXXX' : '6 位验证码'; input.value = '';
+    byID('native-recovery-code-toggle').textContent = recovery ? '使用验证码' : '使用恢复码'; input.focus();
   });
   byID('native-registration-toggle').addEventListener('click', () => {
     if (busy) return;
     registration = !registration;
-    byID('native-login-title').textContent = registration ? '注册账号' : '登录';
+    byID('native-login-title').textContent = registration ? '开始你的工作坊' : '欢迎回来';
+    byID('native-login-subtitle').textContent = registration ? '从这里，开始有条理的每一天。' : '让每一步，都有条理。';
+    byID('native-code-field').hidden = true; byID('native-recovery-code-toggle').hidden = true; byID('native-code').value = '';
     byID('native-password').autocomplete = registration ? 'new-password' : 'current-password';
-    byID('native-password').minLength = registration ? 16 : 0;
-    byID('native-password').placeholder = registration ? '至少 16 个字符' : '';
+    byID('native-password').minLength = registration ? 8 : 0;
+    byID('native-password').placeholder = registration ? '至少 8 个字符' : '';
     byID('native-confirm-field').hidden = !registration;
     byID('native-confirm-password').required = registration;
     byID('native-passkey-login').hidden = registration;
@@ -23858,18 +24209,44 @@ var nativeLoginJS = String.raw`(() => {
     if (!credential) throw new Error('未取得通行密钥，请重试。');
     return api('passkeys/login/verify', { challengeID: challenge.challengeID, credential: assertion(credential) });
   }));
-  byID('native-return').addEventListener('click', () => {
+  byID('native-add-passkey').addEventListener('click', async () => {
+    if (busy || securityBusy || !temporaryToken) return;
+    busy = true; byID('security-panel').inert = true; byID('native-add-passkey').disabled = true; byID('native-return').disabled = true; message('');
+    try {
+      const challenge = await api('passkeys/register/options', {}, temporaryToken);
+      const options = { ...challenge.options, challenge: bytes(challenge.options.challenge), user: { ...challenge.options.user, id: bytes(challenge.options.user.id) },
+        excludeCredentials: (challenge.options.excludeCredentials || []).map(value => ({ ...value, id: bytes(value.id) })) };
+      const credential = await navigator.credentials.create({ publicKey: options });
+      if (!credential) throw new Error('未创建通行密钥，请重试。');
+      const proof = { id: credential.id, rawId: base64url(credential.rawId), type: credential.type,
+        authenticatorAttachment: credential.authenticatorAttachment || undefined, clientExtensionResults: credential.getClientExtensionResults(),
+        response: { clientDataJSON: base64url(credential.response.clientDataJSON), attestationObject: base64url(credential.response.attestationObject),
+          transports: typeof credential.response.getTransports === 'function' ? credential.response.getTransports() : undefined } };
+      await api('passkeys/register/verify', { challengeID: challenge.challengeID, credential: proof }, temporaryToken);
+      byID('native-add-passkey').textContent = '通行密钥已添加'; message('下次可使用通行密钥登录。');
+    } catch (error) { message(error.name === 'NotAllowedError' ? '已取消添加，可继续完成注册。' : error.message, true); }
+    finally { busy = false; byID('security-panel').inert = false; byID('native-add-passkey').disabled = securityBusy; byID('native-return').disabled = securityBusy; }
+  });
+  byID('native-return').addEventListener('click', async () => {
+    if (busy || securityBusy) return;
+    if (pendingSession) {
+      busy = true; byID('native-return').disabled = true;
+      try { await authorize(pendingSession); pendingSession = null; security.reset(); }
+      catch (error) { message(error.message, true); return; }
+      finally { busy = false; byID('native-return').disabled = securityBusy; }
+    }
     if (!callbackURL || Date.now() >= expiresAt) { callbackURL = ''; byID('native-return').disabled = true; message('登录已过期，请关闭后重试。', true); return; }
     location.assign(callbackURL);
   });
-  window.addEventListener('pagehide', () => { byID('native-password').value = ''; byID('native-confirm-password').value = ''; clearTemporarySession(); });
+  window.addEventListener('pagehide', () => { disposed = true; byID('native-password').value = ''; byID('native-confirm-password').value = ''; byID('native-code').value = ''; security.reset(); pendingSession = null; clearTemporarySession(); });
+  window.addEventListener('pageshow', event => { if (event.persisted) location.reload(); });
   setBusy(false);
   if (parameters.get('code_challenge_method') !== 'S256' || !valid.test(codeChallenge || '') || !valid.test(requestState || '') ||
     [...parameters.keys()].length !== 3 || ['code_challenge', 'code_challenge_method', 'state'].some(key => parameters.getAll(key).length !== 1)) {
     byID('native-login-options').hidden = true; message('登录请求无效，请返回 App 重新开始。', true);
   }
 })();`;
-var favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="18" fill="#315b4c"/><path d="M20 14h24v7c0 7-4 10-8 12 4 2 8 5 8 12v6H20v-6c0-7 4-10 8-12-4-2-8-5-8-12zm6 7c0 5 3 7 6 9 3-2 6-4 6-9zm6 15c-3 2-6 4-6 9h12c0-5-3-7-6-9z" fill="#fff"/></svg>`;
+var favicon = String.raw`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><defs><linearGradient id="b" x2="0" y2="1"><stop stop-color="#00fdff"/><stop offset="1" stop-color="#0096ff"/></linearGradient></defs><rect width="120" height="120" rx="28" fill="url(#b)"/><g fill="white"><rect x="21" y="43" width="20" height="52" rx="10"/><rect x="51" y="24" width="20" height="71" rx="10"/><rect x="81" y="53" width="20" height="42" rx="10"/></g></svg>`;
 var headers = Object.freeze({
   "Cache-Control": "no-store",
   "Content-Security-Policy": "default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'; manifest-src 'self'",
@@ -23881,6 +24258,7 @@ var headers = Object.freeze({
   "X-Frame-Options": "DENY"
 });
 var assets = /* @__PURE__ */ new Map([
+  ["/app-icon.png", { type: "image/png", body: brandIcon }],
   ["/", { type: "text/html; charset=utf-8", body: webHTML }],
   ["/index.html", { type: "text/html; charset=utf-8", body: webHTML }],
   ["/native-login", { type: "text/html; charset=utf-8", body: nativeLoginHTML }],
@@ -23902,6 +24280,39 @@ try {
 }
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = "unversioned";
 var sha = (value) => createHash("sha256").update(value).digest("hex");
+var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+function base32Encode(bytes) {
+  let bits = 0, value = 0, encoded = "";
+  for (const byte of bytes) {
+    value = value << 8 | byte;
+    bits += 8;
+    while (bits >= 5) {
+      encoded += base32Alphabet[value >>> bits - 5 & 31];
+      bits -= 5;
+    }
+  }
+  if (bits) encoded += base32Alphabet[value << 5 - bits & 31];
+  return encoded;
+}
+function totpCode(secret, now = Date.now()) {
+  let bits = 0, value = 0;
+  const bytes = [];
+  for (const char of secret) {
+    const digit = base32Alphabet.indexOf(char);
+    if (digit < 0) throw new Error("INVALID_TOTP_SECRET");
+    value = value << 5 | digit;
+    bits += 5;
+    if (bits >= 8) {
+      bytes.push(value >>> bits - 8 & 255);
+      bits -= 8;
+    }
+  }
+  const counter = Buffer.alloc(8);
+  counter.writeBigUInt64BE(BigInt(Math.floor(now / 3e4)));
+  const digest2 = createHmac("sha1", Buffer.from(bytes)).update(counter).digest();
+  const offset = digest2[digest2.length - 1] & 15;
+  return String((digest2.readUInt32BE(offset) & 2147483647) % 1e6).padStart(6, "0");
+}
 var nativeCallbackURL = "guangyi-workspace://auth/callback";
 var webAuthValue = /^[A-Za-z0-9_-]{43}$/;
 var pkceVerifier = /^[A-Za-z0-9._~-]{43,128}$/;
@@ -24036,6 +24447,42 @@ function createNativeServer(configuration) {
   passkeyRecoveryTable(db);
   const passkeyNow = configuration.passkeyNow ?? Date.now;
   const webAuthNow = configuration.webAuthNow ?? Date.now;
+  const totpNow = configuration.totpNow ?? Date.now;
+  db.exec(`CREATE TABLE IF NOT EXISTS totp_credentials(user_id INTEGER PRIMARY KEY REFERENCES users(id),secret TEXT NOT NULL,last_step INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS totp_pending(user_id INTEGER PRIMARY KEY REFERENCES users(id),secret TEXT NOT NULL,expires INTEGER NOT NULL);
+    CREATE TABLE IF NOT EXISTS totp_recovery_codes(user_id INTEGER NOT NULL REFERENCES users(id),hash TEXT NOT NULL,PRIMARY KEY(user_id,hash));`);
+  function totpStep(secret, code) {
+    if (typeof code !== "string" || !/^[0-9]{6}$/.test(code)) return null;
+    const now = totpNow(), current = Math.floor(now / 3e4);
+    for (const step of [current, current - 1, current + 1]) {
+      if (step >= 0 && timingSafeEqual(Buffer.from(totpCode(secret, step * 3e4)), Buffer.from(code))) return step;
+    }
+    return null;
+  }
+  function consumeSecondFactor(userID, code) {
+    const credential = db.prepare("SELECT secret,last_step FROM totp_credentials WHERE user_id=?").get(userID);
+    if (!credential) return false;
+    const step = totpStep(credential.secret, code);
+    if (step !== null && step > credential.last_step) {
+      return db.prepare("UPDATE totp_credentials SET last_step=? WHERE user_id=? AND last_step<?").run(step, userID, step).changes === 1;
+    }
+    if (typeof code !== "string" || !/^[0-9a-f]{4}(?:-[0-9a-f]{4}){3}$/i.test(code)) return false;
+    return db.prepare("DELETE FROM totp_recovery_codes WHERE user_id=? AND hash=?").run(userID, sha(code.toUpperCase())).changes === 1;
+  }
+  function totpRateLimit(userID) {
+    const key = "totp:" + userID, now = Date.now(), prior = attempts.get(key);
+    const counter = prior && now - prior.start < 6e5 ? prior : { start: now, count: 0 };
+    attempts.set(key, counter);
+    if (++counter.count > 20) throw new APIError(429, "RATE_LIMITED");
+  }
+  async function totpBody(request, withCode = true) {
+    sameWebOrigin(request);
+    requireJSON(request);
+    const value = await body(request, 512);
+    if (!value || Array.isArray(value) || typeof value !== "object" || (withCode ? Object.keys(value).length !== 1 || typeof value.code !== "string" || value.code.length > 32 : Object.keys(value).length !== 0))
+      throw new APIError(400, "INVALID_TOTP_REQUEST");
+    return value;
+  }
   db.exec(`CREATE TABLE IF NOT EXISTS web_auth_codes(
     hash TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),challenge TEXT NOT NULL,state TEXT NOT NULL,expires INTEGER NOT NULL);`);
   const attempts = /* @__PURE__ */ new Map();
@@ -24274,7 +24721,7 @@ function createNativeServer(configuration) {
         const local = account.slice(0, account.indexOf("@"));
         if (account.length > 254 || local.length > 64 || local.startsWith(".") || local.endsWith(".") || local.includes("..") || !/^[a-z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(account))
           throw new APIError(422, "INVALID_EMAIL");
-        if (typeof value.password !== "string" || value.password.length < 16 || value.password.length > 1024)
+        if (typeof value.password !== "string" || value.password.length < 8 || value.password.length > 1024)
           throw new APIError(422, "INVALID_PASSWORD");
         const name = local;
         db.exec("BEGIN IMMEDIATE");
@@ -24299,11 +24746,25 @@ function createNativeServer(configuration) {
         if (++counter.count > 20) throw new APIError(429, "RATE_LIMITED");
         attempts.set(ip, counter);
         const value = await body(request, 8192);
-        if (typeof value.email !== "string" || typeof value.password !== "string" || value.password.length > 1024) throw new APIError(401, "INVALID_CREDENTIALS");
+        if (!value || Array.isArray(value) || typeof value.email !== "string" || typeof value.password !== "string" || value.password.length > 1024) throw new APIError(401, "INVALID_CREDENTIALS");
         const user = db.prepare("SELECT * FROM users WHERE email=?").get(value.email.trim().toLowerCase());
         const salt = user?.salt ?? "invalid-user-constant-salt";
         const candidate = scryptSync(value.password, salt, 64);
         if (!user || !timingSafeEqual(candidate, user.hash)) throw new APIError(401, "INVALID_CREDENTIALS");
+        if (db.prepare("SELECT user_id FROM totp_credentials WHERE user_id=?").get(user.id)) {
+          if (value.code === void 0 || value.code === "") throw new APIError(401, "SECOND_FACTOR_REQUIRED");
+          totpRateLimit(user.id);
+          db.exec("BEGIN IMMEDIATE");
+          try {
+            if (!consumeSecondFactor(user.id, value.code)) throw new APIError(401, "INVALID_SECOND_FACTOR");
+            const session = createSession(user);
+            db.exec("COMMIT");
+            return respond(response, 200, { data: session });
+          } catch (error) {
+            db.exec("ROLLBACK");
+            throw error;
+          }
+        }
         return respond(response, 200, { data: createSession(user) });
       }
       if (path === "/api/native/v1/web-auth/token" && request.method === "POST") {
@@ -24353,6 +24814,59 @@ function createNativeServer(configuration) {
         callback.searchParams.set("code", code);
         callback.searchParams.set("state", value.state);
         return respond(response, 200, { data: { callbackURL: callback.href } });
+      }
+      if (path === "/api/native/v1/totp" && request.method === "GET") {
+        return respond(response, 200, { data: { enabled: !!db.prepare("SELECT user_id FROM totp_credentials WHERE user_id=?").get(userID) } });
+      }
+      if (path === "/api/native/v1/totp/setup" && request.method === "POST") {
+        await totpBody(request, false);
+        totpRateLimit(userID);
+        if (db.prepare("SELECT user_id FROM totp_credentials WHERE user_id=?").get(userID)) throw new APIError(409, "TOTP_ALREADY_ENABLED");
+        const secret = base32Encode(randomBytes(20)), now = totpNow();
+        db.prepare("DELETE FROM totp_pending WHERE expires<=?").run(now);
+        db.prepare("INSERT OR REPLACE INTO totp_pending VALUES(?,?,?)").run(userID, secret, now + 6e5);
+        const owner = db.prepare("SELECT email FROM users WHERE id=?").get(userID);
+        const query = new URLSearchParams({ secret, issuer: rpID, algorithm: "SHA1", digits: "6", period: "30" });
+        const uri = "otpauth://totp/" + encodeURIComponent("\u5DE5\u4F5C\u574A:" + owner.email) + "?" + query;
+        return respond(response, 200, { data: { secret, uri, appleURI: uri.replace("otpauth:", "apple-otpauth:") } });
+      }
+      if (path === "/api/native/v1/totp/enable" && request.method === "POST") {
+        const value = await totpBody(request);
+        totpRateLimit(userID);
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          if (db.prepare("SELECT user_id FROM totp_credentials WHERE user_id=?").get(userID)) throw new APIError(409, "TOTP_ALREADY_ENABLED");
+          const pending = db.prepare("SELECT * FROM totp_pending WHERE user_id=?").get(userID);
+          if (!pending || pending.expires <= totpNow()) throw new APIError(410, "TOTP_SETUP_EXPIRED");
+          const step = totpStep(pending.secret, value.code);
+          if (step === null) throw new APIError(401, "INVALID_SECOND_FACTOR");
+          const recoveryCodes = Array.from({ length: 10 }, () => randomBytes(8).toString("hex").toUpperCase().match(/.{4}/g).join("-"));
+          db.prepare("INSERT INTO totp_credentials VALUES(?,?,?)").run(userID, pending.secret, step);
+          db.prepare("DELETE FROM totp_recovery_codes WHERE user_id=?").run(userID);
+          for (const code of recoveryCodes) db.prepare("INSERT INTO totp_recovery_codes VALUES(?,?)").run(userID, sha(code));
+          db.prepare("DELETE FROM totp_pending WHERE user_id=?").run(userID);
+          db.exec("COMMIT");
+          return respond(response, 200, { data: { recoveryCodes } });
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
+      }
+      if (path === "/api/native/v1/totp/disable" && request.method === "POST") {
+        const value = await totpBody(request);
+        totpRateLimit(userID);
+        db.exec("BEGIN IMMEDIATE");
+        try {
+          if (!consumeSecondFactor(userID, value.code)) throw new APIError(401, "INVALID_SECOND_FACTOR");
+          db.prepare("DELETE FROM totp_credentials WHERE user_id=?").run(userID);
+          db.prepare("DELETE FROM totp_pending WHERE user_id=?").run(userID);
+          db.prepare("DELETE FROM totp_recovery_codes WHERE user_id=?").run(userID);
+          db.exec("COMMIT");
+          return respond(response, 200, { data: { enabled: false } });
+        } catch (error) {
+          db.exec("ROLLBACK");
+          throw error;
+        }
       }
       if (path === "/api/native/v1/passkeys/register/options" && request.method === "POST") {
         passkeyRateLimit(request);
@@ -24435,6 +24949,7 @@ function createNativeServer(configuration) {
     db.prepare("DELETE FROM sessions WHERE expires<?").run(now);
     db.prepare("DELETE FROM passkey_recoveries WHERE expires<=?").run(now);
     db.prepare("DELETE FROM web_auth_codes WHERE expires<=?").run(webAuthNow());
+    db.prepare("DELETE FROM totp_pending WHERE expires<=?").run(totpNow());
     for (const [ip, value] of attempts) if (now - value.start > 6e5) attempts.delete(ip);
     if (!sendPush || sweeping) return { accepted: 0 };
     sweeping = true;
@@ -24592,6 +25107,7 @@ export {
   effectiveDeadline,
   formatCountdown,
   issuePasskeyRecovery,
+  totpCode,
   validateSnapshot,
   visibleRecord
 };
