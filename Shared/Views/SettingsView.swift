@@ -9,32 +9,24 @@ import UIKit
 
 struct SettingsView: View {
     @Environment(WorkspaceStore.self) private var store
-    @State private var name = ""
-    @State private var zone = "Asia/Shanghai"
-    @State private var photo: PhotosPickerItem?
     @State private var showExport = false
     @State private var showImport = false
     @AppStorage("hapticsEnabled") private var hapticsEnabled = true
     @AppStorage("appearance") private var appearance = "system"
     var body: some View {
         Form {
-            Section("个人资料") {
-                HStack(spacing: 16) {
-                    AvatarView(data: store.state.profile.avatar).frame(width: 64, height: 64).clipShape(Circle())
-                    PhotosPicker(selection: $photo, matching: .images) { Label("选择头像", systemImage: "person.crop.circle") }
-                    if store.state.profile.avatar != nil { Button("移除") { store.perform { try store.commit { $0.profile.avatar = nil } } } }
+            Section {
+                NavigationLink { BackendSettingsView() } label: {
+                    HStack(spacing: 14) {
+                        AvatarView(data: store.state.profile.avatar).frame(width: 56, height: 56).clipShape(Circle())
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(store.state.profile.name).font(.title3.weight(.semibold)).foregroundStyle(.primary)
+                            Text(store.backend.signedIn ? store.backend.accountName : "登录工作坊，同步你的内容")
+                                .font(.subheadline).foregroundStyle(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }.padding(.vertical, 6)
                 }
-                TextField("姓名", text: $name)
-                Picker("默认时区", selection: $zone) {
-                    ForEach(Array(Set([zone, "Asia/Shanghai", "Asia/Tokyo", "Europe/London", "America/New_York", TimeZone.current.identifier])).sorted(), id: \.self) { Text($0).tag($0) }
-                }
-                Button("保存资料", systemImage: "checkmark") {
-                    store.perform {
-                        guard !name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { throw WorkspaceFailure.invalid("请填写姓名。") }
-                        try store.commit { $0.profile.name = name.trimmingCharacters(in: .whitespacesAndNewlines); $0.profile.timezone = zone }
-                        store.information = "个人资料已保存。"
-                    }
-                }.buttonStyle(WorkspacePrimaryButtonStyle())
             }
             Section("外观") {
                 Picker("主题", selection: $appearance) { Text("跟随系统").tag("system"); Text("浅色").tag("light"); Text("深色").tag("dark") }
@@ -48,12 +40,7 @@ struct SettingsView: View {
                 LabeledContent("PDF 附件", value: "\(store.state.assets.count) 个")
                 Button("导出归档", systemImage: "square.and.arrow.up") { showExport = true }
                 Button("导入归档", systemImage: "square.and.arrow.down") { showImport = true }
-                Text("通过加密归档或 JSON 手动迁移，也可以在“登录与设备同步”中启用服务器自动同步。")
-                    .font(.caption).foregroundStyle(.secondary)
-            }
-            Section("自建服务器") {
-                NavigationLink { BackendSettingsView() } label: { Label("登录与设备同步", systemImage: "server.rack") }
-                Text("服务器地址由你提供。配置前所有功能仍可离线使用；登录凭据只保存在本机 Keychain 中。")
+                Text("备份你的内容，或从其他设备导入。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             #if os(iOS)
@@ -67,7 +54,7 @@ struct SettingsView: View {
                 LabeledContent("应用", value: "工作坊")
                 LabeledContent("英文名称", value: "WorkSpace")
                 LabeledContent("版本", value: "1.0")
-                Link("打开网页版", destination: URL(string: "https://workspace.kdfz.com.cn")!)
+                Link("打开网页版", destination: BackendService.serviceURL)
             }
         }.formStyle(.grouped).navigationTitle("设置")
             .workspaceSelectionFeedback(trigger: appearance)
@@ -76,20 +63,79 @@ struct SettingsView: View {
             .environment(\.locale, Locale(identifier: "zh_CN"))
             .environment(\.timeZone, WorkspaceDates.calendar(store.state.profile.timezone).timeZone)
             .preferredColorScheme(appearance == "light" ? .light : appearance == "dark" ? .dark : nil)
-            .onAppear { name = store.state.profile.name; zone = store.state.profile.timezone }
-            .onChange(of: photo) { _, value in
-                Task {
-                    do {
-                        if let data = try await value?.loadTransferable(type: Data.self) {
-                            guard data.count <= 5 * 1024 * 1024 else { throw WorkspaceFailure.tooLarge }
-                            let avatar = try AvatarService.normalized(data)
-                            try store.commit { $0.profile.avatar = avatar }
-                        }
-                    } catch { store.errorMessage = error.localizedDescription }
-                }
-            }
             .sheet(isPresented: $showExport) { NavigationStack { ExportArchiveView() }.nativeSheetSize() }
             .sheet(isPresented: $showImport) { NavigationStack { ImportArchiveView() }.nativeSheetSize() }
+    }
+}
+struct ProfileSettingsSection: View {
+    @Environment(WorkspaceStore.self) private var store
+    @State private var name = ""
+    @State private var zone = "Asia/Shanghai"
+    @State private var photo: PhotosPickerItem?
+    private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var hasChanges: Bool { trimmedName != store.state.profile.name || zone != store.state.profile.timezone }
+    var body: some View {
+        let avatar = store.state.profile.avatar
+        Section("个人资料") {
+            HStack(spacing: 16) {
+                PhotosPicker(selection: $photo, matching: .images) {
+                    HStack(spacing: 16) {
+                        AvatarView(data: avatar)
+                            .frame(width: 64, height: 64).clipShape(Circle())
+                            .overlay(alignment: .bottomTrailing) {
+                                Image(systemName: "camera.circle.fill").font(.title3)
+                                    .symbolRenderingMode(.palette).foregroundStyle(.white, .indigo)
+                            }
+                        Text("更换头像").font(.subheadline)
+                    }
+                }.buttonStyle(.plain).accessibilityLabel("更换头像")
+                Spacer()
+                if store.state.profile.avatar != nil {
+                    Button("移除头像", role: .destructive) { store.perform { try store.commit { $0.profile.avatar = nil } } }
+                        .buttonStyle(.borderless).font(.caption)
+                }
+            }.padding(.vertical, 4)
+            LabeledContent("姓名") { TextField("姓名", text: $name).multilineTextAlignment(.trailing).onSubmit(save) }
+            Picker("时区", selection: $zone) {
+                ForEach(Array(Set([zone, "Asia/Shanghai", "Asia/Tokyo", "Europe/London", "America/New_York", TimeZone.current.identifier])).sorted(), id: \.self) { value in
+                    Text(zoneName(value)).tag(value)
+                }
+            }
+            if hasChanges {
+                Button("保存修改", systemImage: "checkmark", action: save).disabled(trimmedName.isEmpty)
+            }
+        }
+        .onAppear { name = store.state.profile.name; zone = store.state.profile.timezone }
+        .onChange(of: store.state.profile.name) { previous, current in if name == previous { name = current } }
+        .onChange(of: store.state.profile.timezone) { previous, current in if zone == previous { zone = current } }
+        .onChange(of: photo) { _, value in
+            Task {
+                do {
+                    if let data = try await value?.loadTransferable(type: Data.self) {
+                        guard data.count <= 5 * 1024 * 1024 else { throw WorkspaceFailure.tooLarge }
+                        let avatar = try AvatarService.normalized(data)
+                        try store.commit { $0.profile.avatar = avatar }
+                    }
+                } catch { store.errorMessage = error.localizedDescription }
+            }
+        }
+    }
+    private func save() {
+        guard hasChanges else { return }
+        store.perform {
+            guard !trimmedName.isEmpty else { throw WorkspaceFailure.invalid("请填写姓名。") }
+            try store.commit { $0.profile.name = trimmedName; $0.profile.timezone = zone }
+            store.information = "个人资料已保存。"
+        }
+    }
+    private func zoneName(_ value: String) -> String {
+        switch value {
+        case "Asia/Shanghai": "北京时间"
+        case "Asia/Tokyo": "东京时间"
+        case "Europe/London": "伦敦时间"
+        case "America/New_York": "纽约时间"
+        default: TimeZone(identifier: value)?.localizedName(for: .standard, locale: Locale(identifier: "zh_CN")) ?? value
+        }
     }
 }
 struct AvatarView: View {
@@ -116,7 +162,7 @@ struct NotificationSettingsSection: View {
             }))
             LabeledContent("已安排", value: "\(store.notifications.pendingCount) 条")
             if store.notifications.unscheduledCount > 0 {
-                Text("还有 \(store.notifications.unscheduledCount) 条后续提醒。应用只安排最近 60 条，重新打开时会补齐。")
+                Text("还有 \(store.notifications.unscheduledCount) 条后续提醒，打开应用后会继续安排。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             Button("发送测试通知", systemImage: "bell.badge") {
@@ -126,7 +172,7 @@ struct NotificationSettingsSection: View {
                 }
             }
             Button("打开系统通知设置", systemImage: "gearshape") { openNotificationSettings() }
-            Text("安排好的本地通知由系统触发，应用关闭时仍能提醒。长时间不打开应用时，超过已安排队列的未来提醒不会自动补齐；其他设备的改动会在账号同步后更新本机提醒安排。")
+            Text("关闭应用后仍会提醒。其他设备的更改会在同步后更新。")
                 .font(.caption).foregroundStyle(.secondary)
         }.task { await store.notifications.refreshAuthorization() }
     }
@@ -202,7 +248,7 @@ struct ImportArchiveView: View {
         Form {
             Section("本机归档") {
                 SecureField("归档密码（明文 JSON 可留空）", text: $password)
-                Text("先读取和校验文件，再确认合并策略。不会直接覆盖现有数据。网页 GWOS1/GWOS2 备份使用不同格式，不能直接导入。").font(.caption).foregroundStyle(.secondary)
+                Text("导入工作坊归档后，先预览内容，再确认合并。").font(.caption).foregroundStyle(.secondary)
                 Button("选择归档", systemImage: "doc.badge.plus") { picking = true }
             }
             if let error { Section { Text(error).foregroundStyle(.red) } }
@@ -273,13 +319,13 @@ struct SyncConflictReviewView: View {
                 Picker("同时修改的内容", selection: $resolution) {
                     ForEach(WorkspaceSyncResolution.allCases) { Text($0.rawValue).tag($0) }
                 }
-                Text("此选择只处理双方同时修改的内容。其他新增、改期和删除仍按同步基线合并。下方显示所有不同记录，包括只在一端有改动的记录。")
+                Text("选择同时修改的内容要保留哪个版本，其他更改会自动合并。")
                     .font(.caption).foregroundStyle(.secondary)
             }
             if let checkpoint = store.pendingSyncReview {
                 Section("个人资料") {
                     LabeledContent("本机", value: (store.syncReviewLocal ?? store.state).profile.name + " · " + (store.syncReviewLocal ?? store.state).profile.timezone)
-                    LabeledContent("服务器", value: checkpoint.remote.snapshot.profile.name + " · " + checkpoint.remote.snapshot.profile.timezone)
+                    LabeledContent("云端", value: checkpoint.remote.snapshot.profile.name + " · " + checkpoint.remote.snapshot.profile.timezone)
                 }
                 Section("内容比较") {
                     if differences.isEmpty { Text("记录内容一致；请核对循环、附件或个人资料的变更。") }
@@ -289,13 +335,13 @@ struct SyncConflictReviewView: View {
                                 .font(.caption.weight(.semibold)).foregroundStyle(isConflict(id) ? Color.orange : Color.secondary)
                             version("本机", record: (store.syncReviewLocal ?? store.state).records.first { $0.id == id })
                             Divider()
-                            version("服务器", record: checkpoint.remote.snapshot.records.first { $0.id == id })
+                            version("云端", record: checkpoint.remote.snapshot.records.first { $0.id == id })
                         }.padding(.vertical, 6)
                     }
                 }
                 Section("其他资料") {
                     LabeledContent("本机循环 / 附件", value: "\((store.syncReviewLocal ?? store.state).series.count) / \((store.syncReviewLocal ?? store.state).assets.count)")
-                    LabeledContent("服务器循环 / 附件", value: "\(checkpoint.remote.snapshot.series.count) / \(checkpoint.remote.snapshot.assets.count)")
+                    LabeledContent("云端循环 / 附件", value: "\(checkpoint.remote.snapshot.series.count) / \(checkpoint.remote.snapshot.assets.count)")
                 }
             }
         }.navigationTitle("比较同步内容")

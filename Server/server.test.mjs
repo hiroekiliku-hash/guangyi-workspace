@@ -285,7 +285,8 @@ test('web auth dedicated page rejects malicious parameters and keeps credentials
     const page = await fetch(base + '/native-login?' + query);
     assert.equal(page.status, 200); assert.equal(page.headers.get('cache-control'), 'no-store'); assert.equal(page.headers.get('referrer-policy'), 'no-referrer');
     assert.match(page.headers.get('content-security-policy'), /script-src 'self'/); assert.equal(page.headers.get('x-frame-options'), 'DENY');
-    const html = await page.text(); assert.match(html, /使用账号密码登录/); assert.match(html, /使用已有通行密钥/); assert.match(html, /自动合并本机与云端内容/);
+    const html = await page.text();
+    for (const id of ['native-password-form', 'native-email', 'native-password', 'native-password-login', 'native-passkey-login', 'native-return']) assert.ok(html.includes('id="' + id + '"'));
     assert.equal(html.includes(state), false); assert.equal(html.includes(codeChallenge), false);
     const head = await fetch(base + '/native-login?' + query, { method: 'HEAD' }); assert.equal(head.status, 200); assert.equal(await head.text(), '');
     for (const bad of ['', '?' + query + '&state=' + state, '?' + query + '&redirect_uri=https://evil.test', '?' + query.toString().replace('S256', 'plain'), '?code_challenge=bad&code_challenge_method=S256&state=' + state]) {
