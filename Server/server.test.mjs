@@ -683,7 +683,7 @@ test('verified passkeys remain usable when TOTP is enabled, and TOTP guessing is
 
 test('native signup revokes a late session after pagehide instead of enrolling or authorizing it', async () => {
   const { runInNewContext } = await import('node:vm');
-  const { webAsset } = await import('./web.mjs');
+  const source = await (await fetch(origin + '/native-login.js')).text();
   const nodes = new Map(), windowEvents = new Map(), requests = [];
   function node(id) {
     if (id === 'security-panel') return null; // This test needs only the host lifecycle, not authenticator UI.
@@ -695,7 +695,7 @@ test('native signup revokes a late session after pagehide instead of enrolling o
   let releaseSignup;
   const signup = new Promise(resolve => { releaseSignup = resolve; });
   const response = data => ({ ok: true, json: async () => ({ data }) });
-  runInNewContext(webAsset('/native-login.js').body, {
+  runInNewContext(source, {
     URL, URLSearchParams, Date,
     document: { getElementById: node },
     window: { addEventListener(name, listener) { windowEvents.set(name, listener); } },
