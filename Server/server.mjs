@@ -24275,22 +24275,1238 @@ function webAsset(path) {
 
 // Server/courses.mjs
 import { randomBytes, randomUUID, createHash } from "node:crypto";
+
+// Server/course.schema.json
+var course_schema_default = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
+  title: "WORKSHOP-COURSE/1 with structured-1 rich presentations",
+  description: "A backward-compatible curriculum data contract. Native code is displayed as data; explicit HTML/SVG rich presentations run only in the isolated offline client sandbox. The server never executes curriculum source.",
+  $comment: "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references.",
+  "x-workshop-extensionVersion": "structured-1",
+  type: "object",
+  properties: {
+    protocol: {
+      const: "WORKSHOP-COURSE/1"
+    },
+    id: {
+      $ref: "#/$defs/uuid"
+    },
+    title: {
+      type: "string",
+      maxLength: 240,
+      pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+      "x-workshop-maxUTF16Length": 240,
+      minLength: 1,
+      allOf: [
+        {
+          pattern: "\\S"
+        }
+      ]
+    },
+    summary: {
+      type: "string",
+      maxLength: 2e3,
+      pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+      "x-workshop-maxUTF16Length": 2e3
+    },
+    lessons: {
+      type: "array",
+      items: {
+        $ref: "#/$defs/lesson"
+      },
+      minItems: 1,
+      maxItems: 40
+    }
+  },
+  required: [
+    "protocol",
+    "id",
+    "title",
+    "summary",
+    "lessons"
+  ],
+  additionalProperties: false,
+  $defs: {
+    uuid: {
+      type: "string",
+      pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    code: {
+      type: "object",
+      properties: {
+        language: {
+          type: "string",
+          pattern: "^[A-Za-z0-9_+.-]{1,40}(?![\\s\\S])"
+        },
+        source: {
+          type: "string",
+          maxLength: 2e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        filename: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        highlightLines: {
+          type: "array",
+          items: {
+            type: "integer",
+            minimum: 1,
+            maximum: 20001
+          },
+          minItems: 0,
+          maxItems: 200,
+          uniqueItems: true
+        },
+        annotations: {
+          type: "array",
+          items: {
+            $ref: "#/$defs/annotation"
+          },
+          minItems: 0,
+          maxItems: 40
+        },
+        stdin: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3
+        },
+        expectedOutput: {
+          type: "string",
+          maxLength: 8e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 8e3
+        }
+      },
+      required: [
+        "language",
+        "source"
+      ],
+      additionalProperties: false,
+      $comment: "Line numbers must not exceed the number of CRLF/CR/LF-delimited source lines; annotation.line must be unique. The API performs these semantic checks."
+    },
+    annotation: {
+      type: "object",
+      properties: {
+        line: {
+          type: "integer",
+          minimum: 1,
+          maximum: 20001
+        },
+        text: {
+          type: "string",
+          maxLength: 2e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        }
+      },
+      required: [
+        "line",
+        "text"
+      ],
+      additionalProperties: false
+    },
+    table: {
+      type: "object",
+      properties: {
+        columns: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 120,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 120,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 1,
+          maxItems: 8
+        },
+        rows: {
+          type: "array",
+          items: {
+            type: "array",
+            items: {
+              type: "string",
+              maxLength: 2e3,
+              pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+              "x-workshop-maxUTF16Length": 2e3
+            },
+            minItems: 1,
+            maxItems: 8
+          },
+          minItems: 1,
+          maxItems: 60
+        }
+      },
+      required: [
+        "columns",
+        "rows"
+      ],
+      additionalProperties: false,
+      $comment: "Every row must contain exactly as many cells as columns; the API enforces this cross-field rule."
+    },
+    teachingItem: {
+      type: "object",
+      properties: {
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        code: {
+          $ref: "#/$defs/code"
+        }
+      },
+      required: [
+        "title",
+        "text"
+      ],
+      additionalProperties: false
+    },
+    flashcard: {
+      type: "object",
+      properties: {
+        front: {
+          type: "string",
+          maxLength: 2e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        back: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        }
+      },
+      required: [
+        "front",
+        "back"
+      ],
+      additionalProperties: false
+    },
+    option: {
+      type: "object",
+      properties: {
+        id: {
+          type: "string",
+          pattern: "^[A-Za-z0-9_-]{1,40}$"
+        },
+        text: {
+          type: "string",
+          maxLength: 1e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 1e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        }
+      },
+      required: [
+        "id",
+        "text"
+      ],
+      additionalProperties: false
+    },
+    point: {
+      type: "object",
+      properties: {
+        label: {
+          type: "string",
+          maxLength: 120,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 120,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        value: {
+          type: "number",
+          minimum: -1e15,
+          maximum: 1e15
+        }
+      },
+      required: [
+        "label",
+        "value"
+      ],
+      additionalProperties: false
+    },
+    presentation: {
+      oneOf: [
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "code"
+            },
+            code: {
+              $ref: "#/$defs/code"
+            }
+          },
+          required: [
+            "kind",
+            "code"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "table"
+            },
+            table: {
+              $ref: "#/$defs/table"
+            }
+          },
+          required: [
+            "kind",
+            "table"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "steps"
+            },
+            steps: {
+              type: "array",
+              items: {
+                $ref: "#/$defs/teachingItem"
+              },
+              minItems: 1,
+              maxItems: 20
+            }
+          },
+          required: [
+            "kind",
+            "steps"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "comparison"
+            },
+            items: {
+              type: "array",
+              items: {
+                $ref: "#/$defs/teachingItem"
+              },
+              minItems: 2,
+              maxItems: 4
+            }
+          },
+          required: [
+            "kind",
+            "items"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "flashcards"
+            },
+            cards: {
+              type: "array",
+              items: {
+                $ref: "#/$defs/flashcard"
+              },
+              minItems: 1,
+              maxItems: 20
+            }
+          },
+          required: [
+            "kind",
+            "cards"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "markdown"
+            },
+            markdown: {
+              $ref: "#/$defs/markdown"
+            }
+          },
+          required: [
+            "kind",
+            "markdown"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "html"
+            },
+            html: {
+              $ref: "#/$defs/html"
+            }
+          },
+          required: [
+            "kind",
+            "html"
+          ],
+          additionalProperties: false
+        },
+        {
+          type: "object",
+          properties: {
+            kind: {
+              const: "svg"
+            },
+            svg: {
+              $ref: "#/$defs/svg"
+            }
+          },
+          required: [
+            "kind",
+            "svg"
+          ],
+          additionalProperties: false
+        }
+      ]
+    },
+    textBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "text"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 2e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        presentation: {
+          $ref: "#/$defs/presentation"
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "text"
+      ],
+      additionalProperties: false
+    },
+    calloutBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "callout"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 2e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        presentation: {
+          $ref: "#/$defs/presentation"
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "text"
+      ],
+      additionalProperties: false
+    },
+    imageBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "image"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        url: {
+          type: "string",
+          maxLength: 2048,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2048,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "^[hH][tT][tT][pP][sS]://[^\\s@]+$"
+            },
+            {
+              not: {
+                pattern: "\\.[sS][vV][gG](?:$|[?#])"
+              }
+            }
+          ],
+          format: "uri"
+        },
+        caption: {
+          type: "string",
+          maxLength: 2e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e3
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "url"
+      ],
+      additionalProperties: false
+    },
+    chartBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "chart"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        chartType: {
+          enum: [
+            "bar",
+            "line"
+          ]
+        },
+        points: {
+          type: "array",
+          items: {
+            $ref: "#/$defs/point"
+          },
+          minItems: 1,
+          maxItems: 60
+        },
+        caption: {
+          type: "string",
+          maxLength: 2e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e3
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "chartType",
+        "points"
+      ],
+      additionalProperties: false
+    },
+    choiceBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "question"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        explanation: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3
+        },
+        code: {
+          $ref: "#/$defs/code"
+        },
+        hints: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 2e3,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 2e3,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 5
+        },
+        questionType: {
+          enum: [
+            "singleChoice",
+            "multipleChoice"
+          ]
+        },
+        options: {
+          type: "array",
+          items: {
+            $ref: "#/$defs/option"
+          },
+          minItems: 2,
+          maxItems: 12
+        },
+        correctOptionIDs: {
+          type: "array",
+          items: {
+            type: "string",
+            pattern: "^[A-Za-z0-9_-]{1,40}$"
+          },
+          minItems: 1,
+          maxItems: 12,
+          uniqueItems: true
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "text",
+        "questionType",
+        "options",
+        "correctOptionIDs"
+      ],
+      additionalProperties: false,
+      allOf: [
+        {
+          if: {
+            properties: {
+              questionType: {
+                const: "singleChoice"
+              }
+            }
+          },
+          then: {
+            properties: {
+              correctOptionIDs: {
+                maxItems: 1
+              }
+            }
+          }
+        }
+      ],
+      $comment: "Option IDs must be unique and correctOptionIDs must reference existing options; the API checks these relations."
+    },
+    textAnswerBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "question"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        explanation: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3
+        },
+        code: {
+          $ref: "#/$defs/code"
+        },
+        hints: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 2e3,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 2e3,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 5
+        },
+        questionType: {
+          const: "shortAnswer"
+        },
+        answerFormat: {
+          const: "text"
+        },
+        acceptedAnswers: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 500,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 500,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 20,
+          uniqueItems: true
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "text",
+        "questionType"
+      ],
+      additionalProperties: false
+    },
+    codeAnswerBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "question"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        explanation: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3
+        },
+        code: {
+          $ref: "#/$defs/code"
+        },
+        hints: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 2e3,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 2e3,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 5
+        },
+        questionType: {
+          const: "shortAnswer"
+        },
+        answerFormat: {
+          const: "code"
+        },
+        acceptedAnswers: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 2e4,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 2e4,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 20,
+          uniqueItems: true
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "text",
+        "questionType",
+        "answerFormat"
+      ],
+      additionalProperties: false
+    },
+    outputAnswerBlock: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        type: {
+          const: "question"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        text: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        explanation: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3
+        },
+        code: {
+          $ref: "#/$defs/code"
+        },
+        hints: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 2e3,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 2e3,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 5
+        },
+        questionType: {
+          const: "shortAnswer"
+        },
+        answerFormat: {
+          const: "output"
+        },
+        acceptedAnswers: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 8e3,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 8e3,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 20,
+          uniqueItems: true
+        }
+      },
+      required: [
+        "id",
+        "type",
+        "text",
+        "questionType",
+        "answerFormat"
+      ],
+      additionalProperties: false
+    },
+    block: {
+      oneOf: [
+        {
+          $ref: "#/$defs/textBlock"
+        },
+        {
+          $ref: "#/$defs/calloutBlock"
+        },
+        {
+          $ref: "#/$defs/imageBlock"
+        },
+        {
+          $ref: "#/$defs/chartBlock"
+        },
+        {
+          $ref: "#/$defs/choiceBlock"
+        },
+        {
+          $ref: "#/$defs/textAnswerBlock"
+        },
+        {
+          $ref: "#/$defs/codeAnswerBlock"
+        },
+        {
+          $ref: "#/$defs/outputAnswerBlock"
+        }
+      ]
+    },
+    lesson: {
+      type: "object",
+      properties: {
+        id: {
+          $ref: "#/$defs/uuid"
+        },
+        title: {
+          type: "string",
+          maxLength: 240,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 240,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        objectives: {
+          type: "array",
+          items: {
+            type: "string",
+            maxLength: 500,
+            pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 500,
+            minLength: 1,
+            allOf: [
+              {
+                pattern: "\\S"
+              }
+            ]
+          },
+          minItems: 0,
+          maxItems: 6
+        },
+        estimatedMinutes: {
+          type: "integer",
+          minimum: 1,
+          maximum: 180
+        },
+        blocks: {
+          type: "array",
+          items: {
+            $ref: "#/$defs/block"
+          },
+          minItems: 1,
+          maxItems: 80
+        }
+      },
+      required: [
+        "id",
+        "title",
+        "blocks"
+      ],
+      additionalProperties: false
+    },
+    markdown: {
+      type: "object",
+      properties: {
+        source: {
+          type: "string",
+          maxLength: 2e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        }
+      },
+      required: [
+        "source"
+      ],
+      additionalProperties: false
+    },
+    html: {
+      type: "object",
+      properties: {
+        source: {
+          type: "string",
+          maxLength: 6e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 6e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        height: {
+          type: "integer",
+          minimum: 120,
+          maximum: 640
+        }
+      },
+      required: [
+        "source"
+      ],
+      additionalProperties: false
+    },
+    svg: {
+      type: "object",
+      properties: {
+        source: {
+          type: "string",
+          maxLength: 6e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 6e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        height: {
+          type: "integer",
+          minimum: 120,
+          maximum: 640
+        }
+      },
+      required: [
+        "source"
+      ],
+      additionalProperties: false
+    }
+  }
+};
+
+// Server/courses.mjs
 var courseProtocol = "WORKSHOP-COURSE/1";
 var coursePath = "/api/integrations/v1/courses";
+var courseExtensionVersion = "structured-1";
 var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var identifier = /^[A-Za-z0-9_-]{1,40}$/;
 var hash = (value) => createHash("sha256").update(value).digest("hex");
 var limit = 1024 * 1024;
 function courseTeachingPrompt() {
   return `\u4F60\u662F\u5DE5\u4F5C\u574A\u7684\u8BFE\u7A0B\u8BBE\u8BA1\u4E0E\u6559\u5B66\u52A9\u624B\u3002\u4E0B\u9762\u662F\u5236\u4F5C\u8981\u6C42\uFF0C\u4E0D\u662F\u8981\u5B66\u4E60\u7684\u6750\u6599\uFF0C\u4E0D\u8981\u628A\u8FD9\u6BB5\u63D0\u793A\u8BCD\u672C\u8EAB\u6539\u5199\u6210\u8BFE\u7A0B\u3002\u7B2C\u4E00\u6B21\u6536\u5230\u65F6\uFF0C\u53EA\u7B80\u77ED\u56DE\u590D\u201C\u51C6\u5907\u597D\u4E86\uFF0C\u8BF7\u53D1\u9001\u4E0B\u4E00\u6761\u5B66\u4E60\u4E3B\u9898\u3001\u8D44\u6599\u6216\u95EE\u9898\uFF0C\u6211\u4F1A\u4E3A\u4F60\u5236\u4F5C\u53EF\u9605\u8BFB\u3001\u53EF\u4E92\u52A8\u7684\u8BFE\u7A0B\u3002\u201D\uFF0C\u7B49\u5F85\u7528\u6237\u63A5\u4E0B\u6765\u7684\u6D88\u606F\u3002\u6536\u5230\u5B66\u4E60\u5185\u5BB9\u540E\u518D\u5F00\u59CB\u5236\u4F5C\u3002
-\u6839\u636E\u7528\u6237\u63A5\u4E0B\u6765\u7684\u4E3B\u9898\u3001\u6559\u6750\u3001\u7B14\u8BB0\u6216\u95EE\u9898\uFF0C\u81EA\u884C\u63A8\u65AD\u5408\u9002\u7684\u57FA\u7840\u6C34\u5E73\u3001\u5B66\u4E60\u76EE\u6807\u4E0E\u8BFE\u65F6\u5B89\u6392\uFF1B\u53EA\u6709\u5F71\u54CD\u6559\u5B66\u65B9\u5411\u7684\u5173\u952E\u6761\u4EF6\u786E\u5B9E\u65E0\u6CD5\u63A8\u65AD\u65F6\u624D\u7B80\u77ED\u63D0\u95EE\u3002\u9075\u4ECE\u660E\u786E\u8981\u6C42\uFF0C\u4E0D\u53CD\u590D\u7D22\u8981\u53C2\u6570\u3002\u6309\u201C\u89E3\u91CA\u6982\u5FF5\u2192\u5177\u4F53\u4F8B\u5B50\u6216\u56FE\u5F62\u2192\u7EC3\u4E60\u2192\u53CD\u9988\u201D\u7684\u8282\u594F\u6559\u5B66\uFF0C\u7531\u6D45\u5165\u6DF1\uFF0C\u6BCF\u8BFE\u65F6\u7A81\u51FA\u4E00\u4E2A\u76EE\u6807\u3002\u9898\u76EE\u8981\u68C0\u9A8C\u7406\u89E3\uFF0C\u89E3\u91CA\u5E94\u8BF4\u660E\u63A8\u7406\uFF0C\u4E0D\u53EA\u7ED9\u7B54\u6848\uFF1B\u6CA1\u6709\u552F\u4E00\u7B54\u6848\u7684\u7B80\u7B54\u9898\u4E0D\u7F16\u9020\u6807\u51C6\u7B54\u6848\u3002\u53EF\u628A\u91CD\u8981\u6765\u6E90\u6216\u4E0D\u786E\u5B9A\u4E4B\u5904\u5199\u5728 text \u5757\u4E2D\u3002\u56FE\u8868\u53EA\u4F7F\u7528\u7528\u6237\u63D0\u4F9B\u6216\u53EF\u9A8C\u8BC1\u7684\u6570\u636E\uFF1B\u6F14\u793A\u6570\u636E\u5FC5\u987B\u5728 caption \u660E\u793A\u4E3A\u793A\u4F8B\uFF0C\u4E0D\u865A\u6784\u7EDF\u8BA1\u3002\u56FE\u7247\u53EA\u4F7F\u7528\u786E\u77E5\u6709\u6548\u4E14\u9002\u5408\u4F7F\u7528\u7684 HTTPS \u5730\u5740\uFF1B\u6CA1\u6709\u53EF\u9760\u56FE\u7247\u5C31\u7528\u6587\u5B57\u6216\u53D7\u652F\u6301\u7684\u56FE\u8868\uFF0C\u4E0D\u7F16\u9020\u56FE\u7247 URL\u3002\u4E0D\u8981\u5236\u4F5C HTML\u3001\u811A\u672C\u3001SVG\u3001iframe \u6216\u81EA\u5B9A\u4E49\u6267\u884C\u4EE3\u7801\u3002
-\u8F93\u51FA\u8BFE\u7A0B\u6B63\u6587\u5FC5\u987B\u662F\u4E00\u4E2A\u5B8C\u6574 ${courseProtocol} JSON \u6587\u6863\uFF0C\u4F7F\u7528\u4E0B\u5217\u51C6\u786E\u5B57\u6BB5\uFF0C\u4E0D\u6DFB\u52A0\u6559\u5B66\u76EE\u6807\u3001\u7528\u6237 ID\u3001\u7248\u672C\u53F7\u7B49\u672A\u5B9A\u4E49\u5B57\u6BB5\uFF1A
-\u8BFE\u7A0B {protocol,id,title,summary,lessons:[{id,title,blocks:[]}]}\u3002protocol \u56FA\u5B9A\u4E3A WORKSHOP-COURSE/1\u3002\u6BCF\u4E2A\u8BFE\u7A0B\u3001\u8BFE\u65F6\u3001\u5757\u7684 id \u5FC5\u987B\u4E3A\u540C\u4E00\u6587\u6863\u5185\u552F\u4E00 UUID\uFF1B\u9009\u9879 id \u4E3A 1\u201340 \u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002\u65B0\u8BFE\u7A0B\u751F\u6210\u65B0\u7684 UUID\uFF0C\u4E0D\u7167\u6284\u793A\u4F8B ID\uFF1B\u6709\u7528\u6237\u63D0\u4F9B\u7684\u5DF2\u6709\u8BFE\u7A0B\u65F6\u4FDD\u7559\u5176\u7ED3\u6784 ID\u3002
-\u5757\u652F\u6301 text/callout/image/chart/question\uFF1Atext/callout \u5FC5\u586B text\uFF1Bimage \u5FC5\u586B HTTPS url\u3001\u53EF\u9009 caption\uFF1Bchart \u5FC5\u586B chartType(bar/line)\u3001points:[{label,value}]\u3001\u53EF\u9009 caption\uFF1Bquestion \u5FC5\u586B text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\uFF0C\u53EF\u9009 explanation\u3002\u9009\u62E9\u9898\u9700\u8981 options:[{id,text}] \u548C correctOptionIDs\uFF08\u5FC5\u987B\u5F15\u7528\u5DF2\u6709\u9009\u9879\uFF0C\u5355\u9009\u6070\u597D\u4E00\u4E2A\u6B63\u786E\u9879\uFF0C\u591A\u9009\u81F3\u5C11\u4E00\u4E2A\uFF09\uFF1B\u7B80\u7B54\u9898\u53EF\u63D0\u4F9B acceptedAnswers \u5B57\u7B26\u4E32\u6570\u7EC4\uFF0C\u7701\u7565\u6216\u7A7A\u6570\u7EC4\u8868\u793A\u7531\u5B66\u4E60\u8005\u81EA\u884C\u6838\u5BF9\uFF0C\u4E0D\u80FD\u540C\u65F6\u63D0\u4F9B options/correctOptionIDs\u3002\u4E0D\u8981\u7ED9\u5176\u4ED6\u5757\u6DFB\u52A0\u9898\u76EE\u5B57\u6BB5\u3002
-\u9650\u5236\uFF1A\u5355\u8BFE\u7A0B UTF-8 JSON \u6700\u591A 1 MiB\uFF1B1\u201340 \u8BFE\u65F6\uFF0C\u6BCF\u8BFE\u65F6 1\u201380 \u5757\uFF1Btitle \u6700\u591A 240\u3001summary 2000\u3001\u666E\u901A text/callout 20000\u3001\u9898\u76EE text \u548C explanation 4000\u3001caption 2000 \u4E2A UTF-16 \u4EE3\u7801\u5355\u5143\uFF1B\u6BCF\u56FE\u8868 1\u201360 \u70B9\u3001label \u6700\u591A 120\u3001value \u4E3A\u6709\u9650\u6570\u5B57\u4E14\u7EDD\u5BF9\u503C\u4E0D\u8D85\u8FC7 10^15\uFF1B\u9009\u62E9\u9898 2\u201312 \u9009\u9879\u3001\u6BCF\u9879 text \u6700\u591A 1000\uFF1B\u7B80\u7B54 acceptedAnswers \u6700\u591A 20 \u9879\u3001\u6BCF\u9879\u6700\u591A 500\uFF1BURL \u6700\u591A 2048\u3002
-\u4E0B\u9762\u662F\u5B57\u6BB5\u6B63\u786E\u7684\u5B8C\u6574\u5C0F\u793A\u4F8B\uFF0C\u5B9E\u9645\u6559\u5B66\u5E94\u56F4\u7ED5\u7528\u6237\u4E0B\u4E00\u6761\u5185\u5BB9\u91CD\u5199\uFF0C\u800C\u4E0D\u662F\u4E00\u76F4\u4F7F\u7528\u793A\u4F8B\u4E3B\u9898\uFF1A
+\u6839\u636E\u4E0B\u4E00\u6761\u4E3B\u9898\u3001\u6559\u6750\u3001\u7B14\u8BB0\u6216\u95EE\u9898\uFF0C\u81EA\u884C\u63A8\u65AD\u5408\u9002\u7684\u57FA\u7840\u6C34\u5E73\u3001\u5B66\u4E60\u76EE\u6807\u4E0E\u8BFE\u65F6\u5B89\u6392\uFF1B\u53EA\u6709\u5F71\u54CD\u6559\u5B66\u65B9\u5411\u7684\u5173\u952E\u6761\u4EF6\u786E\u5B9E\u65E0\u6CD5\u63A8\u65AD\u65F6\u624D\u7B80\u77ED\u63D0\u95EE\u3002\u9075\u4ECE\u660E\u786E\u8981\u6C42\uFF0C\u4E0D\u53CD\u590D\u7D22\u8981\u53C2\u6570\u3002\u6309\u201C\u89E3\u91CA\u6982\u5FF5\u2192\u5177\u4F53\u4F8B\u5B50\u6216\u56FE\u5F62\u2192\u7EC3\u4E60\u2192\u53CD\u9988\u201D\u7684\u8282\u594F\u6559\u5B66\uFF0C\u7531\u6D45\u5165\u6DF1\uFF0C\u6BCF\u8BFE\u65F6\u7A81\u51FA\u4E00\u4E2A\u76EE\u6807\u3002\u7F16\u7A0B\u8BFE\u5C24\u5176\u662F C++ \u53EF\u7ED3\u5408\u5B8C\u6574\u6E90\u7801\u3001\u9010\u884C\u6CE8\u91CA\u3001\u6B65\u9AA4\u62C6\u89E3\u3001\u5199\u6CD5\u5BF9\u7167\u3001\u8F93\u51FA\u9884\u6D4B\u3001\u4EE3\u7801\u8865\u5168\u3001\u6982\u5FF5\u7FFB\u5361\u4E0E\u5206\u5C42\u63D0\u793A\uFF0C\u907F\u514D\u53EA\u8F93\u51FA\u957F\u7BC7\u6587\u7AE0\u3002\u9898\u76EE\u8981\u68C0\u9A8C\u7406\u89E3\uFF0C\u89E3\u91CA\u5E94\u8BF4\u660E\u63A8\u7406\uFF1B\u6CA1\u6709\u552F\u4E00\u7B54\u6848\u7684\u7B80\u7B54\u9898\u53EF\u7559\u5F85\u5B66\u4E60\u8005\u6838\u5BF9\u3002\u91CD\u8981\u6765\u6E90\u6216\u4E0D\u786E\u5B9A\u5904\u5199\u5165 text\u3002\u56FE\u8868\u4EC5\u7528\u7528\u6237\u63D0\u4F9B\u6216\u53EF\u9A8C\u8BC1\u7684\u6570\u636E\uFF1B\u6F14\u793A\u6570\u636E\u5728 caption \u660E\u793A\u793A\u4F8B\uFF0C\u4E0D\u865A\u6784\u7EDF\u8BA1\u3002\u8BFE\u7A0B\u5F62\u5F0F\u5E94\u5C3D\u91CF\u4E30\u5BCC\uFF0C\u6309\u6559\u5B66\u9700\u8981\u7EC4\u5408 Markdown\u3001\u539F\u751F\u4EE3\u7801\u6846\u3001SVG \u56FE\u89E3\u548C HTML/CSS/JavaScript/canvas \u4EA4\u4E92\u52A8\u753B\u3002\u4E3A\u964D\u4F4E\u670D\u52A1\u5668\u4E0E\u8BBE\u5907\u8D1F\u62C5\uFF0C\u4F18\u5148\u4F7F\u7528\u5185\u8054\u77E2\u91CF\u3001\u6587\u5B57\u548C\u8F7B\u91CF\u4EA4\u4E92\uFF1B\u9ED8\u8BA4\u4E0D\u8981\u4F7F\u7528\u56FE\u7247\uFF0C\u7981\u6B62\u89C6\u9891\u3001\u97F3\u9891\u3001\u56FE\u7247\u6570\u636E\u4E0E base64\u3002\u65E7 image \u5757\u4EC5\u4E3A\u517C\u5BB9\u4FDD\u7559\uFF0C\u786E\u9700\u5C11\u91CF\u914D\u56FE\u65F6\u53EA\u4F7F\u7528\u786E\u77E5\u6709\u6548\u3001\u4F53\u79EF\u5C0F\u4E14\u9002\u5408\u4F7F\u7528\u7684 HTTPS \u5730\u5740\uFF0C\u4E0D\u7F16\u9020 URL\u3002
+\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u672A\u77E5\u5B57\u6BB5\u4F1A\u88AB\u62D2\u7EDD\u3002\u57FA\u7840 protocol \u4FDD\u6301 WORKSHOP-COURSE/1\uFF0C\u4EE5\u4E0B\u53EF\u9009\u6269\u5C55\u79F0\u4E3A structured-1\u3002\u8BFE\u7A0B {protocol,id,title,summary,lessons:[{id,title,objectives?,estimatedMinutes?,blocks:[]}]}\u3002objectives \u4E3A0\u20136\u4E2A\u5B66\u4E60\u76EE\u6807\uFF0CestimatedMinutes \u4E3A1\u2013180\u6574\u6570\uFF1B\u53EF\u7701\u7565\u3002\u8BFE\u7A0B\u3001\u8BFE\u65F6\u3001\u5757 id \u5FC5\u987B\u662F\u540C\u4E00\u6587\u6863\u5185\u552F\u4E00 UUID\uFF1B\u9009\u9879 id \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002\u65B0\u8BFE\u7A0B\u5FC5\u987B\u751F\u6210\u65B0 UUID\uFF0C\u4E0D\u7167\u6284\u793A\u4F8B\uFF1B\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u4FDD\u7559\u7ED3\u6784 ID\u3002\u4E0D\u8981\u628A\u7528\u6237 ID\u3001\u4FEE\u8BA2\u53F7\u3001\u6267\u884C\u6307\u4EE4\u653E\u5165\u6B63\u6587\u3002
+\u57FA\u7840\u5757\u7C7B\u578B\u4FDD\u6301 text/callout/image/chart/question\uFF0C\u6BCF\u5757\u53EF\u6709 title\u3002text/callout \u5FC5\u586B\u5B8C\u6574 text\uFF0C\u53EF\u589E\u52A0 presentation\uFF1B\u5373\u4F7F\u6709\u7ED3\u6784\u5316\u5185\u5BB9\uFF0Ctext \u4E5F\u5FC5\u987B\u5305\u542B\u5B8C\u6574\u53EF\u8BFB\u9000\u8DEF\uFF08\u6E90\u7801\u5757\u5E94\u6709\u6E90\u7801\u6587\u672C\uFF0C\u8868\u683C/\u6B65\u9AA4/\u6BD4\u8F83/\u7FFB\u5361\u7684 text \u5E94\u8986\u76D6\u6240\u6709\u5173\u952E\u5185\u5BB9\uFF09\uFF0C\u786E\u4FDD\u65E7\u5BA2\u6237\u7AEF\u80FD\u9605\u8BFB\uFF1BHTML/SVG/Markdown \u7684 text \u4E5F\u5E94\u5B8C\u6574\u89E3\u91CA\u6F14\u793A\u5185\u5BB9\u3002image \u5FC5\u586B HTTPS url\u3001\u53EF\u9009 caption\uFF1Bchart \u5FC5\u586B chartType(bar/line)\u3001points:[{label,value}]\u3001\u53EF\u9009 caption\u3002
+presentation \u53EA\u80FD\u51FA\u73B0\u5728 text/callout\uFF0C\u4E25\u683C\u4F7F\u7528\u4EE5\u4E0B\u4E00\u79CD\u7ED3\u6784\uFF0C\u4E0D\u53EF\u6DF7\u642D\uFF1A
+{kind:"code",code:Code}\uFF1B{kind:"table",table:{columns:[\u5B57\u7B26\u4E32],rows:[[\u5B57\u7B26\u4E32]]}}\uFF0C1\u20138\u5217\u30011\u201360\u884C\uFF0C\u6BCF\u884C\u4E0E\u5217\u6570\u76F8\u7B49\uFF1B{kind:"steps",steps:[{title,text,code?}]}\uFF0C1\u201320\u6B65\uFF1B{kind:"comparison",items:[{title,text,code?}]}\uFF0C2\u20134\u9879\uFF1B{kind:"flashcards",cards:[{front,back}]}\uFF0C1\u201320\u5F20\uFF1B{kind:"markdown",markdown:{source}}\uFF1B{kind:"html",html:{source,height?}}\uFF1B{kind:"svg",svg:{source,height?}}\u3002markdown.source \u975E\u7A7A\u6700\u591A20000\uFF1Bhtml.source/svg.source \u975E\u7A7A\u6700\u591A60000\uFF0Cheight \u53EF\u7701\u7565\uFF0C\u63D0\u4F9B\u65F6\u5FC5\u987B\u4E3A120\u2013640\u6574\u6570\u3002steps/comparison \u6BCF\u9879 title \u6700\u591A240\u3001text4000\uFF1Btable \u5217\u540D120\u3001\u5355\u5143\u683C2000\uFF1B\u5361\u7247 front2000\u3001back4000\u3002
+Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}\u3002language \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u3001+\u3001.\u6216-\uFF08C++\u7528 cpp \u6216 c++\uFF09\uFF0Csource \u4E3A\u975E\u7A7A\u4EE3\u7801\u6587\u672C\u6700\u591A20000\u3002filename240\uFF1BhighlightLines \u4E3A0\u2013200\u4E2A\u4E0D\u91CD\u590D\u7684\u6709\u6548\u6B63\u6574\u6570\u884C\u53F7\uFF0C\u6309 CRLF/CR/LF \u5212\u5206\uFF0C\u4E0D\u80FD\u8D85\u8FC7\u5B9E\u9645\u6E90\u7801\u884C\u6570\uFF1Bannotations \u4E3A0\u201340\u4E2A {line,text}\uFF0C\u884C\u53F7\u6709\u6548\u4E14\u4E0D\u91CD\u590D\uFF0Ctext2000\uFF1Bstdin \u53EF\u7A7A\u6700\u591A4000\uFF0CexpectedOutput \u53EF\u7A7A\u6700\u591A8000\u3002\u4E0D\u8981\u628A Markdown \u4EE3\u7801\u56F4\u680F\u5199\u5165 source\u3002#include <iostream>\u3001template<typename T>\u3001\u6BD4\u8F83\u7B26\u3001\u4EE5\u53CA\u8BB2\u89E3\u4E2D\u7684 HTML \u6807\u7B7E\u5B57\u6837\u90FD\u53EA\u662F\u6570\u636E\uFF0C\u53EF\u539F\u6837\u653E\u5165 JSON \u5B57\u7B26\u4E32\u3002\u539F\u751F Code \u6E90\u7801\u4EC5\u4F9B\u6587\u672C\u5C55\u793A\u6216\u7EC3\u4E60\u8F93\u5165\uFF1BApp/\u670D\u52A1\u5668\u4E0D\u7F16\u8BD1\u3001\u4E0D\u6267\u884C\u3001\u4E0D\u9A8C\u8BC1\u8FD0\u884C\u7ED3\u679C\uFF0C\u4E0D\u80FD\u58F0\u79F0\u5DF2\u8FD0\u884C\u3002\u7F16\u7A0B\u5185\u5BB9\u4F18\u5148\u7528 Code \u4E13\u7528\u4EE3\u7801\u6846\uFF0C\u6216 markdown.source \u4E2D\u5E26\u8BED\u8A00\u540D\u7684 Markdown \u56F4\u680F\uFF0C\u4FDD\u7559\u6362\u884C\u7F29\u8FDB\u3002HTML/SVG \u5FC5\u987B\u4F7F\u7528 presentation \u6269\u5C55\uFF0C\u4E0D\u65B0\u9020 block.type\u3002HTML \u53EF\u5728\u5BA2\u6237\u7AEF\u9694\u79BB\u7684\u6C99\u76D2\u5185\u8FD0\u884C\u5185\u8054 CSS/JavaScript\u3001SVG/canvas\u3001\u6309\u94AE\u6ED1\u5757\u548C\u4EA4\u4E92\u52A8\u753B\uFF1B\u670D\u52A1\u5668\u53EA\u5B58\u50A8\uFF0C\u4E0D\u8FD0\u884C\u3002\u6F14\u793A\u987B\u9002\u914D iPhone \u7A84\u5C4F\uFF0C\u907F\u514D\u56FA\u5B9A\u5BBD\u5EA6\uFF0C\u5B57\u4F53\u6E05\u6670\uFF1B\u5C0A\u91CD prefers-reduced-motion\uFF0C\u52A8\u753B\u63D0\u4F9B\u6682\u505C/\u91CD\u7F6E\u6309\u94AE\uFF0C\u79BB\u5F00\u9875\u9762\u505C\u6B62\u3002\u8D44\u6E90\u5FC5\u987B\u5B8C\u5168\u5185\u8054\uFF0C\u4E0D\u7528 CDN\u3001\u5916\u94FE\u811A\u672C/\u6837\u5F0F/\u5B57\u4F53\u3001\u7F51\u7EDC\u8BF7\u6C42\u3001\u5BFC\u822A\u3001iframe\u3001object\u3001embed\u3001\u56FE\u7247\u3001\u89C6\u9891\u3001\u97F3\u9891\u3001data/base64 \u6216\u63D2\u4EF6\u4E0B\u8F7D\uFF1B\u5BA2\u6237\u7AEF CSP \u548C\u5BFC\u822A\u9650\u5236\u7981\u6B62\u8054\u7F51\u3001\u5A92\u4F53\u4E0E\u5D4C\u5165\u3002SVG \u7528 viewBox \u81EA\u9002\u5E94\uFF0C\u5141\u8BB8\u77E2\u91CF\u56FE\u5F62\u548C\u8F7B\u91CF\u52A8\u753B\uFF1B\u4E0D\u8981\u5D4C\u5165 image/foreignObject \u6216\u5916\u94FE\u8D44\u6E90\u3002Markdown \u53EF\u542B\u6807\u9898\u3001\u5217\u8868\u3001\u8868\u683C\u3001\u5F15\u7528\u3001\u4EE3\u7801\u56F4\u680F\uFF1B\u4E0D\u4F7F\u7528\u539F\u59CB HTML\u3001\u56FE\u7247\u6216\u5916\u94FE\u5D4C\u5165\uFF0C\u4EA4\u4E92\u5185\u5BB9\u653E html\u3002\u4E0D\u8981\u58F0\u79F0 HTML \u6F14\u793A\u5DF2\u7F16\u8BD1\u6216\u8FD0\u884C\u4E86\u7528\u6237\u7684 C++/Python \u7B49\u539F\u751F\u6E90\u7801\u3002\u672A\u77E5\u5B57\u6BB5\u4ECD\u62D2\u7EDD\uFF0C\u4E0D\u4F9D\u9760\u5B57\u7B26\u4E32\u9ED1\u540D\u5355\u8FC7\u6EE4\u6559\u5B66\u6E90\u7801\u3002
+question \u5FC5\u586B text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\uFF0C\u53EF\u9009 explanation\u3001code\uFF08Code\u4E0A\u4E0B\u6587\uFF09\u3001hints\uFF080\u20135\u4E2A\u63D0\u793A\uFF0C\u6309\u9700\u9010\u7EA7\u5C55\u5F00\uFF0C\u6BCF\u9879\u6700\u591A2000\uFF09\u3002\u9009\u62E9\u9898\u5FC5\u586B options:[{id,text}] \u548C correctOptionIDs\uFF08\u53EA\u5F15\u7528\u5DF2\u6709\u9009\u9879\uFF0C\u5355\u9009\u6070\u597D\u4E00\u4E2A\u6B63\u786E\u9879\uFF0C\u591A\u9009\u81F3\u5C11\u4E00\u4E2A\uFF09\uFF0C\u4E0D\u5141\u8BB8 acceptedAnswers/answerFormat\u3002shortAnswer \u4E0D\u5141\u8BB8 options/correctOptionIDs\uFF0C\u53EF\u6709 acceptedAnswers\u3001answerFormat\u3002answerFormat \u4EC5 shortAnswer\uFF0C\u503C text/code/output\uFF1B\u7701\u7565\u9ED8\u8BA4 text\u3002text \u7B54\u6848\u6CBF\u7528\u5FFD\u7565\u5927\u5C0F\u5199\u3001\u5408\u5E76\u7A7A\u767D\u7684\u6BD4\u8F83\uFF1Bcode/output \u53EA\u89C4\u8303 CRLF/CR \u4E3A LF \u5E76\u53BB\u6389\u9996\u5C3E\u7A7A\u767D\uFF0C\u4FDD\u7559\u5185\u90E8\u7A7A\u683C\u3001\u6362\u884C\u548C\u5927\u5C0F\u5199\uFF0C\u6309\u6587\u672C\u5339\u914D\u53C2\u8003\u7B54\u6848\uFF0C\u4E0D\u7B49\u540C\u7F16\u8BD1\u9A8C\u8BC1\u3002acceptedAnswers \u7701\u7565\u6216\u7A7A\u6570\u7EC4\u8868\u793A\u81EA\u884C\u6838\u5BF9\uFF0C\u4E0D\u4F2A\u9020\u81EA\u52A8\u8BC4\u5206\uFF1Bcode \u9898\u6709\u591A\u79CD\u5408\u6CD5\u5199\u6CD5\u65F6\u89E3\u91CA\u53C2\u8003\u6BD4\u8F83\u5C40\u9650\uFF0C\u5FC5\u8981\u65F6\u4E0D\u63D0\u4F9B\u7B54\u6848\u5217\u8868\u3002\u6BCF\u8BFE\u65F6\u5B8C\u6210\u4EC5\u8981\u6C42\u6BCF\u9898\u6709\u6709\u6548\u4F5C\u7B54\uFF0C\u4E0D\u8981\u6C42\u5168\u90E8\u7B54\u5BF9\u3002
+\u9650\u5236\u4EE5 UTF-16 \u4EE3\u7801\u5355\u5143\u8BA1\uFF1A\u5355\u8BFE\u7A0B UTF-8 JSON \u6700\u591A1 MiB\uFF1B1\u201340\u8BFE\u65F6\uFF0C\u6BCF\u8BFE\u65F61\u201380\u5757\uFF1B\u6240\u6709 title240\uFF0Csummary2000\uFF0Cobjectives\u6BCF\u9879500\uFF1Btext/callout20000\uFF0C\u9898\u5E72 text\u53CAexplanation4000\uFF0Ccaption2000\uFF1B\u56FE\u88681\u201360\u70B9\uFF0Clabel120\uFF0Cvalue\u4E3A\u6709\u9650\u6570\u5B57\u4E14\u7EDD\u5BF9\u503C\u226410^15\uFF1B\u9009\u62E9\u98982\u201312\u9009\u9879\uFF0C\u9009\u9879text1000\uFF1B\u7B80\u7B54\u53C2\u8003\u6700\u591A20\u9879\u4E14\u4E0D\u91CD\u590D\uFF0C\u6BCF\u9879text\u6A21\u5F0F500/code20000/output8000\uFF1B\u5BF9\u5E94\u7528\u6237\u7B54\u6848\u4E0A\u96504000/20000/8000\u3002URL2048\uFF1B\u5B57\u7B26\u4E32\u4E0D\u53EF\u6709\u7981\u6B62\u7684\u63A7\u5236\u5B57\u7B26\u3002\u4E0D\u8981\u7528\u65B0\u7684\u5757\u7C7B\u578B\u66FF\u4EE3\u53EF\u9009 presentation\uFF0C\u4E5F\u4E0D\u8981\u628A code/hints \u5199\u5230\u975E question \u5757\u3002
+\u4E0B\u9762\u662F\u5B57\u6BB5\u6B63\u786E\u7684\u5B8C\u6574 C++ \u5C0F\u793A\u4F8B\uFF0C\u5B9E\u9645\u6559\u5B66\u987B\u56F4\u7ED5\u4E0B\u4E00\u6761\u5185\u5BB9\u91CD\u5199\uFF0C\u5E76\u751F\u6210\u65B0\u7684 UUID\uFF1A
 \`\`\`json
-{"protocol":"WORKSHOP-COURSE/1","id":"6d5473fb-b594-4203-b3d5-122cc440a414","title":"\u8BA4\u8BC6\u5E73\u5747\u6570","summary":"\u901A\u8FC7\u4E00\u4E2A\u4F8B\u5B50\u4E0E\u7EC3\u4E60\u7406\u89E3\u5E73\u5747\u6570\u3002","lessons":[{"id":"6f59189c-3435-45d1-980d-9bfda402a3fa","title":"\u5148\u6C42\u548C\uFF0C\u518D\u5E73\u5747\u5206","blocks":[{"id":"482e807d-cedd-49f2-a9d4-fb78e9551609","type":"text","text":"\u5E73\u5747\u6570\u8868\u793A\u628A\u603B\u91CF\u5E73\u5747\u5206\u7ED9\u6BCF\u4E00\u4EFD\u3002\u793A\u4F8B\uFF1A2\u30014\u30016 \u7684\u5E73\u5747\u6570\u4E3A (2+4+6)\xF73=4\u3002"},{"id":"6fb4f180-de93-4acb-b391-f2672ab8c5aa","type":"chart","chartType":"bar","caption":"\u6559\u5B66\u793A\u4F8B\u6570\u636E\uFF0C\u4E0D\u4EE3\u8868\u771F\u5B9E\u7EDF\u8BA1\u3002","points":[{"label":"\u7B2C\u4E00\u4EFD","value":2},{"label":"\u7B2C\u4E8C\u4EFD","value":4},{"label":"\u7B2C\u4E09\u4EFD","value":6}]},{"id":"b5d920f6-ccf1-4e8c-b67a-b08e0db00cb1","type":"question","text":"3 \u548C 7 \u7684\u5E73\u5747\u6570\u662F\u591A\u5C11\uFF1F","questionType":"singleChoice","options":[{"id":"a","text":"5"},{"id":"b","text":"10"}],"correctOptionIDs":["a"],"explanation":"\u5148\u76F8\u52A0\u5F97\u5230 10\uFF0C\u518D\u9664\u4EE5\u4EFD\u6570 2\uFF0C\u5F97\u5230 5\u3002"}]}]}
+{"protocol":"WORKSHOP-COURSE/1","id":"c0000000-0000-4000-8000-000000000001","title":"C++ \u51FD\u6570\u6307\u9488\uFF1A\u4ECE\u5730\u5740\u5230\u8C03\u7528","summary":"\u7ED3\u5408\u6E90\u7801\u3001\u5206\u6B65\u62C6\u89E3\u3001\u5BF9\u7167\u3001\u7FFB\u5361\u548C\u7EC3\u4E60\u7406\u89E3\u51FD\u6570\u6307\u9488\u3002\u4EE3\u7801\u4EC5\u4F5C\u8BFE\u7A0B\u6570\u636E\uFF0C\u4E0D\u6267\u884C\u3002","lessons":[{"id":"c0000000-0000-4000-8000-000000000002","title":"\u7528\u4E00\u4E2A\u4F8B\u5B50\u7406\u89E3\u51FD\u6570\u6307\u9488","objectives":["\u533A\u5206\u4FDD\u5B58\u51FD\u6570\u5730\u5740\u4E0E\u53D1\u8D77\u51FD\u6570\u8C03\u7528","\u8BFB\u61C2\u8FD4\u56DE int\u3001\u53C2\u6570\u4E3A int \u7684\u51FD\u6570\u6307\u9488\u58F0\u660E"],"estimatedMinutes":12,"blocks":[{"id":"c0000000-0000-4000-8000-000000000003","type":"text","title":"\u89C2\u5BDF\u4E00\u6BB5\u5B8C\u6574\u4EE3\u7801","text":"\u5B8C\u6574\u793A\u4F8B\uFF08\u4EC5\u4F9B\u9605\u8BFB\uFF0C\u4E0D\u4F1A\u7531 App \u7F16\u8BD1\u6216\u6267\u884C\uFF09\uFF1A\\n#include <iostream>\\n\\nint twice(int x) { return x * 2; }\\n\\nint main() {\\n    int (*operation)(int) = twice;\\n    std::cout << operation(3) << \\"\\\\n\\";\\n}\\n\u9884\u671F\u8F93\u51FA\uFF1A6","presentation":{"kind":"code","code":{"language":"cpp","filename":"dispatch.cpp","source":"#include <iostream>\\n\\nint twice(int x) { return x * 2; }\\n\\nint main() {\\n    int (*operation)(int) = twice;\\n    std::cout << operation(3) << \\"\\\\n\\";\\n}","highlightLines":[6,7],"annotations":[{"line":6,"text":"operation \u662F\u51FD\u6570\u6307\u9488\uFF1B\u5B83\u4FDD\u5B58\u51FD\u6570\u5730\u5740\uFF0C\u4E0D\u4F1A\u5728\u8D4B\u503C\u65F6\u8C03\u7528\u51FD\u6570\u3002"}],"stdin":"","expectedOutput":"6\\n"}}},{"id":"c0000000-0000-4000-8000-000000000010","type":"question","title":"\u6838\u5BF9\u8F93\u51FA","text":"\u4E0A\u9762\u7684\u5B8C\u6574\u7A0B\u5E8F\u8F93\u51FA\u4EC0\u4E48\uFF1F\u53EA\u586B\u5199\u8F93\u51FA\u5185\u5BB9\u3002","questionType":"shortAnswer","answerFormat":"output","code":{"language":"cpp","filename":"dispatch.cpp","source":"#include <iostream>\\n\\nint twice(int x) { return x * 2; }\\n\\nint main() {\\n    int (*operation)(int) = twice;\\n    std::cout << operation(3) << \\"\\\\n\\";\\n}","highlightLines":[6,7],"annotations":[{"line":6,"text":"operation \u662F\u51FD\u6570\u6307\u9488\uFF1B\u5B83\u4FDD\u5B58\u51FD\u6570\u5730\u5740\uFF0C\u4E0D\u4F1A\u5728\u8D4B\u503C\u65F6\u8C03\u7528\u51FD\u6570\u3002"}],"stdin":"","expectedOutput":"6\\n"},"acceptedAnswers":["6"],"explanation":"twice \u628A 3 \u4E58\u4EE5 2\uFF0C\u8F93\u51FA 6\u3002\u9884\u671F\u8F93\u51FA\u7531\u8BFE\u7A0B\u63D0\u4F9B\uFF0CApp \u4E0D\u8FD0\u884C\u7A0B\u5E8F\u3002"}]}]}
 \`\`\``;
 }
 function courseManualPrompt() {
@@ -24300,6 +25516,7 @@ function courseManualPrompt() {
 function coursePrompt(endpoint) {
   return courseTeachingPrompt() + `
 \u7528\u6237\u540E\u7EED\u63D0\u4F9B\u5B66\u4E60\u5185\u5BB9\u540E\uFF0C\u5982\u679C\u4F60\u6709\u7F51\u7EDC\u8BF7\u6C42\u5DE5\u5177\uFF0C\u5C06\u5236\u4F5C\u5B8C\u6210\u7684\u6587\u6863\u4E0A\u4F20\u5230\u5F53\u524D\u8BFE\u7A0B\u53D1\u5E03\u51ED\u636E\u7ED1\u5B9A\u7684\u8D26\u6237\uFF0C\u4E0D\u8BE2\u95EE\u6216\u63D0\u4EA4\u7528\u6237 ID\u3002
+\u9759\u6001 JSON Schema\uFF08\u53EF\u9009\u53D1\u73B0\uFF0C\u4E0D\u542B\u8D26\u6237\u4FE1\u606F\uFF09\uFF1AGET ${endpoint}/schema
 POST ${endpoint}
 Authorization: Bearer {{API_KEY}}
 Content-Type: application/json; charset=utf-8
@@ -24315,7 +25532,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     if (!value || Array.isArray(value) || typeof value !== "object" || Object.keys(value).some((key) => !keys.includes(key))) fail2(code);
   };
   const string = (value, max, nonempty = true) => {
-    if (typeof value !== "string" || value.length > max || nonempty && !value.trim() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value) || /<\/?[A-Za-z][^>]*>/.test(value)) fail2();
+    if (typeof value !== "string" || value.length > max || nonempty && !value.trim() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value)) fail2();
   };
   const uuid3 = (value) => {
     if (typeof value !== "string" || !UUID.test(value)) fail2();
@@ -24333,6 +25550,69 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       seen.add(item);
     }
   };
+  function validateCode(code) {
+    object(code, ["language", "source", "filename", "highlightLines", "annotations", "stdin", "expectedOutput"]);
+    if (typeof code.language !== "string" || code.language.length < 1 || code.language.length > 40 || /[^A-Za-z0-9_+.-]/.test(code.language)) fail2();
+    string(code.source, 2e4);
+    const lineCount = code.source.split(/\r\n|\r|\n/).length;
+    if (code.filename !== void 0) string(code.filename, 240);
+    if (code.highlightLines !== void 0) uniqueStrings(code.highlightLines, 200, (line) => {
+      if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail2();
+    });
+    if (code.annotations !== void 0) {
+      array(code.annotations, 0, 40);
+      const lines = /* @__PURE__ */ new Set();
+      for (const annotation of code.annotations) {
+        object(annotation, ["line", "text"]);
+        if (!Number.isSafeInteger(annotation.line) || annotation.line < 1 || annotation.line > lineCount || lines.has(annotation.line)) fail2();
+        lines.add(annotation.line);
+        string(annotation.text, 2e3);
+      }
+    }
+    if (code.stdin !== void 0) string(code.stdin, 4e3, false);
+    if (code.expectedOutput !== void 0) string(code.expectedOutput, 8e3, false);
+  }
+  function validatePresentation(value) {
+    const fields2 = { code: "code", table: "table", steps: "steps", comparison: "items", flashcards: "cards", markdown: "markdown", html: "html", svg: "svg" };
+    if (!value || !Object.hasOwn(fields2, value.kind)) fail2("UNSUPPORTED_COURSE_PRESENTATION");
+    object(value, ["kind", fields2[value.kind]]);
+    if (value.kind === "code") validateCode(value.code);
+    if (["markdown", "html", "svg"].includes(value.kind)) {
+      const source = value[value.kind];
+      object(source, value.kind === "markdown" ? ["source"] : ["source", "height"]);
+      string(source.source, value.kind === "markdown" ? 2e4 : 6e4);
+      if (source.height !== void 0 && (!Number.isSafeInteger(source.height) || source.height < 120 || source.height > 640)) fail2();
+    }
+    if (value.kind === "table") {
+      object(value.table, ["columns", "rows"]);
+      array(value.table.columns, 1, 8);
+      array(value.table.rows, 1, 60);
+      for (const column of value.table.columns) string(column, 120);
+      for (const row of value.table.rows) {
+        array(row, value.table.columns.length, value.table.columns.length);
+        for (const cell of row) string(cell, 2e3, false);
+      }
+    }
+    if (value.kind === "steps" || value.kind === "comparison") {
+      const items = value[value.kind === "steps" ? "steps" : "items"];
+      array(items, value.kind === "steps" ? 1 : 2, value.kind === "steps" ? 20 : 4);
+      for (const item of items) {
+        object(item, ["title", "text", "code"]);
+        string(item.title, 240);
+        string(item.text, 4e3);
+        if (item.code !== void 0) validateCode(item.code);
+      }
+    }
+    if (value.kind === "flashcards") {
+      array(value.cards, 1, 20);
+      for (const card of value.cards) {
+        object(card, ["front", "back"]);
+        string(card.front, 2e3);
+        string(card.back, 4e3);
+      }
+    }
+  }
+  const answerTextLimit = (block) => block?.questionType === "shortAnswer" ? { text: 4e3, code: 2e4, output: 8e3 }[block.answerFormat ?? "text"] ?? 4e3 : 4e3;
   function validateCourse(value) {
     object(value, ["protocol", "id", "title", "summary", "lessons"]);
     if (value.protocol !== courseProtocol) fail2("UNSUPPORTED_COURSE_PROTOCOL");
@@ -24347,18 +25627,25 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     string(value.summary, 2e3, false);
     array(value.lessons, 1, 40);
     for (const lesson of value.lessons) {
-      object(lesson, ["id", "title", "blocks"]);
+      object(lesson, ["id", "title", "blocks", "objectives", "estimatedMinutes"]);
       takeID(lesson);
       string(lesson.title, 240);
       array(lesson.blocks, 1, 80);
+      if (lesson.objectives !== void 0) {
+        array(lesson.objectives, 0, 6);
+        for (const objective of lesson.objectives) string(objective, 500);
+      }
+      if (lesson.estimatedMinutes !== void 0 && (!Number.isSafeInteger(lesson.estimatedMinutes) || lesson.estimatedMinutes < 1 || lesson.estimatedMinutes > 180)) fail2();
       for (const block of lesson.blocks) {
-        const blockFields = { text: ["text"], callout: ["text"], image: ["url", "caption"], chart: ["chartType", "points", "caption"], question: ["text", "questionType", "options", "correctOptionIDs", "acceptedAnswers", "explanation"] };
+        const blockFields = { text: ["text", "presentation"], callout: ["text", "presentation"], image: ["url", "caption"], chart: ["chartType", "points", "caption"], question: ["text", "questionType", "options", "correctOptionIDs", "acceptedAnswers", "explanation", "code", "hints", "answerFormat"] };
         if (!block || !Object.hasOwn(blockFields, block.type)) fail2("UNSUPPORTED_COURSE_BLOCK");
         const fields2 = blockFields[block.type];
-        object(block, ["id", "type", ...fields2]);
+        object(block, ["id", "type", "title", ...fields2]);
         takeID(block);
+        if (block.title !== void 0) string(block.title, 240);
         if (block.caption !== void 0) string(block.caption, 2e3, false);
         if (block.type === "text" || block.type === "callout" || block.type === "question") string(block.text, block.type === "question" ? 4e3 : 2e4);
+        if (block.presentation !== void 0) validatePresentation(block.presentation);
         if (block.type === "image") {
           string(block.url, 2048);
           let url;
@@ -24380,11 +25667,17 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         }
         if (block.type === "question") {
           if (block.explanation !== void 0) string(block.explanation, 4e3, false);
+          if (block.code !== void 0) validateCode(block.code);
+          if (block.hints !== void 0) {
+            array(block.hints, 0, 5);
+            for (const hint of block.hints) string(hint, 2e3);
+          }
           if (block.questionType === "shortAnswer") {
             if (block.options !== void 0 || block.correctOptionIDs !== void 0) fail2();
-            if (block.acceptedAnswers !== void 0) uniqueStrings(block.acceptedAnswers, 20, (answer) => string(answer, 500));
+            if (block.answerFormat !== void 0 && !["text", "code", "output"].includes(block.answerFormat)) fail2();
+            if (block.acceptedAnswers !== void 0) uniqueStrings(block.acceptedAnswers, 20, (answer) => string(answer, (block.answerFormat ?? "text") === "text" ? 500 : answerTextLimit(block)));
           } else if (["singleChoice", "multipleChoice"].includes(block.questionType)) {
-            if (block.acceptedAnswers !== void 0) fail2();
+            if (block.acceptedAnswers !== void 0 || block.answerFormat !== void 0) fail2();
             array(block.options, 2, 12);
             const options = /* @__PURE__ */ new Set();
             for (const option of block.options) {
@@ -24415,7 +25708,8 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     if (!row) fail2("INVALID_COURSE_TOKEN", 401);
     return row;
   }
-  const endpoint = origin + coursePath;
+  const endpoint = origin + coursePath, schemaURL = endpoint + "/schema";
+  const metadata = { endpoint, protocol: courseProtocol, schemaURL, extensionVersion: courseExtensionVersion };
   const info = (row) => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...row.last_used != null ? { lastUsed: row.last_used } : {} });
   async function read(request, max = limit, acceptsText = false) {
     if (request.headers["content-encoding"] != null && request.headers["content-encoding"] !== "identity") fail2("COURSE_ENCODING_UNSUPPORTED", 415);
@@ -24488,18 +25782,22 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     const prior = db.prepare("SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?").get(owner, key);
     if (prior) {
       if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
-      return { ...JSON.parse(prior.result), replayed: true };
+      return { ...JSON.parse(prior.result), title: doc.title, replayed: true };
     }
     const old = db.prepare("SELECT revision,deleted FROM courses WHERE owner_id=? AND id=?").get(owner, doc.id);
     if (old ? old.deleted || expected !== old.revision : expected !== null) fail2("COURSE_REVISION_CONFLICT", 409);
     if (!old && db.prepare("SELECT COUNT(*) AS n FROM courses WHERE owner_id=? AND deleted=0").get(owner).n >= 200) fail2("COURSE_LIMIT");
     if (db.prepare("SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?").get(owner).n >= 2e4) fail2("COURSE_PUBLICATION_LIMIT");
-    const result = { id: doc.id, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
+    const result = { id: doc.id, title: doc.title, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
     db.prepare("INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at").run(owner, doc.id, result.revision, JSON.stringify(doc), result.updatedAt);
     db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result), now());
     return { ...result, replayed: false };
   }
   return async function handle(request, response, path) {
+    if (path === coursePath + "/schema" && request.method === "GET") {
+      respond(response, 200, course_schema_default);
+      return true;
+    }
     const tokens = path === "/api/native/v1/integrations/course-tokens";
     const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/progress)?)?$/.exec(path);
     if (path !== coursePath && !tokens && !native) return false;
@@ -24522,7 +25820,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     const user = userFor(request);
     if (tokens) {
       if (request.method === "GET") {
-        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), endpoint, protocol: courseProtocol, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt() } });
+        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), ...metadata, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt() } });
         return true;
       }
       if (["POST", "DELETE"].includes(request.method)) {
@@ -24541,7 +25839,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
           if (db.prepare("SELECT COUNT(*) AS n FROM course_tokens WHERE user_id=?").get(actor).n >= 10) fail2("COURSE_TOKEN_LIMIT");
           const accessToken = "wsc_" + randomBytes(32).toString("base64url"), credential2 = { id: randomUUID(), name, created: now(), expires: now() + 365 * 864e5 };
           db.prepare("INSERT INTO course_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)").run(credential2.id, hash(accessToken), actor, name, credential2.created, credential2.expires);
-          return { credential: credential2, accessToken, endpoint, protocol: courseProtocol };
+          return { credential: credential2, accessToken, ...metadata };
         });
         respond(response, request.method === "POST" ? 201 : 200, { data: result });
         return true;
@@ -24586,7 +25884,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         return true;
       }
       if (id && isProgress && request.method === "POST") {
-        const { value, bytes } = await read(request, 16384);
+        const { value, bytes } = await read(request, 128 * 1024);
         object(value, ["mutationID", "courseRevision", "lessonID", "blockID", "selectedOptionIDs", "text", "completed"], "INVALID_COURSE_PROGRESS");
         const mutation = uuid3(value.mutationID), lessonID = uuid3(value.lessonID), blockID = value.blockID === void 0 ? null : uuid3(value.blockID);
         if (!Number.isSafeInteger(value.courseRevision) || value.courseRevision < 1 || blockID === null && typeof value.completed !== "boolean" || value.completed !== void 0 && typeof value.completed !== "boolean") fail2("INVALID_COURSE_PROGRESS");
@@ -24604,13 +25902,13 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
           if (!lesson) fail2("INVALID_COURSE_PROGRESS");
           const state = progress(actor, ownerID, id, doc);
           if (blockID) {
-            const selectedOptionIDs = value.selectedOptionIDs ?? [], text = value.text ?? "";
+            const selectedOptionIDs = value.selectedOptionIDs ?? [], text = value.text ?? "", block = lesson.blocks.find((block2) => block2.id === blockID);
             uniqueStrings(selectedOptionIDs, 20, (id2) => {
               if (typeof id2 !== "string" || !identifier.test(id2)) fail2("INVALID_COURSE_PROGRESS");
             });
-            string(text, 4e3, false);
+            string(text, answerTextLimit(block), false);
             const answer = { lessonID, blockID, selectedOptionIDs, text, updatedAt: new Date(now()).toISOString() };
-            if (!answerValid(answer, lesson.blocks.find((block) => block.id === blockID))) fail2("INVALID_COURSE_ANSWER");
+            if (!answerValid(answer, block)) fail2("INVALID_COURSE_ANSWER");
             state.answers = [...state.answers.filter((answer2) => answer2.lessonID !== lessonID || answer2.blockID !== blockID), answer];
           }
           if (value.completed === true && !lesson.blocks.filter((block) => block.type === "question").every((block) => state.answers.some((answer) => answer.lessonID === lessonID && answer.blockID === block.id))) fail2("COURSE_ANSWERS_REQUIRED", 409);

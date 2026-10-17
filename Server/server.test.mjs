@@ -1108,20 +1108,30 @@ test('course protocol enforces scoped tokens, CAS, strict content validation and
     assert.equal((await native('workspace', { auth: key.accessToken })).status, 401);
     assert.equal((await publishCourse(base, key.accessToken, doc, { headers: { 'X-Workspace-ID': '1' } })).status, 422);
     const published = await publishCourse(base, key.accessToken, doc, { key: mutation, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
-    assert.equal(published.status, 201); assert.equal(published.value.data.revision, 1);
+    assert.equal(published.status, 201); assert.equal(published.value.data.revision, 1); assert.equal(published.value.data.title, doc.title);
     const replay = await publishCourse(base, key.accessToken, doc, { key: mutation });
-    assert.equal(replay.status, 200); assert.equal(replay.value.data.replayed, true);
+    assert.equal(replay.status, 200); assert.equal(replay.value.data.replayed, true); assert.equal(replay.value.data.title, doc.title);
+    const legacyPublication = JSON.parse(instance.db.prepare('SELECT result FROM course_publications WHERE mutation_id=?').get(mutation).result);
+    delete legacyPublication.title;
+    instance.db.prepare('UPDATE course_publications SET result=? WHERE mutation_id=?').run(JSON.stringify(legacyPublication), mutation);
+    const legacyReplay = await publishCourse(base, key.accessToken, doc, { key: mutation });
+    assert.equal(legacyReplay.status, 200); assert.equal(legacyReplay.value.data.replayed, true); assert.equal(legacyReplay.value.data.title, doc.title);
+    assert.equal(legacyReplay.value.data.revision, 1, 'legacy result enrichment does not increment the revision');
     assert.equal((await publishCourse(base, key.accessToken, { ...doc, title: 'different' }, { key: mutation })).status, 409);
     assert.equal((await publishCourse(base, key.accessToken, doc)).status, 409);
     assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 2 })).status, 409);
-    doc.title = '更新后的课程'; assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 1 })).value.data.revision, 2);
+    doc.title = '更新后的课程';
+    const updateMutation = randomUUID(), updated = await publishCourse(base, key.accessToken, doc, { key: updateMutation, revision: 1 });
+    assert.equal(updated.value.data.revision, 2); assert.equal(updated.value.data.title, doc.title);
+    const updatedReplay = await publishCourse(base, key.accessToken, doc, { key: updateMutation, revision: 1 });
+    assert.equal(updatedReplay.status, 200); assert.equal(updatedReplay.value.data.replayed, true); assert.equal(updatedReplay.value.data.title, doc.title);
     assert.equal((await native('courses', { auth: session })).value.data.courses[0].lessonCount, 1);
     const downloaded = await native('courses/' + doc.id, { auth: session }); assert.equal(downloaded.value.data.revision, 2); assert.deepEqual(downloaded.value.data.course, doc);
     const stranger = (await native('accounts', { method: 'POST', body: { email: 'course-stranger@test.invalid', password } })).value.data.accessToken;
     assert.equal((await native('courses', { auth: stranger })).value.data.courses.length, 0);
     assert.equal((await native('courses/' + doc.id, { auth: stranger })).status, 404);
     for (const modify of [
-      d => { d.html = '<script>alert(1)</script>'; }, d => { d.lessons[0].blocks[0].text = '<script>alert(1)</script>'; },
+      d => { d.html = '<script>alert(1)</script>'; }, d => { d.lessons[0].blocks[0].type = 'html'; }, d => { d.lessons[0].blocks[0].type = 'script'; },
       d => { d.lessons[0].blocks[0].type = 'video'; }, d => { d.lessons[0].blocks[0].type = 'constructor'; }, d => { d.lessons[0].blocks[2].url = 'http://example.com/image.png'; },
       d => { d.lessons[0].blocks[2].url = 'https://example.com/image.svg'; }, d => { d.lessons[0].blocks[1].id = d.lessons[0].id; },
       d => { d.lessons[0].blocks[3].points[0].value = Infinity; }, d => { d.lessons[0].blocks[4].correctOptionIDs = ['unknown']; },
@@ -1195,5 +1205,512 @@ test('course progress is personal, revision-aware, idempotent and shared-viewer 
     assert.equal((await native('sharing/member', { auth: session, method: 'DELETE', body: { id: membership } })).status, 200);
     assert.equal((await native('courses', { auth: member, headers })).status, 403);
     assert.equal((await mutate({ blockID: lesson.blocks[5].id, text: 'later', courseRevision: 2 })).status, 403);
+  });
+});
+
+
+// Keep fixtures inline: production verification receives only the bundled server and tests.
+function programmingCourse() {
+  return {
+  "protocol": "WORKSHOP-COURSE/1",
+  "id": "c0000000-0000-4000-8000-000000000001",
+  "title": "C++ 函数指针：从地址到调用",
+  "summary": "结合源码、分步拆解、对照、翻卡和练习理解函数指针。代码仅作课程数据，不执行。",
+  "lessons": [
+    {
+      "id": "c0000000-0000-4000-8000-000000000002",
+      "title": "用一个例子理解函数指针",
+      "objectives": [
+        "区分保存函数地址与发起函数调用",
+        "读懂返回 int、参数为 int 的函数指针声明"
+      ],
+      "estimatedMinutes": 12,
+      "blocks": [
+        {
+          "id": "c0000000-0000-4000-8000-000000000003",
+          "type": "text",
+          "title": "观察一段完整代码",
+          "text": "完整示例（仅供阅读，不会由 App 编译或执行）：\n#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nint main() {\n    int (*operation)(int) = twice;\n    std::cout << operation(3) << \"\\n\";\n}\n预期输出：6",
+          "presentation": {
+            "kind": "code",
+            "code": {
+              "language": "cpp",
+              "filename": "dispatch.cpp",
+              "source": "#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nint main() {\n    int (*operation)(int) = twice;\n    std::cout << operation(3) << \"\\n\";\n}",
+              "highlightLines": [
+                6,
+                7
+              ],
+              "annotations": [
+                {
+                  "line": 6,
+                  "text": "operation 是函数指针；它保存函数地址，不会在赋值时调用函数。"
+                }
+              ],
+              "stdin": "",
+              "expectedOutput": "6\n"
+            }
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000004",
+          "type": "text",
+          "title": "把声明拆开看",
+          "text": "int (*operation)(int)：operation 是名字；(*operation) 说明它是指针；参数是 int；返回值是 int。",
+          "presentation": {
+            "kind": "table",
+            "table": {
+              "columns": [
+                "片段",
+                "含义"
+              ],
+              "rows": [
+                [
+                  "int",
+                  "返回值类型"
+                ],
+                [
+                  "(*operation)",
+                  "指针名"
+                ],
+                [
+                  "(int)",
+                  "参数类型"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000005",
+          "type": "text",
+          "title": "从地址到调用",
+          "text": "1. 定义 twice。2. 把 twice 的地址赋给 operation。3. 调用 operation(3)，得到 6。",
+          "presentation": {
+            "kind": "steps",
+            "steps": [
+              {
+                "title": "定义目标函数",
+                "text": "目标函数接收 int 并返回 int。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int twice(int x) { return x * 2; }"
+                }
+              },
+              {
+                "title": "保存函数地址",
+                "text": "函数名在这里可转换为函数指针。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int (*operation)(int) = twice;"
+                }
+              },
+              {
+                "title": "通过指针调用",
+                "text": "operation(3) 与 twice(3) 的结果相同。"
+              }
+            ]
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000006",
+          "type": "callout",
+          "title": "定义与调用不要混淆",
+          "text": "int (*operation)(int) = twice; 是定义指针；int result = operation(3); 才会调用函数。",
+          "presentation": {
+            "kind": "comparison",
+            "items": [
+              {
+                "title": "保存地址",
+                "text": "这里不会执行 twice。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int (*operation)(int) = twice;"
+                }
+              },
+              {
+                "title": "发起调用",
+                "text": "这里把参数 3 传入函数。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int result = operation(3);"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000007",
+          "type": "text",
+          "title": "用两张卡片检查理解",
+          "text": "卡片1：函数指针保存什么？答案：可调用函数的地址。卡片2：operation(3) 会输出什么？答案：twice(3) 的结果是 6。",
+          "presentation": {
+            "kind": "flashcards",
+            "cards": [
+              {
+                "front": "函数指针保存什么？",
+                "back": "可调用函数的地址，且指针类型需要与函数签名兼容。"
+              },
+              {
+                "front": "operation(3) 的返回值是多少？",
+                "back": "6，因为 operation 指向 twice。"
+              }
+            ]
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000008",
+          "type": "question",
+          "title": "先预测，再核对",
+          "text": "哪个表达式会调用函数？",
+          "questionType": "singleChoice",
+          "code": {
+            "language": "cpp",
+            "source": "int (*operation)(int) = twice;\nint result = operation(3);",
+            "highlightLines": [
+              2
+            ]
+          },
+          "options": [
+            {
+              "id": "address",
+              "text": "twice"
+            },
+            {
+              "id": "call",
+              "text": "operation(3)"
+            }
+          ],
+          "correctOptionIDs": [
+            "call"
+          ],
+          "hints": [
+            "找一找带实际参数的括号。"
+          ],
+          "explanation": "operation(3) 传入实参并发起调用；赋值时的 twice 仅提供函数地址。"
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000009",
+          "type": "question",
+          "title": "补全声明",
+          "text": "写出一行代码：定义名为 operation 的函数指针，参数和返回值都是 int，并指向 twice。",
+          "questionType": "shortAnswer",
+          "answerFormat": "code",
+          "code": {
+            "language": "cpp",
+            "source": "int twice(int x) { return x * 2; }"
+          },
+          "hints": [
+            "指针名需要放在 (*...) 内。",
+            "末尾使用 = twice;"
+          ],
+          "acceptedAnswers": [
+            "int (*operation)(int) = twice;"
+          ],
+          "explanation": "这是参考写法。代码答案会保留内部空格和大小写进行文本比较，并不代表已经编译测试；等价写法可自行对照。"
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000010",
+          "type": "question",
+          "title": "核对输出",
+          "text": "上面的完整程序输出什么？只填写输出内容。",
+          "questionType": "shortAnswer",
+          "answerFormat": "output",
+          "code": {
+            "language": "cpp",
+            "filename": "dispatch.cpp",
+            "source": "#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nint main() {\n    int (*operation)(int) = twice;\n    std::cout << operation(3) << \"\\n\";\n}",
+            "highlightLines": [
+              6,
+              7
+            ],
+            "annotations": [
+              {
+                "line": 6,
+                "text": "operation 是函数指针；它保存函数地址，不会在赋值时调用函数。"
+              }
+            ],
+            "stdin": "",
+            "expectedOutput": "6\n"
+          },
+          "acceptedAnswers": [
+            "6"
+          ],
+          "explanation": "twice 把 3 乘以 2，输出 6。预期输出由课程提供，App 不运行程序。"
+        }
+      ]
+    }
+  ]
+};
+}
+function richCourse() {
+  return {
+  "protocol": "WORKSHOP-COURSE/1",
+  "id": "d0000000-0000-4000-8000-000000000001",
+  "title": "变量与状态：可操作的小演示",
+  "summary": "用代码框、Markdown、SVG 和离线 HTML 演示理解变量更新，不依赖图片或视频。",
+  "lessons": [
+    {
+      "id": "d0000000-0000-4000-8000-000000000002",
+      "title": "观察数值如何变化",
+      "objectives": [
+        "理解变量当前值与一次更新操作的关系"
+      ],
+      "estimatedMinutes": 6,
+      "blocks": [
+        {
+          "id": "d0000000-0000-4000-8000-000000000003",
+          "type": "text",
+          "title": "先读代码",
+          "text": "int value = 1;\nvalue = value + 1;\n更新后 value 为 2。",
+          "presentation": {
+            "kind": "markdown",
+            "markdown": {
+              "source": "## 一次更新\n\n```cpp\nint value = 1;\nvalue = value + 1;\n```\n\n> 先读取旧值，再把结果写回变量。"
+            }
+          }
+        },
+        {
+          "id": "d0000000-0000-4000-8000-000000000004",
+          "type": "text",
+          "title": "看见变量",
+          "text": "一个方框表示变量 value，里面存放当前值 1。执行加 1 操作后，方框里的值变为 2。",
+          "presentation": {
+            "kind": "svg",
+            "svg": {
+              "height": 160,
+              "source": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 320 140\"><rect x=\"20\" y=\"20\" width=\"280\" height=\"100\" rx=\"16\" fill=\"#f0edff\"/><text x=\"160\" y=\"55\" text-anchor=\"middle\" font-size=\"18\" fill=\"#333\">value</text><text x=\"160\" y=\"98\" text-anchor=\"middle\" font-size=\"32\" fill=\"#6553c7\">1 → 2</text></svg>"
+            }
+          }
+        },
+        {
+          "id": "d0000000-0000-4000-8000-000000000005",
+          "type": "callout",
+          "title": "亲手更新状态",
+          "text": "点击“加 1”会把当前值增加 1，点击“重置”恢复到 1。这个 HTML 演示只模拟变量更新，不运行 C++ 程序。",
+          "presentation": {
+            "kind": "html",
+            "html": {
+              "height": 240,
+              "source": "<style>:root{color-scheme:light dark}body{margin:0;padding:16px;font:16px system-ui;text-align:center}output{display:block;font-size:48px;margin:16px}button{font:inherit;padding:10px 20px;border:0;border-radius:24px;background:#6553c7;color:white;margin:4px}</style><p>value 当前值</p><output id=\"value\">1</output><button id=\"add\">加 1</button><button id=\"reset\">重置</button><script>let n=1;const out=document.getElementById(\"value\");document.getElementById(\"add\").onclick=()=>{out.textContent=String(++n)};document.getElementById(\"reset\").onclick=()=>{n=1;out.textContent=\"1\"};</script>"
+            }
+          }
+        },
+        {
+          "id": "d0000000-0000-4000-8000-000000000006",
+          "type": "question",
+          "text": "从 1 开始，连续加 1 两次后，变量的值是多少？",
+          "questionType": "shortAnswer",
+          "answerFormat": "output",
+          "acceptedAnswers": [
+            "3"
+          ],
+          "explanation": "第一次更新为 2，第二次读取 2 再加 1，得到 3。"
+        }
+      ]
+    }
+  ]
+};
+}
+test('course structured extensions round-trip C++ data and expose a static strict schema', async () => {
+  await withTextIngress(async ({ native, base, session, instance }) => {
+    const schemaResponse = await fetch(base + '/api/integrations/v1/courses/schema');
+    assert.equal(schemaResponse.status, 200, 'schema discovery needs no session or publishing credential');
+    assert.match(schemaResponse.headers.get('content-type'), /^application\/json/);
+    assert.equal(schemaResponse.headers.get('x-content-type-options'), 'nosniff');
+    const schema = await schemaResponse.json();
+    assert.equal(schema.properties.protocol.const, 'WORKSHOP-COURSE/1');
+    assert.equal(schema['x-workshop-extensionVersion'], 'structured-1');
+    assert.deepEqual(schema.$defs.presentation.oneOf.map(value => value.properties.kind.const), ['code', 'table', 'steps', 'comparison', 'flashcards', 'markdown', 'html', 'svg']);
+    assert.deepEqual(Object.keys(schema.$defs.lesson.properties).sort(), ['blocks', 'estimatedMinutes', 'id', 'objectives', 'title']);
+    assert.equal(schema.$defs.code.properties.source.maxLength, 20000);
+    const languagePattern = new RegExp(schema.$defs.code.properties.language.pattern);
+    assert.match('c++', languagePattern); assert.doesNotMatch('cpp\n', languagePattern); assert.doesNotMatch('cpp\r', languagePattern);
+    assert.equal(schema.$defs.codeAnswerBlock.properties.acceptedAnswers.items.maxLength, 20000);
+    assert.equal(schema.$defs.outputAnswerBlock.properties.acceptedAnswers.items.maxLength, 8000);
+    assert.equal(schema.$defs.textAnswerBlock.properties.acceptedAnswers.items.maxLength, 500);
+    function checkObjects(node) {
+      if (!node || typeof node !== 'object') return;
+      if (node.type === 'object') assert.equal(node.additionalProperties, false, 'all schema objects reject unknown keys');
+      for (const child of Object.values(node)) if (child && typeof child === 'object') checkObjects(child);
+    }
+    checkObjects(schema);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_tokens').get().n, 0);
+    const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
+    assert.equal(metadata.schemaURL, 'https://text-import.test/api/integrations/v1/courses/schema');
+    assert.equal(metadata.extensionVersion, 'structured-1');
+    assert.match(metadata.prompt, /GET https:\/\/text-import\.test\/api\/integrations\/v1\/courses\/schema/);
+    assert.match(metadata.manualPrompt, /#include <iostream>/);
+    assert.match(metadata.manualPrompt, /comparison/); assert.match(metadata.manualPrompt, /flashcards/); assert.match(metadata.manualPrompt, /不编译、不执行/);
+    const issued = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
+    assert.equal(issued.schemaURL, metadata.schemaURL); assert.equal(issued.extensionVersion, metadata.extensionVersion);
+    const doc = programmingCourse();
+    const code = doc.lessons[0].blocks[0].presentation.code;
+    code.source = '#include <iostream>\r\ntemplate<typename T>\rT identity(T value) { return value; }\n// <script> is a quoted teaching example, not executable markup';
+    code.highlightLines = [1, 2, 4]; code.annotations = [{ line: 2, text: 'C++ template<typename T> is plain source data.' }];
+    doc.lessons[0].blocks[0].text = code.source;
+    doc.lessons[0].blocks[1].presentation.table.rows[0][1] = '<vector<int>>';
+    const created = await publishCourse(base, issued.accessToken, doc); assert.equal(created.status, 201); assert.equal(created.value.data.title, doc.title);
+    const downloaded = await native('courses/' + doc.id, { auth: session });
+    assert.deepEqual(downloaded.value.data.course, doc, 'all structured fields and CRLF/CR/LF source bytes survive publication');
+    assert.deepEqual(doc.lessons[0].blocks.slice(0, 5).map(block => block.presentation.kind), ['code', 'table', 'steps', 'comparison', 'flashcards']);
+    assert.equal(downloaded.value.data.course.lessons[0].blocks[0].presentation.code.source, code.source);
+  });
+});
+
+test('course rich presentations preserve offline HTML SVG and Markdown with bounded strict payloads', async () => {
+  await withTextIngress(async ({ native, base, session }) => {
+    const key = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
+    const doc = richCourse();
+    assert.equal((await publishCourse(base, key.accessToken, doc)).status, 201);
+    assert.deepEqual((await native('courses/' + doc.id, { auth: session })).value.data.course, doc);
+    const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
+    for (const prompt of [metadata.prompt, metadata.manualPrompt]) {
+      for (const pattern of [/kind:"markdown"/, /kind:"html"/, /kind:"svg"/, /暂停\/重置/, /prefers-reduced-motion/, /1 MiB/, /默认不要使用图片/, /Markdown 围栏/, /CDN/]) assert.match(prompt, pattern);
+      assert.doesNotMatch(prompt, /禁止 html\/script\/svg|协议不提供可执行脚本/);
+    }
+    const schema = await (await fetch(base + '/api/integrations/v1/courses/schema')).json();
+    for (const [kind, max] of [['markdown', 20000], ['html', 60000], ['svg', 60000]]) {
+      assert.equal(schema.$defs[kind].properties.source.maxLength, max);
+      assert.equal(schema.$defs[kind].properties.source['x-workshop-maxUTF16Length'], max);
+      assert.equal(schema.$defs[kind].additionalProperties, false);
+      if (kind === 'markdown') assert.equal(schema.$defs[kind].properties.height, undefined);
+      else assert.deepEqual(schema.$defs[kind].properties.height, { type: 'integer', minimum: 120, maximum: 640 });
+    }
+    const invalid = [
+      p => { p.kind = 'canvas'; },
+      p => { p.html.extra = 'unknown'; },
+      p => { p.svg = { source: '<svg/>' }; },
+      p => { delete p.html.source; },
+      p => { p.html = null; },
+      p => { p.html = []; },
+      p => { p.html.source = ''; },
+      p => { p.html.source = ' \n\t'; },
+      p => { p.html.source = 'x\u0000'; },
+      p => { p.html.source = 'x'.repeat(60001); },
+      p => { p.html.source = '🙂'.repeat(30001); },
+      p => { p.html.height = 119; },
+      p => { p.html.height = 641; },
+      p => { p.html.height = 240.5; },
+      p => { p.html.height = '240'; },
+      p => { p.html.height = null; },
+      p => { p.kind = 'markdown'; delete p.html; p.markdown = { source: 'x'.repeat(20001) }; },
+      p => { p.kind = 'markdown'; delete p.html; p.markdown = { source: 'ok', height: 240 }; },
+      p => { p.kind = 'svg'; delete p.html; p.svg = { source: 'x'.repeat(60001) }; },
+      p => { p.kind = 'svg'; delete p.html; p.svg = { source: '<svg/>', height: 119 }; }
+    ];
+    for (const [index, change] of invalid.entries()) {
+      const bad = structuredClone(doc); change(bad.lessons[0].blocks[2].presentation);
+      assert.equal((await publishCourse(base, key.accessToken, bad, { revision: 1 })).status, 422, 'invalid rich payload ' + index);
+    }
+    const noFallback = structuredClone(doc); delete noFallback.lessons[0].blocks[2].text;
+    assert.equal((await publishCourse(base, key.accessToken, noFallback, { revision: 1 })).status, 422);
+    const boundary = structuredClone(doc);
+    boundary.lessons[0].blocks[0].presentation.markdown.source = 'm'.repeat(20000);
+    boundary.lessons[0].blocks[1].presentation.svg = { source: '🙂'.repeat(30000), height: 120 };
+    boundary.lessons[0].blocks[2].presentation.html = { source: 'h'.repeat(60000), height: 640 };
+    assert.equal((await publishCourse(base, key.accessToken, boundary, { revision: 1 })).status, 200);
+    assert.deepEqual((await native('courses/' + doc.id, { auth: session })).value.data.course, boundary);
+    const oversized = structuredClone(doc);
+    oversized.lessons[0].blocks = Array.from({ length: 18 }, () => ({ id: randomUUID(), type: 'text', text: '完整可读退路', presentation: { kind: 'html', html: { source: 'x'.repeat(60000) } } }));
+    assert.equal((await publishCourse(base, key.accessToken, oversized, { revision: 2 })).status, 413, '1 MiB transport limit still applies');
+  });
+});
+
+test('course structured extensions reject invalid bounds, references and misplaced fields', async () => {
+  await withTextIngress(async ({ native, base, session }) => {
+    const key = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
+    const original = programmingCourse();
+    assert.equal((await publishCourse(base, key.accessToken, original)).status, 201);
+    const invalid = [
+      d => { d.lessons[0].objectives = ['']; },
+      d => { d.lessons[0].objectives = Array(7).fill('目标'); },
+      d => { d.lessons[0].objectives = ['x'.repeat(501)]; },
+      d => { d.lessons[0].estimatedMinutes = 0; },
+      d => { d.lessons[0].estimatedMinutes = 181; },
+      d => { d.lessons[0].estimatedMinutes = 1.5; },
+      d => { d.lessons[0].blocks[0].title = 'x'.repeat(241); },
+      d => { delete d.lessons[0].blocks[0].text; },
+      d => { d.lessons[0].blocks[0].presentation.kind = 'html'; },
+      d => { d.lessons[0].blocks[0].presentation.extra = true; },
+      d => { d.lessons[0].blocks[0].presentation.table = { columns: ['a'], rows: [['b']] }; },
+      d => { d.lessons[0].blocks[0].presentation.code.language = 'c++/html'; },
+      d => { d.lessons[0].blocks[0].presentation.code.language = 'cpp\n'; },
+      d => { d.lessons[0].blocks[0].presentation.code.language = 'cpp\r'; },
+      d => { d.lessons[0].blocks[0].presentation.code.source = ''; },
+      d => { d.lessons[0].blocks[0].presentation.code.source = 'x'.repeat(20001); },
+      d => { d.lessons[0].blocks[0].presentation.code.source = 'x\u0000'; },
+      d => { d.lessons[0].blocks[0].presentation.code.execute = true; },
+      d => { d.lessons[0].blocks[0].presentation.code.highlightLines = [0]; },
+      d => { d.lessons[0].blocks[0].presentation.code.highlightLines = [2, 2]; },
+      d => { d.lessons[0].blocks[0].presentation.code.highlightLines = [9]; },
+      d => { d.lessons[0].blocks[0].presentation.code.annotations = [{ line: 6, text: 'a' }, { line: 6, text: 'b' }]; },
+      d => { d.lessons[0].blocks[0].presentation.code.annotations = [{ line: 9, text: 'missing' }]; },
+      d => { d.lessons[0].blocks[0].presentation.code.stdin = 'x'.repeat(4001); },
+      d => { d.lessons[0].blocks[0].presentation.code.expectedOutput = 'x'.repeat(8001); },
+      d => { d.lessons[0].blocks[1].presentation.table.rows[0].pop(); },
+      d => { d.lessons[0].blocks[1].presentation.table.columns = []; },
+      d => { d.lessons[0].blocks[1].presentation.table.rows[0][0] = 'x'.repeat(2001); },
+      d => { d.lessons[0].blocks[2].presentation.steps = []; },
+      d => { d.lessons[0].blocks[2].presentation.steps[0].extra = true; },
+      d => { d.lessons[0].blocks[3].presentation.items = [{ title: 'one', text: 'one' }]; },
+      d => { d.lessons[0].blocks[4].presentation.cards = []; },
+      d => { d.lessons[0].blocks[4].presentation.cards[0].back = 'x'.repeat(4001); },
+      d => { d.lessons[0].blocks[5].presentation = { kind: 'code', code: { language: 'cpp', source: 'int x;' } }; },
+      d => { d.lessons[0].blocks[0].code = { language: 'cpp', source: 'int x;' }; },
+      d => { d.lessons[0].blocks[0].hints = ['hint']; },
+      d => { d.lessons[0].blocks[5].answerFormat = 'code'; },
+      d => { d.lessons[0].blocks[5].hints = Array(6).fill('hint'); },
+      d => { d.lessons[0].blocks[6].answerFormat = 'binary'; },
+      d => { d.lessons[0].blocks[6].acceptedAnswers = ['x'.repeat(20001)]; },
+      d => { d.lessons[0].blocks[7].acceptedAnswers = ['x'.repeat(8001)]; },
+      d => { d.lessons[0].blocks[0].presentation.code = { language: 'cpp', source: 'a\r\nb\rc\nd', highlightLines: [5] }; }
+    ];
+    for (const [index, modify] of invalid.entries()) {
+      const doc = structuredClone(original); modify(doc);
+      const result = await publishCourse(base, key.accessToken, doc, { revision: 1 });
+      assert.equal(result.status, 422, 'invalid structured case ' + index);
+    }
+    assert.equal((await native('courses/' + original.id, { auth: session })).value.data.revision, 1);
+    const boundary = structuredClone(original);
+    boundary.lessons[0].objectives = Array(6).fill('目标'.repeat(250)); boundary.lessons[0].estimatedMinutes = 180;
+    boundary.lessons[0].blocks[0].presentation.code = { language: 'c++', source: 'x'.repeat(20000), highlightLines: [1], annotations: [], stdin: '', expectedOutput: '' };
+    boundary.lessons[0].blocks[6].acceptedAnswers = ['x'.repeat(20000)]; boundary.lessons[0].blocks[7].acceptedAnswers = ['x'.repeat(8000)];
+    assert.equal((await publishCourse(base, key.accessToken, boundary, { revision: 1 })).status, 200);
+  });
+});
+
+test('course programming answers keep exact data, format limits, idempotency and valid-response completion', async () => {
+  await withTextIngress(async ({ native, base, session }) => {
+    const key = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
+    const doc = programmingCourse(), lesson = doc.lessons[0];
+    lesson.blocks = lesson.blocks.filter(block => block.type === 'question');
+    lesson.blocks.push({ id: randomUUID(), type: 'question', text: '保持旧版短答限制', questionType: 'shortAnswer', acceptedAnswers: ['reference'] });
+    assert.equal((await publishCourse(base, key.accessToken, doc)).status, 201);
+    const path = 'courses/' + doc.id + '/progress';
+    const mutate = body => native(path, { auth: session, method: 'POST', body: { mutationID: randomUUID(), courseRevision: 1, lessonID: lesson.id, ...body } });
+    assert.equal((await mutate({ completed: true })).status, 409);
+    const choice = lesson.blocks[0], code = lesson.blocks[1], output = lesson.blocks[2], legacy = lesson.blocks[3];
+    assert.equal((await mutate({ blockID: choice.id, selectedOptionIDs: ['address'] })).status, 200, 'wrong but valid choice remains a valid response');
+    const source = '#include <iostream>\r\nstd::cout << "Case  And  Spaces";\n' + '中'.repeat(20000 - 64);
+    const codeMutation = { mutationID: randomUUID(), blockID: code.id, text: source };
+    const saved = await mutate(codeMutation);
+    assert.equal(saved.status, 200); assert.equal(saved.value.data.answers.find(answer => answer.blockID === code.id).text, source);
+    assert.deepEqual((await mutate(codeMutation)).value.data, saved.value.data, 'long code answers retain existing idempotent retry semantics');
+    assert.equal((await mutate({ ...codeMutation, text: source + 'x' })).status, 409);
+    assert.equal((await mutate({ blockID: code.id, text: 'x'.repeat(20001) })).status, 422);
+    assert.equal((await mutate({ blockID: output.id, text: 'x'.repeat(8001) })).status, 422);
+    assert.equal((await mutate({ blockID: legacy.id, text: 'x'.repeat(4001) })).status, 422, 'new formats do not loosen legacy text limits');
+    assert.equal((await mutate({ blockID: code.id, text: '   ' })).status, 422);
+    const maximumCode = 'x'.repeat(20000);
+    // Escaped JSON needs up to six bytes for each UTF-16 unit; body cap must still admit a valid 20k code answer.
+    const escapedBody = JSON.stringify({ mutationID: randomUUID(), courseRevision: 1, lessonID: lesson.id, blockID: code.id, text: maximumCode }).replaceAll('x', '\\u0078');
+    const escapedResponse = await fetch(base + '/api/native/v1/' + path, { method: 'POST', headers: { Authorization: 'Bearer ' + session, 'Content-Type': 'application/json' }, body: escapedBody });
+    assert.equal(escapedResponse.status, 200); assert.equal((await escapedResponse.json()).data.answers.find(answer => answer.blockID === code.id).text, maximumCode);
+    assert.equal((await mutate({ blockID: output.id, text: 'o'.repeat(8000) })).status, 200);
+    const completed = await mutate({ blockID: legacy.id, text: 't'.repeat(4000), completed: true });
+    assert.equal(completed.status, 200); assert.deepEqual(completed.value.data.completedLessonIDs, [lesson.id], 'reference answer mismatch does not block completion');
+    const stranger = (await native('accounts', { method: 'POST', body: { email: 'programming-stranger@test.invalid', password } })).value.data.accessToken;
+    assert.equal((await native(path, { auth: stranger })).status, 404, 'programming progress remains account isolated');
   });
 });

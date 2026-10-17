@@ -1,0 +1,231 @@
+{
+  "protocol": "WORKSHOP-COURSE/1",
+  "id": "c0000000-0000-4000-8000-000000000001",
+  "title": "C++ 函数指针：从地址到调用",
+  "summary": "结合源码、分步拆解、对照、翻卡和练习理解函数指针。代码仅作课程数据，不执行。",
+  "lessons": [
+    {
+      "id": "c0000000-0000-4000-8000-000000000002",
+      "title": "用一个例子理解函数指针",
+      "objectives": [
+        "区分保存函数地址与发起函数调用",
+        "读懂返回 int、参数为 int 的函数指针声明"
+      ],
+      "estimatedMinutes": 12,
+      "blocks": [
+        {
+          "id": "c0000000-0000-4000-8000-000000000003",
+          "type": "text",
+          "title": "观察一段完整代码",
+          "text": "完整示例（仅供阅读，不会由 App 编译或执行）：\n#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nint main() {\n    int (*operation)(int) = twice;\n    std::cout << operation(3) << \"\\n\";\n}\n预期输出：6",
+          "presentation": {
+            "kind": "code",
+            "code": {
+              "language": "cpp",
+              "filename": "dispatch.cpp",
+              "source": "#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nint main() {\n    int (*operation)(int) = twice;\n    std::cout << operation(3) << \"\\n\";\n}",
+              "highlightLines": [
+                6,
+                7
+              ],
+              "annotations": [
+                {
+                  "line": 6,
+                  "text": "operation 是函数指针；它保存函数地址，不会在赋值时调用函数。"
+                }
+              ],
+              "stdin": "",
+              "expectedOutput": "6\n"
+            }
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000004",
+          "type": "text",
+          "title": "把声明拆开看",
+          "text": "int (*operation)(int)：operation 是名字；(*operation) 说明它是指针；参数是 int；返回值是 int。",
+          "presentation": {
+            "kind": "table",
+            "table": {
+              "columns": [
+                "片段",
+                "含义"
+              ],
+              "rows": [
+                [
+                  "int",
+                  "返回值类型"
+                ],
+                [
+                  "(*operation)",
+                  "指针名"
+                ],
+                [
+                  "(int)",
+                  "参数类型"
+                ]
+              ]
+            }
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000005",
+          "type": "text",
+          "title": "从地址到调用",
+          "text": "1. 定义 twice。2. 把 twice 的地址赋给 operation。3. 调用 operation(3)，得到 6。",
+          "presentation": {
+            "kind": "steps",
+            "steps": [
+              {
+                "title": "定义目标函数",
+                "text": "目标函数接收 int 并返回 int。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int twice(int x) { return x * 2; }"
+                }
+              },
+              {
+                "title": "保存函数地址",
+                "text": "函数名在这里可转换为函数指针。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int (*operation)(int) = twice;"
+                }
+              },
+              {
+                "title": "通过指针调用",
+                "text": "operation(3) 与 twice(3) 的结果相同。"
+              }
+            ]
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000006",
+          "type": "callout",
+          "title": "定义与调用不要混淆",
+          "text": "int (*operation)(int) = twice; 是定义指针；int result = operation(3); 才会调用函数。",
+          "presentation": {
+            "kind": "comparison",
+            "items": [
+              {
+                "title": "保存地址",
+                "text": "这里不会执行 twice。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int (*operation)(int) = twice;"
+                }
+              },
+              {
+                "title": "发起调用",
+                "text": "这里把参数 3 传入函数。",
+                "code": {
+                  "language": "cpp",
+                  "source": "int result = operation(3);"
+                }
+              }
+            ]
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000007",
+          "type": "text",
+          "title": "用两张卡片检查理解",
+          "text": "卡片1：函数指针保存什么？答案：可调用函数的地址。卡片2：operation(3) 会输出什么？答案：twice(3) 的结果是 6。",
+          "presentation": {
+            "kind": "flashcards",
+            "cards": [
+              {
+                "front": "函数指针保存什么？",
+                "back": "可调用函数的地址，且指针类型需要与函数签名兼容。"
+              },
+              {
+                "front": "operation(3) 的返回值是多少？",
+                "back": "6，因为 operation 指向 twice。"
+              }
+            ]
+          }
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000008",
+          "type": "question",
+          "title": "先预测，再核对",
+          "text": "哪个表达式会调用函数？",
+          "questionType": "singleChoice",
+          "code": {
+            "language": "cpp",
+            "source": "int (*operation)(int) = twice;\nint result = operation(3);",
+            "highlightLines": [
+              2
+            ]
+          },
+          "options": [
+            {
+              "id": "address",
+              "text": "twice"
+            },
+            {
+              "id": "call",
+              "text": "operation(3)"
+            }
+          ],
+          "correctOptionIDs": [
+            "call"
+          ],
+          "hints": [
+            "找一找带实际参数的括号。"
+          ],
+          "explanation": "operation(3) 传入实参并发起调用；赋值时的 twice 仅提供函数地址。"
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000009",
+          "type": "question",
+          "title": "补全声明",
+          "text": "写出一行代码：定义名为 operation 的函数指针，参数和返回值都是 int，并指向 twice。",
+          "questionType": "shortAnswer",
+          "answerFormat": "code",
+          "code": {
+            "language": "cpp",
+            "source": "int twice(int x) { return x * 2; }"
+          },
+          "hints": [
+            "指针名需要放在 (*...) 内。",
+            "末尾使用 = twice;"
+          ],
+          "acceptedAnswers": [
+            "int (*operation)(int) = twice;"
+          ],
+          "explanation": "这是参考写法。代码答案会保留内部空格和大小写进行文本比较，并不代表已经编译测试；等价写法可自行对照。"
+        },
+        {
+          "id": "c0000000-0000-4000-8000-000000000010",
+          "type": "question",
+          "title": "核对输出",
+          "text": "上面的完整程序输出什么？只填写输出内容。",
+          "questionType": "shortAnswer",
+          "answerFormat": "output",
+          "code": {
+            "language": "cpp",
+            "filename": "dispatch.cpp",
+            "source": "#include <iostream>\n\nint twice(int x) { return x * 2; }\n\nint main() {\n    int (*operation)(int) = twice;\n    std::cout << operation(3) << \"\\n\";\n}",
+            "highlightLines": [
+              6,
+              7
+            ],
+            "annotations": [
+              {
+                "line": 6,
+                "text": "operation 是函数指针；它保存函数地址，不会在赋值时调用函数。"
+              }
+            ],
+            "stdin": "",
+            "expectedOutput": "6\n"
+          },
+          "acceptedAnswers": [
+            "6"
+          ],
+          "explanation": "twice 把 3 乘以 2，输出 6。预期输出由课程提供，App 不运行程序。"
+        }
+      ]
+    }
+  ]
+}
