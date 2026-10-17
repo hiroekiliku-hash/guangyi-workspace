@@ -10,7 +10,7 @@
 
 由登录 session 管理密钥：
 
-- `GET /api/native/v1/integrations/course-tokens`：返回 `credentials`、`endpoint`、`protocol`、`prompt`（密钥位置为 `{{API_KEY}}`）。
+- `GET /api/native/v1/integrations/course-tokens`：返回 `credentials`、`endpoint`、`protocol`、`prompt`（密钥位置为 `{{API_KEY}}`）、`manualPrompt`（纯生成教程提示词，不含凭据，获取时不创建密钥）。
 - `POST` 相同地址，JSON `{ "name": "课程发布" }`（name 可省略）：201 返回 `credential`、`accessToken`、`endpoint`、`protocol`。
 - `DELETE` 相同地址，JSON `{ "id": "密钥 UUID" }`：撤销自己的密钥。
 
@@ -82,6 +82,7 @@ curl --fail-with-body 'https://workspace.kdfz.com.cn/api/integrations/v1/courses
 
 以下均使用用户登录 session，支持 `X-Workspace-ID` 选择有权访问的关联账户空间。未指定为个人空间。只读成员能阅读课程、提交自己的练习；学习答案和完成度按“学习者 + 空间 + 课程”隔离，不会同步为别人的进度。取消关联后立即失去在线访问。
 
+- `POST /api/native/v1/courses`：App 粘贴导入课程，正文是完整课程 JSON，使用登录 session；必需 `Idempotency-Key`，更新需要 `If-Match`。所有者或编辑成员可向当前空间发布，只读成员 403；不需要创建课程发布密钥。schema、大小限制、事务内鉴权、幂等和版本规则与发布接口共用，返回相同 `{id,revision,updatedAt,replayed}`。
 - `GET /api/native/v1/courses` → `data.courses:[{id,title,summary,revision,updatedAt,lessonCount}]`。
 - `GET /api/native/v1/courses/:uuid` → `data:{course:完整协议文档,revision,updatedAt}`。
 - `DELETE /api/native/v1/courses/:uuid` + `If-Match`：空间所有者或可编辑成员软删除；只读成员 403。
@@ -105,3 +106,9 @@ mutationID 以学习者、空间、课程隔离；同 ID 同正文重试不会�
 ## 给 Agent 的约定
 
 优先遵从用户指定；未指定时自行决定课时拆分、块类型和练习形式。文字优先，图表用于真正有数据的内容，练习用于检验理解，不为装饰填入虚构统计。不得凭空编造参考答案或版权图片来源。发布已获用户请求授权时直接执行；只在无法决定教学目标、目标账户或会覆盖未知版本等实质问题时询问。新建课程生成新 UUID，更新保留已有结构 ID 并使用已知 revision；重试保留原 key、字节正文和 If-Match。只有 HTTP 成功后才报告已发布；把版本冲突解释为需要获取最新课程后再编辑。App 可复制的权威提示词由服务器 `coursePrompt` 输出，自动填入端点，并在本地替换密钥占位符。
+
+## 教学提示词与无网络导入
+
+服务器提供两种权威提示词，均明确等待用户的下一条学习主题或资料，不把提示词本身当成教学内容。AI 自行推断水平、目标和课时，按概念解释、具体例子或图形、练习、反馈组织课程，受支持块与完整有效 JSON 示例均包含在提示词内。禁止虚构统计、图片地址和参考答案。
+
+`prompt` 面向有 HTTP 工具的 Agent，发布凭据仅放 Authorization；若不能联网，只输出一个完整课程 JSON（建议唯一 json 代码块），不声称已上传。`manualPrompt` 完全不含凭据或网络配置，用户可直接复制给普通 AI；生成的课程通过 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）在当前登录空间保存。获取和复制 manualPrompt 不会创建密钥，注册/登录 session 已有权限即可导入。更新课程时由 App 核对当前版本，不猜测覆盖。
