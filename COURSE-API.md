@@ -85,7 +85,8 @@ curl --fail-with-body 'https://workspace.kdfz.com.cn/api/integrations/v1/courses
 以下均使用用户登录 session，支持 `X-Workspace-ID` 选择有权访问的关联账户空间。未指定为个人空间。只读成员能阅读课程、提交自己的练习；学习答案和完成度按“学习者 + 空间 + 课程”隔离，不会同步为别人的进度。取消关联后立即失去在线访问。
 
 - `POST /api/native/v1/courses`：App 粘贴导入课程，正文是完整课程 JSON，使用登录 session；必需 `Idempotency-Key`，更新需要 `If-Match`。所有者或编辑成员可向当前空间发布，只读成员 403；不需要创建课程发布密钥。schema、大小限制、事务内鉴权、幂等和版本规则与发布接口共用，返回相同 `{id,title,revision,updatedAt,replayed}`。
-- `GET /api/native/v1/courses` → `data.courses:[{id,title,summary,revision,updatedAt,lessonCount}]`。
+- `GET /api/native/v1/courses` → `data:{courses:[{id,title,summary,revision,updatedAt,lessonCount}],starredCourseIDs:[课程 UUID]}`。星标只返回当前空间中尚未删除的课程，按“当前学习者 + 空间”隔离。
+- `PUT /api/native/v1/courses/:uuid/star`，JSON `{ "starred": true }` 或 `{ "starred": false }` → `data:{starred:布尔值}`。只读成员也可管理自己的星标；布尔值必填，未知字段拒绝。幂等设置，无需 mutation ID 或 If-Match，不改变课程修订号、更新时间或学习进度；课程不存在或已删除返回 404。读取正文后事务内重新验证会话和空间访问，撤销立即生效。删除课程时清除该课程在该空间中的全部星标。
 - `GET /api/native/v1/courses/:uuid` → `data:{course:完整协议文档,revision,updatedAt}`。
 - `DELETE /api/native/v1/courses/:uuid` + `If-Match`：空间所有者或可编辑成员软删除；只读成员 403。
 - `GET /api/native/v1/courses/:uuid/progress` → `data:{courseID,courseRevision,completedLessonIDs:[],answers:[{lessonID,blockID,selectedOptionIDs:[],text:"",updatedAt:"ISO"}]}`。

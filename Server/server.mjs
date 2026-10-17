@@ -25699,6 +25699,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
   db.exec(`CREATE TABLE IF NOT EXISTS course_tokens(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),name TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER);
     CREATE TABLE IF NOT EXISTS courses(owner_id INTEGER NOT NULL REFERENCES users(id),id TEXT NOT NULL,revision INTEGER NOT NULL,document TEXT NOT NULL,updated_at TEXT NOT NULL,deleted INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(owner_id,id));
     CREATE TABLE IF NOT EXISTS course_publications(owner_id INTEGER NOT NULL REFERENCES users(id),mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(owner_id,mutation_id));
+    CREATE TABLE IF NOT EXISTS course_stars(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
     CREATE TABLE IF NOT EXISTS course_progress(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,state TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
     CREATE TABLE IF NOT EXISTS course_progress_mutations(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id,mutation_id));`);
   function credential(request) {
@@ -25799,7 +25800,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       return true;
     }
     const tokens = path === "/api/native/v1/integrations/course-tokens";
-    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/progress)?)?$/.exec(path);
+    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star))?)?$/.exec(path);
     if (path !== coursePath && !tokens && !native) return false;
     sameWebOrigin(request);
     if (path === coursePath && request.method === "POST") {
@@ -25846,7 +25847,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       }
     }
     if (native) {
-      const id = native[1] ? uuid3(native[1]) : null, isProgress = !!native[2];
+      const id = native[1] ? uuid3(native[1]) : null, isProgress = native[2] === "/progress", isStar = native[2] === "/star";
       if (!id && request.method === "POST") {
         rateLimit("course-ip:" + peer(request), 6e4, 60);
         workspaceAccess(request, true);
@@ -25859,26 +25860,42 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         respond(response, result.replayed || expected !== null ? 200 : 201, { data: result });
         return true;
       }
-      if (request.method === "GET") {
+      if (id && isStar && request.method === "PUT") {
+        workspaceAccess(request);
+        const { value } = await read(request, 1024);
+        object(value, ["starred"], "INVALID_COURSE_STAR");
+        if (typeof value.starred !== "boolean") fail2("INVALID_COURSE_STAR");
+        transaction(() => {
+          const actor = userFor(request), { ownerID } = workspaceAccess(request);
+          course(ownerID, id);
+          if (value.starred) db.prepare("INSERT OR IGNORE INTO course_stars VALUES(?,?,?)").run(actor, ownerID, id);
+          else db.prepare("DELETE FROM course_stars WHERE user_id=? AND owner_id=? AND course_id=?").run(actor, ownerID, id);
+        });
+        respond(response, 200, { data: { starred: value.starred } });
+        return true;
+      }
+      if (!isStar && request.method === "GET") {
         const { ownerID } = workspaceAccess(request);
         if (!id) {
           const courses = db.prepare("SELECT id,revision,document,updated_at FROM courses WHERE owner_id=? AND deleted=0 ORDER BY updated_at DESC,id").all(ownerID).map((row2) => {
             const doc2 = JSON.parse(row2.document);
             return { id: row2.id, title: doc2.title, summary: doc2.summary, revision: row2.revision, updatedAt: row2.updated_at, lessonCount: doc2.lessons.length };
           });
-          respond(response, 200, { data: { courses } });
+          const starredCourseIDs = db.prepare("SELECT s.course_id FROM course_stars s JOIN courses c ON c.owner_id=s.owner_id AND c.id=s.course_id WHERE s.user_id=? AND s.owner_id=? AND c.deleted=0 ORDER BY s.course_id").all(user, ownerID).map((row2) => row2.course_id);
+          respond(response, 200, { data: { courses, starredCourseIDs } });
           return true;
         }
         const row = course(ownerID, id), doc = JSON.parse(row.document);
         respond(response, 200, { data: isProgress ? progress(user, ownerID, id, doc) : { course: doc, revision: row.revision, updatedAt: row.updated_at } });
         return true;
       }
-      if (id && !isProgress && request.method === "DELETE") {
+      if (id && !isProgress && !isStar && request.method === "DELETE") {
         const expected = match(request, true);
         transaction(() => {
           const { ownerID } = workspaceAccess(request, true), row = course(ownerID, id);
           if (row.revision !== expected) fail2("COURSE_REVISION_CONFLICT", 409);
           db.prepare("UPDATE courses SET deleted=1,revision=revision+1,updated_at=? WHERE owner_id=? AND id=?").run(new Date(now()).toISOString(), ownerID, id);
+          db.prepare("DELETE FROM course_stars WHERE owner_id=? AND course_id=?").run(ownerID, id);
         });
         respond(response, 200, { data: { deleted: true } });
         return true;

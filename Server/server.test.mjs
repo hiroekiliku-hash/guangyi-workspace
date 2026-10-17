@@ -1209,6 +1209,88 @@ test('course progress is personal, revision-aware, idempotent and shared-viewer 
 });
 
 
+test('course stars are personal, workspace-scoped, viewer-writable and independent of course CAS and progress', async () => {
+  await withTextIngress(async ({ native, session, state, instance }) => {
+    const doc = sampleCourse();
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: { 'Idempotency-Key': randomUUID() }, body: doc })).status, 201);
+    const member = (await native('accounts', { method: 'POST', body: { email: 'course-star-member@test.invalid', password } })).value.data.accessToken;
+    const outsider = (await native('accounts', { method: 'POST', body: { email: 'course-star-outsider@test.invalid', password } })).value.data.accessToken;
+    const ownerID = (await state()).workspaceID, headers = { 'X-Workspace-ID': ownerID };
+    const invitation = await native('sharing/invitations', { auth: session, method: 'POST', body: { email: 'course-star-member@test.invalid', role: 'viewer' } });
+    const membership = invitation.value.data.outgoing[0].id;
+    assert.equal((await native('sharing/accept', { auth: member, method: 'POST', body: { id: membership } })).status, 200);
+    // Identical UUIDs in different spaces must not share stars.
+    assert.equal((await native('courses', { auth: member, method: 'POST', headers: { 'Idempotency-Key': randomUUID() }, body: doc })).status, 201);
+    const path = 'courses/' + doc.id, star = path + '/star';
+    const mark = (body, auth = member, scope = headers) => native(star, { auth, headers: scope, method: 'PUT', body });
+    const catalog = (auth, scope = {}) => native('courses', { auth, headers: scope });
+    assert.deepEqual((await catalog(member, headers)).value.data.starredCourseIDs, []);
+    const original = (await native(path, { auth: session })).value.data;
+    const progress = (await native(path + '/progress', { auth: member, headers })).value.data;
+    for (const body of [{}, { starred: null }, { starred: 1 }, { starred: 'true' }, { starred: true, userID: 1 }, [], null]) assert.equal((await mark(body)).status, 422);
+    assert.deepEqual((await mark({ starred: true })).value.data, { starred: true });
+    assert.equal((await mark({ starred: true })).status, 200);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_stars').get().n, 1);
+    assert.deepEqual((await catalog(member, headers)).value.data.starredCourseIDs, [doc.id]);
+    assert.deepEqual((await catalog(session)).value.data.starredCourseIDs, []);
+    assert.deepEqual((await catalog(member)).value.data.starredCourseIDs, []);
+    assert.deepEqual((await native(path, { auth: session })).value.data, original);
+    assert.deepEqual((await native(path + '/progress', { auth: member, headers })).value.data, progress);
+    assert.equal((await mark({ starred: true }, outsider)).status, 403);
+    assert.equal((await native('courses/' + randomUUID() + '/star', { auth: member, headers, method: 'PUT', body: { starred: true } })).status, 404);
+    for (const method of ['GET', 'DELETE', 'POST']) assert.equal((await native(star, { auth: session, method, ...(method === 'POST' ? { body: { starred: true } } : {}), headers: { 'If-Match': '"1"' } })).status, 404);
+    assert.equal((await mark({ starred: false })).status, 200);
+    assert.deepEqual((await catalog(member, headers)).value.data.starredCourseIDs, []);
+    assert.equal((await mark({ starred: false })).status, 200);
+    assert.equal((await mark({ starred: true })).status, 200);
+    assert.equal((await mark({ starred: true }, session, {})).status, 200);
+    assert.equal((await mark({ starred: true }, member, {})).status, 200);
+    assert.equal((await native(path, { auth: member, headers: { ...headers, 'If-Match': '"1"' }, method: 'DELETE' })).status, 403);
+    assert.equal((await native(path, { auth: session, headers: { 'If-Match': '"2"' }, method: 'DELETE' })).status, 409);
+    assert.deepEqual((await catalog(member, headers)).value.data.starredCourseIDs, [doc.id]);
+    assert.equal((await native(path, { auth: session, headers: { 'If-Match': '"1"' }, method: 'DELETE' })).status, 200);
+    assert.deepEqual((await catalog(member, headers)).value.data.starredCourseIDs, []);
+    assert.deepEqual((await catalog(session)).value.data.starredCourseIDs, []);
+    assert.deepEqual((await catalog(member)).value.data.starredCourseIDs, [doc.id]);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_stars WHERE owner_id=?').get(Number(ownerID)).n, 0);
+    assert.equal((await mark({ starred: true })).status, 404);
+    assert.equal((await mark({ starred: false })).status, 404);
+  });
+});
+
+test('course star writes recheck session and shared access after streamed bodies finish', async () => {
+  await withTextIngress(async ({ native, base, session, state, instance }) => {
+    const doc = sampleCourse();
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: { 'Idempotency-Key': randomUUID() }, body: doc })).status, 201);
+    const member = (await native('accounts', { method: 'POST', body: { email: 'course-star-revoked@test.invalid', password } })).value.data.accessToken;
+    const headers = { 'X-Workspace-ID': (await state()).workspaceID };
+    const invitation = await native('sharing/invitations', { auth: session, method: 'POST', body: { email: 'course-star-revoked@test.invalid', role: 'viewer' } });
+    const membership = invitation.value.data.outgoing[0].id;
+    assert.equal((await native('sharing/accept', { auth: member, method: 'POST', body: { id: membership } })).status, 200);
+    async function start(auth, scope = {}) {
+      const { request } = await import('node:http');
+      let handle;
+      const arrived = new Promise(resolve => instance.server.once('request', () => setImmediate(resolve)));
+      const response = new Promise((resolve, reject) => {
+        handle = request(base + '/api/native/v1/courses/' + doc.id + '/star', { method: 'PUT', headers: { Authorization: 'Bearer ' + auth, 'Content-Type': 'application/json', ...scope } }, incoming => {
+          const chunks = []; incoming.on('data', chunk => chunks.push(chunk)); incoming.once('error', reject);
+          incoming.once('end', () => resolve({ status: incoming.statusCode, value: JSON.parse(Buffer.concat(chunks).toString('utf8')) }));
+        });
+        handle.once('error', reject); handle.write('{"sta');
+      });
+      await arrived;
+      return { response, finish: () => handle.end('rred":true}') };
+    }
+    const sharedWrite = await start(member, headers);
+    assert.equal((await native('sharing/member', { auth: session, method: 'DELETE', body: { id: membership } })).status, 200);
+    sharedWrite.finish(); assert.equal((await sharedWrite.response).status, 403);
+    const ownerWrite = await start(session);
+    assert.equal((await native('session', { auth: session, method: 'DELETE' })).status, 200);
+    ownerWrite.finish(); assert.equal((await ownerWrite.response).status, 401);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_stars').get().n, 0);
+  });
+});
+
 // Keep fixtures inline: production verification receives only the bundled server and tests.
 function programmingCourse() {
   return {
