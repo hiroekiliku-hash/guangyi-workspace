@@ -1058,3 +1058,114 @@ test('linked invitations enforce expiry, owner control and conflict-safe merge',
     assert.equal((await native('sharing', { auth: session })).value.data.outgoing.length, 0);
   });
 });
+
+function sampleCourse() {
+  return { protocol: 'WORKSHOP-COURSE/1', id: randomUUID(), title: '安排一天', summary: '文字、图形和练习', lessons: [{ id: randomUUID(), title: '安排时间', blocks: [
+    { id: randomUUID(), type: 'text', text: '先安排重要事项。' },
+    { id: randomUUID(), type: 'callout', text: '预留休息时间。' },
+    { id: randomUUID(), type: 'image', url: 'https://example.com/lesson.png', caption: '示意图' },
+    { id: randomUUID(), type: 'chart', chartType: 'bar', points: [{ label: '学习', value: 4 }, { label: '休息', value: 1 }] },
+    { id: randomUUID(), type: 'question', text: '先做什么？', questionType: 'singleChoice', options: [{ id: 'a', text: '重要事项' }, { id: 'b', text: '随意安排' }], correctOptionIDs: ['a'] },
+    { id: randomUUID(), type: 'question', text: '写一句计划。', questionType: 'shortAnswer' }
+  ] }] };
+}
+async function publishCourse(base, accessToken, course, { key = randomUUID(), revision, headers = {}, raw } = {}) {
+  const response = await fetch(base + '/api/integrations/v1/courses', { method: 'POST', headers: { Authorization: 'Bearer ' + accessToken,
+    'Content-Type': 'application/json', 'Idempotency-Key': key, ...(revision === undefined ? {} : { 'If-Match': '"' + revision + '"' }), ...headers }, body: raw ?? JSON.stringify(course) });
+  return { status: response.status, value: await response.json() };
+}
+test('course protocol enforces scoped tokens, CAS, strict content validation and revocation', async () => {
+  await withTextIngress(async ({ native, base, session, instance, createKey, advance }) => {
+    const created = await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} });
+    assert.equal(created.status, 201); const key = created.value.data;
+    assert.match(key.accessToken, /^wsc_[A-Za-z0-9_-]{43}$/); assert.equal(key.protocol, 'WORKSHOP-COURSE/1');
+    assert.equal(key.endpoint, 'https://text-import.test/api/integrations/v1/courses');
+    assert.equal(instance.db.prepare('SELECT hash FROM course_tokens').get().hash, createHash('sha256').update(key.accessToken).digest('hex'));
+    const listing = await native('integrations/course-tokens', { auth: session });
+    assert.match(listing.value.data.prompt, /\{\{API_KEY\}\}/); assert.equal(listing.value.data.credentials.length, 1);
+    const doc = sampleCourse(), mutation = randomUUID();
+    assert.equal((await publishCourse(base, session, doc)).status, 401);
+    assert.equal((await publishCourse(base, (await createKey()).accessToken, doc)).status, 401);
+    assert.equal((await native('workspace', { auth: key.accessToken })).status, 401);
+    assert.equal((await publishCourse(base, key.accessToken, doc, { headers: { 'X-Workspace-ID': '1' } })).status, 422);
+    const published = await publishCourse(base, key.accessToken, doc, { key: mutation, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    assert.equal(published.status, 201); assert.equal(published.value.data.revision, 1);
+    const replay = await publishCourse(base, key.accessToken, doc, { key: mutation });
+    assert.equal(replay.status, 200); assert.equal(replay.value.data.replayed, true);
+    assert.equal((await publishCourse(base, key.accessToken, { ...doc, title: 'different' }, { key: mutation })).status, 409);
+    assert.equal((await publishCourse(base, key.accessToken, doc)).status, 409);
+    assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 2 })).status, 409);
+    doc.title = '更新后的课程'; assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 1 })).value.data.revision, 2);
+    assert.equal((await native('courses', { auth: session })).value.data.courses[0].lessonCount, 1);
+    const downloaded = await native('courses/' + doc.id, { auth: session }); assert.equal(downloaded.value.data.revision, 2); assert.deepEqual(downloaded.value.data.course, doc);
+    const stranger = (await native('accounts', { method: 'POST', body: { email: 'course-stranger@test.invalid', password } })).value.data.accessToken;
+    assert.equal((await native('courses', { auth: stranger })).value.data.courses.length, 0);
+    assert.equal((await native('courses/' + doc.id, { auth: stranger })).status, 404);
+    for (const modify of [
+      d => { d.html = '<script>alert(1)</script>'; }, d => { d.lessons[0].blocks[0].text = '<script>alert(1)</script>'; },
+      d => { d.lessons[0].blocks[0].type = 'video'; }, d => { d.lessons[0].blocks[0].type = 'constructor'; }, d => { d.lessons[0].blocks[2].url = 'http://example.com/image.png'; },
+      d => { d.lessons[0].blocks[2].url = 'https://example.com/image.svg'; }, d => { d.lessons[0].blocks[1].id = d.lessons[0].id; },
+      d => { d.lessons[0].blocks[3].points[0].value = Infinity; }, d => { d.lessons[0].blocks[4].correctOptionIDs = ['unknown']; },
+      d => { d.lessons[0].blocks[5].options = []; }, d => { d.lessons = Array.from({ length: 41 }, () => d.lessons[0]); }
+    ]) { const bad = structuredClone(doc); modify(bad); assert.equal((await publishCourse(base, key.accessToken, bad, { revision: 2 })).status, 422); }
+    assert.equal((await publishCourse(base, key.accessToken, doc, { raw: Buffer.from([0xff]) })).status, 400);
+    assert.equal((await publishCourse(base, key.accessToken, doc, { raw: ' '.repeat(1024 * 1024 + 1) })).status, 413);
+    assert.equal((await native('courses/' + doc.id, { auth: session })).value.data.revision, 2);
+    assert.equal((await native('integrations/course-tokens', { auth: stranger, method: 'DELETE', body: { id: key.credential.id } })).status, 404);
+    assert.equal((await native('integrations/course-tokens', { auth: session, method: 'DELETE', body: { id: key.credential.id } })).status, 200);
+    assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 2 })).status, 401);
+    const expiring = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
+    const boundary = sampleCourse(); boundary.lessons[0].blocks[3].points = Array.from({ length: 60 }, (_, index) => ({ label: '图'.repeat(120), value: index }));
+    boundary.lessons[0].blocks[4].text = '问'.repeat(4000); boundary.lessons[0].blocks[4].explanation = '答'.repeat(4000);
+    boundary.lessons[0].blocks[4].options = Array.from({ length: 12 }, (_, index) => ({ id: 'a' + index, text: '选'.repeat(1000) }));
+    boundary.lessons[0].blocks[4].correctOptionIDs = ['a0']; boundary.lessons[0].blocks[5].acceptedAnswers = ['答'.repeat(500)];
+    assert.equal((await publishCourse(base, expiring.accessToken, boundary)).status, 201, 'native-compatible maximum limits are accepted');
+    for (const modify of [
+      d => d.lessons[0].blocks[3].points.push({ label: '61st', value: 1 }),
+      d => { d.lessons[0].blocks[3].points[0].label += 'x'; },
+      d => { d.lessons[0].blocks[4].text += 'x'; },
+      d => { d.lessons[0].blocks[4].explanation += 'x'; },
+      d => d.lessons[0].blocks[4].options.push({ id: 'a12', text: '13th' }),
+      d => { d.lessons[0].blocks[4].options[0].text += 'x'; },
+      d => { d.lessons[0].blocks[5].acceptedAnswers[0] += 'x'; }
+    ]) { const bad = structuredClone(boundary); modify(bad); assert.equal((await publishCourse(base, expiring.accessToken, bad, { revision: 1 })).status, 422); }
+
+    advance(366 * 86400000); assert.equal((await publishCourse(base, expiring.accessToken, sampleCourse())).status, 401);
+  });
+});
+test('course progress is personal, revision-aware, idempotent and shared-viewer writable', async () => {
+  await withTextIngress(async ({ native, base, session, state }) => {
+    const key = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
+    const doc = sampleCourse(); assert.equal((await publishCourse(base, key.accessToken, doc)).status, 201);
+    const member = (await native('accounts', { method: 'POST', body: { email: 'course-member@test.invalid', password } })).value.data.accessToken;
+    const ownerID = (await state()).workspaceID, headers = { 'X-Workspace-ID': ownerID };
+    const invitation = await native('sharing/invitations', { auth: session, method: 'POST', body: { email: 'course-member@test.invalid', role: 'viewer' } });
+    const membership = invitation.value.data.outgoing[0].id;
+    assert.equal((await native('sharing/accept', { auth: member, method: 'POST', body: { id: membership } })).status, 200);
+    const path = 'courses/' + doc.id, progressPath = path + '/progress', lesson = doc.lessons[0];
+    assert.equal((await native('courses', { auth: member, headers })).value.data.courses.length, 1);
+    const mutate = body => native(progressPath, { auth: member, headers, method: 'POST', body: { mutationID: randomUUID(), courseRevision: 1, lessonID: lesson.id, ...body } });
+    assert.equal((await mutate({ completed: true })).status, 409);
+    for (const body of [{ selectedOptionIDs: ['unknown'] }, { selectedOptionIDs: ['a'], text: 'invalid' }, { selectedOptionIDs: ['a', 'b'] }]) assert.equal((await mutate({ blockID: lesson.blocks[4].id, ...body })).status, 422);
+    const choice = { mutationID: randomUUID(), blockID: lesson.blocks[4].id, selectedOptionIDs: ['b'] };
+    const saved = await mutate(choice); assert.equal(saved.status, 200); assert.equal(saved.value.data.answers.length, 1);
+    assert.deepEqual((await mutate(choice)).value.data, saved.value.data);
+    assert.equal((await mutate({ ...choice, selectedOptionIDs: ['a'] })).status, 409);
+    assert.equal((await mutate({ blockID: lesson.blocks[5].id, text: '我会留出休息时间', completed: true })).status, 200);
+    const progress = await native(progressPath, { auth: member, headers }); assert.deepEqual(progress.value.data.completedLessonIDs, [lesson.id]); assert.equal(progress.value.data.courseRevision, 1);
+    assert.equal((await native(progressPath, { auth: session })).value.data.answers.length, 0);
+    assert.equal((await native(path, { auth: member, headers: { ...headers, 'If-Match': '"1"' }, method: 'DELETE' })).status, 403);
+    doc.summary = '重新修订'; assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 1 })).status, 200);
+    const reset = await native(progressPath, { auth: member, headers }); assert.equal(reset.value.data.courseRevision, 2); assert.deepEqual(reset.value.data.answers, []); assert.deepEqual(reset.value.data.completedLessonIDs, []);
+    assert.equal((await mutate(choice)).status, 409);
+    assert.equal((await native('sharing/permission', { auth: session, method: 'POST', body: { id: membership, role: 'editor' } })).status, 200);
+    assert.equal((await native(path, { auth: member, headers, method: 'DELETE' })).status, 428);
+    assert.equal((await native(path, { auth: member, headers: { ...headers, 'If-Match': '"1"' }, method: 'DELETE' })).status, 409);
+    assert.equal((await native(path, { auth: member, headers: { ...headers, 'If-Match': '"2"' }, method: 'DELETE' })).status, 200);
+    assert.equal((await native(path, { auth: session })).status, 404);
+    assert.equal((await publishCourse(base, key.accessToken, doc, { revision: 3 })).status, 409);
+    assert.equal((await native('sharing/member', { auth: session, method: 'DELETE', body: { id: membership } })).status, 200);
+    assert.equal((await native('courses', { auth: member, headers })).status, 403);
+    assert.equal((await mutate({ blockID: lesson.blocks[5].id, text: 'later', courseRevision: 2 })).status, 403);
+  });
+});

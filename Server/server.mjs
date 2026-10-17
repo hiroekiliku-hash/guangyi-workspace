@@ -4732,8 +4732,8 @@ var require_sequence = __commonJS({
     function compare(a, b) {
       const left = (0, buffer_source_js_1.toUint8Array)(a);
       const right = (0, buffer_source_js_1.toUint8Array)(b);
-      const limit = Math.min(left.byteLength, right.byteLength);
-      for (let index = 0; index < limit; index++) {
+      const limit2 = Math.min(left.byteLength, right.byteLength);
+      for (let index = 0; index < limit2; index++) {
         if (left[index] < right[index]) {
           return -1;
         }
@@ -15560,8 +15560,8 @@ var require_x509_cjs = __commonJS({
         switch (alg.name.toLowerCase()) {
           case ECDSA.toLowerCase():
             if ("hash" in alg) {
-              const hash = typeof alg.hash === "string" ? alg.hash : alg.hash.name;
-              switch (hash.toLowerCase()) {
+              const hash2 = typeof alg.hash === "string" ? alg.hash : alg.hash.name;
+              switch (hash2.toLowerCase()) {
                 case "sha-1":
                   return asn1Ecc__namespace.ecdsaWithSHA1;
                 case "sha-256":
@@ -16954,10 +16954,10 @@ var require_x509_cjs = __commonJS({
           const value = asn1Schema.AsnConvert.parse(this.value, asn1X509__namespace.SubjectKeyIdentifier);
           this.keyId = pvtsutils.Convert.ToHex(value);
         } else {
-          const identifier = typeof args[0] === "string" ? pvtsutils.Convert.FromHex(args[0]) : args[0];
-          const value = new asn1X509__namespace.SubjectKeyIdentifier(identifier);
+          const identifier2 = typeof args[0] === "string" ? pvtsutils.Convert.FromHex(args[0]) : args[0];
+          const value = new asn1X509__namespace.SubjectKeyIdentifier(identifier2);
           super(asn1X509__namespace.id_ce_subjectKeyIdentifier, args[1], asn1Schema.AsnConvert.serialize(value));
-          this.keyId = pvtsutils.Convert.ToHex(identifier);
+          this.keyId = pvtsutils.Convert.ToHex(identifier2);
         }
       }
       toTextObject() {
@@ -17308,8 +17308,8 @@ var require_x509_cjs = __commonJS({
     };
     var RsaAlgorithm_1;
     exports.RsaAlgorithm = RsaAlgorithm_1 = class RsaAlgorithm {
-      static createPssParams(hash, saltLength) {
-        const hashAlgorithm = RsaAlgorithm_1.getHashAlgorithm(hash);
+      static createPssParams(hash2, saltLength) {
+        const hashAlgorithm = RsaAlgorithm_1.getHashAlgorithm(hash2);
         if (!hashAlgorithm) {
           return null;
         }
@@ -17336,15 +17336,15 @@ var require_x509_cjs = __commonJS({
         switch (alg.name.toLowerCase()) {
           case "rsassa-pkcs1-v1_5":
             if ("hash" in alg) {
-              let hash;
+              let hash2;
               if (typeof alg.hash === "string") {
-                hash = alg.hash;
+                hash2 = alg.hash;
               } else if (alg.hash && typeof alg.hash === "object" && "name" in alg.hash && typeof alg.hash.name === "string") {
-                hash = alg.hash.name.toUpperCase();
+                hash2 = alg.hash.name.toUpperCase();
               } else {
                 throw new Error("Cannot get hash algorithm name");
               }
-              switch (hash.toLowerCase()) {
+              switch (hash2.toLowerCase()) {
                 case "sha-1":
                   return new asn1X509.AlgorithmIdentifier({
                     algorithm: asn1Rsa__namespace.id_sha1WithRSAEncryption,
@@ -21434,7 +21434,7 @@ var BaseSettingsService = class {
     this._runtimeSupportsPQC = runtimeSupportsWebCryptoKeyAlg("ML-DSA-44");
   }
   setRootCertificates(opts) {
-    const { identifier, certificates } = opts;
+    const { identifier: identifier2, certificates } = opts;
     const newCertificates = [];
     for (const cert of certificates) {
       if (cert instanceof Uint8Array) {
@@ -21443,11 +21443,11 @@ var BaseSettingsService = class {
         newCertificates.push(cert);
       }
     }
-    this.pemCertificates.set(identifier, newCertificates);
+    this.pemCertificates.set(identifier2, newCertificates);
   }
   getRootCertificates(opts) {
-    const { identifier } = opts;
-    return this.pemCertificates.get(identifier) ?? [];
+    const { identifier: identifier2 } = opts;
+    return this.pemCertificates.get(identifier2) ?? [];
   }
   runtimeSupportsPQC() {
     return this._runtimeSupportsPQC;
@@ -23097,7 +23097,7 @@ import http from "node:http";
 import { isDeepStrictEqual } from "node:util";
 import http2 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
-import { randomBytes, randomUUID as randomUUID2, createHash, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
+import { randomBytes as randomBytes2, randomUUID as randomUUID3, createHash as createHash2, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -24273,8 +24273,331 @@ function webAsset(path) {
   return asset ? { body: asset.body, headers: { ...headers, "Content-Type": asset.type } } : void 0;
 }
 
+// Server/courses.mjs
+import { randomBytes, randomUUID, createHash } from "node:crypto";
+var courseProtocol = "WORKSHOP-COURSE/1";
+var coursePath = "/api/integrations/v1/courses";
+var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+var identifier = /^[A-Za-z0-9_-]{1,40}$/;
+var hash = (value) => createHash("sha256").update(value).digest("hex");
+var limit = 1024 * 1024;
+function coursePrompt(endpoint) {
+  return `\u4F60\u53EF\u4EE5\u901A\u8FC7\u5DE5\u4F5C\u574A\u8BFE\u7A0B\u63A5\u53E3\u5411\u5F53\u524D\u5BC6\u94A5\u7ED1\u5B9A\u7684\u8D26\u6237\u53D1\u5E03\u8BFE\u7A0B\uFF0C\u4E0D\u8981\u8BE2\u95EE\u6216\u63D0\u4EA4\u7528\u6237 ID\u3002\u7528\u6237\u8981\u6C42\u53D1\u5E03\u65F6\uFF0C\u5408\u7406\u5224\u65AD\u8BFE\u7A0B\u5206\u8282\u3001\u6587\u5B57\u3001\u914D\u56FE\u3001\u56FE\u8868\u4E0E\u7EC3\u4E60\uFF1B\u65E0\u9700\u8BA9\u7528\u6237\u586B\u5199\u6280\u672F\u5B57\u6BB5\u3002
+POST ${endpoint}
+Authorization: Bearer {{API_KEY}}
+Content-Type: application/json; charset=utf-8
+Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u7684 UUID\uFF0C\u91CD\u8BD5\u4FDD\u6301\u76F8\u540C\u6B63\u6587\u548C\u8BF7\u6C42\u5934\u3002
+\u534F\u8BAE ${courseProtocol}\uFF1AJSON {protocol,id,title,summary,lessons:[{id,title,blocks:[]}]}\uFF0C\u8BFE\u7A0B\u3001\u8BFE\u8282\u3001\u5185\u5BB9\u5757 id \u5747\u4E3A\u552F\u4E00 UUID\u3002\u5757 type \u4E3A text/callout/image/chart/question\uFF1Btext/callout \u6709 text\uFF1Bimage \u6709 HTTPS url \u548C\u53EF\u9009 caption\uFF1Bchart \u6709 chartType(bar/line)\u3001points:[{label,value}] \u548C\u53EF\u9009 caption\uFF1Bquestion \u6709 text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\u3001explanation \u53EF\u9009\uFF0C\u9009\u62E9\u9898\u6709 options:[{id,text}]\u3001correctOptionIDs\uFF1B\u7B80\u7B54\u9898\u6709 acceptedAnswers\uFF08\u53EF\u9009\uFF0C\u7A7A\u8868\u793A\u81EA\u884C\u68C0\u67E5\uFF09\u3002\u4EC5\u652F\u6301\u8FD9\u4E9B\u5B57\u6BB5\uFF0C\u4E0D\u6DFB\u52A0 HTML\u3001\u811A\u672C\u3001SVG\u3001\u89C6\u9891\u6216\u81EA\u5B9A\u4E49\u53EF\u6267\u884C\u4EE3\u7801\u3002\u4E0D\u4ECE\u7F51\u9875\u81EA\u52A8\u6267\u884C\u4EFB\u4F55\u5185\u5BB9\u3002\u6700\u591A 40 \u8282\u3001\u6BCF\u8282 80 \u5757\u3001\u5355\u8BFE\u7A0B 1 MiB\u3002\u6807\u9898\u6700\u591A 240 \u5B57\u7B26\uFF0C\u666E\u901A\u6587\u5B57\u6700\u591A 20000 \u5B57\u7B26\uFF1B\u9898\u76EE\u53CA\u89E3\u91CA\u6700\u591A 4000\uFF0C\u9009\u9879\u6700\u591A 12 \u9879\u3001\u6BCF\u9879\u6587\u5B57\u6700\u591A 1000\uFF0C\u53C2\u8003\u7B80\u7B54\u7B54\u6848\u6700\u591A 500 \u5B57\u7B26\u3002\u56FE\u8868\u6700\u591A 60 \u70B9\u3001\u6807\u7B7E\u6700\u591A 120 \u5B57\u7B26\u3002\u65B0\u8BFE\u7A0B\u65E0\u9700 If-Match\uFF1B\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u5FC5\u987B\u63D0\u4F9B\u5176\u5DF2\u77E5\u4FEE\u8BA2\u53F7 If-Match: "\u6574\u6570"\u3002409 \u65F6\u505C\u6B62\uFF0C\u4E0D\u731C\u6D4B\u8986\u76D6\u7248\u672C\uFF1B\u8BF7\u6C42\u6210\u529F 201/200 \u540E\u624D\u80FD\u8BF4\u5DF2\u53D1\u5E03\u3002\u8BFE\u7A0B\u5728 App \u767B\u5F55\u8D26\u6237\u7684\u201C\u8BFE\u7A0B\u201D\u9875\u83B7\u53D6\uFF1B\u672C\u63A5\u53E3\u4E0D\u4FEE\u6539\u65E5\u7A0B\u3002\u59A5\u5584\u4FDD\u7BA1\u5BC6\u94A5\uFF0C\u4E0D\u5199\u8FDB\u8BFE\u7A0B\u3001\u65E5\u5FD7\u6216\u516C\u5F00\u5185\u5BB9\u3002`;
+}
+function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError: APIError2, origin, rateLimit, peer, now = Date.now }) {
+  const fail2 = (code = "INVALID_COURSE", status = 422) => {
+    throw new APIError2(status, code);
+  };
+  const object = (value, keys, code) => {
+    if (!value || Array.isArray(value) || typeof value !== "object" || Object.keys(value).some((key) => !keys.includes(key))) fail2(code);
+  };
+  const string = (value, max, nonempty = true) => {
+    if (typeof value !== "string" || value.length > max || nonempty && !value.trim() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(value) || /<\/?[A-Za-z][^>]*>/.test(value)) fail2();
+  };
+  const uuid3 = (value) => {
+    if (typeof value !== "string" || !UUID.test(value)) fail2();
+    return value.toLowerCase();
+  };
+  const array = (value, min, max) => {
+    if (!Array.isArray(value) || value.length < min || value.length > max) fail2();
+  };
+  const uniqueStrings = (value, max, check) => {
+    array(value, 0, max);
+    const seen = /* @__PURE__ */ new Set();
+    for (const item of value) {
+      check(item);
+      if (seen.has(item)) fail2();
+      seen.add(item);
+    }
+  };
+  function validateCourse(value) {
+    object(value, ["protocol", "id", "title", "summary", "lessons"]);
+    if (value.protocol !== courseProtocol) fail2("UNSUPPORTED_COURSE_PROTOCOL");
+    const ids = /* @__PURE__ */ new Set();
+    const takeID = (obj) => {
+      obj.id = uuid3(obj.id);
+      if (ids.has(obj.id)) fail2("DUPLICATE_COURSE_ID");
+      ids.add(obj.id);
+    };
+    takeID(value);
+    string(value.title, 240);
+    string(value.summary, 2e3, false);
+    array(value.lessons, 1, 40);
+    for (const lesson of value.lessons) {
+      object(lesson, ["id", "title", "blocks"]);
+      takeID(lesson);
+      string(lesson.title, 240);
+      array(lesson.blocks, 1, 80);
+      for (const block of lesson.blocks) {
+        const blockFields = { text: ["text"], callout: ["text"], image: ["url", "caption"], chart: ["chartType", "points", "caption"], question: ["text", "questionType", "options", "correctOptionIDs", "acceptedAnswers", "explanation"] };
+        if (!block || !Object.hasOwn(blockFields, block.type)) fail2("UNSUPPORTED_COURSE_BLOCK");
+        const fields2 = blockFields[block.type];
+        object(block, ["id", "type", ...fields2]);
+        takeID(block);
+        if (block.caption !== void 0) string(block.caption, 2e3, false);
+        if (block.type === "text" || block.type === "callout" || block.type === "question") string(block.text, block.type === "question" ? 4e3 : 2e4);
+        if (block.type === "image") {
+          string(block.url, 2048);
+          let url;
+          try {
+            url = new URL(block.url);
+          } catch {
+            fail2("INVALID_COURSE_IMAGE");
+          }
+          if (url.protocol !== "https:" || url.username || url.password || /\.svg(?:$|[?#])/i.test(block.url)) fail2("INVALID_COURSE_IMAGE");
+        }
+        if (block.type === "chart") {
+          if (!["bar", "line"].includes(block.chartType)) fail2();
+          array(block.points, 1, 60);
+          for (const point of block.points) {
+            object(point, ["label", "value"]);
+            string(point.label, 120);
+            if (typeof point.value !== "number" || !Number.isFinite(point.value) || Math.abs(point.value) > 1e15) fail2();
+          }
+        }
+        if (block.type === "question") {
+          if (block.explanation !== void 0) string(block.explanation, 4e3, false);
+          if (block.questionType === "shortAnswer") {
+            if (block.options !== void 0 || block.correctOptionIDs !== void 0) fail2();
+            if (block.acceptedAnswers !== void 0) uniqueStrings(block.acceptedAnswers, 20, (answer) => string(answer, 500));
+          } else if (["singleChoice", "multipleChoice"].includes(block.questionType)) {
+            if (block.acceptedAnswers !== void 0) fail2();
+            array(block.options, 2, 12);
+            const options = /* @__PURE__ */ new Set();
+            for (const option of block.options) {
+              object(option, ["id", "text"]);
+              if (typeof option.id !== "string" || !identifier.test(option.id) || options.has(option.id)) fail2();
+              options.add(option.id);
+              string(option.text, 1e3);
+            }
+            uniqueStrings(block.correctOptionIDs, 12, (id) => {
+              if (!options.has(id)) fail2();
+            });
+            if (block.correctOptionIDs.length < 1 || block.questionType === "singleChoice" && block.correctOptionIDs.length !== 1) fail2();
+          } else fail2("UNSUPPORTED_COURSE_QUESTION");
+        }
+      }
+    }
+    return value;
+  }
+  db.exec(`CREATE TABLE IF NOT EXISTS course_tokens(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),name TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER);
+    CREATE TABLE IF NOT EXISTS courses(owner_id INTEGER NOT NULL REFERENCES users(id),id TEXT NOT NULL,revision INTEGER NOT NULL,document TEXT NOT NULL,updated_at TEXT NOT NULL,deleted INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(owner_id,id));
+    CREATE TABLE IF NOT EXISTS course_publications(owner_id INTEGER NOT NULL REFERENCES users(id),mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(owner_id,mutation_id));
+    CREATE TABLE IF NOT EXISTS course_progress(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,state TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
+    CREATE TABLE IF NOT EXISTS course_progress_mutations(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id,mutation_id));`);
+  function credential(request) {
+    const auth = request.headers.authorization;
+    if (typeof auth !== "string" || !/^Bearer wsc_[A-Za-z0-9_-]{43}$/.test(auth)) fail2("INVALID_COURSE_TOKEN", 401);
+    const row = db.prepare("SELECT * FROM course_tokens WHERE hash=? AND expires>?").get(hash(auth.slice(7)), now());
+    if (!row) fail2("INVALID_COURSE_TOKEN", 401);
+    return row;
+  }
+  const endpoint = origin + coursePath;
+  const info = (row) => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...row.last_used != null ? { lastUsed: row.last_used } : {} });
+  async function read(request, max = limit, acceptsText = false) {
+    if (request.headers["content-encoding"] != null && request.headers["content-encoding"] !== "identity") fail2("COURSE_ENCODING_UNSUPPORTED", 415);
+    const contentType = request.headers["content-type"] ?? "";
+    if (!(acceptsText ? /^(?:application\/json|text\/plain)(?:\s*;\s*charset\s*=\s*(?:utf-8|"utf-8"))?\s*$/i : /^application\/json(?:\s*;\s*charset\s*=\s*(?:utf-8|"utf-8"))?\s*$/i).test(contentType)) fail2("JSON_REQUIRED", 415);
+    if (Number(request.headers["content-length"]) > max) {
+      request.resume();
+      fail2("TOO_LARGE", 413);
+    }
+    const chunks = [];
+    let size = 0;
+    for await (const chunk of request) {
+      size += chunk.length;
+      if (size <= max) chunks.push(chunk);
+    }
+    if (size > max) fail2("TOO_LARGE", 413);
+    const bytes = Buffer.concat(chunks);
+    let value;
+    try {
+      const text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+      value = JSON.parse(text);
+    } catch {
+      fail2("INVALID_COURSE_JSON", 400);
+    }
+    return { value, bytes };
+  }
+  function transaction(work) {
+    db.exec("BEGIN IMMEDIATE");
+    try {
+      const result = work();
+      db.exec("COMMIT");
+      return result;
+    } catch (error) {
+      db.exec("ROLLBACK");
+      throw error;
+    }
+  }
+  function match(request, required) {
+    const value = request.headers["if-match"];
+    if (value === void 0 && !required) return null;
+    if (value === void 0) fail2("REVISION_REQUIRED", 428);
+    if (typeof value !== "string" || !/^"[1-9]\d{0,9}"$/.test(value)) fail2("INVALID_REVISION", 422);
+    return Number(value.slice(1, -1));
+  }
+  function course(owner, id) {
+    const row = db.prepare("SELECT * FROM courses WHERE owner_id=? AND id=? AND deleted=0").get(owner, id);
+    if (!row) fail2("COURSE_NOT_FOUND", 404);
+    return row;
+  }
+  function answerValid(answer, block) {
+    if (!block || block.type !== "question") return false;
+    if (block.questionType === "shortAnswer") return answer.selectedOptionIDs.length === 0 && answer.text.trim().length > 0;
+    return answer.text === "" && answer.selectedOptionIDs.length > 0 && (block.questionType !== "singleChoice" || answer.selectedOptionIDs.length === 1) && answer.selectedOptionIDs.every((id) => block.options.some((option) => option.id === id));
+  }
+  function progress(user, owner, id, doc) {
+    const saved = db.prepare("SELECT state FROM course_progress WHERE user_id=? AND owner_id=? AND course_id=?").get(user, owner, id);
+    const stored = saved ? JSON.parse(saved.state) : null;
+    const currentRevision = course(owner, id).revision;
+    const state = stored?.courseRevision === currentRevision ? stored : { courseID: id, courseRevision: currentRevision, completedLessonIDs: [], answers: [] };
+    state.answers = state.answers.filter((answer) => answerValid(answer, doc.lessons.find((lesson) => lesson.id === answer.lessonID)?.blocks.find((block) => block.id === answer.blockID)));
+    state.completedLessonIDs = state.completedLessonIDs.filter((id2) => {
+      const lesson = doc.lessons.find((lesson2) => lesson2.id === id2);
+      return lesson && lesson.blocks.filter((block) => block.type === "question").every((block) => state.answers.some((answer) => answer.lessonID === id2 && answer.blockID === block.id));
+    });
+    return state;
+  }
+  return async function handle(request, response, path) {
+    const tokens = path === "/api/native/v1/integrations/course-tokens";
+    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/progress)?)?$/.exec(path);
+    if (path !== coursePath && !tokens && !native) return false;
+    sameWebOrigin(request);
+    if (path === coursePath && request.method === "POST") {
+      rateLimit("course-ip:" + peer(request), 6e4, 60);
+      credential(request);
+      if (request.headers["x-workspace-id"] != null) fail2("COURSE_TOKEN_OWNS_PERSONAL_WORKSPACE");
+      const key = uuid3(request.headers["idempotency-key"]), expected = match(request, false);
+      const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
+      const digest2 = hash(Buffer.concat([Buffer.from(String(expected) + "\n"), bytes]));
+      const result = transaction(() => {
+        const token = credential(request), owner = token.user_id;
+        rateLimit("course-owner:" + owner, 36e5, 120);
+        const prior = db.prepare("SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?").get(owner, key);
+        if (prior) {
+          if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
+          return { ...JSON.parse(prior.result), replayed: true };
+        }
+        const old = db.prepare("SELECT revision,deleted FROM courses WHERE owner_id=? AND id=?").get(owner, doc.id);
+        if (old ? old.deleted || expected !== old.revision : expected !== null) fail2("COURSE_REVISION_CONFLICT", 409);
+        if (!old && db.prepare("SELECT COUNT(*) AS n FROM courses WHERE owner_id=? AND deleted=0").get(owner).n >= 200) fail2("COURSE_LIMIT");
+        if (db.prepare("SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?").get(owner).n >= 2e4) fail2("COURSE_PUBLICATION_LIMIT");
+        const result2 = { id: doc.id, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
+        db.prepare("INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at").run(owner, doc.id, result2.revision, JSON.stringify(doc), result2.updatedAt);
+        db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result2), now());
+        db.prepare("UPDATE course_tokens SET last_used=? WHERE id=?").run(now(), token.id);
+        return { ...result2, replayed: false };
+      });
+      respond(response, result.replayed || expected !== null ? 200 : 201, { data: result });
+      return true;
+    }
+    const user = userFor(request);
+    if (tokens) {
+      if (request.method === "GET") {
+        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), endpoint, protocol: courseProtocol, prompt: coursePrompt(endpoint) } });
+        return true;
+      }
+      if (["POST", "DELETE"].includes(request.method)) {
+        const { value } = await read(request, 1024);
+        object(value, request.method === "POST" ? ["name"] : ["id"], "INVALID_COURSE_TOKEN_REQUEST");
+        const result = transaction(() => {
+          const actor = userFor(request);
+          if (request.method === "DELETE") {
+            const id = uuid3(value.id);
+            if (db.prepare("DELETE FROM course_tokens WHERE id=? AND user_id=?").run(id, actor).changes !== 1) fail2("COURSE_TOKEN_NOT_FOUND", 404);
+            return { revoked: true };
+          }
+          const name = value.name === void 0 ? "AI\u8BFE\u7A0B\u53D1\u5E03" : value.name;
+          string(name, 60);
+          db.prepare("DELETE FROM course_tokens WHERE user_id=? AND expires<=?").run(actor, now());
+          if (db.prepare("SELECT COUNT(*) AS n FROM course_tokens WHERE user_id=?").get(actor).n >= 10) fail2("COURSE_TOKEN_LIMIT");
+          const accessToken = "wsc_" + randomBytes(32).toString("base64url"), credential2 = { id: randomUUID(), name, created: now(), expires: now() + 365 * 864e5 };
+          db.prepare("INSERT INTO course_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)").run(credential2.id, hash(accessToken), actor, name, credential2.created, credential2.expires);
+          return { credential: credential2, accessToken, endpoint, protocol: courseProtocol };
+        });
+        respond(response, request.method === "POST" ? 201 : 200, { data: result });
+        return true;
+      }
+    }
+    if (native) {
+      const id = native[1] ? uuid3(native[1]) : null, isProgress = !!native[2];
+      if (request.method === "GET") {
+        const { ownerID } = workspaceAccess(request);
+        if (!id) {
+          const courses = db.prepare("SELECT id,revision,document,updated_at FROM courses WHERE owner_id=? AND deleted=0 ORDER BY updated_at DESC,id").all(ownerID).map((row2) => {
+            const doc2 = JSON.parse(row2.document);
+            return { id: row2.id, title: doc2.title, summary: doc2.summary, revision: row2.revision, updatedAt: row2.updated_at, lessonCount: doc2.lessons.length };
+          });
+          respond(response, 200, { data: { courses } });
+          return true;
+        }
+        const row = course(ownerID, id), doc = JSON.parse(row.document);
+        respond(response, 200, { data: isProgress ? progress(user, ownerID, id, doc) : { course: doc, revision: row.revision, updatedAt: row.updated_at } });
+        return true;
+      }
+      if (id && !isProgress && request.method === "DELETE") {
+        const expected = match(request, true);
+        transaction(() => {
+          const { ownerID } = workspaceAccess(request, true), row = course(ownerID, id);
+          if (row.revision !== expected) fail2("COURSE_REVISION_CONFLICT", 409);
+          db.prepare("UPDATE courses SET deleted=1,revision=revision+1,updated_at=? WHERE owner_id=? AND id=?").run(new Date(now()).toISOString(), ownerID, id);
+        });
+        respond(response, 200, { data: { deleted: true } });
+        return true;
+      }
+      if (id && isProgress && request.method === "POST") {
+        const { value, bytes } = await read(request, 16384);
+        object(value, ["mutationID", "courseRevision", "lessonID", "blockID", "selectedOptionIDs", "text", "completed"], "INVALID_COURSE_PROGRESS");
+        const mutation = uuid3(value.mutationID), lessonID = uuid3(value.lessonID), blockID = value.blockID === void 0 ? null : uuid3(value.blockID);
+        if (!Number.isSafeInteger(value.courseRevision) || value.courseRevision < 1 || blockID === null && typeof value.completed !== "boolean" || value.completed !== void 0 && typeof value.completed !== "boolean") fail2("INVALID_COURSE_PROGRESS");
+        if (blockID === null && (value.selectedOptionIDs !== void 0 || value.text !== void 0)) fail2("INVALID_COURSE_PROGRESS");
+        const digest2 = hash(bytes);
+        const result = transaction(() => {
+          const actor = userFor(request), { ownerID } = workspaceAccess(request), row = course(ownerID, id), doc = JSON.parse(row.document);
+          if (row.revision !== value.courseRevision) fail2("COURSE_REVISION_CONFLICT", 409);
+          const prior = db.prepare("SELECT * FROM course_progress_mutations WHERE user_id=? AND owner_id=? AND course_id=? AND mutation_id=?").get(actor, ownerID, id, mutation);
+          if (prior) {
+            if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
+            return progress(actor, ownerID, id, doc);
+          }
+          const lesson = doc.lessons.find((lesson2) => lesson2.id === lessonID);
+          if (!lesson) fail2("INVALID_COURSE_PROGRESS");
+          const state = progress(actor, ownerID, id, doc);
+          if (blockID) {
+            const selectedOptionIDs = value.selectedOptionIDs ?? [], text = value.text ?? "";
+            uniqueStrings(selectedOptionIDs, 20, (id2) => {
+              if (typeof id2 !== "string" || !identifier.test(id2)) fail2("INVALID_COURSE_PROGRESS");
+            });
+            string(text, 4e3, false);
+            const answer = { lessonID, blockID, selectedOptionIDs, text, updatedAt: new Date(now()).toISOString() };
+            if (!answerValid(answer, lesson.blocks.find((block) => block.id === blockID))) fail2("INVALID_COURSE_ANSWER");
+            state.answers = [...state.answers.filter((answer2) => answer2.lessonID !== lessonID || answer2.blockID !== blockID), answer];
+          }
+          if (value.completed === true && !lesson.blocks.filter((block) => block.type === "question").every((block) => state.answers.some((answer) => answer.lessonID === lessonID && answer.blockID === block.id))) fail2("COURSE_ANSWERS_REQUIRED", 409);
+          if (value.completed !== void 0) state.completedLessonIDs = [...state.completedLessonIDs.filter((id2) => id2 !== lessonID), ...value.completed ? [lessonID] : []];
+          if (db.prepare("SELECT COUNT(*) AS n FROM course_progress_mutations WHERE user_id=? AND owner_id=? AND course_id=?").get(actor, ownerID, id).n >= 2e4) fail2("COURSE_PROGRESS_LIMIT");
+          const serialized = JSON.stringify(state);
+          if (Buffer.byteLength(serialized) > 2 * limit) fail2("COURSE_PROGRESS_TOO_LARGE");
+          db.prepare("INSERT INTO course_progress VALUES(?,?,?,?) ON CONFLICT(user_id,owner_id,course_id) DO UPDATE SET state=excluded.state").run(actor, ownerID, id, serialized);
+          db.prepare("INSERT INTO course_progress_mutations VALUES(?,?,?,?,?,?)").run(actor, ownerID, id, mutation, digest2, "{}");
+          return state;
+        });
+        respond(response, 200, { data: result });
+        return true;
+      }
+    }
+    fail2("NOT_FOUND", 404);
+  };
+}
+
 // Server/text-ingress.mjs
-import { randomUUID } from "node:crypto";
+import { randomUUID as randomUUID2 } from "node:crypto";
 var textImportPath = "/api/integrations/v1/calendar-text";
 var textImportProtocol = "WORKSHOP/1";
 var textImportLimit = 64 * 1024;
@@ -24499,7 +24822,7 @@ function parseCalendarText(text, snapshot, now = Date.now()) {
     if (kind === "DEADLINE" && !dates["\u622A\u6B62"]) fail("TEXT_DUE_REQUIRED", at("\u7C7B\u578B"), "\u622A\u6B62");
     if (kind === "REMINDER" && !dates["\u63D0\u9192"]) fail("TEXT_REMINDER_REQUIRED", at("\u7C7B\u578B"), "\u63D0\u9192");
     const record = {
-      id: randomUUID(),
+      id: randomUUID2(),
       kind,
       title: value["\u6807\u9898"],
       version: 1,
@@ -24536,7 +24859,7 @@ function parseCalendarText(text, snapshot, now = Date.now()) {
     }
     const repeating = recurrence(block, dates, formatter, record);
     if (repeating) {
-      const group = { id: randomUUID(), template: structuredClone(record), rule: repeating.rule };
+      const group = { id: randomUUID2(), template: structuredClone(record), rule: repeating.rule };
       record.recurrenceSeriesID = group.id;
       record.occurrenceDate = repeating.anchor.day;
       record.isException = repeating.exception;
@@ -24615,7 +24938,7 @@ try {
 } catch {
 }
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = "unversioned";
-var sha = (value) => createHash("sha256").update(value).digest("hex");
+var sha = (value) => createHash2("sha256").update(value).digest("hex");
 var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32Encode(bytes) {
   let bits = 0, value = 0, encoded = "";
@@ -24674,7 +24997,7 @@ function createPasskeyRecovery(db, { email, origin, now = Date.now() }) {
   passkeyRecoveryTable(db);
   const users = email ? db.prepare("SELECT id,email FROM users WHERE email=?").all(email.trim().toLowerCase()) : db.prepare("SELECT id,email FROM users ORDER BY id").all();
   if (users.length !== 1) throw new Error(email ? "ACCOUNT_NOT_FOUND" : "ACCOUNT_MUST_BE_SPECIFIED");
-  const user = users[0], token = randomBytes(32).toString("base64url"), expires = now + 10 * 6e4;
+  const user = users[0], token = randomBytes2(32).toString("base64url"), expires = now + 10 * 6e4;
   db.exec("BEGIN IMMEDIATE");
   try {
     db.prepare("DELETE FROM passkey_recoveries WHERE expires<=? OR user_id=?").run(now, user.id);
@@ -24774,8 +25097,8 @@ function createNativeServer(configuration) {
     CREATE TABLE IF NOT EXISTS text_imports(user_id INTEGER NOT NULL REFERENCES users(id),idempotency_key TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,idempotency_key));`);
   const email = adminEmail.trim().toLowerCase();
   if (!db.prepare("SELECT id FROM users WHERE email=?").get(email)) {
-    const salt = randomBytes(16).toString("hex"), hash = scryptSync(adminPassword, salt, 64);
-    const user = db.prepare("INSERT INTO users(email,salt,hash,name) VALUES(?,?,?,?)").run(email, salt, hash, displayName);
+    const salt = randomBytes2(16).toString("hex"), hash2 = scryptSync(adminPassword, salt, 64);
+    const user = db.prepare("INSERT INTO users(email,salt,hash,name) VALUES(?,?,?,?)").run(email, salt, hash2, displayName);
     db.prepare("INSERT INTO workspaces(user_id,revision,snapshot) VALUES(?,0,?)").run(user.lastInsertRowid, JSON.stringify(emptyWorkspace(displayName)));
   }
   const rpID = configuration.passkeyRPID ?? "workspace.kdfz.com.cn";
@@ -24786,14 +25109,14 @@ function createNativeServer(configuration) {
   const textEndpoint = passkeyOrigin + textImportPath;
   const textNow = configuration.textNow ?? Date.now;
   const textAttempts = /* @__PURE__ */ new Map();
-  function textRateLimit(key, window, limit) {
+  function textRateLimit(key, window, limit2) {
     const now = textNow();
     for (const [entryKey, entry2] of textAttempts) if (now >= entry2.until) textAttempts.delete(entryKey);
     const prior = textAttempts.get(key);
     if (!prior && textAttempts.size >= 1e4) throw new APIError(429, "RATE_LIMITED");
     const entry = prior ?? { until: now + window, count: 0 };
     textAttempts.set(key, entry);
-    if (++entry.count > limit) throw new APIError(429, "RATE_LIMITED");
+    if (++entry.count > limit2) throw new APIError(429, "RATE_LIMITED");
   }
   function textPeer(request) {
     const peer = request.socket.remoteAddress ?? "unknown", forwarded = request.headers["x-real-ip"];
@@ -24860,12 +25183,12 @@ function createNativeServer(configuration) {
     const address = localProxy && typeof forwarded === "string" && isIP(forwarded) ? forwarded : peer;
     const now = Date.now();
     for (const [key, value] of attempts) if (now - value.start >= 6e5) attempts.delete(key);
-    for (const [key, limit] of [["registration:" + address, 6], ["registration:global", 60]]) {
+    for (const [key, limit2] of [["registration:" + address, 6], ["registration:global", 60]]) {
       const prior = attempts.get(key);
       if (!prior && attempts.size >= 1e4) throw new APIError(429, "RATE_LIMITED");
       const counter = prior ?? { start: now, count: 0 };
       attempts.set(key, counter);
-      if (++counter.count > limit) throw new APIError(429, "RATE_LIMITED");
+      if (++counter.count > limit2) throw new APIError(429, "RATE_LIMITED");
     }
   }
   function webAuthRateLimit(request) {
@@ -24890,7 +25213,7 @@ function createNativeServer(configuration) {
   function issueChallenge(kind, challenge, userID = null, sessionHash = null) {
     db.prepare("DELETE FROM passkey_challenges WHERE expires<?").run(passkeyNow());
     if (db.prepare("SELECT COUNT(*) AS total FROM passkey_challenges").get().total >= 1e3) throw new APIError(429, "RATE_LIMITED");
-    const id = randomBytes(32).toString("base64url");
+    const id = randomBytes2(32).toString("base64url");
     db.prepare("INSERT INTO passkey_challenges VALUES(?,?,?,?,?,?)").run(id, kind, challenge, userID, sessionHash, passkeyNow() + 3e5);
     return id;
   }
@@ -24902,16 +25225,16 @@ function createNativeServer(configuration) {
   }
   function recoveryFor(token) {
     if (typeof token !== "string" || !/^[A-Za-z0-9_-]{43}$/.test(token)) throw new APIError(401, "INVALID_RECOVERY_TOKEN");
-    const hash = sha(token), value = db.prepare("SELECT hash,user_id,expires FROM passkey_recoveries WHERE hash=?").get(hash);
+    const hash2 = sha(token), value = db.prepare("SELECT hash,user_id,expires FROM passkey_recoveries WHERE hash=?").get(hash2);
     if (!value || value.expires <= passkeyNow()) {
-      db.prepare("DELETE FROM passkey_recoveries WHERE hash=?").run(hash);
+      db.prepare("DELETE FROM passkey_recoveries WHERE hash=?").run(hash2);
       throw new APIError(401, "INVALID_RECOVERY_TOKEN");
     }
     return value;
   }
   async function registrationOptions(userID) {
     const user = db.prepare("SELECT * FROM users WHERE id=?").get(userID);
-    db.prepare("INSERT OR IGNORE INTO passkey_users(user_id,handle) VALUES(?,?)").run(userID, randomBytes(32).toString("base64url"));
+    db.prepare("INSERT OR IGNORE INTO passkey_users(user_id,handle) VALUES(?,?)").run(userID, randomBytes2(32).toString("base64url"));
     const handle = db.prepare("SELECT handle FROM passkey_users WHERE user_id=?").get(userID).handle;
     const credentials = db.prepare("SELECT id FROM passkeys WHERE user_id=?").all(userID);
     if (credentials.length >= 10) throw new APIError(422, "PASSKEY_LIMIT");
@@ -24949,7 +25272,7 @@ function createNativeServer(configuration) {
     return credential;
   }
   function createSession(user) {
-    const accessToken = randomBytes(32).toString("base64url");
+    const accessToken = randomBytes2(32).toString("base64url");
     db.prepare("INSERT INTO sessions(hash,user_id,expires) VALUES(?,?,?)").run(sha(accessToken), user.id, Date.now() + 30 * 864e5);
     return { accessToken, displayName: user.name, account: user.email };
   }
@@ -25017,12 +25340,12 @@ function createNativeServer(configuration) {
     validateSnapshot(merged);
     return merged;
   }
-  async function body(request, limit = 128 * 1024 * 1024) {
+  async function body(request, limit2 = 128 * 1024 * 1024) {
     let size = 0;
     const chunks = [];
     for await (const chunk of request) {
       size += chunk.length;
-      if (size > limit) throw new APIError(413, "TOO_LARGE");
+      if (size > limit2) throw new APIError(413, "TOO_LARGE");
       chunks.push(chunk);
     }
     try {
@@ -25078,6 +25401,7 @@ function createNativeServer(configuration) {
     response.writeHead(200, asset.headers);
     response.end(headOnly ? void 0 : asset.body);
   }
+  const courseAPI = createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin: passkeyOrigin, rateLimit: textRateLimit, peer: textPeer, now: textNow });
   const server = http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://localhost"), path = url.pathname;
@@ -25170,8 +25494,8 @@ function createNativeServer(configuration) {
         db.exec("BEGIN IMMEDIATE");
         try {
           if (db.prepare("SELECT id FROM users WHERE email=?").get(account)) throw new APIError(409, "ACCOUNT_EXISTS");
-          const salt = randomBytes(16).toString("hex"), hash = scryptSync(value.password, salt, 64);
-          const inserted = db.prepare("INSERT INTO users(email,salt,hash,name) VALUES(?,?,?,?)").run(account, salt, hash, name);
+          const salt = randomBytes2(16).toString("hex"), hash2 = scryptSync(value.password, salt, 64);
+          const inserted = db.prepare("INSERT INTO users(email,salt,hash,name) VALUES(?,?,?,?)").run(account, salt, hash2, name);
           const id = Number(inserted.lastInsertRowid);
           db.prepare("INSERT INTO workspaces(user_id,revision,snapshot) VALUES(?,0,?)").run(id, JSON.stringify(emptyWorkspace(name)));
           const session = createSession({ id, email: account, name });
@@ -25216,15 +25540,15 @@ function createNativeServer(configuration) {
         requireJSON(request);
         const value = await body(request, 2048);
         if (!value || Array.isArray(value) || Object.keys(value).length !== 2 || typeof value.code !== "string" || !webAuthValue.test(value.code) || typeof value.codeVerifier !== "string" || !pkceVerifier.test(value.codeVerifier)) throw new APIError(400, "INVALID_WEB_AUTH_REQUEST");
-        const hash = sha(value.code), now = webAuthNow();
+        const hash2 = sha(value.code), now = webAuthNow();
         db.exec("BEGIN IMMEDIATE");
         try {
-          const code = db.prepare("SELECT * FROM web_auth_codes WHERE hash=? AND expires>?").get(hash, now);
-          const challenge = createHash("sha256").update(value.codeVerifier).digest("base64url");
+          const code = db.prepare("SELECT * FROM web_auth_codes WHERE hash=? AND expires>?").get(hash2, now);
+          const challenge = createHash2("sha256").update(value.codeVerifier).digest("base64url");
           if (!code || !timingSafeEqual(Buffer.from(code.challenge), Buffer.from(challenge))) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
           const user = db.prepare("SELECT * FROM users WHERE id=?").get(code.user_id);
           if (!user) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
-          db.prepare("DELETE FROM web_auth_codes WHERE hash=?").run(hash);
+          db.prepare("DELETE FROM web_auth_codes WHERE hash=?").run(hash2);
           const session = createSession(user);
           db.exec("COMMIT");
           return respond(response, 200, { data: session });
@@ -25274,6 +25598,7 @@ function createNativeServer(configuration) {
         if (!repeated) queuePush(() => notifyWorkspaceChanged(owner, result.revision));
         return;
       }
+      if (await courseAPI(request, response, path)) return;
       const userID = userFor(request);
       if (path === "/api/native/v1/sharing" && request.method === "GET") {
         sameWebOrigin(request);
@@ -25302,7 +25627,7 @@ function createNativeServer(configuration) {
             if (db.prepare("SELECT id FROM sharing_members WHERE owner_id=? AND member_id=?").get(actor, other.id)) throw new APIError(409, "SHARING_ALREADY_LINKED");
             if (db.prepare("SELECT id FROM sharing_invitations WHERE owner_id=? AND invitee_id=?").get(actor, other.id)) throw new APIError(409, "SHARING_INVITATION_EXISTS");
             if (db.prepare("SELECT COUNT(*) AS n FROM sharing_invitations WHERE owner_id=?").get(actor).n >= 20 || db.prepare("SELECT COUNT(*) AS n FROM sharing_members WHERE owner_id=?").get(actor).n >= 20) throw new APIError(422, "SHARING_LIMIT");
-            db.prepare("INSERT INTO sharing_invitations VALUES(?,?,?,?,?,?)").run(randomUUID2(), actor, other.id, value.role, now, now + 7 * 864e5);
+            db.prepare("INSERT INTO sharing_invitations VALUES(?,?,?,?,?,?)").run(randomUUID3(), actor, other.id, value.role, now, now + 7 * 864e5);
           } else if (action === "accept" || action === "decline") {
             const invitation = db.prepare("SELECT * FROM sharing_invitations WHERE id=? AND invitee_id=?").get(value.id.toLowerCase(), actor);
             if (!invitation) throw new APIError(404, "SHARING_INVITATION_NOT_FOUND");
@@ -25365,8 +25690,8 @@ function createNativeServer(configuration) {
             const now = textNow();
             db.prepare("DELETE FROM text_tokens WHERE user_id=? AND expires<=?").run(owner, now);
             if (db.prepare("SELECT COUNT(*) AS total FROM text_tokens WHERE user_id=?").get(owner).total >= 10) throw new APIError(422, "TEXT_TOKEN_LIMIT");
-            const accessToken = "wsi_" + randomBytes(32).toString("base64url");
-            const credential = { id: randomUUID2(), name, created: now, expires: now + 365 * 864e5 };
+            const accessToken = "wsi_" + randomBytes2(32).toString("base64url");
+            const credential = { id: randomUUID3(), name, created: now, expires: now + 365 * 864e5 };
             db.prepare("INSERT INTO text_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)").run(credential.id, sha(accessToken), owner, name, credential.created, credential.expires);
             db.exec("COMMIT");
             return respond(response, 201, { data: { credential, accessToken, endpoint: textEndpoint, protocol: textImportProtocol } });
@@ -25386,7 +25711,7 @@ function createNativeServer(configuration) {
         requireJSON(request);
         const value = await body(request, 2048);
         if (!validWebAuthRequest(value)) throw new APIError(400, "INVALID_WEB_AUTH_REQUEST");
-        const now = webAuthNow(), code = randomBytes(32).toString("base64url");
+        const now = webAuthNow(), code = randomBytes2(32).toString("base64url");
         db.exec("BEGIN IMMEDIATE");
         try {
           db.prepare("DELETE FROM web_auth_codes WHERE expires<=?").run(now);
@@ -25411,7 +25736,7 @@ function createNativeServer(configuration) {
         await totpBody(request, false);
         totpRateLimit(userID);
         if (db.prepare("SELECT user_id FROM totp_credentials WHERE user_id=?").get(userID)) throw new APIError(409, "TOTP_ALREADY_ENABLED");
-        const secret = base32Encode(randomBytes(20)), now = totpNow();
+        const secret = base32Encode(randomBytes2(20)), now = totpNow();
         db.prepare("DELETE FROM totp_pending WHERE expires<=?").run(now);
         db.prepare("INSERT OR REPLACE INTO totp_pending VALUES(?,?,?)").run(userID, secret, now + 6e5);
         const owner = db.prepare("SELECT email FROM users WHERE id=?").get(userID);
@@ -25429,7 +25754,7 @@ function createNativeServer(configuration) {
           if (!pending || pending.expires <= totpNow()) throw new APIError(410, "TOTP_SETUP_EXPIRED");
           const step = totpStep(pending.secret, value.code);
           if (step === null) throw new APIError(401, "INVALID_SECOND_FACTOR");
-          const recoveryCodes = Array.from({ length: 10 }, () => randomBytes(8).toString("hex").toUpperCase().match(/.{4}/g).join("-"));
+          const recoveryCodes = Array.from({ length: 10 }, () => randomBytes2(8).toString("hex").toUpperCase().match(/.{4}/g).join("-"));
           db.prepare("INSERT INTO totp_credentials VALUES(?,?,?)").run(userID, pending.secret, step);
           db.prepare("DELETE FROM totp_recovery_codes WHERE user_id=?").run(userID);
           for (const code of recoveryCodes) db.prepare("INSERT INTO totp_recovery_codes VALUES(?,?)").run(userID, sha(code));
