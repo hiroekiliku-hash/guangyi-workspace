@@ -1074,6 +1074,62 @@ async function publishCourse(base, accessToken, course, { key = randomUUID(), re
     'Content-Type': 'application/json', 'Idempotency-Key': key, ...(revision === undefined ? {} : { 'If-Match': '"' + revision + '"' }), ...headers }, body: raw ?? JSON.stringify(course) });
   return { status: response.status, value: await response.json() };
 }
+test('course generation prompts include a valid stateful experiment whose controls update the displayed state', async () => {
+  await withTextIngress(async ({ native, session, instance }) => {
+    const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
+    let example;
+    for (const prompt of [metadata.prompt, metadata.manualPrompt]) {
+      assert.match(prompt, /前两个实质课时内安排至少一个能改变状态的 HTML 互动实验/);
+      assert.match(prompt, /不能只画出按钮、滑块而不绑定事件/);
+      assert.match(prompt, /预测→操作→观察变化→解释→换参数重试/);
+      assert.match(prompt, /真实 addEventListener 事件绑定、计算逻辑和 DOM 更新/);
+      assert.match(prompt, /至少提供重置/);
+      assert.match(prompt, /不是省略互动的理由/);
+      assert.match(prompt, /code.source 不执行，不代表 html.source 内联 script 不能运行/);
+      const fences = [...prompt.matchAll(/```json\n([\s\S]+?)\n```/g)];
+      assert.equal(fences.length, 1, 'each prompt contains one complete, unambiguous JSON example');
+      const parsed = JSON.parse(fences[0][1]);
+      if (example) assert.deepEqual(parsed, example, 'manual and automatic workflows teach the same valid example');
+      else example = parsed;
+    }
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_tokens').get().n, 0);
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: { 'Idempotency-Key': randomUUID() }, body: example })).status, 201);
+    const downloaded = (await native('courses/' + example.id, { auth: session })).value.data.course;
+    assert.deepEqual(downloaded, example, 'the production validator accepts and preserves the full teaching example');
+    const html = downloaded.lessons[0].blocks.find(block => block.presentation?.kind === 'html').presentation.html.source;
+    assert.equal(html, example.lessons[0].blocks[1].presentation.html.source);
+    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
+    assert.equal(scripts.length, 1);
+    // Execute only the trusted, built-in prompt fixture above, never user-submitted course source.
+    const { createContext, runInContext } = await import('node:vm');
+    const nodes = Object.fromEntries(['initial', 'count-value', 'assignment', 'trace', 'increment', 'decrement', 'reset'].map(id => [id, {
+      value: id === 'initial' ? '0' : '', textContent: '', listeners: {},
+      addEventListener(event, handler) { assert.equal(typeof handler, 'function'); this.listeners[event] = handler; }
+    }]));
+    const context = createContext({ document: { getElementById(id) { assert.ok(nodes[id], 'the fixture references a known element'); return nodes[id]; } }, nodes }, { codeGeneration: { strings: false, wasm: false } });
+    runInContext(scripts[0][1], context, { timeout: 1000 });
+    function displayed(expected, tracePattern) {
+      assert.equal(nodes['count-value'].textContent, String(expected));
+      assert.equal(nodes.assignment.textContent, 'count = ' + expected);
+      assert.match(nodes.trace.textContent, tracePattern);
+    }
+    function fire(id, event = 'click') {
+      assert.equal(typeof nodes[id].listeners[event], 'function', id + ' binds a real event handler');
+      runInContext('nodes[' + JSON.stringify(id) + '].listeners[' + JSON.stringify(event) + ']()', context, { timeout: 1000 });
+    }
+    displayed(0, /先预测/);
+    fire('increment'); displayed(1, /旧值 0 \+ 1 → 新值 1/);
+    fire('increment'); displayed(2, /旧值 1 \+ 1 → 新值 2/);
+    fire('decrement'); displayed(1, /旧值 2 - 1 → 新值 1/);
+    fire('reset'); displayed(0, /从初值 0 开始/);
+    nodes.initial.value = '2'; fire('initial', 'change'); displayed(2, /从初值 2 开始/);
+    fire('increment'); displayed(3, /旧值 2 \+ 1 → 新值 3/);
+    fire('increment'); displayed(4, /旧值 3 \+ 1 → 新值 4/);
+    nodes.initial.value = '99'; fire('initial', 'change'); displayed(99, /从初值 99 开始/);
+    fire('increment'); displayed(99, /已到演示范围/);
+  });
+});
+
 test('course protocol enforces scoped tokens, CAS, strict content validation and revocation', async () => {
   await withTextIngress(async ({ native, base, session, instance, createKey, advance }) => {
     const beforeCredentials = await native('integrations/course-tokens', { auth: session });

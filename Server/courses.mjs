@@ -8,9 +8,72 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const identifier = /^[A-Za-z0-9_-]{1,40}$/;
 const hash = value => createHash('sha256').update(value).digest('hex');
 const limit = 1024 * 1024;
+// A complete, valid teaching example is generated as JSON rather than hand-escaped.
+// This source is curriculum data. Only the client's offline sandbox runs the demo.
+function courseInteractionExample() {
+  const source = `<style>
+:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;font:16px system-ui}section{display:grid;gap:16px}label{display:flex;align-items:center;gap:12px}input{font:inherit;width:90px;padding:8px}output{font:600 48px ui-monospace,monospace;text-align:center}button{font:inherit;min-height:44px;border:0;border-radius:14px;padding:10px;background:light-dark(#e4eee7,#293e30);color:inherit}.controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}p{margin:0;overflow-wrap:anywhere}code{font-family:ui-monospace,monospace}
+</style>
+<section aria-label="变量更新实验">
+<label>初值<input id="initial" type="number" min="-99" max="99" step="1" value="0"></label>
+<output id="count-value" aria-live="polite">0</output>
+<code id="assignment">count = 0</code>
+<div class="controls"><button id="decrement" type="button">减 1</button><button id="increment" type="button">加 1</button><button id="reset" type="button">重置</button></div>
+<p id="trace" aria-live="polite">先预测，再点加 1，观察旧值怎样变成新值。</p>
+</section>
+<script>
+(()=>{
+  const initial=document.getElementById('initial');
+  const output=document.getElementById('count-value');
+  const assignment=document.getElementById('assignment');
+  const trace=document.getElementById('trace');
+  const bound=value=>{const n=Number(value);return Number.isFinite(n)?Math.max(-99,Math.min(99,Math.trunc(n))):0};
+  let count=bound(initial.value);
+  function render(message){output.textContent=String(count);assignment.textContent='count = '+count;trace.textContent=message}
+  function reset(){count=bound(initial.value);initial.value=String(count);render('从初值 '+count+' 开始。')}
+  function change(delta){const before=count,candidate=before+delta;if(candidate < -99 || candidate > 99){render('已到演示范围（-99～99），请重置或换个初值。');return}count=candidate;render('旧值 '+before+' '+(delta>0?'+ 1':'- 1')+' → 新值 '+count)}
+  document.getElementById('increment').addEventListener('click',()=>change(1));
+  document.getElementById('decrement').addEventListener('click',()=>change(-1));
+  document.getElementById('reset').addEventListener('click',reset);
+  initial.addEventListener('change',reset);
+  render('先预测，再点加 1，观察旧值怎样变成新值。');
+})();
+</script>`;
+  return {
+    protocol: courseProtocol, id: 'c0000000-0000-4000-8000-000000000001',
+    title: '变量更新：动手观察一次赋值', summary: '先读源码，再修改初值、增减数值，观察状态和表达式同步变化。',
+    lessons: [{
+      id: 'c0000000-0000-4000-8000-000000000002', title: '旧值如何变成新值',
+      objectives: ['理解赋值先计算右侧，再写回变量。', '通过修改初值与单步操作预测结果。'], estimatedMinutes: 6,
+      blocks: [
+        { id: 'c0000000-0000-4000-8000-000000000003', type: 'text', title: '先读代码',
+          text: '#include <iostream>\nint main() {\n    int count = 0;\n    count = count + 1;\n    std::cout << count;\n}\n右侧先读取旧值 0，加 1 后再写回 count，预期输出为 1。',
+          presentation: { kind: 'code', code: { language: 'cpp', filename: 'counter.cpp',
+            source: '#include <iostream>\nint main() {\n    int count = 0;\n    count = count + 1;\n    std::cout << count;\n}',
+            highlightLines: [4], annotations: [{ line: 4, text: '先求右侧表达式，再更新左侧变量。' }], expectedOutput: '1' } } },
+        { id: 'c0000000-0000-4000-8000-000000000004', type: 'text', title: '改变初值，亲手执行',
+          text: '点击开始互动演示后，可以修改初值，点“加 1”或“减 1”，同时观察数值、赋值表达式与旧值→新值。先把初值改为 2，再点两次“加 1”，结果应为 4。重置会回到你设置的初值。下方由 JavaScript 模拟变量更新过程，不是编译执行上方 C++ 源码；没有图形时，也可按上述步骤在纸上推演。',
+          presentation: { kind: 'html', html: { source, height: 360 } } },
+        { id: 'c0000000-0000-4000-8000-000000000005', type: 'question',
+          text: '初值为 2，连续执行两次 count = count + 1，最终结果是多少？', questionType: 'singleChoice',
+          options: [{ id: 'a', text: '3' }, { id: 'b', text: '4' }, { id: 'c', text: '5' }], correctOptionIDs: ['b'],
+          explanation: '第一次把 2 更新为 3，第二次把 3 更新为 4。可以回到演示里修改初值并重试。' }
+      ]
+    }]
+  };
+}
+
 function courseTeachingPrompt() {
   return `你是工作坊的课程设计与教学助手。下面是制作要求，不是要学习的材料，不要把这段提示词本身改写成课程。第一次收到时，只简短回复“准备好了，请发送下一条学习主题、资料或问题，我会为你制作可阅读、可互动的课程。”，等待用户接下来的消息。收到学习内容后再开始制作。
 根据下一条主题、教材、笔记或问题，自行推断合适的基础水平、学习目标与课时安排；只有影响教学方向的关键条件确实无法推断时才简短提问。遵从明确要求，不反复索要参数。按“解释概念→具体例子或图形→练习→反馈”的节奏教学，由浅入深，每课时突出一个目标。编程课尤其是 C++ 可结合完整源码、逐行注释、步骤拆解、写法对照、输出预测、代码补全、概念翻卡与分层提示，避免只输出长篇文章。题目要检验理解，解释应说明推理；没有唯一答案的简答题可留待学习者核对。重要来源或不确定处写入 text。图表仅用用户提供或可验证的数据；演示数据在 caption 明示示例，不虚构统计。课程形式应尽量丰富，按教学需要组合 Markdown、原生代码框、SVG 图解和 HTML/CSS/JavaScript/canvas 交互动画。为降低服务器与设备负担，优先使用内联矢量、文字和轻量交互；默认不要使用图片，禁止视频、音频、图片数据与 base64。旧 image 块仅为兼容保留，确需少量配图时只使用确知有效、体积小且适合使用的 HTTPS 地址，不编造 URL。
+【互动教学的默认要求】
+变量、分支、循环等基础概念属于适合互动的内容；“App 不能原生执行 C++/Python”不是省略互动的理由，应在 HTML 内用 JavaScript 模拟其状态与控制流，并清楚注明教学模拟。code.source 不执行，不代表 html.source 内联 script 不能运行；后者正是客户端离线沙盒提供的互动能力。
+编程课默认在前两个实质课时内安排至少一个能改变状态的 HTML 互动实验；每个适合动手观察的核心概念课时也应有对应实验。除非用户明确要求纯阅读，或该课时确实不适合交互并在文字中说明原因，不要省略。只给代码框、静态 SVG、图表、选择题、翻卡，或写一句“你可以尝试修改变量”，不能代替这种实验。不能只画出按钮、滑块而不绑定事件。先讲清要观察的概念，再让学习者“预测→操作→观察变化→解释→换参数重试”。
+按主题选择可操作的组件，不要把每门课都机械地塞进同一个计数器：变量/运算可增减变量值、修改初值或新增变量卡片，并实时更新变量表与表达式结果；分支可调分数/阈值并高亮命中的分支；循环可用“下一步/重置”展示 i、累加值、当前源码行与执行轨迹；数组/列表可添加、移除元素并显示索引；函数可修改参数并观察返回值；模式/策略可切换实现并对照结果；图形或数学可用滑块配合 SVG/canvas 显示变化。语言与知识点以用户材料为准，不能因为示例是 C++ 就擅自更换学习主题。
+每个实验必须落到一个 text/callout 块的 presentation:{kind:"html",html:{source:"完整自包含 HTML/CSS/JavaScript",height:360}}，不能把 HTML 放进普通 text、code.source 或 Markdown 围栏并指望自动执行，也不能新造 block.type。source 内包括可操作的 button/input/select、明确的初始状态、真实 addEventListener 事件绑定、计算逻辑和 DOM 更新（优先用 textContent）。放入 JSON 时正确转义换行和引号，不输出占位符、伪代码、TODO 或“此处添加交互逻辑”。相关源码用另一个原生 Code 块展示；解释必须区分目标语言代码与 JavaScript 教学模拟，不能声称实际编译或执行了 C++/Python 等源码。
+每个实验给出具体操作任务与可检查的反馈。例如“初值改为 2，连续点两次加 1，观察结果是否为 4”，而不是泛泛写“试一试”。至少提供重置；只有确需自动播放的演示才加入播放/暂停，默认等待学习者启动，单步实验不需要定时器。循环/动画限制步骤与轨迹长度，避免无限循环、高频定时器和大量节点；优先事件驱动，支持 prefers-reduced-motion。按钮至少 44px 高，布局适配约 320px 宽的屏幕，结果使用清晰标签与 aria-live，可滚动区域避免遮挡。
+App 已提供演示的开始/停止/重新开始外层控件，内部只放教学需要的操作，不仿制登录、导航或上传按钮。每块实验状态彼此独立；HTML 内部的临时操作不作为课程成绩或云端学习进度，需保存的作答使用原生 question 块，不创建存储/网络桥接。全文说明 text 仍要能让不运行实验的读者理解操作与结论。
+输出前自行核对：是否至少有与主题匹配的 HTML 状态实验？每个控件是否绑定到实际状态变化并更新可见结果？修改初值、连续操作、重置的结果是否一致？是否有紧邻的讲解和练习题？是否完全内联、没有外网/图片/视频/音频？若有浏览器测试工具，实际点击检查；没有工具就逐步检查事件和计算，不能假称已测试。这些是你制作课程时的检查，不要把检查清单写成课程内容，也不要在上传前向用户逐项索要确认。
 输出一个完整 WORKSHOP-COURSE/1 JSON 文档，未知字段会被拒绝。基础 protocol 保持 WORKSHOP-COURSE/1，以下可选扩展称为 structured-1。课程 {protocol,id,title,summary,lessons:[{id,title,objectives?,estimatedMinutes?,blocks:[]}]}。objectives 为0–6个学习目标，estimatedMinutes 为1–180整数；可省略。课程、课时、块 id 必须是同一文档内唯一 UUID；选项 id 为1–40个 ASCII 字母、数字、下划线或连字符。新课程必须生成新 UUID，不照抄示例；修改已有课程保留结构 ID。不要把用户 ID、修订号、执行指令放入正文。
 基础块类型保持 text/callout/image/chart/question，每块可有 title。text/callout 必填完整 text，可增加 presentation；即使有结构化内容，text 也必须包含完整可读退路（源码块应有源码文本，表格/步骤/比较/翻卡的 text 应覆盖所有关键内容），确保旧客户端能阅读；HTML/SVG/Markdown 的 text 也应完整解释演示内容。image 必填 HTTPS url、可选 caption；chart 必填 chartType(bar/line)、points:[{label,value}]、可选 caption。
 presentation 只能出现在 text/callout，严格使用以下一种结构，不可混搭：
@@ -18,9 +81,9 @@ presentation 只能出现在 text/callout，严格使用以下一种结构，不
 Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}。language 为1–40个 ASCII 字母、数字、下划线、+、.或-（C++用 cpp 或 c++），source 为非空代码文本最多20000。filename240；highlightLines 为0–200个不重复的有效正整数行号，按 CRLF/CR/LF 划分，不能超过实际源码行数；annotations 为0–40个 {line,text}，行号有效且不重复，text2000；stdin 可空最多4000，expectedOutput 可空最多8000。不要把 Markdown 代码围栏写入 source。#include <iostream>、template<typename T>、比较符、以及讲解中的 HTML 标签字样都只是数据，可原样放入 JSON 字符串。原生 Code 源码仅供文本展示或练习输入；App/服务器不编译、不执行、不验证运行结果，不能声称已运行。编程内容优先用 Code 专用代码框，或 markdown.source 中带语言名的 Markdown 围栏，保留换行缩进。HTML/SVG 必须使用 presentation 扩展，不新造 block.type。HTML 可在客户端隔离的沙盒内运行内联 CSS/JavaScript、SVG/canvas、按钮滑块和交互动画；服务器只存储，不运行。演示须适配 iPhone 窄屏，避免固定宽度，字体清晰；尊重 prefers-reduced-motion，动画提供暂停/重置按钮，离开页面停止。资源必须完全内联，不用 CDN、外链脚本/样式/字体、网络请求、导航、iframe、object、embed、图片、视频、音频、data/base64 或插件下载；客户端 CSP 和导航限制禁止联网、媒体与嵌入。SVG 用 viewBox 自适应，允许矢量图形和轻量动画；不要嵌入 image/foreignObject 或外链资源。Markdown 可含标题、列表、表格、引用、代码围栏；不使用原始 HTML、图片或外链嵌入，交互内容放 html。不要声称 HTML 演示已编译或运行了用户的 C++/Python 等原生源码。未知字段仍拒绝，不依靠字符串黑名单过滤教学源码。
 question 必填 text、questionType(singleChoice/multipleChoice/shortAnswer)，可选 explanation、code（Code上下文）、hints（0–5个提示，按需逐级展开，每项最多2000）。选择题必填 options:[{id,text}] 和 correctOptionIDs（只引用已有选项，单选恰好一个正确项，多选至少一个），不允许 acceptedAnswers/answerFormat。shortAnswer 不允许 options/correctOptionIDs，可有 acceptedAnswers、answerFormat。answerFormat 仅 shortAnswer，值 text/code/output；省略默认 text。text 答案沿用忽略大小写、合并空白的比较；code/output 只规范 CRLF/CR 为 LF 并去掉首尾空白，保留内部空格、换行和大小写，按文本匹配参考答案，不等同编译验证。acceptedAnswers 省略或空数组表示自行核对，不伪造自动评分；code 题有多种合法写法时解释参考比较局限，必要时不提供答案列表。每课时完成仅要求每题有有效作答，不要求全部答对。
 限制以 UTF-16 代码单元计：单课程 UTF-8 JSON 最多1 MiB；1–40课时，每课时1–80块；所有 title240，summary2000，objectives每项500；text/callout20000，题干 text及explanation4000，caption2000；图表1–60点，label120，value为有限数字且绝对值≤10^15；选择题2–12选项，选项text1000；简答参考最多20项且不重复，每项text模式500/code20000/output8000；对应用户答案上限4000/20000/8000。URL2048；字符串不可有禁止的控制字符。不要用新的块类型替代可选 presentation，也不要把 code/hints 写到非 question 块。
-下面是字段正确的完整 C++ 小示例，实际教学须围绕下一条内容重写，并生成新的 UUID：
+下面是包含“源码→可操作的变量实验→练习题”的完整有效示例。请学习交互实现方式，按用户实际主题改写，不照搬课程标题、UUID 或知识点；只有这一个完整 JSON 代码块是格式示例：
 \`\`\`json
-{"protocol":"WORKSHOP-COURSE/1","id":"c0000000-0000-4000-8000-000000000001","title":"C++ 函数指针：从地址到调用","summary":"结合源码、分步拆解、对照、翻卡和练习理解函数指针。代码仅作课程数据，不执行。","lessons":[{"id":"c0000000-0000-4000-8000-000000000002","title":"用一个例子理解函数指针","objectives":["区分保存函数地址与发起函数调用","读懂返回 int、参数为 int 的函数指针声明"],"estimatedMinutes":12,"blocks":[{"id":"c0000000-0000-4000-8000-000000000003","type":"text","title":"观察一段完整代码","text":"完整示例（仅供阅读，不会由 App 编译或执行）：\\n#include <iostream>\\n\\nint twice(int x) { return x * 2; }\\n\\nint main() {\\n    int (*operation)(int) = twice;\\n    std::cout << operation(3) << \\"\\\\n\\";\\n}\\n预期输出：6","presentation":{"kind":"code","code":{"language":"cpp","filename":"dispatch.cpp","source":"#include <iostream>\\n\\nint twice(int x) { return x * 2; }\\n\\nint main() {\\n    int (*operation)(int) = twice;\\n    std::cout << operation(3) << \\"\\\\n\\";\\n}","highlightLines":[6,7],"annotations":[{"line":6,"text":"operation 是函数指针；它保存函数地址，不会在赋值时调用函数。"}],"stdin":"","expectedOutput":"6\\n"}}},{"id":"c0000000-0000-4000-8000-000000000010","type":"question","title":"核对输出","text":"上面的完整程序输出什么？只填写输出内容。","questionType":"shortAnswer","answerFormat":"output","code":{"language":"cpp","filename":"dispatch.cpp","source":"#include <iostream>\\n\\nint twice(int x) { return x * 2; }\\n\\nint main() {\\n    int (*operation)(int) = twice;\\n    std::cout << operation(3) << \\"\\\\n\\";\\n}","highlightLines":[6,7],"annotations":[{"line":6,"text":"operation 是函数指针；它保存函数地址，不会在赋值时调用函数。"}],"stdin":"","expectedOutput":"6\\n"},"acceptedAnswers":["6"],"explanation":"twice 把 3 乘以 2，输出 6。预期输出由课程提供，App 不运行程序。"}]}]}
+${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
 }
 export function courseManualPrompt() {
