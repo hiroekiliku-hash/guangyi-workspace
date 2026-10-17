@@ -1076,13 +1076,32 @@ async function publishCourse(base, accessToken, course, { key = randomUUID(), re
 }
 test('course protocol enforces scoped tokens, CAS, strict content validation and revocation', async () => {
   await withTextIngress(async ({ native, base, session, instance, createKey, advance }) => {
+    const beforeCredentials = await native('integrations/course-tokens', { auth: session });
+    const manualPrompt = beforeCredentials.value.data.manualPrompt;
+    assert.match(manualPrompt, /下一条学习主题/); assert.match(manualPrompt, /解释概念→具体例子或图形→练习→反馈/);
+    assert.match(manualPrompt, /不要声称已上传/); assert.match(manualPrompt, /完整 JSON 文档/);
+    assert.doesNotMatch(manualPrompt, /\{\{API_KEY\}\}|wsc_|Authorization/);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_tokens').get().n, 0, 'manual generation never mints a credential');
+    const example = JSON.parse(manualPrompt.match(/```json\n([\s\S]+?)\n```/)[1]);
+    const manualHeaders = { 'Idempotency-Key': randomUUID() };
+    const nativeCreated = await native('courses', { auth: session, method: 'POST', headers: manualHeaders, body: example });
+    assert.equal(nativeCreated.status, 201); assert.equal(nativeCreated.value.data.revision, 1);
+    const nativeReplay = await native('courses', { auth: session, method: 'POST', headers: manualHeaders, body: example });
+    assert.equal(nativeReplay.status, 200); assert.equal(nativeReplay.value.data.replayed, true);
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: manualHeaders, body: { ...example, title: 'changed' } })).status, 409);
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: { 'Idempotency-Key': randomUUID() }, body: example })).status, 409);
+    const updateHeaders = { 'Idempotency-Key': randomUUID(), 'If-Match': '\"1\"' };
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: updateHeaders, body: { ...example, title: '更新课程' } })).value.data.revision, 2);
+    assert.equal((await native('courses', { auth: session, method: 'POST', headers: { ...updateHeaders, 'Idempotency-Key': randomUUID() }, body: example })).status, 409);
+    assert.equal((await native('courses/' + example.id, { auth: session, method: 'DELETE', headers: { 'If-Match': '\"2\"' } })).status, 200);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_tokens').get().n, 0, 'native publishing requires no integration credential');
     const created = await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} });
     assert.equal(created.status, 201); const key = created.value.data;
     assert.match(key.accessToken, /^wsc_[A-Za-z0-9_-]{43}$/); assert.equal(key.protocol, 'WORKSHOP-COURSE/1');
     assert.equal(key.endpoint, 'https://text-import.test/api/integrations/v1/courses');
     assert.equal(instance.db.prepare('SELECT hash FROM course_tokens').get().hash, createHash('sha256').update(key.accessToken).digest('hex'));
     const listing = await native('integrations/course-tokens', { auth: session });
-    assert.match(listing.value.data.prompt, /\{\{API_KEY\}\}/); assert.equal(listing.value.data.credentials.length, 1);
+    assert.match(listing.value.data.prompt, /\{\{API_KEY\}\}/); assert.match(listing.value.data.prompt, /没有网络工具/); assert.match(listing.value.data.prompt, /不要假装上传/); assert.equal(listing.value.data.credentials.length, 1);
     const doc = sampleCourse(), mutation = randomUUID();
     assert.equal((await publishCourse(base, session, doc)).status, 401);
     assert.equal((await publishCourse(base, (await createKey()).accessToken, doc)).status, 401);
@@ -1144,6 +1163,9 @@ test('course progress is personal, revision-aware, idempotent and shared-viewer 
     assert.equal((await native('sharing/accept', { auth: member, method: 'POST', body: { id: membership } })).status, 200);
     const path = 'courses/' + doc.id, progressPath = path + '/progress', lesson = doc.lessons[0];
     assert.equal((await native('courses', { auth: member, headers })).value.data.courses.length, 1);
+    const memberDocument = sampleCourse();
+    assert.equal((await native('courses', { auth: member, headers: { ...headers, 'Idempotency-Key': randomUUID() }, method: 'POST', body: memberDocument })).status, 403);
+
     const mutate = body => native(progressPath, { auth: member, headers, method: 'POST', body: { mutationID: randomUUID(), courseRevision: 1, lessonID: lesson.id, ...body } });
     assert.equal((await mutate({ completed: true })).status, 409);
     for (const body of [{ selectedOptionIDs: ['unknown'] }, { selectedOptionIDs: ['a'], text: 'invalid' }, { selectedOptionIDs: ['a', 'b'] }]) assert.equal((await mutate({ blockID: lesson.blocks[4].id, ...body })).status, 422);
@@ -1159,6 +1181,12 @@ test('course progress is personal, revision-aware, idempotent and shared-viewer 
     const reset = await native(progressPath, { auth: member, headers }); assert.equal(reset.value.data.courseRevision, 2); assert.deepEqual(reset.value.data.answers, []); assert.deepEqual(reset.value.data.completedLessonIDs, []);
     assert.equal((await mutate(choice)).status, 409);
     assert.equal((await native('sharing/permission', { auth: session, method: 'POST', body: { id: membership, role: 'editor' } })).status, 200);
+    const sharedPublish = await native('courses', { auth: member, headers: { ...headers, 'Idempotency-Key': randomUUID() }, method: 'POST', body: memberDocument });
+    assert.equal(sharedPublish.status, 201); assert.equal(sharedPublish.value.data.revision, 1);
+    assert.deepEqual((await native('courses/' + memberDocument.id, { auth: session })).value.data.course, memberDocument);
+    assert.equal((await native('courses/' + memberDocument.id, { auth: member })).status, 404, 'shared publish never writes member personal space');
+    assert.equal((await native('courses', { auth: member, headers: { ...headers, 'Idempotency-Key': randomUUID(), 'If-Match': '\"1\"' }, method: 'POST', body: { ...memberDocument, title: '共同编辑' } })).value.data.revision, 2);
+
     assert.equal((await native(path, { auth: member, headers, method: 'DELETE' })).status, 428);
     assert.equal((await native(path, { auth: member, headers: { ...headers, 'If-Match': '"1"' }, method: 'DELETE' })).status, 409);
     assert.equal((await native(path, { auth: member, headers: { ...headers, 'If-Match': '"2"' }, method: 'DELETE' })).status, 200);

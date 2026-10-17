@@ -24281,13 +24281,31 @@ var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var identifier = /^[A-Za-z0-9_-]{1,40}$/;
 var hash = (value) => createHash("sha256").update(value).digest("hex");
 var limit = 1024 * 1024;
+function courseTeachingPrompt() {
+  return `\u4F60\u662F\u5DE5\u4F5C\u574A\u7684\u8BFE\u7A0B\u8BBE\u8BA1\u4E0E\u6559\u5B66\u52A9\u624B\u3002\u4E0B\u9762\u662F\u5236\u4F5C\u8981\u6C42\uFF0C\u4E0D\u662F\u8981\u5B66\u4E60\u7684\u6750\u6599\uFF0C\u4E0D\u8981\u628A\u8FD9\u6BB5\u63D0\u793A\u8BCD\u672C\u8EAB\u6539\u5199\u6210\u8BFE\u7A0B\u3002\u7B2C\u4E00\u6B21\u6536\u5230\u65F6\uFF0C\u53EA\u7B80\u77ED\u56DE\u590D\u201C\u51C6\u5907\u597D\u4E86\uFF0C\u8BF7\u53D1\u9001\u4E0B\u4E00\u6761\u5B66\u4E60\u4E3B\u9898\u3001\u8D44\u6599\u6216\u95EE\u9898\uFF0C\u6211\u4F1A\u4E3A\u4F60\u5236\u4F5C\u53EF\u9605\u8BFB\u3001\u53EF\u4E92\u52A8\u7684\u8BFE\u7A0B\u3002\u201D\uFF0C\u7B49\u5F85\u7528\u6237\u63A5\u4E0B\u6765\u7684\u6D88\u606F\u3002\u6536\u5230\u5B66\u4E60\u5185\u5BB9\u540E\u518D\u5F00\u59CB\u5236\u4F5C\u3002
+\u6839\u636E\u7528\u6237\u63A5\u4E0B\u6765\u7684\u4E3B\u9898\u3001\u6559\u6750\u3001\u7B14\u8BB0\u6216\u95EE\u9898\uFF0C\u81EA\u884C\u63A8\u65AD\u5408\u9002\u7684\u57FA\u7840\u6C34\u5E73\u3001\u5B66\u4E60\u76EE\u6807\u4E0E\u8BFE\u65F6\u5B89\u6392\uFF1B\u53EA\u6709\u5F71\u54CD\u6559\u5B66\u65B9\u5411\u7684\u5173\u952E\u6761\u4EF6\u786E\u5B9E\u65E0\u6CD5\u63A8\u65AD\u65F6\u624D\u7B80\u77ED\u63D0\u95EE\u3002\u9075\u4ECE\u660E\u786E\u8981\u6C42\uFF0C\u4E0D\u53CD\u590D\u7D22\u8981\u53C2\u6570\u3002\u6309\u201C\u89E3\u91CA\u6982\u5FF5\u2192\u5177\u4F53\u4F8B\u5B50\u6216\u56FE\u5F62\u2192\u7EC3\u4E60\u2192\u53CD\u9988\u201D\u7684\u8282\u594F\u6559\u5B66\uFF0C\u7531\u6D45\u5165\u6DF1\uFF0C\u6BCF\u8BFE\u65F6\u7A81\u51FA\u4E00\u4E2A\u76EE\u6807\u3002\u9898\u76EE\u8981\u68C0\u9A8C\u7406\u89E3\uFF0C\u89E3\u91CA\u5E94\u8BF4\u660E\u63A8\u7406\uFF0C\u4E0D\u53EA\u7ED9\u7B54\u6848\uFF1B\u6CA1\u6709\u552F\u4E00\u7B54\u6848\u7684\u7B80\u7B54\u9898\u4E0D\u7F16\u9020\u6807\u51C6\u7B54\u6848\u3002\u53EF\u628A\u91CD\u8981\u6765\u6E90\u6216\u4E0D\u786E\u5B9A\u4E4B\u5904\u5199\u5728 text \u5757\u4E2D\u3002\u56FE\u8868\u53EA\u4F7F\u7528\u7528\u6237\u63D0\u4F9B\u6216\u53EF\u9A8C\u8BC1\u7684\u6570\u636E\uFF1B\u6F14\u793A\u6570\u636E\u5FC5\u987B\u5728 caption \u660E\u793A\u4E3A\u793A\u4F8B\uFF0C\u4E0D\u865A\u6784\u7EDF\u8BA1\u3002\u56FE\u7247\u53EA\u4F7F\u7528\u786E\u77E5\u6709\u6548\u4E14\u9002\u5408\u4F7F\u7528\u7684 HTTPS \u5730\u5740\uFF1B\u6CA1\u6709\u53EF\u9760\u56FE\u7247\u5C31\u7528\u6587\u5B57\u6216\u53D7\u652F\u6301\u7684\u56FE\u8868\uFF0C\u4E0D\u7F16\u9020\u56FE\u7247 URL\u3002\u4E0D\u8981\u5236\u4F5C HTML\u3001\u811A\u672C\u3001SVG\u3001iframe \u6216\u81EA\u5B9A\u4E49\u6267\u884C\u4EE3\u7801\u3002
+\u8F93\u51FA\u8BFE\u7A0B\u6B63\u6587\u5FC5\u987B\u662F\u4E00\u4E2A\u5B8C\u6574 ${courseProtocol} JSON \u6587\u6863\uFF0C\u4F7F\u7528\u4E0B\u5217\u51C6\u786E\u5B57\u6BB5\uFF0C\u4E0D\u6DFB\u52A0\u6559\u5B66\u76EE\u6807\u3001\u7528\u6237 ID\u3001\u7248\u672C\u53F7\u7B49\u672A\u5B9A\u4E49\u5B57\u6BB5\uFF1A
+\u8BFE\u7A0B {protocol,id,title,summary,lessons:[{id,title,blocks:[]}]}\u3002protocol \u56FA\u5B9A\u4E3A WORKSHOP-COURSE/1\u3002\u6BCF\u4E2A\u8BFE\u7A0B\u3001\u8BFE\u65F6\u3001\u5757\u7684 id \u5FC5\u987B\u4E3A\u540C\u4E00\u6587\u6863\u5185\u552F\u4E00 UUID\uFF1B\u9009\u9879 id \u4E3A 1\u201340 \u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002\u65B0\u8BFE\u7A0B\u751F\u6210\u65B0\u7684 UUID\uFF0C\u4E0D\u7167\u6284\u793A\u4F8B ID\uFF1B\u6709\u7528\u6237\u63D0\u4F9B\u7684\u5DF2\u6709\u8BFE\u7A0B\u65F6\u4FDD\u7559\u5176\u7ED3\u6784 ID\u3002
+\u5757\u652F\u6301 text/callout/image/chart/question\uFF1Atext/callout \u5FC5\u586B text\uFF1Bimage \u5FC5\u586B HTTPS url\u3001\u53EF\u9009 caption\uFF1Bchart \u5FC5\u586B chartType(bar/line)\u3001points:[{label,value}]\u3001\u53EF\u9009 caption\uFF1Bquestion \u5FC5\u586B text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\uFF0C\u53EF\u9009 explanation\u3002\u9009\u62E9\u9898\u9700\u8981 options:[{id,text}] \u548C correctOptionIDs\uFF08\u5FC5\u987B\u5F15\u7528\u5DF2\u6709\u9009\u9879\uFF0C\u5355\u9009\u6070\u597D\u4E00\u4E2A\u6B63\u786E\u9879\uFF0C\u591A\u9009\u81F3\u5C11\u4E00\u4E2A\uFF09\uFF1B\u7B80\u7B54\u9898\u53EF\u63D0\u4F9B acceptedAnswers \u5B57\u7B26\u4E32\u6570\u7EC4\uFF0C\u7701\u7565\u6216\u7A7A\u6570\u7EC4\u8868\u793A\u7531\u5B66\u4E60\u8005\u81EA\u884C\u6838\u5BF9\uFF0C\u4E0D\u80FD\u540C\u65F6\u63D0\u4F9B options/correctOptionIDs\u3002\u4E0D\u8981\u7ED9\u5176\u4ED6\u5757\u6DFB\u52A0\u9898\u76EE\u5B57\u6BB5\u3002
+\u9650\u5236\uFF1A\u5355\u8BFE\u7A0B UTF-8 JSON \u6700\u591A 1 MiB\uFF1B1\u201340 \u8BFE\u65F6\uFF0C\u6BCF\u8BFE\u65F6 1\u201380 \u5757\uFF1Btitle \u6700\u591A 240\u3001summary 2000\u3001\u666E\u901A text/callout 20000\u3001\u9898\u76EE text \u548C explanation 4000\u3001caption 2000 \u4E2A UTF-16 \u4EE3\u7801\u5355\u5143\uFF1B\u6BCF\u56FE\u8868 1\u201360 \u70B9\u3001label \u6700\u591A 120\u3001value \u4E3A\u6709\u9650\u6570\u5B57\u4E14\u7EDD\u5BF9\u503C\u4E0D\u8D85\u8FC7 10^15\uFF1B\u9009\u62E9\u9898 2\u201312 \u9009\u9879\u3001\u6BCF\u9879 text \u6700\u591A 1000\uFF1B\u7B80\u7B54 acceptedAnswers \u6700\u591A 20 \u9879\u3001\u6BCF\u9879\u6700\u591A 500\uFF1BURL \u6700\u591A 2048\u3002
+\u4E0B\u9762\u662F\u5B57\u6BB5\u6B63\u786E\u7684\u5B8C\u6574\u5C0F\u793A\u4F8B\uFF0C\u5B9E\u9645\u6559\u5B66\u5E94\u56F4\u7ED5\u7528\u6237\u4E0B\u4E00\u6761\u5185\u5BB9\u91CD\u5199\uFF0C\u800C\u4E0D\u662F\u4E00\u76F4\u4F7F\u7528\u793A\u4F8B\u4E3B\u9898\uFF1A
+\`\`\`json
+{"protocol":"WORKSHOP-COURSE/1","id":"6d5473fb-b594-4203-b3d5-122cc440a414","title":"\u8BA4\u8BC6\u5E73\u5747\u6570","summary":"\u901A\u8FC7\u4E00\u4E2A\u4F8B\u5B50\u4E0E\u7EC3\u4E60\u7406\u89E3\u5E73\u5747\u6570\u3002","lessons":[{"id":"6f59189c-3435-45d1-980d-9bfda402a3fa","title":"\u5148\u6C42\u548C\uFF0C\u518D\u5E73\u5747\u5206","blocks":[{"id":"482e807d-cedd-49f2-a9d4-fb78e9551609","type":"text","text":"\u5E73\u5747\u6570\u8868\u793A\u628A\u603B\u91CF\u5E73\u5747\u5206\u7ED9\u6BCF\u4E00\u4EFD\u3002\u793A\u4F8B\uFF1A2\u30014\u30016 \u7684\u5E73\u5747\u6570\u4E3A (2+4+6)\xF73=4\u3002"},{"id":"6fb4f180-de93-4acb-b391-f2672ab8c5aa","type":"chart","chartType":"bar","caption":"\u6559\u5B66\u793A\u4F8B\u6570\u636E\uFF0C\u4E0D\u4EE3\u8868\u771F\u5B9E\u7EDF\u8BA1\u3002","points":[{"label":"\u7B2C\u4E00\u4EFD","value":2},{"label":"\u7B2C\u4E8C\u4EFD","value":4},{"label":"\u7B2C\u4E09\u4EFD","value":6}]},{"id":"b5d920f6-ccf1-4e8c-b67a-b08e0db00cb1","type":"question","text":"3 \u548C 7 \u7684\u5E73\u5747\u6570\u662F\u591A\u5C11\uFF1F","questionType":"singleChoice","options":[{"id":"a","text":"5"},{"id":"b","text":"10"}],"correctOptionIDs":["a"],"explanation":"\u5148\u76F8\u52A0\u5F97\u5230 10\uFF0C\u518D\u9664\u4EE5\u4EFD\u6570 2\uFF0C\u5F97\u5230 5\u3002"}]}]}
+\`\`\``;
+}
+function courseManualPrompt() {
+  return courseTeachingPrompt() + `
+\u4F60\u5728\u672C\u6B21\u6D41\u7A0B\u53EA\u8D1F\u8D23\u751F\u6210\u4F9B\u7528\u6237\u5BFC\u5165\u7684\u8BFE\u7A0B\uFF0C\u4E0D\u9700\u8981\u767B\u5F55\u6216\u8C03\u7528\u7F51\u7EDC\u3002\u5148\u6309\u4E0A\u8FF0\u8981\u6C42\u7B49\u5F85\u7528\u6237\u4E0B\u4E00\u6761\u5B66\u4E60\u5185\u5BB9\u3002\u8BFE\u7A0B\u5236\u4F5C\u5B8C\u6210\u540E\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 JSON \u6587\u6863\uFF0C\u653E\u5728\u4E00\u4E2A json \u4EE3\u7801\u5757\u4E2D\uFF1B\u4E0D\u8981\u5728\u4EE3\u7801\u5757\u5916\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u4E0D\u8981\u8F93\u51FA\u591A\u4E2A\u7247\u6BB5\uFF0C\u4E0D\u8981\u58F0\u79F0\u5DF2\u4E0A\u4F20\u3002\u7528\u6237\u4F1A\u628A\u6587\u6863\u590D\u5236\u5230\u5DE5\u4F5C\u574A\u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u5E76\u7531 App \u4F7F\u7528\u5176\u5F53\u524D\u767B\u5F55\u8D26\u6237\u4E0A\u4F20\u3002\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u65F6\uFF0C\u7528\u6237\u9700\u5728 App \u6838\u5BF9\u5DF2\u77E5\u8BFE\u7A0B\u7248\u672C\uFF1B\u6CA1\u6709\u5DF2\u6709\u6587\u6863\u65F6\u521B\u5EFA\u65B0 UUID\uFF0C\u4E0D\u731C\u6D4B\u6216\u8986\u76D6\u65E7\u8BFE\u7A0B\u3002`;
+}
 function coursePrompt(endpoint) {
-  return `\u4F60\u53EF\u4EE5\u901A\u8FC7\u5DE5\u4F5C\u574A\u8BFE\u7A0B\u63A5\u53E3\u5411\u5F53\u524D\u5BC6\u94A5\u7ED1\u5B9A\u7684\u8D26\u6237\u53D1\u5E03\u8BFE\u7A0B\uFF0C\u4E0D\u8981\u8BE2\u95EE\u6216\u63D0\u4EA4\u7528\u6237 ID\u3002\u7528\u6237\u8981\u6C42\u53D1\u5E03\u65F6\uFF0C\u5408\u7406\u5224\u65AD\u8BFE\u7A0B\u5206\u8282\u3001\u6587\u5B57\u3001\u914D\u56FE\u3001\u56FE\u8868\u4E0E\u7EC3\u4E60\uFF1B\u65E0\u9700\u8BA9\u7528\u6237\u586B\u5199\u6280\u672F\u5B57\u6BB5\u3002
+  return courseTeachingPrompt() + `
+\u7528\u6237\u540E\u7EED\u63D0\u4F9B\u5B66\u4E60\u5185\u5BB9\u540E\uFF0C\u5982\u679C\u4F60\u6709\u7F51\u7EDC\u8BF7\u6C42\u5DE5\u5177\uFF0C\u5C06\u5236\u4F5C\u5B8C\u6210\u7684\u6587\u6863\u4E0A\u4F20\u5230\u5F53\u524D\u8BFE\u7A0B\u53D1\u5E03\u51ED\u636E\u7ED1\u5B9A\u7684\u8D26\u6237\uFF0C\u4E0D\u8BE2\u95EE\u6216\u63D0\u4EA4\u7528\u6237 ID\u3002
 POST ${endpoint}
 Authorization: Bearer {{API_KEY}}
 Content-Type: application/json; charset=utf-8
-Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u7684 UUID\uFF0C\u91CD\u8BD5\u4FDD\u6301\u76F8\u540C\u6B63\u6587\u548C\u8BF7\u6C42\u5934\u3002
-\u534F\u8BAE ${courseProtocol}\uFF1AJSON {protocol,id,title,summary,lessons:[{id,title,blocks:[]}]}\uFF0C\u8BFE\u7A0B\u3001\u8BFE\u8282\u3001\u5185\u5BB9\u5757 id \u5747\u4E3A\u552F\u4E00 UUID\u3002\u5757 type \u4E3A text/callout/image/chart/question\uFF1Btext/callout \u6709 text\uFF1Bimage \u6709 HTTPS url \u548C\u53EF\u9009 caption\uFF1Bchart \u6709 chartType(bar/line)\u3001points:[{label,value}] \u548C\u53EF\u9009 caption\uFF1Bquestion \u6709 text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\u3001explanation \u53EF\u9009\uFF0C\u9009\u62E9\u9898\u6709 options:[{id,text}]\u3001correctOptionIDs\uFF1B\u7B80\u7B54\u9898\u6709 acceptedAnswers\uFF08\u53EF\u9009\uFF0C\u7A7A\u8868\u793A\u81EA\u884C\u68C0\u67E5\uFF09\u3002\u4EC5\u652F\u6301\u8FD9\u4E9B\u5B57\u6BB5\uFF0C\u4E0D\u6DFB\u52A0 HTML\u3001\u811A\u672C\u3001SVG\u3001\u89C6\u9891\u6216\u81EA\u5B9A\u4E49\u53EF\u6267\u884C\u4EE3\u7801\u3002\u4E0D\u4ECE\u7F51\u9875\u81EA\u52A8\u6267\u884C\u4EFB\u4F55\u5185\u5BB9\u3002\u6700\u591A 40 \u8282\u3001\u6BCF\u8282 80 \u5757\u3001\u5355\u8BFE\u7A0B 1 MiB\u3002\u6807\u9898\u6700\u591A 240 \u5B57\u7B26\uFF0C\u666E\u901A\u6587\u5B57\u6700\u591A 20000 \u5B57\u7B26\uFF1B\u9898\u76EE\u53CA\u89E3\u91CA\u6700\u591A 4000\uFF0C\u9009\u9879\u6700\u591A 12 \u9879\u3001\u6BCF\u9879\u6587\u5B57\u6700\u591A 1000\uFF0C\u53C2\u8003\u7B80\u7B54\u7B54\u6848\u6700\u591A 500 \u5B57\u7B26\u3002\u56FE\u8868\u6700\u591A 60 \u70B9\u3001\u6807\u7B7E\u6700\u591A 120 \u5B57\u7B26\u3002\u65B0\u8BFE\u7A0B\u65E0\u9700 If-Match\uFF1B\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u5FC5\u987B\u63D0\u4F9B\u5176\u5DF2\u77E5\u4FEE\u8BA2\u53F7 If-Match: "\u6574\u6570"\u3002409 \u65F6\u505C\u6B62\uFF0C\u4E0D\u731C\u6D4B\u8986\u76D6\u7248\u672C\uFF1B\u8BF7\u6C42\u6210\u529F 201/200 \u540E\u624D\u80FD\u8BF4\u5DF2\u53D1\u5E03\u3002\u8BFE\u7A0B\u5728 App \u767B\u5F55\u8D26\u6237\u7684\u201C\u8BFE\u7A0B\u201D\u9875\u83B7\u53D6\uFF1B\u672C\u63A5\u53E3\u4E0D\u4FEE\u6539\u65E5\u7A0B\u3002\u59A5\u5584\u4FDD\u7BA1\u5BC6\u94A5\uFF0C\u4E0D\u5199\u8FDB\u8BFE\u7A0B\u3001\u65E5\u5FD7\u6216\u516C\u5F00\u5185\u5BB9\u3002`;
+Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u7684 UUID\u3002\u5BC6\u94A5\u53EA\u51FA\u73B0\u5728 Authorization \u8BF7\u6C42\u5934\uFF0C\u4E0D\u80FD\u8FDB\u5165\u6B63\u6587\u3001\u65E5\u5FD7\u3001\u8BFE\u7A0B\u6216\u516C\u5F00\u8F93\u51FA\u3002
+\u65B0\u5EFA\u8BFE\u7A0B\u65E0\u9700 If-Match\uFF1B\u66F4\u65B0\u5DF2\u6709\u8BFE\u7A0B\u5FC5\u987B\u63D0\u4F9B\u5DF2\u77E5\u5F53\u524D\u4FEE\u8BA2\u53F7 If-Match: "\u6574\u6570"\u3002\u4FEE\u8BA2\u53F7\u653E\u5728\u8BF7\u6C42\u5934\uFF0C\u4E0D\u653E\u5165\u8BFE\u7A0B JSON\u3002\u91CD\u8BD5\u4FDD\u7559\u540C\u4E00 Idempotency-Key\u3001\u5B8C\u5168\u76F8\u540C\u7684\u5B57\u8282\u6B63\u6587\u4E0E If-Match\u3002409 \u8868\u793A\u51B2\u7A81\uFF0C\u5E94\u505C\u6B62\u5E76\u83B7\u53D6\u6700\u65B0\u8BFE\u7A0B\u6216\u8BF7\u7528\u6237\u6838\u5BF9\uFF0C\u4E0D\u80FD\u731C\u6D4B\u7248\u672C\u5F3A\u884C\u8986\u76D6\u3002\u53EA\u6709 HTTP 201/200 \u6210\u529F\u540E\u624D\u53EF\u4EE5\u8BF4\u5DF2\u4E0A\u4F20\uFF0C\u5E76\u62A5\u544A\u8FD4\u56DE\u7684\u8BFE\u7A0B\u6807\u9898\u548C\u4FEE\u8BA2\u53F7\u3002
+\u5982\u679C\u6CA1\u6709\u7F51\u7EDC\u5DE5\u5177\u6216\u65E0\u6CD5\u5B9E\u9645\u53D1\u8D77 HTTP \u8BF7\u6C42\uFF0C\u4E0D\u8981\u5047\u88C5\u4E0A\u4F20\uFF1A\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u4F18\u5148\u653E\u5728\u552F\u4E00\u7684 json \u4EE3\u7801\u5757\u5185\uFF0C\u4E0D\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u8BA9\u7528\u6237\u590D\u5236\u5230 App \u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u3002\u6B64\u9000\u8DEF\u4E0D\u9700\u8981\u7528\u6237\u63D0\u4F9B\u5176\u4ED6\u51ED\u636E\u3002`;
 }
 function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError: APIError2, origin, rateLimit, peer, now = Date.now }) {
   const fail2 = (code = "INVALID_COURSE", status = 422) => {
@@ -24464,6 +24482,23 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     });
     return state;
   }
+  function publish(owner, key, expected, bytes, doc) {
+    rateLimit("course-owner:" + owner, 36e5, 120);
+    const digest2 = hash(Buffer.concat([Buffer.from(String(expected) + "\n"), bytes]));
+    const prior = db.prepare("SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?").get(owner, key);
+    if (prior) {
+      if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
+      return { ...JSON.parse(prior.result), replayed: true };
+    }
+    const old = db.prepare("SELECT revision,deleted FROM courses WHERE owner_id=? AND id=?").get(owner, doc.id);
+    if (old ? old.deleted || expected !== old.revision : expected !== null) fail2("COURSE_REVISION_CONFLICT", 409);
+    if (!old && db.prepare("SELECT COUNT(*) AS n FROM courses WHERE owner_id=? AND deleted=0").get(owner).n >= 200) fail2("COURSE_LIMIT");
+    if (db.prepare("SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?").get(owner).n >= 2e4) fail2("COURSE_PUBLICATION_LIMIT");
+    const result = { id: doc.id, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
+    db.prepare("INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at").run(owner, doc.id, result.revision, JSON.stringify(doc), result.updatedAt);
+    db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result), now());
+    return { ...result, replayed: false };
+  }
   return async function handle(request, response, path) {
     const tokens = path === "/api/native/v1/integrations/course-tokens";
     const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/progress)?)?$/.exec(path);
@@ -24475,24 +24510,11 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       if (request.headers["x-workspace-id"] != null) fail2("COURSE_TOKEN_OWNS_PERSONAL_WORKSPACE");
       const key = uuid3(request.headers["idempotency-key"]), expected = match(request, false);
       const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
-      const digest2 = hash(Buffer.concat([Buffer.from(String(expected) + "\n"), bytes]));
       const result = transaction(() => {
-        const token = credential(request), owner = token.user_id;
-        rateLimit("course-owner:" + owner, 36e5, 120);
-        const prior = db.prepare("SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?").get(owner, key);
-        if (prior) {
-          if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
-          return { ...JSON.parse(prior.result), replayed: true };
-        }
-        const old = db.prepare("SELECT revision,deleted FROM courses WHERE owner_id=? AND id=?").get(owner, doc.id);
-        if (old ? old.deleted || expected !== old.revision : expected !== null) fail2("COURSE_REVISION_CONFLICT", 409);
-        if (!old && db.prepare("SELECT COUNT(*) AS n FROM courses WHERE owner_id=? AND deleted=0").get(owner).n >= 200) fail2("COURSE_LIMIT");
-        if (db.prepare("SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?").get(owner).n >= 2e4) fail2("COURSE_PUBLICATION_LIMIT");
-        const result2 = { id: doc.id, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
-        db.prepare("INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at").run(owner, doc.id, result2.revision, JSON.stringify(doc), result2.updatedAt);
-        db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result2), now());
+        const token = credential(request);
+        const result2 = publish(token.user_id, key, expected, bytes, doc);
         db.prepare("UPDATE course_tokens SET last_used=? WHERE id=?").run(now(), token.id);
-        return { ...result2, replayed: false };
+        return result2;
       });
       respond(response, result.replayed || expected !== null ? 200 : 201, { data: result });
       return true;
@@ -24500,7 +24522,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     const user = userFor(request);
     if (tokens) {
       if (request.method === "GET") {
-        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), endpoint, protocol: courseProtocol, prompt: coursePrompt(endpoint) } });
+        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), endpoint, protocol: courseProtocol, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt() } });
         return true;
       }
       if (["POST", "DELETE"].includes(request.method)) {
@@ -24527,6 +24549,18 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     }
     if (native) {
       const id = native[1] ? uuid3(native[1]) : null, isProgress = !!native[2];
+      if (!id && request.method === "POST") {
+        rateLimit("course-ip:" + peer(request), 6e4, 60);
+        workspaceAccess(request, true);
+        const key = uuid3(request.headers["idempotency-key"]), expected = match(request, false);
+        const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
+        const result = transaction(() => {
+          const { ownerID } = workspaceAccess(request, true);
+          return publish(ownerID, key, expected, bytes, doc);
+        });
+        respond(response, result.replayed || expected !== null ? 200 : 201, { data: result });
+        return true;
+      }
       if (request.method === "GET") {
         const { ownerID } = workspaceAccess(request);
         if (!id) {
