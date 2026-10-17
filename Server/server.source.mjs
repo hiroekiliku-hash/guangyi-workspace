@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { isIP } from 'node:net';
 import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
+import { createCourseAPI } from './courses.mjs';
 import { parseCalendarText, calendarTextPrompt, TextImportError, textImportPath, textImportProtocol, textImportLimit } from './text-ingress.mjs';
 
 export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
@@ -415,6 +416,7 @@ export function createNativeServer(configuration) {
     response.writeHead(200, asset.headers);
     response.end(headOnly ? undefined : asset.body);
   }
+  const courseAPI = createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin: passkeyOrigin, rateLimit: textRateLimit, peer: textPeer, now: textNow });
   const server = http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, 'http://localhost'), path = url.pathname;
@@ -586,6 +588,7 @@ export function createNativeServer(configuration) {
         if (!repeated) queuePush(() => notifyWorkspaceChanged(owner, result.revision));
         return;
       }
+      if (await courseAPI(request, response, path)) return;
       const userID = userFor(request);
       if (path === '/api/native/v1/sharing' && request.method === 'GET') {
         sameWebOrigin(request);
