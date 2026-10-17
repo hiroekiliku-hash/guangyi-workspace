@@ -1125,6 +1125,8 @@ test('course generation prompts include a valid stateful experiment whose contro
     nodes.initial.value = '2'; fire('initial', 'change'); displayed(2, /从初值 2 开始/);
     fire('increment'); displayed(3, /旧值 2 \+ 1 → 新值 3/);
     fire('increment'); displayed(4, /旧值 3 \+ 1 → 新值 4/);
+    nodes.initial.value = '99'; fire('initial', 'change'); displayed(99, /从初值 99 开始/);
+    fire('increment'); displayed(99, /已到演示范围/);
   });
 });
 

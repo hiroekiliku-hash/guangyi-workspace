@@ -25515,7 +25515,7 @@ function courseInteractionExample() {
   let count=bound(initial.value);
   function render(message){output.textContent=String(count);assignment.textContent='count = '+count;trace.textContent=message}
   function reset(){count=bound(initial.value);initial.value=String(count);render('\u4ECE\u521D\u503C '+count+' \u5F00\u59CB\u3002')}
-  function change(delta){const before=count;count=bound(count+delta);render('\u65E7\u503C '+before+' '+(delta>0?'+ 1':'- 1')+' \u2192 \u65B0\u503C '+count)}
+  function change(delta){const before=count,candidate=before+delta;if(candidate < -99 || candidate > 99){render('\u5DF2\u5230\u6F14\u793A\u8303\u56F4\uFF08-99\uFF5E99\uFF09\uFF0C\u8BF7\u91CD\u7F6E\u6216\u6362\u4E2A\u521D\u503C\u3002');return}count=candidate;render('\u65E7\u503C '+before+' '+(delta>0?'+ 1':'- 1')+' \u2192 \u65B0\u503C '+count)}
   document.getElementById('increment').addEventListener('click',()=>change(1));
   document.getElementById('decrement').addEventListener('click',()=>change(-1));
   document.getElementById('reset').addEventListener('click',reset);

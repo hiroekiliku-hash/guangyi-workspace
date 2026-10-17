@@ -31,7 +31,7 @@ function courseInteractionExample() {
   let count=bound(initial.value);
   function render(message){output.textContent=String(count);assignment.textContent='count = '+count;trace.textContent=message}
   function reset(){count=bound(initial.value);initial.value=String(count);render('从初值 '+count+' 开始。')}
-  function change(delta){const before=count;count=bound(count+delta);render('旧值 '+before+' '+(delta>0?'+ 1':'- 1')+' → 新值 '+count)}
+  function change(delta){const before=count,candidate=before+delta;if(candidate < -99 || candidate > 99){render('已到演示范围（-99～99），请重置或换个初值。');return}count=candidate;render('旧值 '+before+' '+(delta>0?'+ 1':'- 1')+' → 新值 '+count)}
   document.getElementById('increment').addEventListener('click',()=>change(1));
   document.getElementById('decrement').addEventListener('click',()=>change(-1));
   document.getElementById('reset').addEventListener('click',reset);
