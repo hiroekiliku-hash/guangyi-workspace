@@ -80,7 +80,7 @@
 
 每账户每分钟 12 次、每 IP 每分钟 30 次；每账户同一时间 1 次，API 实例总共 2 次，繁忙返回 429 `COURSE_RUN_BUSY`。本机 JavaScript 在 App 的隔离 Worker 中运行。Python/C++ 由独立运行服务处理；没有配置时诚实返回 `unavailable`，仍可正常输入和保存答案。
 
-## 独立 runner 运维（本次仅提供文件，尚未安装启用）
+## 独立 runner 运维
 
 API 主进程不运行编译器、解释器、shell，也不连接 Docker socket。它只通过 `COURSE_RUNNER_SOCKET=/run/workshop-course-runner/runner.sock` 连接独立 runner 的 Unix socket。API 用户只获得这个 socket 的组权限，不加入 docker 组，不获得 Docker 引擎权限。
 
@@ -94,12 +94,24 @@ API 主进程不运行编译器、解释器、shell，也不连接 Docker socket
 
 在专用 runner 账户/主机准备 Docker（推荐 rootless）。需要 Linux、cgroup v2、systemd cgroup 驱动、默认 seccomp，以及 CPU/内存/swap/PID 限制有效；启动前检查，不满足时拒绝启动。官方资源限制说明：[Docker run](https://docs.docker.com/engine/containers/run/)、[Rootless cgroup 条件](https://docs.docker.com/engine/security/rootless/tips/)。容器共享宿主内核；面向不受信任的公网账户开放前，宜在专用运行节点或额外内核沙盒运行，不把账户数据库挂到该节点。
 
-1. 在 runner 主机构建已审阅镜像：`docker build -t workshop-course-runner:reviewed Server/CourseRunner`。
+1. 在 runner 主机构建已审阅镜像：`docker build --platform linux/amd64 -t workshop-course-runner:reviewed Server/CourseRunner`。
 2. 使用 `docker image inspect --format '{{.Id}}' workshop-course-runner:reviewed` 获取镜像 ID。配置只接受 `sha256:` 加 64 位十六进制的固定镜像 ID；运行时 `--pull=never`，不临时安装依赖。
 3. 将 runner.mjs 和专用 Node 可执行文件放在 `/opt/workshop-course-runner`。创建独立 `workshop-runner` 用户和 `workshop-course-api` 组，使 API 用户只加入后者。若使用 rootless Docker，runner 用户须为该引擎的所属用户；在环境文件设置对应 DOCKER_HOST 与必要的 XDG_RUNTIME_DIR。
-4. 将已核对的 systemd 示例与环境文件安装到独立路径。环境文件至少包含 `COURSE_RUNNER_IMAGE=sha256:...`、`COURSE_RUNNER_DOCKER=/usr/bin/docker`、`COURSE_RUNNER_CONCURRENCY=1`。服务上限只允许 1–2 并发。
-5. 使用临时测试课程验证各语言成功、编译错误、死循环、输出洪泛与引擎不可用；确认未对真实账号内容产生写入后，再给 API 环境添加 COURSE_RUNNER_SOCKET 并重启本项目服务。
+4. 将已核对的 systemd 示例与环境文件安装到独立路径。环境文件至少包含 `COURSE_RUNNER_IMAGE=sha256:...`、`COURSE_RUNNER_DOCKER=/opt/workshop-course-runner/docker-cli`、`COURSE_RUNNER_CONCURRENCY=1`；Docker CLI 必须使用实际安装的绝对路径，不依赖系统的 `/usr/bin/docker`。服务上限只允许 1–2 并发。
+5. 每个独立服务使用固定的 `COURSE_RUNNER_INSTANCE`，默认 `guangyi-workspace`；允许小写字母开头、后接小写字母/数字/连字符，总长不超过 64 字符。同一引擎上的其他 runner 必须使用不同实例名，同一实例不得同时启动多个服务。新容器同时带 `workshop.course-runner=1` 和 `workshop.course-runner.instance=<实例名>`，清扫只选择同时匹配这两个 label 的容器，不触碰其他实例或其他项目。
+6. runner 启动时先清扫本实例的遗留容器，并再次查询确认清零，然后验证引擎和固定镜像，成功后才监听 API socket。`runner.mjs --cleanup` 使用同一环境文件和 Docker 路径，独立执行清扫，无需镜像或 API socket 配置；任意列表、删除或清零校验失败均以非零退出，不继续启动。不要通过忽略退出状态绕过检查。
+7. 使用临时测试课程验证各语言成功、编译错误、死循环、输出洪泛与引擎不可用；再覆盖运行过程中重启/强制终止 runner，确认旧容器清零且新任务正常。确认未对真实账号内容产生写入后，再给 API 环境添加 COURSE_RUNNER_SOCKET 并重启本项目服务。
 
-每次运行：无网络、只读根文件系统、UID/GID 10001、删除全部 capabilities、no-new-privileges、默认 seccomp、256 MiB 内存及同额 memory-swap（无额外 swap）、0.5 CPU、48 PID、文件/句柄/核心转储限制。仅两个有界 tmpfs 可写，不挂载宿主目录、账户数据库、凭据或 Docker socket；日志驱动关闭。编译上限 5 秒、程序上限 2 秒、宿主整体上限 10 秒；超时和输出超限会终止并强制删除容器；无法确认已删除时停止接收新运行，待管理员处理并重启。容器内 `/workspace` 必须可执行以启动 C++ 产物，`/tmp` 使用 noexec。
+每次运行：无网络、只读根文件系统、UID/GID 10001、删除全部 capabilities、no-new-privileges、默认 seccomp、256 MiB 内存及同额 memory-swap（无额外 swap）、0.5 CPU、48 PID、单文件 8 MiB、64 句柄和禁用核心转储。工作区 tmpfs 总量 32 MiB，临时目录 tmpfs 总量 16 MiB；不挂载宿主目录、账户数据库、凭据或 Docker socket，日志驱动关闭。编译上限 5 秒、程序上限 2 秒、宿主整体上限 10 秒；超时和输出超限会终止并强制删除容器；无法确认已删除时停止接收新运行，待管理员处理并重启。容器内 `/workspace` 必须可执行以启动 C++ 产物，`/tmp` 使用 noexec。Docker 的 fsize 数字按字节配置，不能写成 `1024` 冒充 MiB 级上限，否则连普通 C++ 产物也无法生成。
 
-本轮未操作生产服务器、安装 Docker 或启用远程代码执行。相关单元测试使用内存 SQLite、临时 socket 与假的 Docker 命令驱动；它们不能替代启用前的真实容器隔离验证。
+正常收到 SIGTERM/SIGINT 后，runner 先停止接收新提交，等待已发出的 Docker 请求和逐项回收结束，再清扫本实例 label。systemd 的 `KillMode=mixed`、`TimeoutStopSec=25` 为此提供有界退出时间；`ExecStopPost` 无论正常停止还是主进程异常退出都会再调用独立 `--cleanup`。清扫失败保持失败状态；下次启动仍须通过清扫，不能带着无法确认的残留容器开放运行。
+
+单元测试使用内存 SQLite、临时 socket 与假的 Docker 命令驱动；它们不能替代启用前的真实容器隔离、资源限制及异常重启回收验证。
+
+## 真实服务验收
+
+`RUNNER_SOCKET=/run/workshop-course-runner/runner.sock node Scripts/Acceptance/verify-course-runner.mjs` 运行真实容器验收，覆盖 Python/C++ 标准输入、编译与运行错误、Unicode 输出边界、资源耗尽及恢复。支持 `--functional`、`--isolation`、`--stress` 分组；不得在主机上直接运行这些作答源码。
+
+`Scripts/Acceptance/native-course-execution-server.mjs` 只创建内存数据库，连接已部署 runner，并要求随机的 32 字符以上测试密码。它只监听 loopback，全部响应带隔离验收标记。通过 SSH 转发给 `run-native-course-execution.py` 后，可使用真实 Swift 传输验证课程发布、数值格式、模板、stdin、输出核对、只读共享、版本/会话拒绝与运行不保存学习进度。Swift 验收器会先检查隔离标记，不应连接生产账号库。临时 API、转发和测试凭据应在验收后移除。
+
+后端发布只更新应用 release。runner 源码、固定镜像 ID、引擎与 systemd 配置须由管理员单独审阅安装；更新后重复与变更相关的容器验收。禁用运行时，只移除工作坊专用 drop-in 中的 `COURSE_RUNNER_SOCKET` 与 socket 组权限、重启工作坊，再停止独立 runner；课程和已经保存的答案仍保留。

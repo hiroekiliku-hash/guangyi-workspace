@@ -1,6 +1,6 @@
 # Build and review on the isolated runner host, then pin its sha256 image ID.
 # No image pull, install or build occurs when a learner submits an answer.
-FROM node:24-bookworm-slim
+FROM node:24-bookworm-slim@sha256:ec857ea6bb60cb3d0fa4d97495590c5fe7d51be8572c307b55957eeb06569cf7
 RUN apt-get update && apt-get install -y --no-install-recommends python3 g++ \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /workspace /opt/course-runner \
