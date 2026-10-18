@@ -1,5 +1,6 @@
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import courseSchema from './course.schema.json' with { type: 'json' };
+import { courseExecutionLanguages, unavailableCourseExecution } from './course-execution.mjs';
 
 export const courseProtocol = 'WORKSHOP-COURSE/1';
 export const coursePath = '/api/integrations/v1/courses';
@@ -51,10 +52,15 @@ presentation 只允许 kind 与唯一对应载荷，不能混搭：
 {kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,note,objects:[{id,names:[字符串],value,scope?,changed?}],output?}]}]}}。
 trace.variants 为1–4项、id各不相同；每项 frames 为2–24帧，每帧 objects 为1–4项且对象id不能重复。variant/object 的 id 为1–40个 ASCII 字母、数字、下划线或连字符。每个对象 names 为1–3个非空名字，作者应避免重复；value 是非空字符串最多120，scope 可选非空最多80，changed 可选布尔值。names 每项最多80；frame.title 和 variant.title 非空最多120；note 非空最多400（默认一句不超过60字）；line 为对应 code.source 的有效正整数行号；output 可空最多2000。一个对象的 names 表示同一对象的不同名字，不是多个对象。
 现有形式按需使用：{kind:"code",code:Code}；{kind:"table",table:{columns:[字符串],rows:[[字符串]]}}，1–8列、1–60行，每行与列数一致；{kind:"steps",steps:[{title,text,code?}]}，1–20步；{kind:"comparison",items:[{title,text,code?}]}，2–4项；{kind:"flashcards",cards:[{front,back}]}，1–20张；{kind:"markdown",markdown:{source}}；{kind:"html",html:{source,height?}}；{kind:"svg",svg:{source,height?}}。steps/comparison 每项 title240、text4000；table列名120、单元格2000；flashcards.front2000、back4000。markdown.source 非空最多20000；html.source/svg.source 非空最多60000；height 可省略，提供时为120–640整数，Markdown不接受height。
-Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}。language 为1–40个 ASCII 字母、数字、下划线、+、.或-（C++用 cpp 或 c++）；source 非空最多20000，保留换行与缩进，不放 Markdown 围栏。filename240；highlightLines 为0–200个有效、不重复的正整数行号；annotations 为0–40个 {line,text}，行号有效且不重复、text2000；stdin 可空最多4000，expectedOutput 可空最多8000。行按 CRLF/CR/LF 划分。#include <iostream>、template<typename T>、a < b 都是数据，允许原样写入字符串。App/服务器对原生源码不编译、不执行，也不验证真实运行结果，不能声称已运行。
+Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}。language 为1–40个 ASCII 字母、数字、下划线、+、.或-（C++用 cpp 或 c++）；source 非空最多20000，保留换行与缩进，不放 Markdown 围栏。filename240；highlightLines 为0–200个有效、不重复的正整数行号；annotations 为0–40个 {line,text}，行号有效且不重复、text2000；stdin 可空最多4000，expectedOutput 可空最多8000。行按 CRLF/CR/LF 划分。#include <iostream>、template<typename T>、a < b 都是数据，允许原样写入字符串。普通 Code 展示不编译、不执行，也不验证真实运行结果，不能声称已运行。只有下面显式 execution 的作答题可以实际运行。
 question 必填 text、questionType(singleChoice/multipleChoice/shortAnswer)，可有 explanation、code:Code、hints（0–5项，每项最多2000）。选择题必填 options:[{id,text}]、correctOptionIDs，只引用已有选项；单选恰好一个正确项，多选至少一个；不接受 acceptedAnswers/answerFormat。选项id为1–40个 ASCII 字母、数字、下划线或连字符。shortAnswer 不接受 options/correctOptionIDs；可有 acceptedAnswers 和 answerFormat(text/code/output)，默认text。text比较忽略大小写、合并空白；code/output仅统一换行并去掉首尾空白，仍是文本比较。开放代码题默认自行核对：省略 acceptedAnswers，解析给参考实现与检查点；不能把代码文本匹配当作通用代码判分。只有答案确实唯一的补全题才给 code 参考文本，并说明比较局限。每课完成只要求每题有效作答，不要求全对。
+【作答输入与真实运行】
+shortAnswer 可指定 input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}。数字答案必须用 integer 或 decimal，让 App 使用两行数字键盘；代码练习用 code，让 App 提供有语法颜色的多行编辑器。input.language 仅 code 可用，限定 javascript/python/cpp；starterCode 仅 code 可用、可空最多20000；placeholder 可空最多500。minLines/maxLines 为2–24整数且min≤max；数字输入仍会紧凑显示。integer 仅可带正负号的十进制整数；decimal 可带正负号与小数点、不接受科学记数、逗号、NaN/Infinity。不要把要求输入数字的题目保留成普通长文本框。旧文档省略input仍兼容；execution存在或answerFormat=code时推断为code，其他默认text。
+仅 shortAnswer 可显式添加 execution:{language:"javascript"|"python"|"cpp",template?,stdin?,expectedOutput?}。input.language与execution.language都提供时必须相同。完整程序题可省略template，使用学生提交的完整源码；填空题必须提供template，且完整程序模板中恰好出现一次字面标记{{ANSWER}}，App/服务器只替换这一处。显式input.kind为text/integer/decimal时execution必须带template，不把任意文字或数字误当源码。template非空最多20000；stdin可空最多4000；expectedOutput可空最多8000。真实运行作答/代码输入上限20000。template只提供公开教学程序，不含秘密、密钥或隐藏答案；输入永远不通过shell拼接。比较运行输出会统一换行并去末尾空白；expectedOutput只用于课程默认stdin的一次输出核对，不等于通用判分或隐藏测试，不要把一个示例通过宣称为普遍正确。
+明确区分三种形式：trace是人工推演；code/presentation.code是源码展示；execution才是可实际运行的作答题。JavaScript可在App本地隔离运行；Python/C++需服务器独立沙盒可用。运行服务未启用、超时或编译错误时要如实反馈，课程仍可编辑与作答；不能宣称已编译通过。默认非运行开放代码题仍自行核对；需要实验时有意添加execution，不能靠把程序塞进普通text或HTML冒充编译器。
+例如补全输出的数字题：questionType:"shortAnswer",answerFormat:"output",input:{kind:"integer",placeholder:"输入整数"},execution:{language:"cpp",template:"#include <iostream>\\nint main(){ std::cout << {{ANSWER}}; }",expectedOutput:"42"}；完整JavaScript程序题：input:{kind:"code",language:"javascript",starterCode:"console.log(2 + 3);",minLines:4,maxLines:16},execution:{language:"javascript",expectedOutput:"5"}。这些是块字段片段说明；正式输出仍必须是唯一完整课程JSON。
 HTML/SVG 通过显式 presentation 进入离线沙盒；不与普通字符串拼接。完全内联，不使用 CDN、外链脚本/样式/字体、请求、导航、iframe/object/embed、SVG image/foreignObject、媒体、data/base64 或下载。HTML可运行内联CSS/JavaScript、SVG/canvas；服务器只存储。不要仿制 App 导航、账号或上传控件；适配约320px宽屏幕，控件至少44px高，事件更新先改模型再绘制，避免每次输入替换整个innerHTML，避免无限循环和后台定时器。Markdown可含标题、列表、表格、引用和带语言名的代码围栏，不启用原始HTML或图片。
-限制按 UTF-16 代码单元：JSON UTF-8最多1 MiB；1–40课时，每课1–80块；所有title240、summary2000、text/callout20000、题干和explanation4000、caption2000。图表1–60点，label120，value有限且绝对值≤10^15；选择题2–12项，选项text1000；acceptedAnswers最多20个不重复项，各项上限text500/code20000/output8000，用户答案上限4000/20000/8000；URL2048；禁止控制字符。不要新造 block.type 或把 code/hints 放在非 question 块。
+限制按 UTF-16 代码单元：JSON UTF-8最多1 MiB；1–40课时，每课1–80块；所有title240、summary2000、text/callout20000、题干和explanation4000、caption2000。图表1–60点，label120，value有限且绝对值≤10^15；选择题2–12项，选项text1000；acceptedAnswers最多20个不重复项，各项上限text500/code20000/output8000，用户答案上限4000/20000/8000；URL2048；禁止控制字符。不要新造 block.type 或把 code/hints/input/execution 放在非 question 块；input/execution仅shortAnswer可用。
 输出前核对：每一步是否只突出一个变化？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？不要把检查清单写进课程，也不逐项索要确认。
 下面是“原生单步推演→一道迁移题”的完整有效示例。按用户主题设计，不照搬标题、UUID或知识点；只有这一个完整 JSON 代码块是格式示例：
 \`\`\`json
@@ -77,7 +83,7 @@ Idempotency-Key: 每次新操作生成的 UUID。密钥只出现在 Authorizatio
 如果没有网络工具或无法实际发起 HTTP 请求，不要假装上传：只输出一个完整 WORKSHOP-COURSE/1 JSON 文档，优先放在唯一的 json 代码块内，不附加无关说明，让用户复制到 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）。此退路不需要用户提供其他凭据。`;
 }
 
-export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin, rateLimit, peer, now = Date.now }) {
+export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin, rateLimit, peer, now = Date.now, runCode = async () => unavailableCourseExecution() }) {
   const fail = (code = 'INVALID_COURSE', status = 422) => { throw new APIError(status, code); };
   const object = (value, keys, code) => {
     if (!value || Array.isArray(value) || typeof value !== 'object' || Object.keys(value).some(key => !keys.includes(key))) fail(code);
@@ -166,7 +172,30 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
       for (const card of value.cards) { object(card, ['front', 'back']); string(card.front, 2000); string(card.back, 4000); }
     }
   }
-  const answerTextLimit = block => block?.questionType === 'shortAnswer' ? ({ text: 4000, code: 20000, output: 8000 }[block.answerFormat ?? 'text'] ?? 4000) : 4000;
+  const integerAnswer = /^[+-]?[0-9]+$/;
+  const decimalAnswer = /^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$/;
+  const numericAnswerValid = (block, text) => block?.input?.kind === 'integer' ? integerAnswer.test(text.trim()) : block?.input?.kind === 'decimal' ? decimalAnswer.test(text.trim()) : true;
+  const answerTextLimit = block => block?.questionType === 'shortAnswer' ? (block.execution || block.input?.kind === 'code' ? 20000 : ({ text: 4000, code: 20000, output: 8000 }[block.answerFormat ?? 'text'] ?? 4000)) : 4000;
+  function validateInput(input) {
+    object(input, ['kind', 'language', 'placeholder', 'starterCode', 'minLines', 'maxLines']);
+    if (!['text', 'integer', 'decimal', 'code'].includes(input.kind)) fail();
+    if (input.placeholder !== undefined) string(input.placeholder, 500, false);
+    if (input.language !== undefined && (input.kind !== 'code' || !courseExecutionLanguages.includes(input.language))) fail();
+    if (input.starterCode !== undefined) { if (input.kind !== 'code') fail(); string(input.starterCode, 20000, false); }
+    for (const key of ['minLines', 'maxLines']) if (input[key] !== undefined && (!Number.isSafeInteger(input[key]) || input[key] < 2 || input[key] > 24)) fail();
+    if (input.minLines !== undefined && input.maxLines !== undefined && input.maxLines < input.minLines) fail();
+  }
+  function validateExecution(execution, input) {
+    object(execution, ['language', 'template', 'stdin', 'expectedOutput']);
+    if (!courseExecutionLanguages.includes(execution.language)) fail();
+    if (input?.language !== undefined && input.language !== execution.language) fail();
+    if (execution.template !== undefined) {
+      string(execution.template, 20000);
+      if (execution.template.split('{{ANSWER}}').length !== 2) fail();
+    } else if (input !== undefined && input.kind !== 'code') fail();
+    if (execution.stdin !== undefined) string(execution.stdin, 4000, false);
+    if (execution.expectedOutput !== undefined) string(execution.expectedOutput, 8000, false);
+  }
   function validateCourse(value) {
     object(value, ['protocol', 'id', 'title', 'summary', 'lessons']);
     if (value.protocol !== courseProtocol) fail('UNSUPPORTED_COURSE_PROTOCOL');
@@ -178,7 +207,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
       if (lesson.objectives !== undefined) { array(lesson.objectives, 0, 6); for (const objective of lesson.objectives) string(objective, 500); }
       if (lesson.estimatedMinutes !== undefined && (!Number.isSafeInteger(lesson.estimatedMinutes) || lesson.estimatedMinutes < 1 || lesson.estimatedMinutes > 180)) fail();
       for (const block of lesson.blocks) {
-        const blockFields = { text: ['text', 'presentation'], callout: ['text', 'presentation'], image: ['url', 'caption'], chart: ['chartType', 'points', 'caption'], question: ['text', 'questionType', 'options', 'correctOptionIDs', 'acceptedAnswers', 'explanation', 'code', 'hints', 'answerFormat'] };
+        const blockFields = { text: ['text', 'presentation'], callout: ['text', 'presentation'], image: ['url', 'caption'], chart: ['chartType', 'points', 'caption'], question: ['text', 'questionType', 'options', 'correctOptionIDs', 'acceptedAnswers', 'explanation', 'code', 'hints', 'answerFormat', 'input', 'execution'] };
         if (!block || !Object.hasOwn(blockFields, block.type)) fail('UNSUPPORTED_COURSE_BLOCK');
         const fields = blockFields[block.type];
         object(block, ['id', 'type', 'title', ...fields]); takeID(block);
@@ -202,9 +231,12 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
           if (block.questionType === 'shortAnswer') {
             if (block.options !== undefined || block.correctOptionIDs !== undefined) fail();
             if (block.answerFormat !== undefined && !['text', 'code', 'output'].includes(block.answerFormat)) fail();
-            if (block.acceptedAnswers !== undefined) uniqueStrings(block.acceptedAnswers, 20, answer => string(answer, (block.answerFormat ?? 'text') === 'text' ? 500 : answerTextLimit(block)));
+            if (block.input !== undefined) validateInput(block.input);
+            if (block.execution !== undefined) validateExecution(block.execution, block.input);
+            if (block.acceptedAnswers !== undefined) uniqueStrings(block.acceptedAnswers, 20, answer => string(answer, block.input?.kind === 'code' || (!block.input && block.execution) ? 20000 : (block.answerFormat ?? 'text') === 'text' ? 500 : answerTextLimit(block)));
+            if (block.acceptedAnswers?.some(answer => !numericAnswerValid(block, answer))) fail();
           } else if (['singleChoice', 'multipleChoice'].includes(block.questionType)) {
-            if (block.acceptedAnswers !== undefined || block.answerFormat !== undefined) fail(); array(block.options, 2, 12);
+            if (block.acceptedAnswers !== undefined || block.answerFormat !== undefined || block.input !== undefined || block.execution !== undefined) fail(); array(block.options, 2, 12);
             const options = new Set();
             for (const option of block.options) { object(option, ['id', 'text']); if (typeof option.id !== 'string' || !identifier.test(option.id) || options.has(option.id)) fail(); options.add(option.id); string(option.text, 1000); }
             uniqueStrings(block.correctOptionIDs, 12, id => { if (!options.has(id)) fail(); });
@@ -257,7 +289,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
   }
   function answerValid(answer, block) {
     if (!block || block.type !== 'question') return false;
-    if (block.questionType === 'shortAnswer') return answer.selectedOptionIDs.length === 0 && answer.text.trim().length > 0;
+    if (block.questionType === 'shortAnswer') return answer.selectedOptionIDs.length === 0 && answer.text.trim().length > 0 && numericAnswerValid(block, answer.text);
     return answer.text === '' && answer.selectedOptionIDs.length > 0 && (block.questionType !== 'singleChoice' || answer.selectedOptionIDs.length === 1) && answer.selectedOptionIDs.every(id => block.options.some(option => option.id === id));
   }
   function progress(user, owner, id, doc) {
@@ -285,11 +317,12 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     db.prepare('INSERT INTO course_publications VALUES(?,?,?,?,?)').run(owner, key, digest, JSON.stringify(result), now());
     return { ...result, replayed: false };
   }
+  const runningUsers = new Set();
   return async function handle(request, response, path) {
     // This static contract carries no credentials, account state or course data.
     if (path === coursePath + '/schema' && request.method === 'GET') { respond(response, 200, courseSchema); return true; }
     const tokens = path === '/api/native/v1/integrations/course-tokens';
-    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star))?)?$/.exec(path);
+    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star|run))?)?$/.exec(path);
     if (path !== coursePath && !tokens && !native) return false;
     sameWebOrigin(request);
     if (path === coursePath && request.method === 'POST') {
@@ -326,7 +359,36 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
       }
     }
     if (native) {
-      const id = native[1] ? uuid(native[1]) : null, isProgress = native[2] === '/progress', isStar = native[2] === '/star';
+      const id = native[1] ? uuid(native[1]) : null, isProgress = native[2] === '/progress', isStar = native[2] === '/star', isRun = native[2] === '/run';
+      if (id && isRun && request.method === 'POST') {
+        workspaceAccess(request);
+        const { value } = await read(request, 128 * 1024);
+        object(value, ['courseRevision', 'lessonID', 'blockID', 'text', 'stdin'], 'INVALID_COURSE_RUN');
+        const lessonID = uuid(value.lessonID), blockID = uuid(value.blockID);
+        if (!Number.isSafeInteger(value.courseRevision) || value.courseRevision < 1) fail('INVALID_COURSE_RUN');
+        string(value.text, 20000); if (value.stdin !== undefined) string(value.stdin, 4000, false);
+        // Recheck after the streamed body: a revoked session or sharing invitation
+        // must not start work merely because it was valid at the start of the upload.
+        const actor = userFor(request), { ownerID } = workspaceAccess(request), row = course(ownerID, id);
+        if (row.revision !== value.courseRevision) fail('COURSE_REVISION_CONFLICT', 409);
+        const doc = JSON.parse(row.document), block = doc.lessons.find(lesson => lesson.id === lessonID)?.blocks.find(block => block.id === blockID);
+        if (block?.type !== 'question' || block.questionType !== 'shortAnswer' || !block.execution) fail('COURSE_EXECUTION_NOT_ALLOWED');
+        if (!numericAnswerValid(block, value.text)) fail('INVALID_COURSE_ANSWER');
+        rateLimit('course-run-user:' + actor, 60000, 12); rateLimit('course-run-ip:' + peer(request), 60000, 30);
+        if (runningUsers.has(actor) || runningUsers.size >= 2) fail('COURSE_RUN_BUSY', 429);
+        const execution = block.execution, source = execution.template === undefined ? value.text : execution.template.replace('{{ANSWER}}', () => value.text);
+        runningUsers.add(actor);
+        try {
+          let result;
+          try { result = await runCode({ language: execution.language, source, stdin: value.stdin ?? execution.stdin ?? '' }); }
+          catch { result = unavailableCourseExecution(); }
+          const normalize = value => value.replace(/\r\n|\r/g, '\n').trimEnd();
+          const passed = result.status === 'completed' && execution.expectedOutput !== undefined && value.stdin === undefined
+            ? normalize(result.stdout) === normalize(execution.expectedOutput) : undefined;
+          respond(response, 200, { data: { status: result.status, stdout: result.stdout, stderr: result.stderr, durationMs: result.durationMs,
+            ...(result.exitCode === undefined ? {} : { exitCode: result.exitCode }), ...(passed === undefined ? {} : { passed }) } }); return true;
+        } finally { runningUsers.delete(actor); }
+      }
       if (!id && request.method === 'POST') {
         rateLimit('course-ip:' + peer(request), 60000, 60);
         workspaceAccess(request, true);
@@ -351,7 +413,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
         });
         respond(response, 200, { data: { starred: value.starred } }); return true;
       }
-      if (!isStar && request.method === 'GET') {
+      if (!isStar && !isRun && request.method === 'GET') {
         const { ownerID } = workspaceAccess(request);
         if (!id) {
           const courses = db.prepare('SELECT id,revision,document,updated_at FROM courses WHERE owner_id=? AND deleted=0 ORDER BY updated_at DESC,id').all(ownerID).map(row => { const doc = JSON.parse(row.document); return { id: row.id, title: doc.title, summary: doc.summary, revision: row.revision, updatedAt: row.updated_at, lessonCount: doc.lessons.length }; });
@@ -361,7 +423,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
         const row = course(ownerID, id), doc = JSON.parse(row.document);
         respond(response, 200, { data: isProgress ? progress(user, ownerID, id, doc) : { course: doc, revision: row.revision, updatedAt: row.updated_at } }); return true;
       }
-      if (id && !isProgress && !isStar && request.method === 'DELETE') {
+      if (id && !isProgress && !isStar && !isRun && request.method === 'DELETE') {
         const expected = match(request, true);
         transaction(() => { const { ownerID } = workspaceAccess(request, true), row = course(ownerID, id); if (row.revision !== expected) fail('COURSE_REVISION_CONFLICT', 409); db.prepare('UPDATE courses SET deleted=1,revision=revision+1,updated_at=? WHERE owner_id=? AND id=?').run(new Date(now()).toISOString(), ownerID, id); db.prepare('DELETE FROM course_stars WHERE owner_id=? AND course_id=?').run(ownerID, id); });
         respond(response, 200, { data: { deleted: true } }); return true;

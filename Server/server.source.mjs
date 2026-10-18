@@ -10,6 +10,7 @@ import { pathToFileURL } from 'node:url';
 import { isIP } from 'node:net';
 import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
 import { createCourseAPI } from './courses.mjs';
+import { createCourseExecutionClient } from './course-execution.mjs';
 import { parseCalendarText, calendarTextPrompt, TextImportError, textImportPath, textImportProtocol, textImportLimit } from './text-ingress.mjs';
 
 export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
@@ -416,7 +417,8 @@ export function createNativeServer(configuration) {
     response.writeHead(200, asset.headers);
     response.end(headOnly ? undefined : asset.body);
   }
-  const courseAPI = createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin: passkeyOrigin, rateLimit: textRateLimit, peer: textPeer, now: textNow });
+  const courseAPI = createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin: passkeyOrigin, rateLimit: textRateLimit, peer: textPeer, now: textNow,
+    runCode: configuration.runCourseCode ?? createCourseExecutionClient({ socketPath: configuration.courseRunnerSocket }) });
   const server = http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, 'http://localhost'), path = url.pathname;
@@ -919,6 +921,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   } else {
     const app = createNativeServer({ databasePath: process.env.DATABASE_PATH ?? '/data/workspace.sqlite', adminEmail: process.env.ADMIN_EMAIL,
       adminPassword: process.env.ADMIN_PASSWORD, passkeyRPID: process.env.PASSKEY_RP_ID, passkeyOrigin: process.env.PASSKEY_ORIGIN, passkeyApps: process.env.PASSKEY_APP_IDS, displayName: process.env.DISPLAY_NAME, allowedBundles: process.env.APNS_ALLOWED_BUNDLE_IDS,
+      courseRunnerSocket: process.env.COURSE_RUNNER_SOCKET,
       sendPush: applePushSender({ teamID: process.env.APNS_TEAM_ID, keyID: process.env.APNS_KEY_ID, keyPath: process.env.APNS_PRIVATE_KEY_FILE }) });
     app.server.listen(Number(process.env.PORT ?? 8080), process.env.HOST ?? '127.0.0.1', () => console.log('Native workspace API is listening'));
     setInterval(() => app.sweep().catch(() => console.error('notification_dispatch_failed')), 30000).unref();

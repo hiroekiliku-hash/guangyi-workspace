@@ -1,0 +1,30 @@
+[Unit]
+Description=Workshop isolated course code runner
+After=network.target
+
+[Service]
+Type=simple
+User=workshop-runner
+Group=workshop-course-api
+EnvironmentFile=/etc/workshop-course-runner.env
+Environment=COURSE_RUNNER_SOCKET=/run/workshop-course-runner/runner.sock
+ExecStart=/opt/workshop-course-runner/node /opt/workshop-course-runner/runner.mjs
+RuntimeDirectory=workshop-course-runner
+RuntimeDirectoryMode=0750
+UMask=0007
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=read-only
+RestrictAddressFamilies=AF_UNIX
+CapabilityBoundingSet=
+LockPersonality=true
+RestrictSUIDSGID=true
+TasksMax=64
+MemoryMax=192M
+CPUQuota=50%
+
+[Install]
+WantedBy=multi-user.target

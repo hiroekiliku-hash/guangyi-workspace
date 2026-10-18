@@ -23093,9 +23093,9 @@ async function verifyAuthenticationResponse(options) {
 }
 
 // Server/server.source.mjs
-import http from "node:http";
+import http2 from "node:http";
 import { isDeepStrictEqual } from "node:util";
-import http2 from "node:http2";
+import http22 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
 import { randomBytes as randomBytes2, randomUUID as randomUUID3, createHash as createHash2, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
@@ -24280,9 +24280,9 @@ import { randomBytes, randomUUID, createHash } from "node:crypto";
 var course_schema_default = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
-  title: "WORKSHOP-COURSE/1 with structured-2 native teaching traces",
-  description: "A curriculum data contract with author-written native teaching traces. New trace content requires a supporting client. Native code is displayed as data; explicit HTML/SVG presentations run only in the isolated offline client sandbox. The server never executes curriculum source.",
-  $comment: "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references.",
+  title: "WORKSHOP-COURSE/1 with structured-2 teaching traces and typed executable questions",
+  description: "A curriculum data contract with author-written native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
+  $comment: "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references. Question maxLines >= minLines and matching explicit input/execution languages are checked by the server and Swift client.",
   "x-workshop-extensionVersion": "structured-2",
   type: "object",
   properties: {
@@ -25133,9 +25133,9 @@ var course_schema_default = {
           type: "array",
           items: {
             type: "string",
-            maxLength: 500,
+            maxLength: 2e4,
             pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
-            "x-workshop-maxUTF16Length": 500,
+            "x-workshop-maxUTF16Length": 2e4,
             minLength: 1,
             allOf: [
               {
@@ -25146,6 +25146,12 @@ var course_schema_default = {
           minItems: 0,
           maxItems: 20,
           uniqueItems: true
+        },
+        input: {
+          $ref: "#/$defs/questionInput"
+        },
+        execution: {
+          $ref: "#/$defs/execution"
         }
       },
       required: [
@@ -25154,7 +25160,234 @@ var course_schema_default = {
         "text",
         "questionType"
       ],
-      additionalProperties: false
+      additionalProperties: false,
+      allOf: [
+        {
+          if: {
+            anyOf: [
+              {
+                properties: {
+                  input: {
+                    properties: {
+                      kind: {
+                        const: "code"
+                      }
+                    },
+                    required: [
+                      "kind"
+                    ]
+                  }
+                },
+                required: [
+                  "input"
+                ]
+              },
+              {
+                not: {
+                  required: [
+                    "input"
+                  ]
+                },
+                required: [
+                  "execution"
+                ]
+              }
+            ]
+          },
+          else: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  maxLength: 500,
+                  "x-workshop-maxUTF16Length": 500
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    enum: [
+                      "text",
+                      "integer",
+                      "decimal"
+                    ]
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                required: [
+                  "template"
+                ]
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "javascript"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "javascript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "python"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "python"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "cpp"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "cpp"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    const: "integer"
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input"
+            ]
+          },
+          then: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  pattern: "^\\s*[+-]?[0-9]+\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    const: "decimal"
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input"
+            ]
+          },
+          then: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  pattern: "^\\s*[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     codeAnswerBlock: {
       type: "object",
@@ -25238,6 +25471,12 @@ var course_schema_default = {
           minItems: 0,
           maxItems: 20,
           uniqueItems: true
+        },
+        input: {
+          $ref: "#/$defs/questionInput"
+        },
+        execution: {
+          $ref: "#/$defs/execution"
         }
       },
       required: [
@@ -25247,7 +25486,234 @@ var course_schema_default = {
         "questionType",
         "answerFormat"
       ],
-      additionalProperties: false
+      additionalProperties: false,
+      allOf: [
+        {
+          if: {
+            anyOf: [
+              {
+                properties: {
+                  input: {
+                    properties: {
+                      kind: {
+                        const: "code"
+                      }
+                    },
+                    required: [
+                      "kind"
+                    ]
+                  }
+                },
+                required: [
+                  "input"
+                ]
+              },
+              {
+                not: {
+                  required: [
+                    "input"
+                  ]
+                },
+                required: [
+                  "execution"
+                ]
+              }
+            ]
+          },
+          else: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  maxLength: 2e4,
+                  "x-workshop-maxUTF16Length": 2e4
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    enum: [
+                      "text",
+                      "integer",
+                      "decimal"
+                    ]
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                required: [
+                  "template"
+                ]
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "javascript"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "javascript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "python"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "python"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "cpp"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "cpp"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    const: "integer"
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input"
+            ]
+          },
+          then: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  pattern: "^\\s*[+-]?[0-9]+\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    const: "decimal"
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input"
+            ]
+          },
+          then: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  pattern: "^\\s*[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     outputAnswerBlock: {
       type: "object",
@@ -25318,9 +25784,9 @@ var course_schema_default = {
           type: "array",
           items: {
             type: "string",
-            maxLength: 8e3,
+            maxLength: 2e4,
             pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
-            "x-workshop-maxUTF16Length": 8e3,
+            "x-workshop-maxUTF16Length": 2e4,
             minLength: 1,
             allOf: [
               {
@@ -25331,6 +25797,12 @@ var course_schema_default = {
           minItems: 0,
           maxItems: 20,
           uniqueItems: true
+        },
+        input: {
+          $ref: "#/$defs/questionInput"
+        },
+        execution: {
+          $ref: "#/$defs/execution"
         }
       },
       required: [
@@ -25340,7 +25812,234 @@ var course_schema_default = {
         "questionType",
         "answerFormat"
       ],
-      additionalProperties: false
+      additionalProperties: false,
+      allOf: [
+        {
+          if: {
+            anyOf: [
+              {
+                properties: {
+                  input: {
+                    properties: {
+                      kind: {
+                        const: "code"
+                      }
+                    },
+                    required: [
+                      "kind"
+                    ]
+                  }
+                },
+                required: [
+                  "input"
+                ]
+              },
+              {
+                not: {
+                  required: [
+                    "input"
+                  ]
+                },
+                required: [
+                  "execution"
+                ]
+              }
+            ]
+          },
+          else: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  maxLength: 8e3,
+                  "x-workshop-maxUTF16Length": 8e3
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    enum: [
+                      "text",
+                      "integer",
+                      "decimal"
+                    ]
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                required: [
+                  "template"
+                ]
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "javascript"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "javascript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "python"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "python"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  language: {
+                    const: "cpp"
+                  }
+                },
+                required: [
+                  "language"
+                ]
+              }
+            },
+            required: [
+              "input",
+              "execution"
+            ]
+          },
+          then: {
+            properties: {
+              execution: {
+                properties: {
+                  language: {
+                    const: "cpp"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    const: "integer"
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input"
+            ]
+          },
+          then: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  pattern: "^\\s*[+-]?[0-9]+\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          if: {
+            properties: {
+              input: {
+                properties: {
+                  kind: {
+                    const: "decimal"
+                  }
+                },
+                required: [
+                  "kind"
+                ]
+              }
+            },
+            required: [
+              "input"
+            ]
+          },
+          then: {
+            properties: {
+              acceptedAnswers: {
+                items: {
+                  pattern: "^\\s*[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     block: {
       oneOf: [
@@ -25671,9 +26370,192 @@ var course_schema_default = {
       ],
       additionalProperties: false,
       $comment: "Author-written teaching frames; never a claim that source was compiled. Variant IDs and per-frame object IDs must be unique. Frame.line must reference a source line in its variant. The API performs these semantic checks."
+    },
+    questionInput: {
+      type: "object",
+      properties: {
+        kind: {
+          enum: [
+            "text",
+            "integer",
+            "decimal",
+            "code"
+          ]
+        },
+        language: {
+          type: "string",
+          enum: [
+            "javascript",
+            "python",
+            "cpp"
+          ]
+        },
+        placeholder: {
+          type: "string",
+          maxLength: 500,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 500
+        },
+        starterCode: {
+          type: "string",
+          maxLength: 2e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e4
+        },
+        minLines: {
+          type: "integer",
+          minimum: 2,
+          maximum: 24
+        },
+        maxLines: {
+          type: "integer",
+          minimum: 2,
+          maximum: 24
+        }
+      },
+      required: [
+        "kind"
+      ],
+      additionalProperties: false,
+      allOf: [
+        {
+          if: {
+            properties: {
+              kind: {
+                enum: [
+                  "text",
+                  "integer",
+                  "decimal"
+                ]
+              }
+            }
+          },
+          then: {
+            not: {
+              anyOf: [
+                {
+                  required: [
+                    "language"
+                  ]
+                },
+                {
+                  required: [
+                    "starterCode"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      $comment: "When both line limits are provided, maxLines must be at least minLines; checked by server and client."
+    },
+    execution: {
+      type: "object",
+      properties: {
+        language: {
+          type: "string",
+          enum: [
+            "javascript",
+            "python",
+            "cpp"
+          ]
+        },
+        template: {
+          type: "string",
+          maxLength: 2e4,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2e4,
+          minLength: 1,
+          allOf: [
+            {
+              pattern: "\\S"
+            },
+            {
+              pattern: "^(?:(?!\\{\\{ANSWER\\}\\})[\\s\\S])*\\{\\{ANSWER\\}\\}(?:(?!\\{\\{ANSWER\\}\\})[\\s\\S])*(?![\\s\\S])"
+            }
+          ]
+        },
+        stdin: {
+          type: "string",
+          maxLength: 4e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4e3
+        },
+        expectedOutput: {
+          type: "string",
+          maxLength: 8e3,
+          pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 8e3
+        }
+      },
+      required: [
+        "language"
+      ],
+      additionalProperties: false,
+      $comment: "Only explicit short-answer execution is enabled. Template substitutes exactly one {{ANSWER}} and is required for non-code inputs. The input and execution languages must match when both are specified."
     }
   }
 };
+
+// Server/course-execution.mjs
+import http from "node:http";
+var courseExecutionLanguages = Object.freeze(["javascript", "python", "cpp"]);
+var courseExecutionStatuses = Object.freeze(["completed", "timeout", "compileError", "runtimeError", "unavailable", "outputLimit"]);
+var courseExecutionOutputBytes = 16 * 1024;
+var unavailableCourseExecution = () => ({ status: "unavailable", stdout: "", stderr: "\u4EE3\u7801\u8FD0\u884C\u670D\u52A1\u6682\u672A\u542F\u7528\uFF0C\u8BF7\u7A0D\u540E\u91CD\u8BD5\u3002", durationMs: 0 });
+function createCourseExecutionClient({ socketPath, timeoutMs = 15e3 } = {}) {
+  return (payload) => {
+    if (typeof socketPath !== "string" || !socketPath.startsWith("/") || socketPath.includes("\0")) return Promise.resolve(unavailableCourseExecution());
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (value) => {
+        if (!settled) {
+          settled = true;
+          resolve(value);
+        }
+      };
+      const body = Buffer.from(JSON.stringify(payload));
+      const request = http.request({ socketPath, method: "POST", path: "/run", headers: { "Content-Type": "application/json", "Content-Length": body.length } }, (response) => {
+        const chunks = [];
+        let size = 0;
+        response.on("data", (chunk) => {
+          size += chunk.length;
+          if (size > 256 * 1024) {
+            response.destroy();
+            request.destroy();
+            finish(unavailableCourseExecution());
+          } else chunks.push(chunk);
+        });
+        response.on("error", () => finish(unavailableCourseExecution()));
+        response.on("end", () => {
+          let value;
+          try {
+            value = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+          } catch {
+            return finish(unavailableCourseExecution());
+          }
+          if (response.statusCode !== 200 || !value || !courseExecutionStatuses.includes(value.status) || typeof value.stdout !== "string" || typeof value.stderr !== "string" || Buffer.byteLength(value.stdout) > courseExecutionOutputBytes || Buffer.byteLength(value.stderr) > courseExecutionOutputBytes || !Number.isSafeInteger(value.durationMs) || value.durationMs < 0 || value.durationMs > 6e4 || value.exitCode !== void 0 && (!Number.isSafeInteger(value.exitCode) || Math.abs(value.exitCode) > 255)) return finish(unavailableCourseExecution());
+          finish({
+            status: value.status,
+            stdout: value.stdout,
+            stderr: value.stderr,
+            durationMs: value.durationMs,
+            ...value.exitCode === void 0 ? {} : { exitCode: value.exitCode }
+          });
+        });
+      });
+      const timeout = setTimeout(() => {
+        request.destroy();
+        finish(unavailableCourseExecution());
+      }, timeoutMs);
+      timeout.unref?.();
+      request.on("close", () => clearTimeout(timeout));
+      request.on("error", () => finish(unavailableCourseExecution()));
+      request.end(body);
+    });
+  };
+}
 
 // Server/courses.mjs
 var courseProtocol = "WORKSHOP-COURSE/1";
@@ -25742,10 +26624,15 @@ presentation \u53EA\u5141\u8BB8 kind \u4E0E\u552F\u4E00\u5BF9\u5E94\u8F7D\u8377\
 {kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,note,objects:[{id,names:[\u5B57\u7B26\u4E32],value,scope?,changed?}],output?}]}]}}\u3002
 trace.variants \u4E3A1\u20134\u9879\u3001id\u5404\u4E0D\u76F8\u540C\uFF1B\u6BCF\u9879 frames \u4E3A2\u201324\u5E27\uFF0C\u6BCF\u5E27 objects \u4E3A1\u20134\u9879\u4E14\u5BF9\u8C61id\u4E0D\u80FD\u91CD\u590D\u3002variant/object \u7684 id \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002\u6BCF\u4E2A\u5BF9\u8C61 names \u4E3A1\u20133\u4E2A\u975E\u7A7A\u540D\u5B57\uFF0C\u4F5C\u8005\u5E94\u907F\u514D\u91CD\u590D\uFF1Bvalue \u662F\u975E\u7A7A\u5B57\u7B26\u4E32\u6700\u591A120\uFF0Cscope \u53EF\u9009\u975E\u7A7A\u6700\u591A80\uFF0Cchanged \u53EF\u9009\u5E03\u5C14\u503C\u3002names \u6BCF\u9879\u6700\u591A80\uFF1Bframe.title \u548C variant.title \u975E\u7A7A\u6700\u591A120\uFF1Bnote \u975E\u7A7A\u6700\u591A400\uFF08\u9ED8\u8BA4\u4E00\u53E5\u4E0D\u8D85\u8FC760\u5B57\uFF09\uFF1Bline \u4E3A\u5BF9\u5E94 code.source \u7684\u6709\u6548\u6B63\u6574\u6570\u884C\u53F7\uFF1Boutput \u53EF\u7A7A\u6700\u591A2000\u3002\u4E00\u4E2A\u5BF9\u8C61\u7684 names \u8868\u793A\u540C\u4E00\u5BF9\u8C61\u7684\u4E0D\u540C\u540D\u5B57\uFF0C\u4E0D\u662F\u591A\u4E2A\u5BF9\u8C61\u3002
 \u73B0\u6709\u5F62\u5F0F\u6309\u9700\u4F7F\u7528\uFF1A{kind:"code",code:Code}\uFF1B{kind:"table",table:{columns:[\u5B57\u7B26\u4E32],rows:[[\u5B57\u7B26\u4E32]]}}\uFF0C1\u20138\u5217\u30011\u201360\u884C\uFF0C\u6BCF\u884C\u4E0E\u5217\u6570\u4E00\u81F4\uFF1B{kind:"steps",steps:[{title,text,code?}]}\uFF0C1\u201320\u6B65\uFF1B{kind:"comparison",items:[{title,text,code?}]}\uFF0C2\u20134\u9879\uFF1B{kind:"flashcards",cards:[{front,back}]}\uFF0C1\u201320\u5F20\uFF1B{kind:"markdown",markdown:{source}}\uFF1B{kind:"html",html:{source,height?}}\uFF1B{kind:"svg",svg:{source,height?}}\u3002steps/comparison \u6BCF\u9879 title240\u3001text4000\uFF1Btable\u5217\u540D120\u3001\u5355\u5143\u683C2000\uFF1Bflashcards.front2000\u3001back4000\u3002markdown.source \u975E\u7A7A\u6700\u591A20000\uFF1Bhtml.source/svg.source \u975E\u7A7A\u6700\u591A60000\uFF1Bheight \u53EF\u7701\u7565\uFF0C\u63D0\u4F9B\u65F6\u4E3A120\u2013640\u6574\u6570\uFF0CMarkdown\u4E0D\u63A5\u53D7height\u3002
-Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}\u3002language \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u3001+\u3001.\u6216-\uFF08C++\u7528 cpp \u6216 c++\uFF09\uFF1Bsource \u975E\u7A7A\u6700\u591A20000\uFF0C\u4FDD\u7559\u6362\u884C\u4E0E\u7F29\u8FDB\uFF0C\u4E0D\u653E Markdown \u56F4\u680F\u3002filename240\uFF1BhighlightLines \u4E3A0\u2013200\u4E2A\u6709\u6548\u3001\u4E0D\u91CD\u590D\u7684\u6B63\u6574\u6570\u884C\u53F7\uFF1Bannotations \u4E3A0\u201340\u4E2A {line,text}\uFF0C\u884C\u53F7\u6709\u6548\u4E14\u4E0D\u91CD\u590D\u3001text2000\uFF1Bstdin \u53EF\u7A7A\u6700\u591A4000\uFF0CexpectedOutput \u53EF\u7A7A\u6700\u591A8000\u3002\u884C\u6309 CRLF/CR/LF \u5212\u5206\u3002#include <iostream>\u3001template<typename T>\u3001a < b \u90FD\u662F\u6570\u636E\uFF0C\u5141\u8BB8\u539F\u6837\u5199\u5165\u5B57\u7B26\u4E32\u3002App/\u670D\u52A1\u5668\u5BF9\u539F\u751F\u6E90\u7801\u4E0D\u7F16\u8BD1\u3001\u4E0D\u6267\u884C\uFF0C\u4E5F\u4E0D\u9A8C\u8BC1\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\uFF0C\u4E0D\u80FD\u58F0\u79F0\u5DF2\u8FD0\u884C\u3002
+Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}\u3002language \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u3001+\u3001.\u6216-\uFF08C++\u7528 cpp \u6216 c++\uFF09\uFF1Bsource \u975E\u7A7A\u6700\u591A20000\uFF0C\u4FDD\u7559\u6362\u884C\u4E0E\u7F29\u8FDB\uFF0C\u4E0D\u653E Markdown \u56F4\u680F\u3002filename240\uFF1BhighlightLines \u4E3A0\u2013200\u4E2A\u6709\u6548\u3001\u4E0D\u91CD\u590D\u7684\u6B63\u6574\u6570\u884C\u53F7\uFF1Bannotations \u4E3A0\u201340\u4E2A {line,text}\uFF0C\u884C\u53F7\u6709\u6548\u4E14\u4E0D\u91CD\u590D\u3001text2000\uFF1Bstdin \u53EF\u7A7A\u6700\u591A4000\uFF0CexpectedOutput \u53EF\u7A7A\u6700\u591A8000\u3002\u884C\u6309 CRLF/CR/LF \u5212\u5206\u3002#include <iostream>\u3001template<typename T>\u3001a < b \u90FD\u662F\u6570\u636E\uFF0C\u5141\u8BB8\u539F\u6837\u5199\u5165\u5B57\u7B26\u4E32\u3002\u666E\u901A Code \u5C55\u793A\u4E0D\u7F16\u8BD1\u3001\u4E0D\u6267\u884C\uFF0C\u4E5F\u4E0D\u9A8C\u8BC1\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\uFF0C\u4E0D\u80FD\u58F0\u79F0\u5DF2\u8FD0\u884C\u3002\u53EA\u6709\u4E0B\u9762\u663E\u5F0F execution \u7684\u4F5C\u7B54\u9898\u53EF\u4EE5\u5B9E\u9645\u8FD0\u884C\u3002
 question \u5FC5\u586B text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\uFF0C\u53EF\u6709 explanation\u3001code:Code\u3001hints\uFF080\u20135\u9879\uFF0C\u6BCF\u9879\u6700\u591A2000\uFF09\u3002\u9009\u62E9\u9898\u5FC5\u586B options:[{id,text}]\u3001correctOptionIDs\uFF0C\u53EA\u5F15\u7528\u5DF2\u6709\u9009\u9879\uFF1B\u5355\u9009\u6070\u597D\u4E00\u4E2A\u6B63\u786E\u9879\uFF0C\u591A\u9009\u81F3\u5C11\u4E00\u4E2A\uFF1B\u4E0D\u63A5\u53D7 acceptedAnswers/answerFormat\u3002\u9009\u9879id\u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002shortAnswer \u4E0D\u63A5\u53D7 options/correctOptionIDs\uFF1B\u53EF\u6709 acceptedAnswers \u548C answerFormat(text/code/output)\uFF0C\u9ED8\u8BA4text\u3002text\u6BD4\u8F83\u5FFD\u7565\u5927\u5C0F\u5199\u3001\u5408\u5E76\u7A7A\u767D\uFF1Bcode/output\u4EC5\u7EDF\u4E00\u6362\u884C\u5E76\u53BB\u6389\u9996\u5C3E\u7A7A\u767D\uFF0C\u4ECD\u662F\u6587\u672C\u6BD4\u8F83\u3002\u5F00\u653E\u4EE3\u7801\u9898\u9ED8\u8BA4\u81EA\u884C\u6838\u5BF9\uFF1A\u7701\u7565 acceptedAnswers\uFF0C\u89E3\u6790\u7ED9\u53C2\u8003\u5B9E\u73B0\u4E0E\u68C0\u67E5\u70B9\uFF1B\u4E0D\u80FD\u628A\u4EE3\u7801\u6587\u672C\u5339\u914D\u5F53\u4F5C\u901A\u7528\u4EE3\u7801\u5224\u5206\u3002\u53EA\u6709\u7B54\u6848\u786E\u5B9E\u552F\u4E00\u7684\u8865\u5168\u9898\u624D\u7ED9 code \u53C2\u8003\u6587\u672C\uFF0C\u5E76\u8BF4\u660E\u6BD4\u8F83\u5C40\u9650\u3002\u6BCF\u8BFE\u5B8C\u6210\u53EA\u8981\u6C42\u6BCF\u9898\u6709\u6548\u4F5C\u7B54\uFF0C\u4E0D\u8981\u6C42\u5168\u5BF9\u3002
+\u3010\u4F5C\u7B54\u8F93\u5165\u4E0E\u771F\u5B9E\u8FD0\u884C\u3011
+shortAnswer \u53EF\u6307\u5B9A input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}\u3002\u6570\u5B57\u7B54\u6848\u5FC5\u987B\u7528 integer \u6216 decimal\uFF0C\u8BA9 App \u4F7F\u7528\u4E24\u884C\u6570\u5B57\u952E\u76D8\uFF1B\u4EE3\u7801\u7EC3\u4E60\u7528 code\uFF0C\u8BA9 App \u63D0\u4F9B\u6709\u8BED\u6CD5\u989C\u8272\u7684\u591A\u884C\u7F16\u8F91\u5668\u3002input.language \u4EC5 code \u53EF\u7528\uFF0C\u9650\u5B9A javascript/python/cpp\uFF1BstarterCode \u4EC5 code \u53EF\u7528\u3001\u53EF\u7A7A\u6700\u591A20000\uFF1Bplaceholder \u53EF\u7A7A\u6700\u591A500\u3002minLines/maxLines \u4E3A2\u201324\u6574\u6570\u4E14min\u2264max\uFF1B\u6570\u5B57\u8F93\u5165\u4ECD\u4F1A\u7D27\u51D1\u663E\u793A\u3002integer \u4EC5\u53EF\u5E26\u6B63\u8D1F\u53F7\u7684\u5341\u8FDB\u5236\u6574\u6570\uFF1Bdecimal \u53EF\u5E26\u6B63\u8D1F\u53F7\u4E0E\u5C0F\u6570\u70B9\u3001\u4E0D\u63A5\u53D7\u79D1\u5B66\u8BB0\u6570\u3001\u9017\u53F7\u3001NaN/Infinity\u3002\u4E0D\u8981\u628A\u8981\u6C42\u8F93\u5165\u6570\u5B57\u7684\u9898\u76EE\u4FDD\u7559\u6210\u666E\u901A\u957F\u6587\u672C\u6846\u3002\u65E7\u6587\u6863\u7701\u7565input\u4ECD\u517C\u5BB9\uFF1Bexecution\u5B58\u5728\u6216answerFormat=code\u65F6\u63A8\u65AD\u4E3Acode\uFF0C\u5176\u4ED6\u9ED8\u8BA4text\u3002
+\u4EC5 shortAnswer \u53EF\u663E\u5F0F\u6DFB\u52A0 execution:{language:"javascript"|"python"|"cpp",template?,stdin?,expectedOutput?}\u3002input.language\u4E0Eexecution.language\u90FD\u63D0\u4F9B\u65F6\u5FC5\u987B\u76F8\u540C\u3002\u5B8C\u6574\u7A0B\u5E8F\u9898\u53EF\u7701\u7565template\uFF0C\u4F7F\u7528\u5B66\u751F\u63D0\u4EA4\u7684\u5B8C\u6574\u6E90\u7801\uFF1B\u586B\u7A7A\u9898\u5FC5\u987B\u63D0\u4F9Btemplate\uFF0C\u4E14\u5B8C\u6574\u7A0B\u5E8F\u6A21\u677F\u4E2D\u6070\u597D\u51FA\u73B0\u4E00\u6B21\u5B57\u9762\u6807\u8BB0{{ANSWER}}\uFF0CApp/\u670D\u52A1\u5668\u53EA\u66FF\u6362\u8FD9\u4E00\u5904\u3002\u663E\u5F0Finput.kind\u4E3Atext/integer/decimal\u65F6execution\u5FC5\u987B\u5E26template\uFF0C\u4E0D\u628A\u4EFB\u610F\u6587\u5B57\u6216\u6570\u5B57\u8BEF\u5F53\u6E90\u7801\u3002template\u975E\u7A7A\u6700\u591A20000\uFF1Bstdin\u53EF\u7A7A\u6700\u591A4000\uFF1BexpectedOutput\u53EF\u7A7A\u6700\u591A8000\u3002\u771F\u5B9E\u8FD0\u884C\u4F5C\u7B54/\u4EE3\u7801\u8F93\u5165\u4E0A\u965020000\u3002template\u53EA\u63D0\u4F9B\u516C\u5F00\u6559\u5B66\u7A0B\u5E8F\uFF0C\u4E0D\u542B\u79D8\u5BC6\u3001\u5BC6\u94A5\u6216\u9690\u85CF\u7B54\u6848\uFF1B\u8F93\u5165\u6C38\u8FDC\u4E0D\u901A\u8FC7shell\u62FC\u63A5\u3002\u6BD4\u8F83\u8FD0\u884C\u8F93\u51FA\u4F1A\u7EDF\u4E00\u6362\u884C\u5E76\u53BB\u672B\u5C3E\u7A7A\u767D\uFF1BexpectedOutput\u53EA\u7528\u4E8E\u8BFE\u7A0B\u9ED8\u8BA4stdin\u7684\u4E00\u6B21\u8F93\u51FA\u6838\u5BF9\uFF0C\u4E0D\u7B49\u4E8E\u901A\u7528\u5224\u5206\u6216\u9690\u85CF\u6D4B\u8BD5\uFF0C\u4E0D\u8981\u628A\u4E00\u4E2A\u793A\u4F8B\u901A\u8FC7\u5BA3\u79F0\u4E3A\u666E\u904D\u6B63\u786E\u3002
+\u660E\u786E\u533A\u5206\u4E09\u79CD\u5F62\u5F0F\uFF1Atrace\u662F\u4EBA\u5DE5\u63A8\u6F14\uFF1Bcode/presentation.code\u662F\u6E90\u7801\u5C55\u793A\uFF1Bexecution\u624D\u662F\u53EF\u5B9E\u9645\u8FD0\u884C\u7684\u4F5C\u7B54\u9898\u3002JavaScript\u53EF\u5728App\u672C\u5730\u9694\u79BB\u8FD0\u884C\uFF1BPython/C++\u9700\u670D\u52A1\u5668\u72EC\u7ACB\u6C99\u76D2\u53EF\u7528\u3002\u8FD0\u884C\u670D\u52A1\u672A\u542F\u7528\u3001\u8D85\u65F6\u6216\u7F16\u8BD1\u9519\u8BEF\u65F6\u8981\u5982\u5B9E\u53CD\u9988\uFF0C\u8BFE\u7A0B\u4ECD\u53EF\u7F16\u8F91\u4E0E\u4F5C\u7B54\uFF1B\u4E0D\u80FD\u5BA3\u79F0\u5DF2\u7F16\u8BD1\u901A\u8FC7\u3002\u9ED8\u8BA4\u975E\u8FD0\u884C\u5F00\u653E\u4EE3\u7801\u9898\u4ECD\u81EA\u884C\u6838\u5BF9\uFF1B\u9700\u8981\u5B9E\u9A8C\u65F6\u6709\u610F\u6DFB\u52A0execution\uFF0C\u4E0D\u80FD\u9760\u628A\u7A0B\u5E8F\u585E\u8FDB\u666E\u901Atext\u6216HTML\u5192\u5145\u7F16\u8BD1\u5668\u3002
+\u4F8B\u5982\u8865\u5168\u8F93\u51FA\u7684\u6570\u5B57\u9898\uFF1AquestionType:"shortAnswer",answerFormat:"output",input:{kind:"integer",placeholder:"\u8F93\u5165\u6574\u6570"},execution:{language:"cpp",template:"#include <iostream>\\nint main(){ std::cout << {{ANSWER}}; }",expectedOutput:"42"}\uFF1B\u5B8C\u6574JavaScript\u7A0B\u5E8F\u9898\uFF1Ainput:{kind:"code",language:"javascript",starterCode:"console.log(2 + 3);",minLines:4,maxLines:16},execution:{language:"javascript",expectedOutput:"5"}\u3002\u8FD9\u4E9B\u662F\u5757\u5B57\u6BB5\u7247\u6BB5\u8BF4\u660E\uFF1B\u6B63\u5F0F\u8F93\u51FA\u4ECD\u5FC5\u987B\u662F\u552F\u4E00\u5B8C\u6574\u8BFE\u7A0BJSON\u3002
 HTML/SVG \u901A\u8FC7\u663E\u5F0F presentation \u8FDB\u5165\u79BB\u7EBF\u6C99\u76D2\uFF1B\u4E0D\u4E0E\u666E\u901A\u5B57\u7B26\u4E32\u62FC\u63A5\u3002\u5B8C\u5168\u5185\u8054\uFF0C\u4E0D\u4F7F\u7528 CDN\u3001\u5916\u94FE\u811A\u672C/\u6837\u5F0F/\u5B57\u4F53\u3001\u8BF7\u6C42\u3001\u5BFC\u822A\u3001iframe/object/embed\u3001SVG image/foreignObject\u3001\u5A92\u4F53\u3001data/base64 \u6216\u4E0B\u8F7D\u3002HTML\u53EF\u8FD0\u884C\u5185\u8054CSS/JavaScript\u3001SVG/canvas\uFF1B\u670D\u52A1\u5668\u53EA\u5B58\u50A8\u3002\u4E0D\u8981\u4EFF\u5236 App \u5BFC\u822A\u3001\u8D26\u53F7\u6216\u4E0A\u4F20\u63A7\u4EF6\uFF1B\u9002\u914D\u7EA6320px\u5BBD\u5C4F\u5E55\uFF0C\u63A7\u4EF6\u81F3\u5C1144px\u9AD8\uFF0C\u4E8B\u4EF6\u66F4\u65B0\u5148\u6539\u6A21\u578B\u518D\u7ED8\u5236\uFF0C\u907F\u514D\u6BCF\u6B21\u8F93\u5165\u66FF\u6362\u6574\u4E2AinnerHTML\uFF0C\u907F\u514D\u65E0\u9650\u5FAA\u73AF\u548C\u540E\u53F0\u5B9A\u65F6\u5668\u3002Markdown\u53EF\u542B\u6807\u9898\u3001\u5217\u8868\u3001\u8868\u683C\u3001\u5F15\u7528\u548C\u5E26\u8BED\u8A00\u540D\u7684\u4EE3\u7801\u56F4\u680F\uFF0C\u4E0D\u542F\u7528\u539F\u59CBHTML\u6216\u56FE\u7247\u3002
-\u9650\u5236\u6309 UTF-16 \u4EE3\u7801\u5355\u5143\uFF1AJSON UTF-8\u6700\u591A1 MiB\uFF1B1\u201340\u8BFE\u65F6\uFF0C\u6BCF\u8BFE1\u201380\u5757\uFF1B\u6240\u6709title240\u3001summary2000\u3001text/callout20000\u3001\u9898\u5E72\u548Cexplanation4000\u3001caption2000\u3002\u56FE\u88681\u201360\u70B9\uFF0Clabel120\uFF0Cvalue\u6709\u9650\u4E14\u7EDD\u5BF9\u503C\u226410^15\uFF1B\u9009\u62E9\u98982\u201312\u9879\uFF0C\u9009\u9879text1000\uFF1BacceptedAnswers\u6700\u591A20\u4E2A\u4E0D\u91CD\u590D\u9879\uFF0C\u5404\u9879\u4E0A\u9650text500/code20000/output8000\uFF0C\u7528\u6237\u7B54\u6848\u4E0A\u96504000/20000/8000\uFF1BURL2048\uFF1B\u7981\u6B62\u63A7\u5236\u5B57\u7B26\u3002\u4E0D\u8981\u65B0\u9020 block.type \u6216\u628A code/hints \u653E\u5728\u975E question \u5757\u3002
+\u9650\u5236\u6309 UTF-16 \u4EE3\u7801\u5355\u5143\uFF1AJSON UTF-8\u6700\u591A1 MiB\uFF1B1\u201340\u8BFE\u65F6\uFF0C\u6BCF\u8BFE1\u201380\u5757\uFF1B\u6240\u6709title240\u3001summary2000\u3001text/callout20000\u3001\u9898\u5E72\u548Cexplanation4000\u3001caption2000\u3002\u56FE\u88681\u201360\u70B9\uFF0Clabel120\uFF0Cvalue\u6709\u9650\u4E14\u7EDD\u5BF9\u503C\u226410^15\uFF1B\u9009\u62E9\u98982\u201312\u9879\uFF0C\u9009\u9879text1000\uFF1BacceptedAnswers\u6700\u591A20\u4E2A\u4E0D\u91CD\u590D\u9879\uFF0C\u5404\u9879\u4E0A\u9650text500/code20000/output8000\uFF0C\u7528\u6237\u7B54\u6848\u4E0A\u96504000/20000/8000\uFF1BURL2048\uFF1B\u7981\u6B62\u63A7\u5236\u5B57\u7B26\u3002\u4E0D\u8981\u65B0\u9020 block.type \u6216\u628A code/hints/input/execution \u653E\u5728\u975E question \u5757\uFF1Binput/execution\u4EC5shortAnswer\u53EF\u7528\u3002
 \u8F93\u51FA\u524D\u6838\u5BF9\uFF1A\u6BCF\u4E00\u6B65\u662F\u5426\u53EA\u7A81\u51FA\u4E00\u4E2A\u53D8\u5316\uFF1F\u5BF9\u8C61\u8EAB\u4EFD\u548C\u5F15\u7528\u522B\u540D\u662F\u5426\u4E00\u81F4\uFF1F\u4EE3\u7801\u884C\u53F7\u3001\u6570\u503C\u3001\u8F93\u51FA\u4E0E\u7EC3\u4E60\u7B54\u6848\u662F\u5426\u5BF9\u5E94\uFF1F\u539F\u751F\u80FD\u8868\u8FBE\u65F6\u662F\u5426\u907F\u514D\u4E86 HTML\uFF1F\u4E0D\u8981\u628A\u68C0\u67E5\u6E05\u5355\u5199\u8FDB\u8BFE\u7A0B\uFF0C\u4E5F\u4E0D\u9010\u9879\u7D22\u8981\u786E\u8BA4\u3002
 \u4E0B\u9762\u662F\u201C\u539F\u751F\u5355\u6B65\u63A8\u6F14\u2192\u4E00\u9053\u8FC1\u79FB\u9898\u201D\u7684\u5B8C\u6574\u6709\u6548\u793A\u4F8B\u3002\u6309\u7528\u6237\u4E3B\u9898\u8BBE\u8BA1\uFF0C\u4E0D\u7167\u642C\u6807\u9898\u3001UUID\u6216\u77E5\u8BC6\u70B9\uFF1B\u53EA\u6709\u8FD9\u4E00\u4E2A\u5B8C\u6574 JSON \u4EE3\u7801\u5757\u662F\u683C\u5F0F\u793A\u4F8B\uFF1A
 \`\`\`json
@@ -25767,7 +26654,7 @@ Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u7684 UUID\u3002\u5B
 \u65B0\u5EFA\u8BFE\u7A0B\u65E0\u9700 If-Match\uFF1B\u66F4\u65B0\u5DF2\u6709\u8BFE\u7A0B\u5FC5\u987B\u63D0\u4F9B\u5DF2\u77E5\u5F53\u524D\u4FEE\u8BA2\u53F7 If-Match: "\u6574\u6570"\u3002\u4FEE\u8BA2\u53F7\u653E\u5728\u8BF7\u6C42\u5934\uFF0C\u4E0D\u653E\u5165\u8BFE\u7A0B JSON\u3002\u91CD\u8BD5\u4FDD\u7559\u540C\u4E00 Idempotency-Key\u3001\u5B8C\u5168\u76F8\u540C\u7684\u5B57\u8282\u6B63\u6587\u4E0E If-Match\u3002409 \u8868\u793A\u51B2\u7A81\uFF0C\u5E94\u505C\u6B62\u5E76\u83B7\u53D6\u6700\u65B0\u8BFE\u7A0B\u6216\u8BF7\u7528\u6237\u6838\u5BF9\uFF0C\u4E0D\u80FD\u731C\u6D4B\u7248\u672C\u5F3A\u884C\u8986\u76D6\u3002\u53EA\u6709 HTTP 201/200 \u6210\u529F\u540E\u624D\u53EF\u4EE5\u8BF4\u5DF2\u4E0A\u4F20\uFF0C\u5E76\u62A5\u544A\u8FD4\u56DE\u7684\u8BFE\u7A0B\u6807\u9898\u548C\u4FEE\u8BA2\u53F7\u3002
 \u5982\u679C\u6CA1\u6709\u7F51\u7EDC\u5DE5\u5177\u6216\u65E0\u6CD5\u5B9E\u9645\u53D1\u8D77 HTTP \u8BF7\u6C42\uFF0C\u4E0D\u8981\u5047\u88C5\u4E0A\u4F20\uFF1A\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u4F18\u5148\u653E\u5728\u552F\u4E00\u7684 json \u4EE3\u7801\u5757\u5185\uFF0C\u4E0D\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u8BA9\u7528\u6237\u590D\u5236\u5230 App \u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u3002\u6B64\u9000\u8DEF\u4E0D\u9700\u8981\u7528\u6237\u63D0\u4F9B\u5176\u4ED6\u51ED\u636E\u3002`;
 }
-function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError: APIError2, origin, rateLimit, peer, now = Date.now }) {
+function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError: APIError2, origin, rateLimit, peer, now = Date.now, runCode = async () => unavailableCourseExecution() }) {
   const fail2 = (code = "INVALID_COURSE", status = 422) => {
     throw new APIError2(status, code);
   };
@@ -25891,7 +26778,33 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       }
     }
   }
-  const answerTextLimit = (block) => block?.questionType === "shortAnswer" ? { text: 4e3, code: 2e4, output: 8e3 }[block.answerFormat ?? "text"] ?? 4e3 : 4e3;
+  const integerAnswer = /^[+-]?[0-9]+$/;
+  const decimalAnswer = /^[+-]?(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$/;
+  const numericAnswerValid = (block, text) => block?.input?.kind === "integer" ? integerAnswer.test(text.trim()) : block?.input?.kind === "decimal" ? decimalAnswer.test(text.trim()) : true;
+  const answerTextLimit = (block) => block?.questionType === "shortAnswer" ? block.execution || block.input?.kind === "code" ? 2e4 : { text: 4e3, code: 2e4, output: 8e3 }[block.answerFormat ?? "text"] ?? 4e3 : 4e3;
+  function validateInput(input) {
+    object(input, ["kind", "language", "placeholder", "starterCode", "minLines", "maxLines"]);
+    if (!["text", "integer", "decimal", "code"].includes(input.kind)) fail2();
+    if (input.placeholder !== void 0) string(input.placeholder, 500, false);
+    if (input.language !== void 0 && (input.kind !== "code" || !courseExecutionLanguages.includes(input.language))) fail2();
+    if (input.starterCode !== void 0) {
+      if (input.kind !== "code") fail2();
+      string(input.starterCode, 2e4, false);
+    }
+    for (const key of ["minLines", "maxLines"]) if (input[key] !== void 0 && (!Number.isSafeInteger(input[key]) || input[key] < 2 || input[key] > 24)) fail2();
+    if (input.minLines !== void 0 && input.maxLines !== void 0 && input.maxLines < input.minLines) fail2();
+  }
+  function validateExecution(execution, input) {
+    object(execution, ["language", "template", "stdin", "expectedOutput"]);
+    if (!courseExecutionLanguages.includes(execution.language)) fail2();
+    if (input?.language !== void 0 && input.language !== execution.language) fail2();
+    if (execution.template !== void 0) {
+      string(execution.template, 2e4);
+      if (execution.template.split("{{ANSWER}}").length !== 2) fail2();
+    } else if (input !== void 0 && input.kind !== "code") fail2();
+    if (execution.stdin !== void 0) string(execution.stdin, 4e3, false);
+    if (execution.expectedOutput !== void 0) string(execution.expectedOutput, 8e3, false);
+  }
   function validateCourse(value) {
     object(value, ["protocol", "id", "title", "summary", "lessons"]);
     if (value.protocol !== courseProtocol) fail2("UNSUPPORTED_COURSE_PROTOCOL");
@@ -25916,7 +26829,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       }
       if (lesson.estimatedMinutes !== void 0 && (!Number.isSafeInteger(lesson.estimatedMinutes) || lesson.estimatedMinutes < 1 || lesson.estimatedMinutes > 180)) fail2();
       for (const block of lesson.blocks) {
-        const blockFields = { text: ["text", "presentation"], callout: ["text", "presentation"], image: ["url", "caption"], chart: ["chartType", "points", "caption"], question: ["text", "questionType", "options", "correctOptionIDs", "acceptedAnswers", "explanation", "code", "hints", "answerFormat"] };
+        const blockFields = { text: ["text", "presentation"], callout: ["text", "presentation"], image: ["url", "caption"], chart: ["chartType", "points", "caption"], question: ["text", "questionType", "options", "correctOptionIDs", "acceptedAnswers", "explanation", "code", "hints", "answerFormat", "input", "execution"] };
         if (!block || !Object.hasOwn(blockFields, block.type)) fail2("UNSUPPORTED_COURSE_BLOCK");
         const fields2 = blockFields[block.type];
         object(block, ["id", "type", "title", ...fields2]);
@@ -25954,9 +26867,12 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
           if (block.questionType === "shortAnswer") {
             if (block.options !== void 0 || block.correctOptionIDs !== void 0) fail2();
             if (block.answerFormat !== void 0 && !["text", "code", "output"].includes(block.answerFormat)) fail2();
-            if (block.acceptedAnswers !== void 0) uniqueStrings(block.acceptedAnswers, 20, (answer) => string(answer, (block.answerFormat ?? "text") === "text" ? 500 : answerTextLimit(block)));
+            if (block.input !== void 0) validateInput(block.input);
+            if (block.execution !== void 0) validateExecution(block.execution, block.input);
+            if (block.acceptedAnswers !== void 0) uniqueStrings(block.acceptedAnswers, 20, (answer) => string(answer, block.input?.kind === "code" || !block.input && block.execution ? 2e4 : (block.answerFormat ?? "text") === "text" ? 500 : answerTextLimit(block)));
+            if (block.acceptedAnswers?.some((answer) => !numericAnswerValid(block, answer))) fail2();
           } else if (["singleChoice", "multipleChoice"].includes(block.questionType)) {
-            if (block.acceptedAnswers !== void 0 || block.answerFormat !== void 0) fail2();
+            if (block.acceptedAnswers !== void 0 || block.answerFormat !== void 0 || block.input !== void 0 || block.execution !== void 0) fail2();
             array(block.options, 2, 12);
             const options = /* @__PURE__ */ new Set();
             for (const option of block.options) {
@@ -26041,7 +26957,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
   }
   function answerValid(answer, block) {
     if (!block || block.type !== "question") return false;
-    if (block.questionType === "shortAnswer") return answer.selectedOptionIDs.length === 0 && answer.text.trim().length > 0;
+    if (block.questionType === "shortAnswer") return answer.selectedOptionIDs.length === 0 && answer.text.trim().length > 0 && numericAnswerValid(block, answer.text);
     return answer.text === "" && answer.selectedOptionIDs.length > 0 && (block.questionType !== "singleChoice" || answer.selectedOptionIDs.length === 1) && answer.selectedOptionIDs.every((id) => block.options.some((option) => option.id === id));
   }
   function progress(user, owner, id, doc) {
@@ -26073,13 +26989,14 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result), now());
     return { ...result, replayed: false };
   }
+  const runningUsers = /* @__PURE__ */ new Set();
   return async function handle(request, response, path) {
     if (path === coursePath + "/schema" && request.method === "GET") {
       respond(response, 200, course_schema_default);
       return true;
     }
     const tokens = path === "/api/native/v1/integrations/course-tokens";
-    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star))?)?$/.exec(path);
+    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star|run))?)?$/.exec(path);
     if (path !== coursePath && !tokens && !native) return false;
     sameWebOrigin(request);
     if (path === coursePath && request.method === "POST") {
@@ -26126,7 +27043,47 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       }
     }
     if (native) {
-      const id = native[1] ? uuid3(native[1]) : null, isProgress = native[2] === "/progress", isStar = native[2] === "/star";
+      const id = native[1] ? uuid3(native[1]) : null, isProgress = native[2] === "/progress", isStar = native[2] === "/star", isRun = native[2] === "/run";
+      if (id && isRun && request.method === "POST") {
+        workspaceAccess(request);
+        const { value } = await read(request, 128 * 1024);
+        object(value, ["courseRevision", "lessonID", "blockID", "text", "stdin"], "INVALID_COURSE_RUN");
+        const lessonID = uuid3(value.lessonID), blockID = uuid3(value.blockID);
+        if (!Number.isSafeInteger(value.courseRevision) || value.courseRevision < 1) fail2("INVALID_COURSE_RUN");
+        string(value.text, 2e4);
+        if (value.stdin !== void 0) string(value.stdin, 4e3, false);
+        const actor = userFor(request), { ownerID } = workspaceAccess(request), row = course(ownerID, id);
+        if (row.revision !== value.courseRevision) fail2("COURSE_REVISION_CONFLICT", 409);
+        const doc = JSON.parse(row.document), block = doc.lessons.find((lesson) => lesson.id === lessonID)?.blocks.find((block2) => block2.id === blockID);
+        if (block?.type !== "question" || block.questionType !== "shortAnswer" || !block.execution) fail2("COURSE_EXECUTION_NOT_ALLOWED");
+        if (!numericAnswerValid(block, value.text)) fail2("INVALID_COURSE_ANSWER");
+        rateLimit("course-run-user:" + actor, 6e4, 12);
+        rateLimit("course-run-ip:" + peer(request), 6e4, 30);
+        if (runningUsers.has(actor) || runningUsers.size >= 2) fail2("COURSE_RUN_BUSY", 429);
+        const execution = block.execution, source = execution.template === void 0 ? value.text : execution.template.replace("{{ANSWER}}", () => value.text);
+        runningUsers.add(actor);
+        try {
+          let result;
+          try {
+            result = await runCode({ language: execution.language, source, stdin: value.stdin ?? execution.stdin ?? "" });
+          } catch {
+            result = unavailableCourseExecution();
+          }
+          const normalize = (value2) => value2.replace(/\r\n|\r/g, "\n").trimEnd();
+          const passed = result.status === "completed" && execution.expectedOutput !== void 0 && value.stdin === void 0 ? normalize(result.stdout) === normalize(execution.expectedOutput) : void 0;
+          respond(response, 200, { data: {
+            status: result.status,
+            stdout: result.stdout,
+            stderr: result.stderr,
+            durationMs: result.durationMs,
+            ...result.exitCode === void 0 ? {} : { exitCode: result.exitCode },
+            ...passed === void 0 ? {} : { passed }
+          } });
+          return true;
+        } finally {
+          runningUsers.delete(actor);
+        }
+      }
       if (!id && request.method === "POST") {
         rateLimit("course-ip:" + peer(request), 6e4, 60);
         workspaceAccess(request, true);
@@ -26153,7 +27110,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         respond(response, 200, { data: { starred: value.starred } });
         return true;
       }
-      if (!isStar && request.method === "GET") {
+      if (!isStar && !isRun && request.method === "GET") {
         const { ownerID } = workspaceAccess(request);
         if (!id) {
           const courses = db.prepare("SELECT id,revision,document,updated_at FROM courses WHERE owner_id=? AND deleted=0 ORDER BY updated_at DESC,id").all(ownerID).map((row2) => {
@@ -26168,7 +27125,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         respond(response, 200, { data: isProgress ? progress(user, ownerID, id, doc) : { course: doc, revision: row.revision, updatedAt: row.updated_at } });
         return true;
       }
-      if (id && !isProgress && !isStar && request.method === "DELETE") {
+      if (id && !isProgress && !isStar && !isRun && request.method === "DELETE") {
         const expected = match(request, true);
         transaction(() => {
           const { ownerID } = workspaceAccess(request, true), row = course(ownerID, id);
@@ -27029,8 +27986,20 @@ function createNativeServer(configuration) {
     response.writeHead(200, asset.headers);
     response.end(headOnly ? void 0 : asset.body);
   }
-  const courseAPI = createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin: passkeyOrigin, rateLimit: textRateLimit, peer: textPeer, now: textNow });
-  const server = http.createServer(async (request, response) => {
+  const courseAPI = createCourseAPI({
+    db,
+    userFor,
+    workspaceAccess,
+    sameWebOrigin,
+    respond,
+    APIError,
+    origin: passkeyOrigin,
+    rateLimit: textRateLimit,
+    peer: textPeer,
+    now: textNow,
+    runCode: configuration.runCourseCode ?? createCourseExecutionClient({ socketPath: configuration.courseRunnerSocket })
+  });
+  const server = http2.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://localhost"), path = url.pathname;
       if (path === "/native-login" && (request.method === "GET" || request.method === "HEAD")) {
@@ -27570,7 +28539,7 @@ function applePushSender({ teamID, keyID, keyPath }) {
       minted = Date.now();
     }
     return new Promise((resolve, reject) => {
-      const session = http2.connect(device.environment === "sandbox" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com");
+      const session = http22.connect(device.environment === "sandbox" ? "https://api.sandbox.push.apple.com" : "https://api.push.apple.com");
       const timer = setTimeout(() => {
         session.destroy();
         reject(new Error("APNS_TIMEOUT"));
@@ -27639,6 +28608,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
       passkeyApps: process.env.PASSKEY_APP_IDS,
       displayName: process.env.DISPLAY_NAME,
       allowedBundles: process.env.APNS_ALLOWED_BUNDLE_IDS,
+      courseRunnerSocket: process.env.COURSE_RUNNER_SOCKET,
       sendPush: applePushSender({ teamID: process.env.APNS_TEAM_ID, keyID: process.env.APNS_KEY_ID, keyPath: process.env.APNS_PRIVATE_KEY_FILE })
     });
     app.server.listen(Number(process.env.PORT ?? 8080), process.env.HOST ?? "127.0.0.1", () => console.log("Native workspace API is listening"));
