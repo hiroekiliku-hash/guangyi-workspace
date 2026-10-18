@@ -1645,8 +1645,12 @@ test('course structured extensions round-trip C++ data and expose a static stric
     const languagePattern = new RegExp(schema.$defs.code.properties.language.pattern);
     assert.match('c++', languagePattern); assert.doesNotMatch('cpp\n', languagePattern); assert.doesNotMatch('cpp\r', languagePattern);
     assert.equal(schema.$defs.codeAnswerBlock.properties.acceptedAnswers.items.maxLength, 20000);
-    assert.equal(schema.$defs.outputAnswerBlock.properties.acceptedAnswers.items.maxLength, 8000);
-    assert.equal(schema.$defs.textAnswerBlock.properties.acceptedAnswers.items.maxLength, 500);
+    // Code input may override a legacy answerFormat. Non-code branches keep
+    // the original output/text limits; the common property permits code input.
+    assert.equal(schema.$defs.outputAnswerBlock.properties.acceptedAnswers.items.maxLength, 20000);
+    assert.equal(schema.$defs.textAnswerBlock.properties.acceptedAnswers.items.maxLength, 20000);
+    assert.equal(schema.$defs.outputAnswerBlock.allOf[0].else.properties.acceptedAnswers.items.maxLength, 8000);
+    assert.equal(schema.$defs.textAnswerBlock.allOf[0].else.properties.acceptedAnswers.items.maxLength, 500);
     function checkObjects(node) {
       if (!node || typeof node !== 'object') return;
       if (node.type === 'object') assert.equal(node.additionalProperties, false, 'all schema objects reject unknown keys');
