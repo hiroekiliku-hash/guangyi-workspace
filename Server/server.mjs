@@ -26717,7 +26717,6 @@ function courseInteractionExample() {
           title: "\u518D\u66F4\u65B0\u4E00\u6B21",
           text: "\u5982\u679C\u8F93\u51FA\u524D\u518D\u6267\u884C\u4E00\u6B21 count = count + 1\uFF0C\u4F1A\u8F93\u51FA\u591A\u5C11\uFF1F",
           questionType: "singleChoice",
-          focusLines: [4],
           focusSpans: [{ line: 4, text: "count", occurrence: 2 }, { line: 4, text: "+" }],
           options: [{ id: "a", text: "2" }, { id: "b", text: "3" }, { id: "c", text: "4" }],
           correctOptionIDs: ["c"],

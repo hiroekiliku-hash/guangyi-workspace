@@ -1112,7 +1112,7 @@ test('course generation prompts prioritize a compact native trace and self-check
     assert.ok(runnable.filter(block => block.input.kind === 'code').every(block => block.input.language === block.execution.language && block.acceptedAnswers === undefined));
     const variant = blocks[0].presentation.trace.variants[0];
     assert.deepEqual(downloaded.lessons[0].referenceCode, variant.code);
-    assert.deepEqual(blocks[1].focusLines, [4]);
+    assert.equal(blocks[1].focusLines, undefined, 'precise focus does not require whole-line highlighting');
     assert.deepEqual(blocks[1].focusSpans, [{ line: 4, text: 'count', occurrence: 2 }, { line: 4, text: '+' }]);
     assert.deepEqual(variant.frames[1].focusSpans, blocks[1].focusSpans);
     assert.equal(variant.frames[2].focusSpans, undefined, 'frames retain a line-only fallback');

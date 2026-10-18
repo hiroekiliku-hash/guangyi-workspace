@@ -30,7 +30,7 @@ function courseInteractionExample() {
             ] }] } } },
         { id: 'c0000000-0000-4000-8000-000000000004', type: 'question', title: '再更新一次',
           text: '如果输出前再执行一次 count = count + 1，会输出多少？', questionType: 'singleChoice',
-          focusLines: [4], focusSpans: [{ line: 4, text: 'count', occurrence: 2 }, { line: 4, text: '+' }],
+          focusSpans: [{ line: 4, text: 'count', occurrence: 2 }, { line: 4, text: '+' }],
           options: [{ id: 'a', text: '2' }, { id: 'b', text: '3' }, { id: 'c', text: '4' }], correctOptionIDs: ['c'],
           explanation: '第一次更新后是 3，再加 1 得到 4。' },
         { id: 'c0000000-0000-4000-8000-000000000005', type: 'question', title: 'Python 数值填空',
