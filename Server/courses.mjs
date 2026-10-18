@@ -18,19 +18,19 @@ function courseInteractionExample() {
     lessons: [{
       id: 'c0000000-0000-4000-8000-000000000002', title: '先计算，再写回',
       objectives: ['理解赋值先计算右侧，再写回变量。', '用 Python/C++ 的填空和完整程序验证输出。'], estimatedMinutes: 12,
-      referenceCode: { language: 'cpp', source, filename: 'counter.cpp' },
+      referenceCode: { language: 'cpp', source, filename: 'counter.cpp', highlightSpans: [{ line: 4, text: 'count', occurrence: 2 }] },
       blocks: [
         { id: 'c0000000-0000-4000-8000-000000000003', type: 'text', title: '跟着一次赋值走',
           text: '这是固定程序的教学推演。count 从 2 开始，加 1 后变成 3，最后输出 3。',
           presentation: { kind: 'trace', trace: { variants: [{ id: 'assignment', title: '赋值',
-            code: { language: 'cpp', source, filename: 'counter.cpp' }, frames: [
-              { title: '创建变量', line: 3, note: 'count 的初值是 2。', objects: [{ id: 'count', names: ['count'], value: '2', scope: 'main', changed: true }] },
-              { title: '更新变量', line: 4, note: '先计算 2 + 1，再把 3 写回 count。', objects: [{ id: 'count', names: ['count'], value: '3', scope: 'main', changed: true }] },
+            code: { language: 'cpp', source, filename: 'counter.cpp', highlightSpans: [{ line: 4, text: 'count', occurrence: 2 }] }, frames: [
+              { title: '创建变量', line: 3, focusSpans: [{ line: 3, text: 'count' }], note: 'count 的初值是 2。', objects: [{ id: 'count', names: ['count'], value: '2', scope: 'main', changed: true }] },
+              { title: '更新变量', line: 4, focusSpans: [{ line: 4, text: 'count', occurrence: 2 }, { line: 4, text: '+' }], note: '先计算 2 + 1，再把 3 写回 count。', objects: [{ id: 'count', names: ['count'], value: '3', scope: 'main', changed: true }] },
               { title: '输出结果', line: 5, note: '输出现在的 count：3。', objects: [{ id: 'count', names: ['count'], value: '3', scope: 'main' }], output: '3' }
             ] }] } } },
         { id: 'c0000000-0000-4000-8000-000000000004', type: 'question', title: '再更新一次',
           text: '如果输出前再执行一次 count = count + 1，会输出多少？', questionType: 'singleChoice',
-          focusLines: [4],
+          focusLines: [4], focusSpans: [{ line: 4, text: 'count', occurrence: 2 }, { line: 4, text: '+' }],
           options: [{ id: 'a', text: '2' }, { id: 'b', text: '3' }, { id: 'c', text: '4' }], correctOptionIDs: ['c'],
           explanation: '第一次更新后是 3，再加 1 得到 4。' },
         { id: 'c0000000-0000-4000-8000-000000000005', type: 'question', title: 'Python 数值填空',
@@ -67,18 +67,20 @@ function courseTeachingPrompt() {
 根据用户的主题、教材、笔记或问题推断基础、目标和课时；只有无法推断的关键条件才简短提问。遵从明确要求，不反复索要参数。按“解释概念→具体例子或图形→练习→反馈”的节奏，由浅入深，每课时一个目标。重要来源和不确定处明示，不虚构统计或参考答案。
 【先清楚，再丰富】
 每屏一个问题、一个变化。编程课优先使用原生 trace 表达逐步语义，作者只提供代码、状态和解释，由 App 决定布局、配色、字号、动画和交互；不要自造布局、坐标、颜色或按钮字段。每节围绕一个短程序连续展开：先预测→单步观察→迁移一道题→动手改写。通常 4–6 块即可，不为了形式丰富而叠加对照、闪卡、修复题、术语表。没有新的教学价值就删掉。
-trace 默认每帧最多展示 2 个对象，note 用一句话，默认不超过 60 字；每一步只解释一个变化。围绕同一程序的课程或课时必须通过 referenceCode 提供完整短程序，App 始终保留一块可见的代码区；讲解、推演和做题时都能对照，不要求用户记住前页源码，也不能只露一行、把完整代码藏在展开按钮后。当前块用 focusLines 标记讲解行，trace 则用当前 frame.line 动态标记。长程序由代码区内部滚动，作者不指定高度或布局。除这块必要代码外，不同时堆叠参数面板、输出面板、对照、时间轴和重复标签。相同对象的多个名字必须放在同一个 objects 项的 names 数组；不要把引用画成新的副本。对象 id 在同一 variant 的连续帧保持稳定，离开作用域时移除名字或对象。frame 表示执行对应 line 后的状态，line 必须真实存在；返回帧可定位函数右花括号。output 仅在真正产生输出的帧提供，不能混用预期输出与已发生输出。
+trace 默认每帧最多展示 2 个对象，note 用一句话，默认不超过 60 字；每一步只解释一个变化。围绕同一程序的课程或课时必须通过 referenceCode 提供完整短程序，App 始终保留一块可见的代码区；讲解、推演和做题时都能对照，不要求用户记住前页源码，也不能只露一行、把完整代码藏在展开按钮后。讲解变量、操作符或表达式时，用 focusSpans 精确标记；只有整行都相关时才用 focusLines，trace 可用 frame.focusSpans 动态标记，未提供精确标记时回退 frame.line。长程序由代码区内部滚动，作者不指定高度或布局。除这块必要代码外，不同时堆叠参数面板、输出面板、对照、时间轴和重复标签。相同对象的多个名字必须放在同一个 objects 项的 names 数组；不要把引用画成新的副本。对象 id 在同一 variant 的连续帧保持稳定，离开作用域时移除名字或对象。frame 表示执行对应 line 后的状态，line 必须真实存在；返回帧可定位函数右花括号。output 仅在真正产生输出的帧提供，不能混用预期输出与已发生输出。
 【互动边界】
 trace 是作者编写、客户端逐步展示的教学推演，不是实际编译或运行 C++/Python。优先原生 trace、question、code。仅当原生形式无法表达核心交互（例如连续拖动物理参数）时，才使用显式 HTML；不要求每节课包含 HTML，不用多种控件堆出实验台。普通正文、Code、Markdown 围栏不执行。HTML 操作必须绑定实际状态更新并给明确观察任务；至少提供重置，动画附暂停/重置并尊重 prefers-reduced-motion。HTML 临时状态不保存为作答或进度，需保存的练习用 question。
 默认不要使用图片；图解优先 SVG，图表只用真实数据。禁止视频、音频、图片数据、base64。旧 image 字段仍可接受有效 HTTPS 地址，不编造 URL。
 【文档格式 structured-2】
 输出一个完整 WORKSHOP-COURSE/1 JSON 文档，未知字段拒绝。课程 {protocol,id,title,summary,referenceCode?:Code,lessons:[{id,title,objectives?,estimatedMinutes?,referenceCode?:Code,blocks:[]}]}。整门课共用一个程序就放课程 referenceCode，仅本课时共用则放课时 referenceCode；切换到另一个程序时显式提供当前 code 或课时 referenceCode，不靠正文暗示。objectives 0–6项，每项最多500；estimatedMinutes 1–180整数。课程、课时、块 id 为同一文档内唯一 UUID。新课程生成新 UUID，修改已有课程保留结构 ID。不要把用户 ID、修订号或执行指令放入正文。
-块 type 为 text/callout/image/chart/question，每块可有 title 和 focusLines。focusLines 为0–200个有效、不重复的1起始整数行号，指向当前可见代码；省略保留 Code.highlightLines，[] 表示清除静态高亮。代码优先级为当前 block.code、presentation.code、trace 当前 variant.code、execution.template、课时 referenceCode、课程 referenceCode；旧课程才回退同课时最近前置代码块或首个后置代码块，不跨课时。填空程序必须显示保留 {{ANSWER}} 的完整模板，不能把 acceptedAnswers、解析或完成后的答案写进 referenceCode 来泄题；完整程序练习的 code 显示未完成骨架，而非标准答案。text/callout 必填非空 text，可加一种 presentation；结构化块的 text 是简短教学摘要，不必重复完整代码或逐帧内容，也不要求兼容旧展示端。image 必填 HTTPS url、可选 caption；chart 必填 chartType(bar/line)、points:[{label,value}]、可选 caption。
+块 type 为 text/callout/image/chart/question，每块可有 title、focusLines 和 focusSpans。focusLines 为0–200个有效、不重复的1起始整数行号，指向当前可见代码。focusLines/focusSpans 只要出现任一个，两个静态焦点都以该块为准，未给的另一个按空数组；两个都省略才继承显式代码源的 highlightLines/highlightSpans。[] 可清除高亮且允许无代码；旧课程邻居回退不继承邻居两种高亮。代码优先级为当前 block.code、presentation.code、trace 当前 variant.code、execution.template、课时 referenceCode、课程 referenceCode；旧课程才回退同课时最近前置代码块或首个后置代码块，不跨课时。填空程序必须显示保留 {{ANSWER}} 的完整模板，不能把 acceptedAnswers、解析或完成后的答案写进 referenceCode 来泄题；完整程序练习的 code 显示未完成骨架，而非标准答案。text/callout 必填非空 text，可加一种 presentation；结构化块的 text 是简短教学摘要，不必重复完整代码或逐帧内容，也不要求兼容旧展示端。image 必填 HTTPS url、可选 caption；chart 必填 chartType(bar/line)、points:[{label,value}]、可选 caption。
 presentation 只允许 kind 与唯一对应载荷，不能混搭：
-{kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,note,objects:[{id,names:[字符串],value,scope?,changed?}],output?}]}]}}。
+{kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,focusSpans?,note,objects:[{id,names:[字符串],value,scope?,changed?}],output?}]}]}}。
 trace.variants 为1–4项、id各不相同；每项 frames 为2–24帧，每帧 objects 为1–4项且对象id不能重复。variant/object 的 id 为1–40个 ASCII 字母、数字、下划线或连字符。每个对象 names 为1–3个非空名字，作者应避免重复；value 是非空字符串最多120，scope 可选非空最多80，changed 可选布尔值。names 每项最多80；frame.title 和 variant.title 非空最多120；note 非空最多400（默认一句不超过60字）；line 为对应 code.source 的有效正整数行号；output 可空最多2000。一个对象的 names 表示同一对象的不同名字，不是多个对象。
 现有形式按需使用：{kind:"code",code:Code}；{kind:"table",table:{columns:[字符串],rows:[[字符串]]}}，1–8列、1–60行，每行与列数一致；{kind:"steps",steps:[{title,text,code?}]}，1–20步；{kind:"comparison",items:[{title,text,code?}]}，2–4项；{kind:"flashcards",cards:[{front,back}]}，1–20张；{kind:"markdown",markdown:{source}}；{kind:"html",html:{source,height?}}；{kind:"svg",svg:{source,height?}}。steps/comparison 每项 title240、text4000；table列名120、单元格2000；flashcards.front2000、back4000。markdown.source 非空最多20000；html.source/svg.source 非空最多60000；height 可省略，提供时为120–640整数，Markdown不接受height。
-Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}。language 为1–40个 ASCII 字母、数字、下划线、+、.或-（C++用 cpp 或 c++）；source 非空最多20000，保留换行与缩进，不放 Markdown 围栏。filename240；highlightLines 为0–200个有效、不重复的正整数行号；annotations 为0–40个 {line,text}，行号有效且不重复、text2000；stdin 可空最多4000，expectedOutput 可空最多8000。行按 CRLF/CR/LF 划分。#include <iostream>、template<typename T>、a < b 都是数据，允许原样写入字符串。普通 Code 展示不编译、不执行，也不验证真实运行结果，不能声称已运行。只有下面显式 execution 的作答题可以实际运行。
+Code={language,source,filename?,highlightLines?,highlightSpans?,annotations?,stdin?,expectedOutput?}。language 为1–40个 ASCII 字母、数字、下划线、+、.或-（C++用 cpp 或 c++）；source 非空最多20000，保留换行与缩进，不放 Markdown 围栏。filename240；highlightLines 为0–200个有效、不重复的正整数行号；annotations 为0–40个 {line,text}，行号有效且不重复、text2000；stdin 可空最多4000，expectedOutput 可空最多8000。行按 CRLF/CR/LF 划分。#include <iostream>、template<typename T>、a < b 都是数据，允许原样写入字符串。普通 Code 展示不编译、不执行，也不验证真实运行结果，不能声称已运行。只有下面显式 execution 的作答题可以实际运行。
+【代码精确标记】
+Code.highlightSpans、所有块的 focusSpans、trace 每帧的 focusSpans 都可提供0–200个 Span={line,text,occurrence?}。需要解释某个变量名、关键字、运算符、中文、emoji 或连续表达式时主动使用它，不必把整行涂亮；只标记本步最重要的一两处，不逐字标全程序，也不编造列号/颜色/正则字段。line 从1起，text 是该行实际存在、区分大小写的精确字面片段，非空且不全为空白、最多2000个UTF-16代码单元，不含换行或控制字符；匹配不做Unicode规范化。occurrence 为1–20000整数，省略默认1，在同一行按从左到右、互不重叠的出现次数定位；重复词需要显式 occurrence，不靠列数或模糊语义猜测。例如在 count = count + 1; 这一行，{line:4,text:"count",occurrence:2} 只标记右侧 count，{line:4,text:"+"} 标记加号。不同标记可以重叠，App 合并显示；相同 line/text/默认化 occurrence 的重复项拒绝（省略与1相同）。Code 标记对自己的 source 校验，块标记对上述实际可见代码校验；trace 每帧标记对所在 variant.code 校验，frame.focusSpans 非空时只聚焦这些片段，省略或[]时回退必填 frame.line。不能引用另一段程序、跨行片段或不存在的第N次出现；精确标记不运行代码，也不提供答案。
 question 必填 text、questionType(singleChoice/multipleChoice/shortAnswer)，可有 explanation、code:Code、hints（0–5项，每项最多2000）。选择题必填 options:[{id,text}]、correctOptionIDs，只引用已有选项；单选恰好一个正确项，多选至少一个；不接受 acceptedAnswers/answerFormat。选项id为1–40个 ASCII 字母、数字、下划线或连字符。shortAnswer 不接受 options/correctOptionIDs；可有 acceptedAnswers 和 answerFormat(text/code/output)，默认text。text比较忽略大小写、合并空白；code/output仅统一换行并去掉首尾空白，仍是文本比较。开放代码题省略 acceptedAnswers，使用 execution 的样例输出反馈，并在解析给参考实现与检查点；不能把代码文本匹配当作通用代码判分。只有答案确实唯一的补全题才给 code 参考文本，并说明比较局限。每课完成只要求每题有效作答，不要求全对。
 【作答输入与真实运行】
 shortAnswer 可指定 input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}。数字答案必须用 integer 或 decimal，让 App 使用两行数字键盘；代码练习用 code，让 App 提供有语法颜色的多行编辑器。input.language 仅 code 可用，限定 javascript/python/cpp；starterCode 仅 code 可用、可空最多20000；placeholder 可空最多500。minLines/maxLines 为2–24整数且min≤max；数字输入仍会紧凑显示。integer 仅可带正负号的十进制整数；decimal 可带正负号与小数点、不接受科学记数、逗号、NaN/Infinity。不要把要求输入数字的题目保留成普通长文本框。旧文档省略input仍兼容；execution存在或answerFormat=code时推断为code，其他默认text。
@@ -91,8 +93,8 @@ shortAnswer 可指定 input:{kind:"text"|"integer"|"decimal"|"code",language?,pl
 开放程序题与允许等价表达式的题目省略 acceptedAnswers，依据这组运行输出反馈并给解析；expectedOutput 不是隐藏测试或完整判题系统。上传课程不会自动编译或运行；没有实际运行证据就不能宣称已编译通过。超时、编译错误或运行服务暂不可用时应如实反馈。trace 仍是人工推演，code/presentation.code 仍是展示；JavaScript 可通过 execution 在 App 本地隔离运行，不能靠普通 text/HTML 冒充真实 Python/C++ 执行。
 HTML/SVG 通过显式 presentation 进入离线沙盒；不与普通字符串拼接。完全内联，不使用 CDN、外链脚本/样式/字体、请求、导航、iframe/object/embed、SVG image/foreignObject、媒体、data/base64 或下载。HTML可运行内联CSS/JavaScript、SVG/canvas；服务器只存储。不要仿制 App 导航、账号或上传控件；适配约320px宽屏幕，控件至少44px高，事件更新先改模型再绘制，避免每次输入替换整个innerHTML，避免无限循环和后台定时器。Markdown可含标题、列表、表格、引用和带语言名的代码围栏，不启用原始HTML或图片。
 限制按 UTF-16 代码单元：JSON UTF-8最多1 MiB；1–40课时，每课1–80块；所有title240、summary2000、text/callout20000、题干和explanation4000、caption2000。图表1–60点，label120，value有限且绝对值≤10^15；选择题2–12项，选项text1000；acceptedAnswers最多20个不重复项，各项上限text500/code20000/output8000，用户答案上限4000/20000/8000；URL2048；禁止控制字符。不要新造 block.type 或把 code/hints/input/execution 放在非 question 块；input/execution仅shortAnswer可用。
-输出前核对：每一步是否只突出一个变化？是否有始终可见的完整参考程序，讲解/提问的 focusLines 与当前代码一致，trace 当前行是否真实存在？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？每道 Python/C++ 编程练习是否有正确的 input 与 execution，填空是否只有一个模板标记且公开代码不泄露答案，完整程序是否省略 template，默认 stdin 与 expectedOutput 是否匹配参考程序？不要把检查清单写进课程，也不逐项索要确认。
-下面是“共享参考程序→原生单步推演→带行高亮的迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。只有这一个完整 JSON 代码块是格式示例：
+输出前核对：每一步是否只突出一个变化？是否有始终可见的完整参考程序，讲解/提问的 focusLines/focusSpans 与当前代码一致，重复词 occurrence 是否正确，trace 当前行和精确片段是否真实存在？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？每道 Python/C++ 编程练习是否有正确的 input 与 execution，填空是否只有一个模板标记且公开代码不泄露答案，完整程序是否省略 template，默认 stdin 与 expectedOutput 是否匹配参考程序？不要把检查清单写进课程，也不逐项索要确认。
+下面是“共享参考程序→原生单步推演→带行与字符高亮的迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。只有这一个完整 JSON 代码块是格式示例：
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
@@ -130,13 +132,34 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
   // Native code strings are curriculum data. Rich presentation source is also stored
   // as data here and runs only inside the client sandbox; never execute it on the server.
   // Do not blacklist quoted HTML or C++ syntax in ordinary teaching text.
+  function validateSpans(spans, source) {
+    array(spans, 0, 200); const seen = new Set();
+    const lines = source?.split(/\r\n|\r|\n/) ?? [];
+    for (const span of spans) {
+      object(span, ['line', 'text', 'occurrence']);
+      if (!Number.isSafeInteger(span.line) || span.line < 1 || span.line > lines.length) fail();
+      string(span.text, 2000);
+      if (/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(span.text)) fail();
+      const occurrence = span.occurrence ?? 1;
+      if (span.occurrence === null || !Number.isSafeInteger(occurrence) || occurrence < 1 || occurrence > 20000) fail();
+      const key = JSON.stringify([span.line, span.text, occurrence]);
+      if (seen.has(key)) fail(); seen.add(key);
+      let next = 0;
+      for (let count = 0; count < occurrence; count++) {
+        const start = lines[span.line - 1].indexOf(span.text, next);
+        if (start === -1) fail();
+        next = start + span.text.length;
+      }
+    }
+  }
   function validateCode(code) {
-    object(code, ['language', 'source', 'filename', 'highlightLines', 'annotations', 'stdin', 'expectedOutput']);
+    object(code, ['language', 'source', 'filename', 'highlightLines', 'highlightSpans', 'annotations', 'stdin', 'expectedOutput']);
     if (typeof code.language !== 'string' || code.language.length < 1 || code.language.length > 40 || /[^A-Za-z0-9_+.-]/.test(code.language)) fail();
     string(code.source, 20000);
     const lineCount = code.source.split(/\r\n|\r|\n/).length;
     if (code.filename !== undefined) string(code.filename, 240);
     if (code.highlightLines !== undefined) uniqueStrings(code.highlightLines, 200, line => { if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail(); });
+    if (code.highlightSpans !== undefined) validateSpans(code.highlightSpans, code.source);
     if (code.annotations !== undefined) {
       array(code.annotations, 0, 40); const lines = new Set();
       for (const annotation of code.annotations) {
@@ -160,9 +183,10 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
       string(variant.title, 120); validateCode(variant.code); array(variant.frames, 2, 24);
       const lines = variant.code.source.split(/\r\n|\r|\n/).length;
       for (const frame of variant.frames) {
-        object(frame, ['title', 'line', 'note', 'objects', 'output']);
+        object(frame, ['title', 'line', 'note', 'objects', 'output', 'focusSpans']);
         string(frame.title, 120); string(frame.note, 400);
         if (!Number.isSafeInteger(frame.line) || frame.line < 1 || frame.line > lines) fail();
+        if (frame.focusSpans !== undefined) validateSpans(frame.focusSpans, variant.code.source);
         array(frame.objects, 1, 4); const objects = new Set();
         for (const item of frame.objects) {
           object(item, ['id', 'names', 'value', 'scope', 'changed']); takeIdentifier(item.id, objects);
@@ -259,7 +283,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
         const blockFields = { text: ['text', 'presentation'], callout: ['text', 'presentation'], image: ['url', 'caption'], chart: ['chartType', 'points', 'caption'], question: ['text', 'questionType', 'options', 'correctOptionIDs', 'acceptedAnswers', 'explanation', 'code', 'hints', 'answerFormat', 'input', 'execution'] };
         if (!block || !Object.hasOwn(blockFields, block.type)) fail('UNSUPPORTED_COURSE_BLOCK');
         const fields = blockFields[block.type];
-        object(block, ['id', 'type', 'title', 'focusLines', ...fields]); takeID(block);
+        object(block, ['id', 'type', 'title', 'focusLines', 'focusSpans', ...fields]); takeID(block);
         if (block.title !== undefined) string(block.title, 240);
         if (block.caption !== undefined) string(block.caption, 2000, false);
         if (block.type === 'text' || block.type === 'callout' || block.type === 'question') string(block.text, block.type === 'question' ? 4000 : 20000);
@@ -295,10 +319,11 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
       }
       // All candidate blocks are validated before following source references,
       // including forward references in older documents.
-      for (const [index, block] of lesson.blocks.entries()) if (block.focusLines !== undefined) {
+      for (const [index, block] of lesson.blocks.entries()) if (block.focusLines !== undefined || block.focusSpans !== undefined) {
         const code = resolvedReferenceCode(value, lesson, index);
         const lineCount = code ? code.source.split(/\r\n|\r|\n/).length : 0;
-        uniqueStrings(block.focusLines, 200, line => { if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail(); });
+        if (block.focusLines !== undefined) uniqueStrings(block.focusLines, 200, line => { if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail(); });
+        if (block.focusSpans !== undefined) validateSpans(block.focusSpans, code?.source);
       }
     }
     return value;

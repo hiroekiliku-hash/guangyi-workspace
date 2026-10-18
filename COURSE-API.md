@@ -2,13 +2,13 @@
 
 课程内容独立于日程快照。服务器保存课程，App 登录后在“课程”页获取并缓存；课程发布不会创建事项、提醒或重复日程。当前提供 JSON 文档协议，同时接受包含相同 JSON 的 UTF-8 纯文本。
 
-`WORKSHOP-COURSE/1` 现提供 `structured-2`：支持原生程序推演 `trace`、课程/课时共享的 `referenceCode`、内容块的 `focusLines`，以及结构化代码、Markdown、SVG、离线 HTML、表格、分步、对照、记忆卡片与练习。作者提供语义数据，客户端统一布局和交互；新课程不要求旧客户端可读。
+`WORKSHOP-COURSE/1` 现提供 `structured-2`：支持原生程序推演 `trace`、课程/课时共享的 `referenceCode`、内容块的 `focusLines/focusSpans` 与 Code 的 `highlightSpans`，以及结构化代码、Markdown、SVG、离线 HTML、表格、分步、对照、记忆卡片与练习。作者提供语义数据，客户端统一布局和交互；新课程不要求旧客户端可读。
 
 ## AI 互动教学要求
 
 自动上传版与手动导入版提示词共用一套约定：**每屏一个问题、一个变化，先清楚再丰富**。编程课围绕一个短程序，按“预测 → 单步观察 → 迁移题 → 自行改写”展开，通常 4–6 块即可。保留必要的完整代码区，不为形式丰富而重复铺设源码、参数面板、输出、对照、时间轴、标签与多种练习。
 
-逐步语义优先用原生 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释。同一程序贯穿的课程或课时必须提供 `referenceCode`，App 在讲解、推演与做题时始终保留完整代码区，长程序在区内滚动；不能只露当前一行或要求用户回忆前页源码。内容块用 `focusLines` 标记讲解行，trace 用当前 `frame.line` 动态标记。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
+逐步语义优先用原生 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释。同一程序贯穿的课程或课时必须提供 `referenceCode`，App 在讲解、推演与做题时始终保留完整代码区，长程序在区内滚动；不能只露当前一行或要求用户回忆前页源码。解释变量、关键字、运算符或表达式时主动使用 `focusSpans` 精确标记一两处，整行相关时才用 `focusLines`，不逐字标满程序。trace 使用当前 `frame.focusSpans`，省略或空时回退 `frame.line`。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
 
 不再要求前两课或每节课包含 HTML。只有连续拖动等原生结构无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 展示不执行，正式作答与进度使用 `question`。制作练习时必须按答案内容选择 `input.kind`：整数和小数使用数值输入，真正要用户编写源码时使用代码编辑器并声明语言。Python/C++ 代码填空、改错与程序题默认必须增加 `execution`，每个含编程练习的课时至少一道可运行题；纯讲解、预测输出或选择题不强加执行。提示词的唯一完整示例保留紧凑原生 trace 与迁移选择题，并附 Python 数值填空、C++ 表达式填空和两种语言的完整程序题。这些属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
 
@@ -163,7 +163,7 @@ mutationID 以学习者、空间、课程隔离；同 ID 同正文重试不会�
 
 每帧 `objects` 1–4 项且 id 唯一。对象必填 `id/names/value`，可有 `scope/changed`；同一 variant 中对象 id 应跨帧保持稳定。variant/object id 为 1–40 个 ASCII 字母、数字、下划线或连字符。`names` 1–3 个非空字符串，每个最多 80，作者应避免重复，表示**同一个对象**的名字；作用域结束时移除失效名字或对象。`value` 非空最多 120，`scope` 非空最多 80，`changed` 为布尔值。variant/frame 的 `title` 非空最多 120；`note` 非空最多 400（生成时默认一句不超过 60 字），`output` 可空最多 2000，仅在产生输出时提供。
 
-载荷不接受布局、坐标、颜色或按钮字段。客户端控制切换、单步、回退、持续可见的完整代码区和视觉层级。切换 variant 时同步切换完整代码，当前 frame 的 `line` 优先于块的静态 `focusLines`。这是作者提供的教学状态，不声称编译或运行过源码。值/引用传参示范见 [Shared/LearningLabs/CppValueReference.json](Shared/LearningLabs/CppValueReference.json)。
+载荷不接受布局、坐标、颜色或按钮字段。客户端控制切换、单步、回退、持续可见的完整代码区和视觉层级。切换 variant 时同步切换完整代码。当前 frame 的非空 `focusSpans` 只高亮对应片段；省略或 `[]` 时高亮 `line`，均覆盖块的静态焦点。这是作者提供的教学状态，不声称编译或运行过源码。值/引用传参示范见 [Shared/LearningLabs/CppValueReference.json](Shared/LearningLabs/CppValueReference.json)。
 
 ### 富内容与离线演示
 
@@ -202,6 +202,7 @@ slider.addEventListener('input', () => {
   "filename": "main.cpp",
   "source": "#include <iostream>\nint main() { std::cout << 6; }",
   "highlightLines": [2],
+  "highlightSpans": [{"line": 2, "text": "std::cout"}, {"line": 2, "text": "<<"}],
   "annotations": [{"line": 2, "text": "输出整数 6。"}],
   "stdin": "",
   "expectedOutput": "6"
@@ -212,9 +213,21 @@ slider.addEventListener('input', () => {
 
 `highlightLines` 最多 200 个不重复的有效行号，`annotations` 最多 40 条，行号不重复、注解非空最多 2000。行号从 1 开始，按源码实际的 CRLF/CR/LF 行分隔计算；超出范围拒绝。`expectedOutput` 是作者提供的教学参考，不表示服务器已运行或验证代码；不凭空编造编译结果。
 
+### 变量、单词和字符片段
+
+`Code.highlightSpans`、任意块的 `focusSpans`、trace 每帧的 `focusSpans` 使用相同的可选数组，每处最多 200 个标记。每项严格为 `{line,text,occurrence?}`：`line` 为有效的 1 起始整数行号；`text` 是原行精确存在的字面片段，区分大小写、不做 Unicode 规范化，非空且不全为空白，最多 2000 个 UTF-16 代码单元，不能包含 CR/LF、tab、C0/C1 控制字符或 U+2028/U+2029 行分隔。可以标记单个字符、变量、运算符、中文、emoji 或连续表达式，不使用正则表达式，也不要求作者数列号。
+
+`occurrence` 是 1–20000 的整数，省略为 1，按该行从左到右**互不重叠**的出现次数计数。同一行 `count = count + 1;` 可用下列标记只突出右侧 `count` 和加号：
+
+```json
+{"focusSpans":[{"line":4,"text":"count","occurrence":2},{"line":4,"text":"+"}]}
+```
+
+`aaaa` 中 `aa` 的 occurrence 2 有效，`aaa` 中 occurrence 2 无效。不同片段允许重叠并合并显示；相同 `(line,text,occurrence ?? 1)` 的重复项拒绝，所以省略 occurrence 与显式 1 不能重复指定。每个标记必须在实际源码找到，Code 标记检查自己的 source、块标记检查当前解析的可见代码、trace 帧标记检查所在 variant.code；`[]` 允许在没有代码时清除焦点。行号、字面片段或出现次数无效均拒绝发布，不猜测作者意图。标记只影响阅读展示，不执行代码或公开解答。
+
 ### 持续显示的参考程序与行聚焦
 
-课程根对象和每个课时均可增加可选的 `referenceCode:Code`，沿用上述完整 Code 校验。全课程共用一个程序放根对象；只有一个课时共用则放课时。所有类型的块均可增加可选 `focusLines:[整数行号]`，按当前实际显示的完整源码定位，最多 200 个且不能重复。省略沿用对应 Code 的 `highlightLines`；显式 `[]` 清除静态高亮，即使没有代码也允许。非空时必须能解析到代码，且每个 1 起始行号在源码范围内。trace 在播放时由当前 frame 的 line 覆盖静态高亮。
+课程根对象和每个课时均可增加可选的 `referenceCode:Code`，沿用上述完整 Code 校验。全课程共用一个程序放根对象；只有一个课时共用则放课时。所有类型的块均可增加可选 `focusLines:[整数行号]`，按当前实际显示的完整源码定位，最多 200 个且不能重复。`focusLines` 和 `focusSpans` 只要显式提供任一个，两个焦点都以当前块为准，未提供的另一个按空数组处理；两个都省略才沿用显式 Code 的 `highlightLines/highlightSpans`。显式 `[]` 可清除静态高亮，即使没有代码也允许。非空时必须能解析到代码，且每个行号与片段在源码范围内。trace 在播放时由当前 frame 的非空 spans 覆盖静态焦点，否则回退 frame.line。
 
 同一课时里的讲解和题目可以共用程序，无须在每块重复源码：
 
@@ -230,7 +243,7 @@ slider.addEventListener('input', () => {
 }
 ```
 
-当前代码解析顺序为：当前 `block.code` → `presentation.code` → 当前 trace 的 variant.code → 当前 `execution.template`（保留字面 `{{ANSWER}}`）→ 课时 `referenceCode` → 课程 `referenceCode`。没有以上来源的旧课程才回退到同课时最近的前置代码块；无前置则取首个后置代码块，不跨课时，也不从 HTML/Markdown 猜测源码。邻居块按同样的 `code/presentation.code/trace 首 variant/template` 顺序取直接代码，并清除邻居的静态高亮，避免沿用上一段讲解的行。服务器以 trace 首 variant 校验静态 `focusLines`，播放期间选中 variant 的 frame.line 已分别验证有效。
+当前代码解析顺序为：当前 `block.code` → `presentation.code` → 当前 trace 的 variant.code → 当前 `execution.template`（保留字面 `{{ANSWER}}`）→ 课时 `referenceCode` → 课程 `referenceCode`。没有以上来源的旧课程才回退到同课时最近的前置代码块；无前置则取首个后置代码块，不跨课时，也不从 HTML/Markdown 猜测源码。邻居块按同样的 `code/presentation.code/trace 首 variant/template` 顺序取直接代码，并清除邻居的两种静态高亮，避免沿用上一段讲解的行与片段。服务器以 trace 首 variant 校验块的静态 `focusLines/focusSpans`，播放期间选中 variant 的 frame.line/focusSpans 已分别验证有效。
 
 填空改动了程序时，完整 `execution.template` 优先于共享参考程序，使用户看到实际带 `{{ANSWER}}` 缺口的代码；若另有 `block.code`，它必须是同一个未解答程序。完整程序题的 `code` 可以复用 `input.starterCode` 骨架，不能公开标准解答。参考程序只帮助阅读，不自动运行，也不从 `acceptedAnswers` 或解析合成补全代码。旧课程无须重发即可使用同课时来源回退；新字段不更改课程 ID、题目 ID、运行配置或进度格式，基础协议与 extensionVersion 保持不变。
 
@@ -324,7 +337,7 @@ Content-Type: application/json
 
 ### 给界面实现者
 
-Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation` / `CoursePresentationKind`、`CourseCodeSample`、`CourseTableContent`、`CourseTeachingItem`、`CourseFlashcardContent`、`CourseAnswerFormat`、`CourseQuestionInput` / `CourseQuestionInputKind`、`CourseExecutionConfiguration`。入口是 `course/lesson.referenceCode`、`block.focusLines/presentation`、题目 `block.code/hints/answerFormat/input/execution`、计算属性 `block.resolvedInput` 和 `lesson.objectives/estimatedMinutes`。原 `CourseBlockType`、`CourseQuestionType` 枚举未增加分支，不会要求现有 `switch` 改写；新客户端编码解码会保留扩展数据。
+Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation` / `CoursePresentationKind`、`CourseCodeSample`、`CourseCodeSpan`、`CourseTableContent`、`CourseTeachingItem`、`CourseFlashcardContent`、`CourseAnswerFormat`、`CourseQuestionInput` / `CourseQuestionInputKind`、`CourseExecutionConfiguration`。入口是 `course/lesson.referenceCode`、`code.highlightSpans`、`block.focusLines/focusSpans/presentation`、`frame.focusSpans`、题目 `block.code/hints/answerFormat/input/execution`、计算属性 `block.resolvedInput` 和 `lesson.objectives/estimatedMinutes`。原 `CourseBlockType`、`CourseQuestionType` 枚举未增加分支，不会要求现有 `switch` 改写；新客户端编码解码会保留扩展数据。
 
 界面可把代码展示为等宽文本、按行高亮与注解；步骤逐步展开；对照并排或纵向切换；卡片翻面；提示逐级揭示。它们都是同一份结构化课程的展示方式。不要重新解析兼容 `text` 来猜测结构，普通文档文字和 Code 不进入 HTML 执行环境，只有显式 HTML/SVG presentation 进入专用离线沙盒。引用块与作答继续使用原 UUID，展示拆分不能生成新题目 ID。
 
