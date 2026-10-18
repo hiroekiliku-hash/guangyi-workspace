@@ -14,10 +14,10 @@ function courseInteractionExample() {
   const source = '#include <iostream>\nint main() {\n    int count = 2;\n    count = count + 1;\n    std::cout << count;\n}';
   return {
     protocol: courseProtocol, id: 'c0000000-0000-4000-8000-000000000001',
-    title: '一次赋值，发生了什么', summary: '沿着程序的三个状态，观察同一个变量如何更新。',
+    title: '从赋值推演到运行代码', summary: '先观察变量更新，再补全并运行 Python/C++，最后独立编写程序。',
     lessons: [{
       id: 'c0000000-0000-4000-8000-000000000002', title: '先计算，再写回',
-      objectives: ['理解赋值先计算右侧，再写回变量。'], estimatedMinutes: 4,
+      objectives: ['理解赋值先计算右侧，再写回变量。', '用 Python/C++ 的填空和完整程序验证输出。'], estimatedMinutes: 12,
       blocks: [
         { id: 'c0000000-0000-4000-8000-000000000003', type: 'text', title: '跟着一次赋值走',
           text: '这是固定程序的教学推演。count 从 2 开始，加 1 后变成 3，最后输出 3。',
@@ -30,7 +30,27 @@ function courseInteractionExample() {
         { id: 'c0000000-0000-4000-8000-000000000004', type: 'question', title: '再更新一次',
           text: '如果输出前再执行一次 count = count + 1，会输出多少？', questionType: 'singleChoice',
           options: [{ id: 'a', text: '2' }, { id: 'b', text: '3' }, { id: 'c', text: '4' }], correctOptionIDs: ['c'],
-          explanation: '第一次更新后是 3，再加 1 得到 4。' }
+          explanation: '第一次更新后是 3，再加 1 得到 4。' },
+        { id: 'c0000000-0000-4000-8000-000000000005', type: 'question', title: 'Python 数值填空',
+          text: '补全增加的整数，让 count 从 2 变成 3。只填写一个整数，再运行观察输出。', questionType: 'shortAnswer',
+          answerFormat: 'output', input: { kind: 'integer', placeholder: '输入增加的整数' }, acceptedAnswers: ['1'],
+          execution: { language: 'python', template: 'count = 2\ncount = count + {{ANSWER}}\nprint(count)\n', stdin: '', expectedOutput: '3\n' },
+          explanation: '填入 1，程序输出 3。填入的数值与程序的最终输出是两件事。' },
+        { id: 'c0000000-0000-4000-8000-000000000006', type: 'question', title: 'C++ 表达式填空',
+          text: '补全赋值右侧的表达式，让 count 从 2 变成 3。只输入表达式，不写 main 或分号。', questionType: 'shortAnswer',
+          answerFormat: 'code', input: { kind: 'code', language: 'cpp', placeholder: '填写赋值右侧的表达式', minLines: 2, maxLines: 4 },
+          execution: { language: 'cpp', template: '#include <iostream>\nint main() {\n    int count = 2;\n    count = {{ANSWER}};\n    std::cout << count << "\\n";\n}\n', stdin: '', expectedOutput: '3\n' },
+          explanation: '例如 count + 1。用运行输出核对样例，允许等价写法，不要求源码逐字相同。' },
+        { id: 'c0000000-0000-4000-8000-000000000007', type: 'question', title: 'Python 完整程序',
+          text: '读取两个整数并输出它们的和。提交完整 Python 程序；样例输入 2 5，预期输出 7。', questionType: 'shortAnswer',
+          answerFormat: 'code', input: { kind: 'code', language: 'python', starterCode: 'a, b = map(int, input().split())\n# TODO: 输出它们的和\n', minLines: 4, maxLines: 12 },
+          execution: { language: 'python', stdin: '2 5\n', expectedOutput: '7\n' },
+          explanation: '在读取后用 print 输出 a + b。此运行反馈只核对这组样例，其他边界情况也要自己思考。' },
+        { id: 'c0000000-0000-4000-8000-000000000008', type: 'question', title: 'C++ 完整程序',
+          text: '读取两个整数并输出它们的和。提交含头文件和 main 的完整 C++ 程序；样例输入 2 5，预期输出 7。', questionType: 'shortAnswer',
+          answerFormat: 'code', input: { kind: 'code', language: 'cpp', starterCode: '#include <iostream>\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // TODO: 输出它们的和\n    return 0;\n}\n', minLines: 8, maxLines: 16 },
+          execution: { language: 'cpp', stdin: '2 5\n', expectedOutput: '7\n' },
+          explanation: '用 std::cout 输出 a + b，再输出换行。完整程序直接运行学生源码，因此不设置 template。' }
       ]
     }]
   };
@@ -53,16 +73,20 @@ presentation 只允许 kind 与唯一对应载荷，不能混搭：
 trace.variants 为1–4项、id各不相同；每项 frames 为2–24帧，每帧 objects 为1–4项且对象id不能重复。variant/object 的 id 为1–40个 ASCII 字母、数字、下划线或连字符。每个对象 names 为1–3个非空名字，作者应避免重复；value 是非空字符串最多120，scope 可选非空最多80，changed 可选布尔值。names 每项最多80；frame.title 和 variant.title 非空最多120；note 非空最多400（默认一句不超过60字）；line 为对应 code.source 的有效正整数行号；output 可空最多2000。一个对象的 names 表示同一对象的不同名字，不是多个对象。
 现有形式按需使用：{kind:"code",code:Code}；{kind:"table",table:{columns:[字符串],rows:[[字符串]]}}，1–8列、1–60行，每行与列数一致；{kind:"steps",steps:[{title,text,code?}]}，1–20步；{kind:"comparison",items:[{title,text,code?}]}，2–4项；{kind:"flashcards",cards:[{front,back}]}，1–20张；{kind:"markdown",markdown:{source}}；{kind:"html",html:{source,height?}}；{kind:"svg",svg:{source,height?}}。steps/comparison 每项 title240、text4000；table列名120、单元格2000；flashcards.front2000、back4000。markdown.source 非空最多20000；html.source/svg.source 非空最多60000；height 可省略，提供时为120–640整数，Markdown不接受height。
 Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}。language 为1–40个 ASCII 字母、数字、下划线、+、.或-（C++用 cpp 或 c++）；source 非空最多20000，保留换行与缩进，不放 Markdown 围栏。filename240；highlightLines 为0–200个有效、不重复的正整数行号；annotations 为0–40个 {line,text}，行号有效且不重复、text2000；stdin 可空最多4000，expectedOutput 可空最多8000。行按 CRLF/CR/LF 划分。#include <iostream>、template<typename T>、a < b 都是数据，允许原样写入字符串。普通 Code 展示不编译、不执行，也不验证真实运行结果，不能声称已运行。只有下面显式 execution 的作答题可以实际运行。
-question 必填 text、questionType(singleChoice/multipleChoice/shortAnswer)，可有 explanation、code:Code、hints（0–5项，每项最多2000）。选择题必填 options:[{id,text}]、correctOptionIDs，只引用已有选项；单选恰好一个正确项，多选至少一个；不接受 acceptedAnswers/answerFormat。选项id为1–40个 ASCII 字母、数字、下划线或连字符。shortAnswer 不接受 options/correctOptionIDs；可有 acceptedAnswers 和 answerFormat(text/code/output)，默认text。text比较忽略大小写、合并空白；code/output仅统一换行并去掉首尾空白，仍是文本比较。开放代码题默认自行核对：省略 acceptedAnswers，解析给参考实现与检查点；不能把代码文本匹配当作通用代码判分。只有答案确实唯一的补全题才给 code 参考文本，并说明比较局限。每课完成只要求每题有效作答，不要求全对。
+question 必填 text、questionType(singleChoice/multipleChoice/shortAnswer)，可有 explanation、code:Code、hints（0–5项，每项最多2000）。选择题必填 options:[{id,text}]、correctOptionIDs，只引用已有选项；单选恰好一个正确项，多选至少一个；不接受 acceptedAnswers/answerFormat。选项id为1–40个 ASCII 字母、数字、下划线或连字符。shortAnswer 不接受 options/correctOptionIDs；可有 acceptedAnswers 和 answerFormat(text/code/output)，默认text。text比较忽略大小写、合并空白；code/output仅统一换行并去掉首尾空白，仍是文本比较。开放代码题省略 acceptedAnswers，使用 execution 的样例输出反馈，并在解析给参考实现与检查点；不能把代码文本匹配当作通用代码判分。只有答案确实唯一的补全题才给 code 参考文本，并说明比较局限。每课完成只要求每题有效作答，不要求全对。
 【作答输入与真实运行】
 shortAnswer 可指定 input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}。数字答案必须用 integer 或 decimal，让 App 使用两行数字键盘；代码练习用 code，让 App 提供有语法颜色的多行编辑器。input.language 仅 code 可用，限定 javascript/python/cpp；starterCode 仅 code 可用、可空最多20000；placeholder 可空最多500。minLines/maxLines 为2–24整数且min≤max；数字输入仍会紧凑显示。integer 仅可带正负号的十进制整数；decimal 可带正负号与小数点、不接受科学记数、逗号、NaN/Infinity。不要把要求输入数字的题目保留成普通长文本框。旧文档省略input仍兼容；execution存在或answerFormat=code时推断为code，其他默认text。
 仅 shortAnswer 可显式添加 execution:{language:"javascript"|"python"|"cpp",template?,stdin?,expectedOutput?}。input.language与execution.language都提供时必须相同。完整程序题可省略template，使用学生提交的完整源码；填空题必须提供template，且完整程序模板中恰好出现一次字面标记{{ANSWER}}，App/服务器只替换这一处。显式input.kind为text/integer/decimal时execution必须带template，不把任意文字或数字误当源码。template非空最多20000；stdin可空最多4000；expectedOutput可空最多8000。真实运行作答/代码输入上限20000。template只提供公开教学程序，不含秘密、密钥或隐藏答案；输入永远不通过shell拼接。比较运行输出会统一换行并去末尾空白；expectedOutput只用于课程默认stdin的一次输出核对，不等于通用判分或隐藏测试，不要把一个示例通过宣称为普遍正确。
-明确区分三种形式：trace是人工推演；code/presentation.code是源码展示；execution才是可实际运行的作答题。JavaScript可在App本地隔离运行；Python/C++需服务器独立沙盒可用。运行服务未启用、超时或编译错误时要如实反馈，课程仍可编辑与作答；不能宣称已编译通过。默认非运行开放代码题仍自行核对；需要实验时有意添加execution，不能靠把程序塞进普通text或HTML冒充编译器。
-例如补全输出的数字题：questionType:"shortAnswer",answerFormat:"output",input:{kind:"integer",placeholder:"输入整数"},execution:{language:"cpp",template:"#include <iostream>\\nint main(){ std::cout << {{ANSWER}}; }",expectedOutput:"42"}；完整JavaScript程序题：input:{kind:"code",language:"javascript",starterCode:"console.log(2 + 3);",minLines:4,maxLines:16},execution:{language:"javascript",expectedOutput:"5"}。这些是块字段片段说明；正式输出仍必须是唯一完整课程JSON。
+【Python/C++ 编程练习默认可运行】
+工作坊已提供 Python 3 与 C++20 的服务器独立沙盒运行。设计 Python/C++ 代码填空、补全表达式/语句、改错或完整程序题时，必须生成 type:"question"、questionType:"shortAnswer" 并显式添加 execution；不能只给 input、code、Markdown 源码或参考答案。每个含编程练习的 Python/C++ 课时至少安排一道可运行题，除非用户明确只需要讲解、预测输出或选择题。仅解释概念、选择答案、预测固定程序输出的题目可以保留为普通题，不为所有内容强加执行。
+数值填空：input.kind 用 integer/decimal，execution.language 用 python/cpp，并提供完整可执行 template，在真正缺少的数值位置恰放一次 {{ANSWER}}。表达式或语句填空：input.kind:"code"、input.language 与 execution.language 相同；template 包含必需的导入或头文件、main/调用、标准输入读取与结果输出，缺口只留一次 {{ANSWER}}。题干明确只填哪个片段；不要让学生重复提交模板。Python 模板须保证替换后的缩进有效，优先单行表达式；多行算法改用完整程序题。
+完整程序题：input.kind:"code"，input.language 与 execution.language 都明确写 python 或 cpp（execution 不写 c++）；设置适量 minLines/maxLines，并给不泄露最终答案的 starterCode 骨架。execution 省略 template，直接运行学生完整源码；Python 含必要 import，C++ 含必要头文件与 main，不能只提交函数却没有调用或输出。
+每道可运行题都提供 execution.stdin 与 execution.expectedOutput：无输入用 stdin:""，有输入给一组确定、轻量、可复现的样例。expectedOutput 是完整参考程序在该组输入下的标准输出，不是填入的数值或表达式本身；不要把这两个字段只写在展示用的 code 对象中。数字输出使用固定格式，浮点数明确精度；不要打印“请输入”等交互提示。仅使用 Python 标准库或 C++20 标准库，不依赖第三方安装、网络、图形界面、宿主文件或人工交互；样例计算应在 2 秒内完成、C++ 编译在 5 秒内完成，内存不超过 256 MiB，输出各不超过 16 KiB。不要发明 tests/testCases、编译命令、运行主机等协议字段。
+开放程序题与允许等价表达式的题目省略 acceptedAnswers，依据这组运行输出反馈并给解析；expectedOutput 不是隐藏测试或完整判题系统。上传课程不会自动编译或运行；没有实际运行证据就不能宣称已编译通过。超时、编译错误或运行服务暂不可用时应如实反馈。trace 仍是人工推演，code/presentation.code 仍是展示；JavaScript 可通过 execution 在 App 本地隔离运行，不能靠普通 text/HTML 冒充真实 Python/C++ 执行。
 HTML/SVG 通过显式 presentation 进入离线沙盒；不与普通字符串拼接。完全内联，不使用 CDN、外链脚本/样式/字体、请求、导航、iframe/object/embed、SVG image/foreignObject、媒体、data/base64 或下载。HTML可运行内联CSS/JavaScript、SVG/canvas；服务器只存储。不要仿制 App 导航、账号或上传控件；适配约320px宽屏幕，控件至少44px高，事件更新先改模型再绘制，避免每次输入替换整个innerHTML，避免无限循环和后台定时器。Markdown可含标题、列表、表格、引用和带语言名的代码围栏，不启用原始HTML或图片。
 限制按 UTF-16 代码单元：JSON UTF-8最多1 MiB；1–40课时，每课1–80块；所有title240、summary2000、text/callout20000、题干和explanation4000、caption2000。图表1–60点，label120，value有限且绝对值≤10^15；选择题2–12项，选项text1000；acceptedAnswers最多20个不重复项，各项上限text500/code20000/output8000，用户答案上限4000/20000/8000；URL2048；禁止控制字符。不要新造 block.type 或把 code/hints/input/execution 放在非 question 块；input/execution仅shortAnswer可用。
-输出前核对：每一步是否只突出一个变化？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？不要把检查清单写进课程，也不逐项索要确认。
-下面是“原生单步推演→一道迁移题”的完整有效示例。按用户主题设计，不照搬标题、UUID或知识点；只有这一个完整 JSON 代码块是格式示例：
+输出前核对：每一步是否只突出一个变化？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？每道 Python/C++ 编程练习是否有正确的 input 与 execution，填空是否只有一个模板标记，完整程序是否省略 template，默认 stdin 与 expectedOutput 是否匹配参考程序？不要把检查清单写进课程，也不逐项索要确认。
+下面是“原生单步推演→迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。只有这一个完整 JSON 代码块是格式示例：
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
