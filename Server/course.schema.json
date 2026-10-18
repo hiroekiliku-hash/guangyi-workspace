@@ -1,9 +1,9 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
-  "title": "WORKSHOP-COURSE/1 with structured-2 native teaching traces",
-  "description": "A curriculum data contract with author-written native teaching traces. New trace content requires a supporting client. Native code is displayed as data; explicit HTML/SVG presentations run only in the isolated offline client sandbox. The server never executes curriculum source.",
-  "$comment": "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references.",
+  "title": "WORKSHOP-COURSE/1 with structured-2 teaching traces and typed executable questions",
+  "description": "A curriculum data contract with author-written native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
+  "$comment": "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references. Question maxLines >= minLines and matching explicit input/execution languages are checked by the server and Swift client.",
   "x-workshop-extensionVersion": "structured-2",
   "type": "object",
   "properties": {
@@ -854,9 +854,9 @@
           "type": "array",
           "items": {
             "type": "string",
-            "maxLength": 500,
+            "maxLength": 20000,
             "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
-            "x-workshop-maxUTF16Length": 500,
+            "x-workshop-maxUTF16Length": 20000,
             "minLength": 1,
             "allOf": [
               {
@@ -867,6 +867,12 @@
           "minItems": 0,
           "maxItems": 20,
           "uniqueItems": true
+        },
+        "input": {
+          "$ref": "#/$defs/questionInput"
+        },
+        "execution": {
+          "$ref": "#/$defs/execution"
         }
       },
       "required": [
@@ -875,7 +881,234 @@
         "text",
         "questionType"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "input": {
+                    "properties": {
+                      "kind": {
+                        "const": "code"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "input"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "input"
+                  ]
+                },
+                "required": [
+                  "execution"
+                ]
+              }
+            ]
+          },
+          "else": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "maxLength": 500,
+                  "x-workshop-maxUTF16Length": 500
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "text",
+                      "integer",
+                      "decimal"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "required": [
+                  "template"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "javascript"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "javascript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "cpp"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "cpp"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "const": "integer"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "pattern": "^\\s*[+-]?[0-9]+\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "const": "decimal"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "pattern": "^\\s*[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "codeAnswerBlock": {
       "type": "object",
@@ -959,6 +1192,12 @@
           "minItems": 0,
           "maxItems": 20,
           "uniqueItems": true
+        },
+        "input": {
+          "$ref": "#/$defs/questionInput"
+        },
+        "execution": {
+          "$ref": "#/$defs/execution"
         }
       },
       "required": [
@@ -968,7 +1207,234 @@
         "questionType",
         "answerFormat"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "input": {
+                    "properties": {
+                      "kind": {
+                        "const": "code"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "input"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "input"
+                  ]
+                },
+                "required": [
+                  "execution"
+                ]
+              }
+            ]
+          },
+          "else": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "maxLength": 20000,
+                  "x-workshop-maxUTF16Length": 20000
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "text",
+                      "integer",
+                      "decimal"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "required": [
+                  "template"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "javascript"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "javascript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "cpp"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "cpp"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "const": "integer"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "pattern": "^\\s*[+-]?[0-9]+\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "const": "decimal"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "pattern": "^\\s*[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "outputAnswerBlock": {
       "type": "object",
@@ -1039,9 +1505,9 @@
           "type": "array",
           "items": {
             "type": "string",
-            "maxLength": 8000,
+            "maxLength": 20000,
             "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
-            "x-workshop-maxUTF16Length": 8000,
+            "x-workshop-maxUTF16Length": 20000,
             "minLength": 1,
             "allOf": [
               {
@@ -1052,6 +1518,12 @@
           "minItems": 0,
           "maxItems": 20,
           "uniqueItems": true
+        },
+        "input": {
+          "$ref": "#/$defs/questionInput"
+        },
+        "execution": {
+          "$ref": "#/$defs/execution"
         }
       },
       "required": [
@@ -1061,7 +1533,234 @@
         "questionType",
         "answerFormat"
       ],
-      "additionalProperties": false
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "input": {
+                    "properties": {
+                      "kind": {
+                        "const": "code"
+                      }
+                    },
+                    "required": [
+                      "kind"
+                    ]
+                  }
+                },
+                "required": [
+                  "input"
+                ]
+              },
+              {
+                "not": {
+                  "required": [
+                    "input"
+                  ]
+                },
+                "required": [
+                  "execution"
+                ]
+              }
+            ]
+          },
+          "else": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "maxLength": 8000,
+                  "x-workshop-maxUTF16Length": 8000
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "enum": [
+                      "text",
+                      "integer",
+                      "decimal"
+                    ]
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "required": [
+                  "template"
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "javascript"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "javascript"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "python"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "language": {
+                    "const": "cpp"
+                  }
+                },
+                "required": [
+                  "language"
+                ]
+              }
+            },
+            "required": [
+              "input",
+              "execution"
+            ]
+          },
+          "then": {
+            "properties": {
+              "execution": {
+                "properties": {
+                  "language": {
+                    "const": "cpp"
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "const": "integer"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "pattern": "^\\s*[+-]?[0-9]+\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "input": {
+                "properties": {
+                  "kind": {
+                    "const": "decimal"
+                  }
+                },
+                "required": [
+                  "kind"
+                ]
+              }
+            },
+            "required": [
+              "input"
+            ]
+          },
+          "then": {
+            "properties": {
+              "acceptedAnswers": {
+                "items": {
+                  "pattern": "^\\s*[+-]?(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?![\\s\\S])"
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "block": {
       "oneOf": [
@@ -1392,6 +2091,130 @@
       ],
       "additionalProperties": false,
       "$comment": "Author-written teaching frames; never a claim that source was compiled. Variant IDs and per-frame object IDs must be unique. Frame.line must reference a source line in its variant. The API performs these semantic checks."
+    },
+    "questionInput": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "enum": [
+            "text",
+            "integer",
+            "decimal",
+            "code"
+          ]
+        },
+        "language": {
+          "type": "string",
+          "enum": [
+            "javascript",
+            "python",
+            "cpp"
+          ]
+        },
+        "placeholder": {
+          "type": "string",
+          "maxLength": 500,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 500
+        },
+        "starterCode": {
+          "type": "string",
+          "maxLength": 20000,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 20000
+        },
+        "minLines": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 24
+        },
+        "maxLines": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 24
+        }
+      },
+      "required": [
+        "kind"
+      ],
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "kind": {
+                "enum": [
+                  "text",
+                  "integer",
+                  "decimal"
+                ]
+              }
+            }
+          },
+          "then": {
+            "not": {
+              "anyOf": [
+                {
+                  "required": [
+                    "language"
+                  ]
+                },
+                {
+                  "required": [
+                    "starterCode"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ],
+      "$comment": "When both line limits are provided, maxLines must be at least minLines; checked by server and client."
+    },
+    "execution": {
+      "type": "object",
+      "properties": {
+        "language": {
+          "type": "string",
+          "enum": [
+            "javascript",
+            "python",
+            "cpp"
+          ]
+        },
+        "template": {
+          "type": "string",
+          "maxLength": 20000,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 20000,
+          "minLength": 1,
+          "allOf": [
+            {
+              "pattern": "\\S"
+            },
+            {
+              "pattern": "^(?:(?!\\{\\{ANSWER\\}\\})[\\s\\S])*\\{\\{ANSWER\\}\\}(?:(?!\\{\\{ANSWER\\}\\})[\\s\\S])*(?![\\s\\S])"
+            }
+          ]
+        },
+        "stdin": {
+          "type": "string",
+          "maxLength": 4000,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 4000
+        },
+        "expectedOutput": {
+          "type": "string",
+          "maxLength": 8000,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 8000
+        }
+      },
+      "required": [
+        "language"
+      ],
+      "additionalProperties": false,
+      "$comment": "Only explicit short-answer execution is enabled. Template substitutes exactly one {{ANSWER}} and is required for non-code inputs. The input and execution languages must match when both are specified."
     }
   }
 }

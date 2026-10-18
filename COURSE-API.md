@@ -10,7 +10,7 @@
 
 逐步语义优先用原生 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释，App 聚焦当前执行行，完整代码按需展开。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
 
-不再要求前两课或每节课包含 HTML。只有连续拖动等原生结构无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 源码不执行，正式作答与进度使用 `question`。提示词附一个简洁的“原生 trace → 迁移题”完整示例；以上属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
+不再要求前两课或每节课包含 HTML。只有连续拖动等原生结构无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 展示不执行，正式作答与进度使用 `question`。制作练习时必须按答案内容选择 `input.kind`：整数和小数使用数值输入，真正要用户编写源码时使用代码编辑器并声明语言；需要运行才显式增加 `execution`，不能把代码文本匹配称为程序判分。提示词附一个简洁的“原生 trace → 迁移题”完整示例；以上属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
 
 ## 身份与账户
 
@@ -65,9 +65,9 @@ Idempotency-Key: 操作 UUID
 | `chart` | 必填 `chartType`（`bar`/`line`）、`points:[{label,value}]`，可选 `caption` |
 | `question` | 必填 `text`、`questionType`，可选 `explanation`；其余依题型如下 |
 
-`singleChoice`、`multipleChoice` 需要 `options:[{id,text}]` 与 `correctOptionIDs`。单选恰有一个正确项，多选至少一个。`shortAnswer` 可提供 `acceptedAnswers:["答案"]`；省略或空数组表示自行核对，不伪造自动评分。原生 Code 源码与作答只作数据保存和展示，不会编译执行；HTML/SVG 则通过下文的显式 presentation 进入客户端离线沙盒，支持内联交互与动画。基础块枚举未变，不增加 HTML、视频或 iframe 的 block.type。旧 image 为兼容保留，默认不要使用；服务器只验证图片地址，不替用户请求该地址。
+`singleChoice`、`multipleChoice` 需要 `options:[{id,text}]` 与 `correctOptionIDs`。单选恰有一个正确项，多选至少一个。`shortAnswer` 可提供 `acceptedAnswers:["答案"]`；省略或空数组表示不进行参考答案文本评分。可选 `input` 声明数值、普通文字或代码编辑器，可选 `execution` 允许用户主动运行作答；运行输出与原有答案保存相互独立。原生 Code 展示不自动执行；HTML/SVG 则通过下文的显式 presentation 进入客户端离线沙盒，支持内联交互与动画。基础块枚举未变，不增加 HTML、视频或 iframe 的 block.type。旧 image 为兼容保留，默认不要使用；服务器只验证图片地址，不替用户请求该地址。
 
-所有课程、课时、块 UUID 在同一文档内不能重复，统一小写存储。选项 ID 是 1–40 个 ASCII 字母、数字、下划线或连字符。未知字段或类型拒绝；服务器将所有字符串作为数据保存，不执行任何课程源码，允许 `#include <iostream>`、`std::vector<int>`、`a < b` 等源码与尖括号。禁止不支持的控制字符，普通正文与 Code 必须作为原生文字展示；仅显式 HTML/SVG presentation 在隔离沙盒中渲染，不能把其他课程字符串拼入执行环境。课程标题、课时标题最多 240 个 UTF-16 代码单元，summary 最多 2000；text/callout 正文最多 20000，题目正文及 explanation 最多 4000；caption 最多 2000，选项文字最多 1000，参考简答答案最多 500；图片 URL 最多 2048。每课程 1–40 课时，每课时 1–80 块；每图表 1–60 点，label 最多 120，value 有限且绝对值不超过 10^15；选择题 2–12 选项；参考简答答案最多 20 个。每账户最多 200 个未删除课程。
+所有课程、课时、块 UUID 在同一文档内不能重复，统一小写存储。选项 ID 是 1–40 个 ASCII 字母、数字、下划线或连字符。未知字段或类型拒绝；发布课程与保存进度时只保存数据，不运行源码，允许 `#include <iostream>`、`std::vector<int>`、`a < b` 等源码与尖括号。禁止不支持的控制字符，普通正文与 Code 必须作为原生文字展示；显式 HTML/SVG presentation 在隔离沙盒中渲染，声明 execution 的题目另由用户主动运行，不能把其他课程字符串拼入执行环境。课程标题、课时标题最多 240 个 UTF-16 代码单元，summary 最多 2000；text/callout 正文最多 20000，题目正文及 explanation 最多 4000；caption 最多 2000，选项文字最多 1000，普通参考简答答案最多 500（代码与输出见后文）；图片 URL 最多 2048。每课程 1–40 课时，每课时 1–80 块；每图表 1–60 点，label 最多 120，value 有限且绝对值不超过 10^15；选择题 2–12 选项；参考简答答案最多 20 个。每账户最多 200 个未删除课程。
 
 首次发布无需 `If-Match`，返回 201；更新必须提供 `If-Match: "当前修订号"`，成功返回 200，修订号加一。删除后的 UUID 保留墓碑，不可重新发布；可使用新 UUID 新建。课程内容更新会开启新的学习版本，原版本答案和完成标记不作为新版进度显示；客户端应保留未提交的旧版练习草稿供用户核对。
 
@@ -110,7 +110,7 @@ curl --fail-with-body 'https://workspace.kdfz.com.cn/api/integrations/v1/courses
 }
 ```
 
-简答用 `text`，不同时提交选项。普通文字最多 4000、代码最多 20000、输出最多 8000 个 UTF-16 代码单元，按题目 `answerFormat` 校验；单次进度请求最多 128 KiB。仅改变课时完成状态时，省略 blockID/答案字段并提交 `completed:true/false`；也可在答题请求附上 completed。标记完成前该课时的每道题都必须有有效作答，不要求全对。未作答 409 `COURSE_ANSWERS_REQUIRED`。旧课程版本的提交 409，不能用重试恢复旧版答案。
+简答用 `text`，不同时提交选项。普通文字最多 4000、代码最多 20000、输出最多 8000 个 UTF-16 代码单元；显式或推断的 `input.kind=code` 使用代码上限，其余沿用 `answerFormat`。数值输入在提交时校验格式，不接受单位、表达式、指数或非数字字符；首尾空白可省略。单次进度请求最多 128 KiB。仅改变课时完成状态时，省略 blockID/答案字段并提交 `completed:true/false`；也可在答题请求附上 completed。标记完成前该课时的每道题都必须有有效作答，不要求全对；无需先运行程序。未作答 409 `COURSE_ANSWERS_REQUIRED`。旧课程版本的提交 409，不能用重试恢复旧版答案。
 
 mutationID 以学习者、空间、课程隔离；同 ID 同正文重试不会再次修改，返回当前进度（避免旧响应倒退当前界面），同 ID 不同正文 409。每课程每学习者最多 20000 个不同 mutation，进度总大小最多 2 MiB。保存过程在读完正文后于事务内重新验证 session 和关联权限。此版本使用拉取同步，不依赖 APNs，不向关闭的 App 承诺即时更新。
 
@@ -226,6 +226,63 @@ slider.addEventListener('input', () => {
 
 `code` / `output` 比较时统一 CRLF/CR 为 LF、去除答案首尾空白，**保留内部空白并区分大小写**。例如 `Value` 不等于 `value`，`"a b"` 不等于 `"a  b"`。这是对作者参考答案的文字核对，不是编译器、判题沙箱或 C++ 语义等价检查；不同正确写法应列入 `acceptedAnswers`。省略或空参考答案仍表示不自动判分，课时完成仍只要求有效作答，不要求答对。
 
+#### 输入方式与编辑器
+
+仅 `shortAnswer` 支持 `input`，发布课程时即可指定，不依赖客户端猜测题目文字：
+
+| 字段 | 约定 |
+|---|---|
+| `kind` | 必填，`text`、`integer`、`decimal`、`code` |
+| `language` | 仅 code，可选 `javascript`、`python`、`cpp`；用于语法着色 |
+| `placeholder` | 可选，最多 500，简短说明需要填什么，不堆入题干 |
+| `starterCode` | 仅 code，可空，最多 20000；首次作答的初始源码，不覆盖已保存的答案或用户草稿 |
+| `minLines` / `maxLines` | 可选整数，各为 2–24，双提供时 max 不小于 min；指定编辑区行数而非整屏高度 |
+
+`integer` 接受带可选正负号的十进制整数，例如 `0`、`-12`；`decimal` 额外接受小数点，例如 `3.5`、`-.5`、`2.`。数值输入使用紧凑数字输入面板；不把数值题强行变成多行文字编辑。代码编辑区以等宽字体和语言着色呈现，保留缩进和换行。输入类型不会自动修改用户的作答内容。
+
+未提供 `input` 时保持旧课程兼容：`answerFormat=code` 或显式配置 `execution` 使用代码编辑器，其余为普通文字；代码语言优先来自 execution，再取题目 `code.language`，再默认 JavaScript。旧代码语言的常见别名可以识别，未知语言仍以等宽普通源码呈现。`input.kind=code` 的答案与参考答案各最多 20000，文本核对使用 code 的字面规则；其余仍沿用 answerFormat，不将数值相等误称为文字相等。
+
+#### 主动运行作答
+
+仅 `shortAnswer` 可声明 `execution`。它使题目提供独立的运行操作；保存答案、检查 acceptedAnswers 和切换课时不会暗中运行源码。没有该字段的旧代码题继续只保存与核对文字。
+
+| 字段 | 约定 |
+|---|---|
+| `language` | 必填，`javascript`、`python`、`cpp`；与显式代码输入语言相同 |
+| `template` | 可选，非空最多 20000，必须恰含一次 `{{ANSWER}}`；用用户答案原样替换这一处，适合表达式、语句或数值填空 |
+| `stdin` | 可选，可空最多 4000；完整程序的标准输入 |
+| `expectedOutput` | 可选，可空最多 8000；作者提供的参考输出，只检查这一组输入输出，不表示通用判题 |
+
+未提供 template 时运行用户的完整代码；非 code 输入要运行时必须提供 template。模板使用语言本身的语法组织填空位置，不自动添加引号、不转义成字符串。运行结果与 acceptedAnswers 的文本评分分开呈现，开放程序题不要穷举源码文本作为标准答案。编写 starterCode 时给出可修改的骨架，不直接泄露填空答案；提供确定、轻量的样例输入和输出。
+
+数值代码填空示例：
+
+```json
+{
+  "id": "c0000000-0000-4000-8000-000000000021",
+  "type": "question",
+  "text": "补全循环上限，让程序输出 10。",
+  "questionType": "shortAnswer",
+  "input": {"kind":"integer","placeholder":"输入一个整数","minLines":2,"maxLines":2},
+  "acceptedAnswers": ["4"],
+  "execution": {"language":"javascript","template":"let sum = 0; for (let i = 0; i <= {{ANSWER}}; i++) sum += i; console.log(sum);","expectedOutput":"10"},
+  "explanation": "0 + 1 + 2 + 3 + 4 = 10。"
+}
+```
+
+完整程序练习可使用 `"input":{"kind":"code","language":"python","starterCode":"a, b = map(int, input().split())\n# 计算并输出最大公约数\n","minLines":8,"maxLines":16}`，配合 `"execution":{"language":"python","stdin":"12 18","expectedOutput":"6"}`。只有用户主动运行时才提交运行请求；作者不指定运行主机或自定义执行命令。
+
+JavaScript 使用本机一次性离线 Web Worker，禁止联网并限制运行时间为 2 秒。Python / C++ 使用已登录账户的独立执行接口：
+
+```text
+POST /api/native/v1/courses/:uuid/run
+Content-Type: application/json
+
+{"courseRevision":1,"lessonID":"课时 UUID","blockID":"题目 UUID","text":"用户答案","stdin":"可选的本次输入"}
+```
+
+请求沿用课程读取的会话和空间权限；服务器从对应课程版本读取 execution，不接受用户自定义编译命令或运行目标。成功响应为 `data:{status,stdout,stderr,exitCode?,durationMs,passed?}`。`passed` 仅在提供参考输出时比较本次输出；运行不会保存答案、改变完成度或课程源码。Python / C++ 需要管理员启用通过 Unix socket 连接的独立 Docker 受限运行服务；未配置返回 `unavailable`，不回退到直接在应用服务器执行。本协议与客户端支持不表示生产运行服务已经启用。
+
 ```json
 {
   "id": "c0000000-0000-4000-8000-000000000020",
@@ -243,7 +300,7 @@ slider.addEventListener('input', () => {
 
 ### 给界面实现者
 
-Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation` / `CoursePresentationKind`、`CourseCodeSample`、`CourseTableContent`、`CourseTeachingItem`、`CourseFlashcardContent`、`CourseAnswerFormat`。入口是 `block.presentation`、题目 `block.code/hints/answerFormat` 和 `lesson.objectives/estimatedMinutes`。原 `CourseBlockType`、`CourseQuestionType` 枚举未增加分支，不会要求现有 `switch` 改写；新客户端编码解码会保留扩展数据。
+Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation` / `CoursePresentationKind`、`CourseCodeSample`、`CourseTableContent`、`CourseTeachingItem`、`CourseFlashcardContent`、`CourseAnswerFormat`、`CourseQuestionInput` / `CourseQuestionInputKind`、`CourseExecutionConfiguration`。入口是 `block.presentation`、题目 `block.code/hints/answerFormat/input/execution`、计算属性 `block.resolvedInput` 和 `lesson.objectives/estimatedMinutes`。原 `CourseBlockType`、`CourseQuestionType` 枚举未增加分支，不会要求现有 `switch` 改写；新客户端编码解码会保留扩展数据。
 
 界面可把代码展示为等宽文本、按行高亮与注解；步骤逐步展开；对照并排或纵向切换；卡片翻面；提示逐级揭示。它们都是同一份结构化课程的展示方式。不要重新解析兼容 `text` 来猜测结构，普通文档文字和 Code 不进入 HTML 执行环境，只有显式 HTML/SVG presentation 进入专用离线沙盒。引用块与作答继续使用原 UUID，展示拆分不能生成新题目 ID。
 
