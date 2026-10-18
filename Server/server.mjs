@@ -41,7 +41,7 @@ var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__ge
 ));
 var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
 
-// node_modules/tslib/tslib.es6.mjs
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tslib/tslib.es6.mjs
 var tslib_es6_exports = {};
 __export(tslib_es6_exports, {
   __addDisposableResource: () => __addDisposableResource,
@@ -480,7 +480,7 @@ function __rewriteRelativeImportExtension(path, preserveJsx) {
 }
 var extendStatics, __assign, __createBinding, __setModuleDefault, ownKeys, _SuppressedError, tslib_es6_default;
 var init_tslib_es6 = __esm({
-  "node_modules/tslib/tslib.es6.mjs"() {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tslib/tslib.es6.mjs"() {
     extendStatics = function(d, b) {
       extendStatics = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
         d2.__proto__ = b2;
@@ -566,9 +566,9 @@ var init_tslib_es6 = __esm({
   }
 });
 
-// node_modules/pvtsutils/build/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/pvtsutils/build/index.js
 var require_build = __commonJS({
-  "node_modules/pvtsutils/build/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/pvtsutils/build/index.js"(exports) {
     "use strict";
     var ARRAY_BUFFER_NAME = "[object ArrayBuffer]";
     var BufferSourceConverter = class _BufferSourceConverter {
@@ -930,9 +930,9 @@ var require_build = __commonJS({
   }
 });
 
-// node_modules/pvutils/build/utils.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/pvutils/build/utils.js
 var require_utils = __commonJS({
-  "node_modules/pvutils/build/utils.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/pvutils/build/utils.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function getUTCDate(date) {
@@ -1283,9 +1283,9 @@ var require_utils = __commonJS({
   }
 });
 
-// node_modules/asn1js/build/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/asn1js/build/index.js
 var require_build2 = __commonJS({
-  "node_modules/asn1js/build/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/asn1js/build/index.js"(exports) {
     "use strict";
     var pvtsutils = require_build();
     var pvutils = require_utils();
@@ -4398,9 +4398,9 @@ ${values.join("\n")}` : `${blockName} :`;
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/bytes/buffer-source.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/buffer-source.js
 var require_buffer_source = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/bytes/buffer-source.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/buffer-source.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isArrayBuffer = isArrayBuffer;
@@ -4517,9 +4517,9 @@ var require_buffer_source = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/bytes/concat.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/concat.js
 var require_concat = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/bytes/concat.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/concat.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.concatToUint8Array = concatToUint8Array;
@@ -4562,9 +4562,9 @@ var require_concat = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/bytes/equal.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/equal.js
 var require_equal = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/bytes/equal.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/equal.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.equal = equal;
@@ -4585,9 +4585,9 @@ var require_equal = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/bytes/sequence.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/sequence.js
 var require_sequence = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/bytes/sequence.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/sequence.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.indexOf = indexOf;
@@ -4752,9 +4752,9 @@ var require_sequence = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/bytes/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/index.js
 var require_bytes = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/bytes/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/bytes/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.tail = exports.startsWith = exports.slice = exports.lastIndexOf = exports.indexOf = exports.includes = exports.endsWith = exports.copy = exports.compare = exports.equal = exports.concatToUint8Array = exports.concat = exports.toViewCopy = exports.toView = exports.toUint8ArrayCopy = exports.toUint8Array = exports.toArrayBufferLike = exports.toArrayBuffer = exports.isSharedArrayBuffer = exports.isBufferSource = exports.isArrayBufferView = exports.isArrayBufferLike = exports.isArrayBuffer = exports.assertBufferSource = void 0;
@@ -4837,9 +4837,9 @@ var require_bytes = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/binary.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/binary.js
 var require_binary = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/binary.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/binary.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.binary = void 0;
@@ -4869,9 +4869,9 @@ var require_binary = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/hex.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/hex.js
 var require_hex = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/hex.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/hex.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.hex = exports.formats = void 0;
@@ -5102,9 +5102,9 @@ var require_hex = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/utf8.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/utf8.js
 var require_utf8 = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/utf8.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/utf8.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.utf8 = void 0;
@@ -5121,9 +5121,9 @@ var require_utf8 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/utf16.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/utf16.js
 var require_utf16 = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/utf16.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/utf16.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.utf16 = void 0;
@@ -5151,9 +5151,9 @@ var require_utf16 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/base64.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/base64.js
 var require_base64 = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/base64.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/base64.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.base64 = void 0;
@@ -5205,9 +5205,9 @@ var require_base64 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/base64url.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/base64url.js
 var require_base64url = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/base64url.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/base64url.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.base64url = void 0;
@@ -5237,9 +5237,9 @@ var require_base64url = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/encoding/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/index.js
 var require_encoding = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/encoding/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/encoding/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.base64url = exports.base64 = exports.utf16 = exports.utf8 = exports.hex = exports.binary = void 0;
@@ -5253,9 +5253,9 @@ var require_encoding = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/pem/pem.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/pem/pem.js
 var require_pem = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/pem/pem.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/pem/pem.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.pemConverter = exports.pem = void 0;
@@ -5397,9 +5397,9 @@ var require_pem = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/pem/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/pem/index.js
 var require_pem2 = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/pem/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/pem/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.pemConverter = exports.pem = exports.parse = exports.format = exports.findAll = exports.find = exports.encodeMany = exports.encode = exports.decodeFirst = exports.decode = void 0;
@@ -5437,9 +5437,9 @@ var require_pem2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/converters/registry.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/registry.js
 var require_registry = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/converters/registry.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/registry.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.createConverterRegistry = createConverterRegistry;
@@ -5625,9 +5625,9 @@ var require_registry = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/converters/defaults.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/defaults.js
 var require_defaults = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/converters/defaults.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/defaults.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.defaultConverterRegistry = exports.defaultConverters = exports.utf16leConverter = exports.utf16beConverter = exports.utf8Converter = exports.base64urlConverter = exports.base64Converter = exports.hexConverter = exports.binaryConverter = exports.pemConverter = void 0;
@@ -5705,9 +5705,9 @@ var require_defaults = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/converters/convert.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/convert.js
 var require_convert = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/converters/convert.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/convert.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.convert = void 0;
@@ -5785,9 +5785,9 @@ var require_convert = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/converters/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/index.js
 var require_converters = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/converters/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/converters/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.convert = exports.utf8Converter = exports.utf16leConverter = exports.utf16beConverter = exports.pemConverter = exports.hexConverter = exports.defaultConverters = exports.defaultConverterRegistry = exports.binaryConverter = exports.base64urlConverter = exports.base64Converter = exports.createConverterRegistry = void 0;
@@ -5833,9 +5833,9 @@ var require_converters = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/legacy/buffer-source-converter.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/buffer-source-converter.js
 var require_buffer_source_converter = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/legacy/buffer-source-converter.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/buffer-source-converter.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.BufferSourceConverter = void 0;
@@ -5874,9 +5874,9 @@ var require_buffer_source_converter = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/legacy/convert.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/convert.js
 var require_convert2 = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/legacy/convert.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/convert.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Convert = void 0;
@@ -5952,9 +5952,9 @@ var require_convert2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/legacy/functions.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/functions.js
 var require_functions = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/legacy/functions.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/functions.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.assign = assign;
@@ -5981,9 +5981,9 @@ var require_functions = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/legacy/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/index.js
 var require_legacy = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/legacy/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/legacy/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isEqual = exports.combine = exports.assign = exports.Convert = exports.BufferSourceConverter = void 0;
@@ -6008,9 +6008,9 @@ var require_legacy = __commonJS({
   }
 });
 
-// node_modules/@peculiar/utils/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/index.js
 var require_cjs = __commonJS({
-  "node_modules/@peculiar/utils/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/utils/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.bytes = void 0;
@@ -6024,9 +6024,9 @@ var require_cjs = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/enums.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/enums.js
 var require_enums = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/enums.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/enums.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnPropTypes = exports.AsnTypeTypes = void 0;
@@ -6070,9 +6070,9 @@ var require_enums = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/types/bit_string.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/types/bit_string.js
 var require_bit_string = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/types/bit_string.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/types/bit_string.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.BitString = void 0;
@@ -6141,9 +6141,9 @@ var require_bit_string = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/types/octet_string.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/types/octet_string.js
 var require_octet_string = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/types/octet_string.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/types/octet_string.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OctetString = void 0;
@@ -6189,9 +6189,9 @@ var require_octet_string = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/types/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/types/index.js
 var require_types = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/types/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/types/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -6200,9 +6200,9 @@ var require_types = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/converters.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/converters.js
 var require_converters2 = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/converters.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/converters.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnNullConverter = exports.AsnGeneralizedTimeConverter = exports.AsnUTCTimeConverter = exports.AsnCharacterStringConverter = exports.AsnGeneralStringConverter = exports.AsnVisibleStringConverter = exports.AsnGraphicStringConverter = exports.AsnIA5StringConverter = exports.AsnVideotexStringConverter = exports.AsnTeletexStringConverter = exports.AsnPrintableStringConverter = exports.AsnNumericStringConverter = exports.AsnUniversalStringConverter = exports.AsnBmpStringConverter = exports.AsnUtf8StringConverter = exports.AsnConstructedOctetStringConverter = exports.AsnOctetStringConverter = exports.AsnBooleanConverter = exports.AsnRelativeObjectIdentifierConverter = exports.AsnObjectIdentifierConverter = exports.AsnBitStringConverter = exports.AsnIntegerBigIntConverter = exports.AsnIntegerArrayBufferConverter = exports.AsnEnumeratedConverter = exports.AsnIntegerConverter = exports.AsnAnyConverter = void 0;
@@ -6352,9 +6352,9 @@ var require_converters2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/helper.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/helper.js
 var require_helper = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/helper.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/helper.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isConvertible = isConvertible;
@@ -6400,9 +6400,9 @@ var require_helper = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/schema.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/schema.js
 var require_schema = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/schema.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/schema.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnSchemaStorage = void 0;
@@ -6564,9 +6564,9 @@ var require_schema = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/storage.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/storage.js
 var require_storage = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/storage.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/storage.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.schemaStorage = void 0;
@@ -6575,9 +6575,9 @@ var require_storage = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/decorators.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/decorators.js
 var require_decorators = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/decorators.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/decorators.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnProp = exports.AsnSequenceType = exports.AsnSetType = exports.AsnChoiceType = exports.AsnType = void 0;
@@ -6631,9 +6631,9 @@ var require_decorators = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/errors/schema_validation.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/errors/schema_validation.js
 var require_schema_validation = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/errors/schema_validation.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/errors/schema_validation.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnSchemaValidationError = void 0;
@@ -6644,9 +6644,9 @@ var require_schema_validation = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/errors/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/errors/index.js
 var require_errors = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/errors/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/errors/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -6654,9 +6654,9 @@ var require_errors = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/parser.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/parser.js
 var require_parser = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/parser.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/parser.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnParser = void 0;
@@ -6947,9 +6947,9 @@ var require_parser = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/serializer.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/serializer.js
 var require_serializer = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/serializer.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/serializer.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnSerializer = void 0;
@@ -7092,9 +7092,9 @@ var require_serializer = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/objects.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/objects.js
 var require_objects = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/objects.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/objects.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnArray = void 0;
@@ -7114,9 +7114,9 @@ var require_objects = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/convert.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/convert.js
 var require_convert3 = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/convert.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/convert.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnConvert = void 0;
@@ -7145,9 +7145,9 @@ var require_convert3 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-schema/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/index.js
 var require_cjs2 = __commonJS({
-  "node_modules/@peculiar/asn1-schema/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-schema/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AsnSerializer = exports.AsnParser = exports.AsnPropTypes = exports.AsnTypeTypes = exports.AsnSetType = exports.AsnSequenceType = exports.AsnChoiceType = exports.AsnType = exports.AsnProp = void 0;
@@ -7191,9 +7191,9 @@ var require_cjs2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/ip_converter.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/ip_converter.js
 var require_ip_converter = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/ip_converter.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/ip_converter.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.IpConverter = void 0;
@@ -7367,9 +7367,9 @@ var require_ip_converter = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/name.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/name.js
 var require_name = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/name.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/name.js"(exports) {
     "use strict";
     var RelativeDistinguishedName_1;
     var RDNSequence_1;
@@ -7485,9 +7485,9 @@ var require_name = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/general_name.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/general_name.js
 var require_general_name = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/general_name.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/general_name.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.GeneralName = exports.EDIPartyName = exports.OtherName = exports.AsnIpConverter = void 0;
@@ -7623,9 +7623,9 @@ var require_general_name = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/object_identifiers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/object_identifiers.js
 var require_object_identifiers = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/object_identifiers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/object_identifiers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_alg_unsigned = exports.id_ce = exports.id_ad_caRepository = exports.id_ad_timeStamping = exports.id_ad_caIssuers = exports.id_ad_ocsp = exports.id_qt_unotice = exports.id_qt_csp = exports.id_ad = exports.id_kp = exports.id_qt = exports.id_pe = exports.id_pkix = void 0;
@@ -7645,9 +7645,9 @@ var require_object_identifiers = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_information_access.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_information_access.js
 var require_authority_information_access = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_information_access.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_information_access.js"(exports) {
     "use strict";
     var AuthorityInfoAccessSyntax_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7687,9 +7687,9 @@ var require_authority_information_access = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_key_identifier.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_key_identifier.js
 var require_authority_key_identifier = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_key_identifier.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/authority_key_identifier.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AuthorityKeyIdentifier = exports.KeyIdentifier = exports.id_ce_authorityKeyIdentifier = void 0;
@@ -7741,9 +7741,9 @@ var require_authority_key_identifier = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/basic_constraints.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/basic_constraints.js
 var require_basic_constraints = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/basic_constraints.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/basic_constraints.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.BasicConstraints = exports.id_ce_basicConstraints = void 0;
@@ -7774,9 +7774,9 @@ var require_basic_constraints = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/general_names.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/general_names.js
 var require_general_names = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/general_names.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/general_names.js"(exports) {
     "use strict";
     var GeneralNames_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7800,9 +7800,9 @@ var require_general_names = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_issuer.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_issuer.js
 var require_certificate_issuer = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_issuer.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_issuer.js"(exports) {
     "use strict";
     var CertificateIssuer_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7825,9 +7825,9 @@ var require_certificate_issuer = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_policies.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_policies.js
 var require_certificate_policies = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_policies.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/certificate_policies.js"(exports) {
     "use strict";
     var CertificatePolicies_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -7967,9 +7967,9 @@ var require_certificate_policies = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_number.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_number.js
 var require_crl_number = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_number.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_number.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CRLNumber = exports.id_ce_cRLNumber = void 0;
@@ -7993,9 +7993,9 @@ var require_crl_number = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_delta_indicator.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_delta_indicator.js
 var require_crl_delta_indicator = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_delta_indicator.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_delta_indicator.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.BaseCRLNumber = exports.id_ce_deltaCRLIndicator = void 0;
@@ -8013,9 +8013,9 @@ var require_crl_delta_indicator = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_distribution_points.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_distribution_points.js
 var require_crl_distribution_points = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_distribution_points.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_distribution_points.js"(exports) {
     "use strict";
     var CRLDistributionPoints_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8151,9 +8151,9 @@ var require_crl_distribution_points = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_freshest.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_freshest.js
 var require_crl_freshest = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_freshest.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_freshest.js"(exports) {
     "use strict";
     var FreshestCRL_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8179,9 +8179,9 @@ var require_crl_freshest = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_issuing_distribution_point.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_issuing_distribution_point.js
 var require_crl_issuing_distribution_point = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_issuing_distribution_point.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_issuing_distribution_point.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.IssuingDistributionPoint = exports.id_ce_issuingDistributionPoint = void 0;
@@ -8253,9 +8253,9 @@ var require_crl_issuing_distribution_point = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_reason.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_reason.js
 var require_crl_reason = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_reason.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/crl_reason.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CRLReason = exports.CRLReasons = exports.id_ce_cRLReasons = void 0;
@@ -8298,9 +8298,9 @@ var require_crl_reason = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/extended_key_usage.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/extended_key_usage.js
 var require_extended_key_usage = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/extended_key_usage.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/extended_key_usage.js"(exports) {
     "use strict";
     var ExtendedKeyUsage_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8332,9 +8332,9 @@ var require_extended_key_usage = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/inhibit_any_policy.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/inhibit_any_policy.js
 var require_inhibit_any_policy = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/inhibit_any_policy.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/inhibit_any_policy.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.InhibitAnyPolicy = exports.id_ce_inhibitAnyPolicy = void 0;
@@ -8361,9 +8361,9 @@ var require_inhibit_any_policy = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/invalidity_date.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/invalidity_date.js
 var require_invalidity_date = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/invalidity_date.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/invalidity_date.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.InvalidityDate = exports.id_ce_invalidityDate = void 0;
@@ -8389,9 +8389,9 @@ var require_invalidity_date = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/issuer_alternative_name.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/issuer_alternative_name.js
 var require_issuer_alternative_name = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/issuer_alternative_name.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/issuer_alternative_name.js"(exports) {
     "use strict";
     var IssueAlternativeName_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8414,9 +8414,9 @@ var require_issuer_alternative_name = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/key_usage.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/key_usage.js
 var require_key_usage = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/key_usage.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/key_usage.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.KeyUsage = exports.KeyUsageFlags = exports.id_ce_keyUsage = void 0;
@@ -8476,9 +8476,9 @@ var require_key_usage = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/name_constraints.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/name_constraints.js
 var require_name_constraints = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/name_constraints.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/name_constraints.js"(exports) {
     "use strict";
     var GeneralSubtrees_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8556,9 +8556,9 @@ var require_name_constraints = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_constraints.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_constraints.js
 var require_policy_constraints = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_constraints.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_constraints.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PolicyConstraints = exports.id_ce_policyConstraints = void 0;
@@ -8595,9 +8595,9 @@ var require_policy_constraints = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_mappings.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_mappings.js
 var require_policy_mappings = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_mappings.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/policy_mappings.js"(exports) {
     "use strict";
     var PolicyMappings_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8636,9 +8636,9 @@ var require_policy_mappings = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_alternative_name.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_alternative_name.js
 var require_subject_alternative_name = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_alternative_name.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_alternative_name.js"(exports) {
     "use strict";
     var SubjectAlternativeName_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8661,9 +8661,9 @@ var require_subject_alternative_name = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/attribute.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/attribute.js
 var require_attribute = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/attribute.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/attribute.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Attribute = void 0;
@@ -8689,9 +8689,9 @@ var require_attribute = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_directory_attributes.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_directory_attributes.js
 var require_subject_directory_attributes = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_directory_attributes.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_directory_attributes.js"(exports) {
     "use strict";
     var SubjectDirectoryAttributes_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8717,9 +8717,9 @@ var require_subject_directory_attributes = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_key_identifier.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_key_identifier.js
 var require_subject_key_identifier = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_key_identifier.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_key_identifier.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SubjectKeyIdentifier = exports.id_ce_subjectKeyIdentifier = void 0;
@@ -8732,9 +8732,9 @@ var require_subject_key_identifier = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/private_key_usage_period.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/private_key_usage_period.js
 var require_private_key_usage_period = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/private_key_usage_period.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/private_key_usage_period.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PrivateKeyUsagePeriod = exports.id_ce_privateKeyUsagePeriod = void 0;
@@ -8769,9 +8769,9 @@ var require_private_key_usage_period = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/entrust_version_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/entrust_version_info.js
 var require_entrust_version_info = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/entrust_version_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/entrust_version_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.EntrustVersionInfo = exports.EntrustInfo = exports.EntrustInfoFlags = exports.id_entrust_entrustVersInfo = void 0;
@@ -8821,9 +8821,9 @@ var require_entrust_version_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_info_access.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_info_access.js
 var require_subject_info_access = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_info_access.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/subject_info_access.js"(exports) {
     "use strict";
     var SubjectInfoAccessSyntax_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -8849,9 +8849,9 @@ var require_subject_info_access = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extensions/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/index.js
 var require_extensions = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extensions/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extensions/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -8883,9 +8883,9 @@ var require_extensions = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/algorithm_identifier.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/algorithm_identifier.js
 var require_algorithm_identifier = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/algorithm_identifier.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/algorithm_identifier.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AlgorithmIdentifier = void 0;
@@ -8915,9 +8915,9 @@ var require_algorithm_identifier = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/subject_public_key_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/subject_public_key_info.js
 var require_subject_public_key_info = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/subject_public_key_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/subject_public_key_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SubjectPublicKeyInfo = void 0;
@@ -8941,9 +8941,9 @@ var require_subject_public_key_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/time.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/time.js
 var require_time = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/time.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/time.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Time = void 0;
@@ -8988,9 +8988,9 @@ var require_time = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/validity.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/validity.js
 var require_validity = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/validity.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/validity.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Validity = void 0;
@@ -9017,9 +9017,9 @@ var require_validity = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/extension.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extension.js
 var require_extension = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/extension.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/extension.js"(exports) {
     "use strict";
     var Extensions_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -9064,9 +9064,9 @@ var require_extension = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/types.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/types.js
 var require_types2 = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/types.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Version = void 0;
@@ -9079,9 +9079,9 @@ var require_types2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/tbs_certificate.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/tbs_certificate.js
 var require_tbs_certificate = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/tbs_certificate.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/tbs_certificate.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.TBSCertificate = void 0;
@@ -9163,9 +9163,9 @@ var require_tbs_certificate = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/certificate.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/certificate.js
 var require_certificate = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/certificate.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/certificate.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Certificate = void 0;
@@ -9198,9 +9198,9 @@ var require_certificate = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/tbs_cert_list.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/tbs_cert_list.js
 var require_tbs_cert_list = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/tbs_cert_list.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/tbs_cert_list.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.TBSCertList = exports.RevokedCertificate = void 0;
@@ -9287,9 +9287,9 @@ var require_tbs_cert_list = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/certificate_list.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/certificate_list.js
 var require_certificate_list = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/certificate_list.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/certificate_list.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CertificateList = void 0;
@@ -9322,9 +9322,9 @@ var require_certificate_list = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/index.js
 var require_cjs3 = __commonJS({
-  "node_modules/@peculiar/asn1-x509/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -9347,9 +9347,9 @@ var require_cjs3 = __commonJS({
   }
 });
 
-// node_modules/reflect-metadata/Reflect.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/reflect-metadata/Reflect.js
 var require_Reflect = __commonJS({
-  "node_modules/reflect-metadata/Reflect.js"() {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/reflect-metadata/Reflect.js"() {
     var Reflect2;
     (function(Reflect3) {
       (function(factory) {
@@ -10432,9 +10432,9 @@ var require_Reflect = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/issuer_and_serial_number.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/issuer_and_serial_number.js
 var require_issuer_and_serial_number = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/issuer_and_serial_number.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/issuer_and_serial_number.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.IssuerAndSerialNumber = void 0;
@@ -10461,9 +10461,9 @@ var require_issuer_and_serial_number = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/signer_identifier.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/signer_identifier.js
 var require_signer_identifier = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/signer_identifier.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/signer_identifier.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SignerIdentifier = void 0;
@@ -10495,9 +10495,9 @@ var require_signer_identifier = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/types.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/types.js
 var require_types3 = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/types.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.KeyDerivationAlgorithmIdentifier = exports.MessageAuthenticationCodeAlgorithm = exports.ContentEncryptionAlgorithmIdentifier = exports.KeyEncryptionAlgorithmIdentifier = exports.SignatureAlgorithmIdentifier = exports.DigestAlgorithmIdentifier = exports.CMSVersion = void 0;
@@ -10552,9 +10552,9 @@ var require_types3 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/attribute.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attribute.js
 var require_attribute2 = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/attribute.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attribute.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Attribute = void 0;
@@ -10580,9 +10580,9 @@ var require_attribute2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/signer_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/signer_info.js
 var require_signer_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/signer_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/signer_info.js"(exports) {
     "use strict";
     var SignerInfos_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -10656,9 +10656,9 @@ var require_signer_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/attributes/counter_signature.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/counter_signature.js
 var require_counter_signature = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/attributes/counter_signature.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/counter_signature.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CounterSignature = exports.id_counterSignature = void 0;
@@ -10675,9 +10675,9 @@ var require_counter_signature = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/attributes/message_digest.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/message_digest.js
 var require_message_digest = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/attributes/message_digest.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/message_digest.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MessageDigest = exports.id_messageDigest = void 0;
@@ -10689,9 +10689,9 @@ var require_message_digest = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/attributes/signing_time.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/signing_time.js
 var require_signing_time = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/attributes/signing_time.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/signing_time.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SigningTime = exports.id_signingTime = void 0;
@@ -10708,9 +10708,9 @@ var require_signing_time = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/attributes/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/index.js
 var require_attributes = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/attributes/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/attributes/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_contentType = void 0;
@@ -10722,9 +10722,9 @@ var require_attributes = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_clear_attrs.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_clear_attrs.js
 var require_aa_clear_attrs = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_clear_attrs.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_clear_attrs.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ACClearAttrs = void 0;
@@ -10755,9 +10755,9 @@ var require_aa_clear_attrs = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_spec.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_spec.js
 var require_attr_spec = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_spec.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_spec.js"(exports) {
     "use strict";
     var AttrSpec_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -10780,9 +10780,9 @@ var require_attr_spec = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_controls.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_controls.js
 var require_aa_controls = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_controls.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/aa_controls.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AAControls = void 0;
@@ -10830,9 +10830,9 @@ var require_aa_controls = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/issuer_serial.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/issuer_serial.js
 var require_issuer_serial = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/issuer_serial.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/issuer_serial.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.IssuerSerial = void 0;
@@ -10866,9 +10866,9 @@ var require_issuer_serial = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/object_digest_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/object_digest_info.js
 var require_object_digest_info = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/object_digest_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/object_digest_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ObjectDigestInfo = exports.DigestedObjectType = void 0;
@@ -10909,9 +10909,9 @@ var require_object_digest_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/v2_form.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/v2_form.js
 var require_v2_form = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/v2_form.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/v2_form.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.V2Form = void 0;
@@ -10954,9 +10954,9 @@ var require_v2_form = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_issuer.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_issuer.js
 var require_attr_cert_issuer = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_issuer.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_issuer.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AttCertIssuer = void 0;
@@ -10991,9 +10991,9 @@ var require_attr_cert_issuer = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_validity_period.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_validity_period.js
 var require_attr_cert_validity_period = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_validity_period.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attr_cert_validity_period.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AttCertValidityPeriod = void 0;
@@ -11016,9 +11016,9 @@ var require_attr_cert_validity_period = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/holder.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/holder.js
 var require_holder = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/holder.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/holder.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Holder = void 0;
@@ -11063,9 +11063,9 @@ var require_holder = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate_info.js
 var require_attribute_certificate_info = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AttributeCertificateInfo = exports.AttCertVersion = void 0;
@@ -11136,9 +11136,9 @@ var require_attribute_certificate_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate.js
 var require_attribute_certificate = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/attribute_certificate.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AttributeCertificate = void 0;
@@ -11167,9 +11167,9 @@ var require_attribute_certificate = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/class_list.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/class_list.js
 var require_class_list = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/class_list.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/class_list.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ClassList = exports.ClassListFlags = void 0;
@@ -11189,9 +11189,9 @@ var require_class_list = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/security_category.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/security_category.js
 var require_security_category = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/security_category.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/security_category.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SecurityCategory = void 0;
@@ -11222,9 +11222,9 @@ var require_security_category = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/clearance.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/clearance.js
 var require_clearance = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/clearance.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/clearance.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.Clearance = void 0;
@@ -11259,9 +11259,9 @@ var require_clearance = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/ietf_attr_syntax.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/ietf_attr_syntax.js
 var require_ietf_attr_syntax = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/ietf_attr_syntax.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/ietf_attr_syntax.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.IetfAttrSyntax = exports.IetfAttrSyntaxValueChoices = void 0;
@@ -11311,9 +11311,9 @@ var require_ietf_attr_syntax = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/object_identifiers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/object_identifiers.js
 var require_object_identifiers2 = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/object_identifiers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/object_identifiers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_at_clearance = exports.id_at_role = exports.id_at = exports.id_aca_encAttrs = exports.id_aca_group = exports.id_aca_chargingIdentity = exports.id_aca_accessIdentity = exports.id_aca_authenticationInfo = exports.id_aca = exports.id_ce_targetInformation = exports.id_pe_ac_proxying = exports.id_pe_aaControls = exports.id_pe_ac_auditIdentity = void 0;
@@ -11334,9 +11334,9 @@ var require_object_identifiers2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/target.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/target.js
 var require_target = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/target.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/target.js"(exports) {
     "use strict";
     var Targets_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -11419,9 +11419,9 @@ var require_target = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/proxy_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/proxy_info.js
 var require_proxy_info = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/proxy_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/proxy_info.js"(exports) {
     "use strict";
     var ProxyInfo_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -11445,9 +11445,9 @@ var require_proxy_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/role_syntax.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/role_syntax.js
 var require_role_syntax = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/role_syntax.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/role_syntax.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RoleSyntax = void 0;
@@ -11480,9 +11480,9 @@ var require_role_syntax = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/svce_auth_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/svce_auth_info.js
 var require_svce_auth_info = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/svce_auth_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/svce_auth_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SvceAuthInfo = void 0;
@@ -11513,9 +11513,9 @@ var require_svce_auth_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-x509-attr/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/index.js
 var require_cjs4 = __commonJS({
-  "node_modules/@peculiar/asn1-x509-attr/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-x509-attr/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -11542,9 +11542,9 @@ var require_cjs4 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/certificate_choices.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/certificate_choices.js
 var require_certificate_choices = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/certificate_choices.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/certificate_choices.js"(exports) {
     "use strict";
     var CertificateSet_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -11612,9 +11612,9 @@ var require_certificate_choices = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/content_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/content_info.js
 var require_content_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/content_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/content_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ContentInfo = void 0;
@@ -11640,9 +11640,9 @@ var require_content_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/encapsulated_content_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/encapsulated_content_info.js
 var require_encapsulated_content_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/encapsulated_content_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/encapsulated_content_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.EncapsulatedContentInfo = exports.EncapsulatedContent = void 0;
@@ -11686,9 +11686,9 @@ var require_encapsulated_content_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/encrypted_content_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/encrypted_content_info.js
 var require_encrypted_content_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/encrypted_content_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/encrypted_content_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.EncryptedContentInfo = exports.EncryptedContent = void 0;
@@ -11748,9 +11748,9 @@ var require_encrypted_content_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/other_key_attribute.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/other_key_attribute.js
 var require_other_key_attribute = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/other_key_attribute.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/other_key_attribute.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OtherKeyAttribute = void 0;
@@ -11776,9 +11776,9 @@ var require_other_key_attribute = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/key_agree_recipient_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/key_agree_recipient_info.js
 var require_key_agree_recipient_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/key_agree_recipient_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/key_agree_recipient_info.js"(exports) {
     "use strict";
     var RecipientEncryptedKeys_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -11949,9 +11949,9 @@ var require_key_agree_recipient_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/key_trans_recipient_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/key_trans_recipient_info.js
 var require_key_trans_recipient_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/key_trans_recipient_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/key_trans_recipient_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.KeyTransRecipientInfo = exports.RecipientIdentifier = void 0;
@@ -12006,9 +12006,9 @@ var require_key_trans_recipient_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/kek_recipient_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/kek_recipient_info.js
 var require_kek_recipient_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/kek_recipient_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/kek_recipient_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.KEKRecipientInfo = exports.KEKIdentifier = void 0;
@@ -12065,9 +12065,9 @@ var require_kek_recipient_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/password_recipient_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/password_recipient_info.js
 var require_password_recipient_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/password_recipient_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/password_recipient_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PasswordRecipientInfo = void 0;
@@ -12103,9 +12103,9 @@ var require_password_recipient_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/recipient_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/recipient_info.js
 var require_recipient_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/recipient_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/recipient_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RecipientInfo = exports.OtherRecipientInfo = void 0;
@@ -12184,9 +12184,9 @@ var require_recipient_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/recipient_infos.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/recipient_infos.js
 var require_recipient_infos = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/recipient_infos.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/recipient_infos.js"(exports) {
     "use strict";
     var RecipientInfos_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -12210,9 +12210,9 @@ var require_recipient_infos = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/revocation_info_choice.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/revocation_info_choice.js
 var require_revocation_info_choice = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/revocation_info_choice.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/revocation_info_choice.js"(exports) {
     "use strict";
     var RevocationInfoChoices_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -12270,9 +12270,9 @@ var require_revocation_info_choice = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/originator_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/originator_info.js
 var require_originator_info = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/originator_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/originator_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.OriginatorInfo = void 0;
@@ -12307,9 +12307,9 @@ var require_originator_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/enveloped_data.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/enveloped_data.js
 var require_enveloped_data = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/enveloped_data.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/enveloped_data.js"(exports) {
     "use strict";
     var UnprotectedAttributes_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -12373,9 +12373,9 @@ var require_enveloped_data = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/object_identifiers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/object_identifiers.js
 var require_object_identifiers3 = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/object_identifiers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/object_identifiers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_authData = exports.id_encryptedData = exports.id_digestedData = exports.id_envelopedData = exports.id_signedData = exports.id_data = exports.id_ct_contentInfo = void 0;
@@ -12389,9 +12389,9 @@ var require_object_identifiers3 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/signed_data.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/signed_data.js
 var require_signed_data = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/signed_data.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/signed_data.js"(exports) {
     "use strict";
     var DigestAlgorithmIdentifiers_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -12459,9 +12459,9 @@ var require_signed_data = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-cms/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/index.js
 var require_cjs5 = __commonJS({
-  "node_modules/@peculiar/asn1-cms/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-cms/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -12489,9 +12489,9 @@ var require_cjs5 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/object_identifiers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/object_identifiers.js
 var require_object_identifiers4 = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/object_identifiers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/object_identifiers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_sect571r1 = exports.id_sect571k1 = exports.id_secp521r1 = exports.id_sect409r1 = exports.id_sect409k1 = exports.id_secp384r1 = exports.id_sect283r1 = exports.id_sect283k1 = exports.id_secp256r1 = exports.id_sect233r1 = exports.id_sect233k1 = exports.id_secp224r1 = exports.id_sect163r2 = exports.id_sect163k1 = exports.id_secp192r1 = exports.id_ecdsaWithSHA512 = exports.id_ecdsaWithSHA384 = exports.id_ecdsaWithSHA256 = exports.id_ecdsaWithSHA224 = exports.id_ecdsaWithSHA1 = exports.id_ecMQV = exports.id_ecDH = exports.id_ecPublicKey = void 0;
@@ -12521,9 +12521,9 @@ var require_object_identifiers4 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/algorithms.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/algorithms.js
 var require_algorithms = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/algorithms.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/algorithms.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ecdsaWithSHA512 = exports.ecdsaWithSHA384 = exports.ecdsaWithSHA256 = exports.ecdsaWithSHA224 = exports.ecdsaWithSHA1 = void 0;
@@ -12541,9 +12541,9 @@ var require_algorithms = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/rfc3279.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/rfc3279.js
 var require_rfc3279 = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/rfc3279.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/rfc3279.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SpecifiedECDomain = exports.ECPVer = exports.Curve = exports.FieldElement = exports.ECPoint = exports.FieldID = void 0;
@@ -12642,9 +12642,9 @@ var require_rfc3279 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/ec_parameters.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/ec_parameters.js
 var require_ec_parameters = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/ec_parameters.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/ec_parameters.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ECParameters = void 0;
@@ -12675,9 +12675,9 @@ var require_ec_parameters = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/ec_private_key.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/ec_private_key.js
 var require_ec_private_key = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/ec_private_key.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/ec_private_key.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ECPrivateKey = void 0;
@@ -12717,9 +12717,9 @@ var require_ec_private_key = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/ec_signature_value.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/ec_signature_value.js
 var require_ec_signature_value = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/ec_signature_value.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/ec_signature_value.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.ECDSASigValue = void 0;
@@ -12748,9 +12748,9 @@ var require_ec_signature_value = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-ecc/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/index.js
 var require_cjs6 = __commonJS({
-  "node_modules/@peculiar/asn1-ecc/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-ecc/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -12763,9 +12763,9 @@ var require_cjs6 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/object_identifiers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/object_identifiers.js
 var require_object_identifiers5 = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/object_identifiers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/object_identifiers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_mgf1 = exports.id_md5 = exports.id_md2 = exports.id_sha512_256 = exports.id_sha512_224 = exports.id_sha512 = exports.id_sha384 = exports.id_sha256 = exports.id_sha224 = exports.id_sha1 = exports.id_sha512_256WithRSAEncryption = exports.id_sha512_224WithRSAEncryption = exports.id_sha512WithRSAEncryption = exports.id_sha384WithRSAEncryption = exports.id_sha256WithRSAEncryption = exports.id_ssha224WithRSAEncryption = exports.id_sha224WithRSAEncryption = exports.id_sha1WithRSAEncryption = exports.id_md5WithRSAEncryption = exports.id_md2WithRSAEncryption = exports.id_RSASSA_PSS = exports.id_pSpecified = exports.id_RSAES_OAEP = exports.id_rsaEncryption = exports.id_pkcs_1 = void 0;
@@ -12797,9 +12797,9 @@ var require_object_identifiers5 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/algorithms.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/algorithms.js
 var require_algorithms2 = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/algorithms.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/algorithms.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.sha512_256WithRSAEncryption = exports.sha512_224WithRSAEncryption = exports.sha512WithRSAEncryption = exports.sha384WithRSAEncryption = exports.sha256WithRSAEncryption = exports.sha224WithRSAEncryption = exports.sha1WithRSAEncryption = exports.md5WithRSAEncryption = exports.md2WithRSAEncryption = exports.rsaEncryption = exports.pSpecifiedEmpty = exports.mgf1SHA1 = exports.sha512_256 = exports.sha512_224 = exports.sha512 = exports.sha384 = exports.sha256 = exports.sha224 = exports.sha1 = exports.md4 = exports.md2 = void 0;
@@ -12843,9 +12843,9 @@ var require_algorithms2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsaes_oaep.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsaes_oaep.js
 var require_rsaes_oaep = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsaes_oaep.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsaes_oaep.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RSAES_OAEP = exports.RsaEsOaepParams = void 0;
@@ -12894,9 +12894,9 @@ var require_rsaes_oaep = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pss.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pss.js
 var require_rsassa_pss = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pss.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pss.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RSASSA_PSS = exports.RsaSaPssParams = void 0;
@@ -12953,9 +12953,9 @@ var require_rsassa_pss = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pkcs1_v1_5.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pkcs1_v1_5.js
 var require_rsassa_pkcs1_v1_5 = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pkcs1_v1_5.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/rsassa_pkcs1_v1_5.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.DigestInfo = void 0;
@@ -12979,9 +12979,9 @@ var require_rsassa_pkcs1_v1_5 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/parameters/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/index.js
 var require_parameters = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/parameters/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/parameters/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -12991,9 +12991,9 @@ var require_parameters = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/other_prime_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/other_prime_info.js
 var require_other_prime_info = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/other_prime_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/other_prime_info.js"(exports) {
     "use strict";
     var OtherPrimeInfos_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -13043,9 +13043,9 @@ var require_other_prime_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/rsa_private_key.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/rsa_private_key.js
 var require_rsa_private_key = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/rsa_private_key.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/rsa_private_key.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RSAPrivateKey = void 0;
@@ -13128,9 +13128,9 @@ var require_rsa_private_key = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/rsa_public_key.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/rsa_public_key.js
 var require_rsa_public_key = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/rsa_public_key.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/rsa_public_key.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.RSAPublicKey = void 0;
@@ -13159,9 +13159,9 @@ var require_rsa_public_key = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-rsa/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/index.js
 var require_cjs7 = __commonJS({
-  "node_modules/@peculiar/asn1-rsa/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-rsa/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -13174,7 +13174,7 @@ var require_cjs7 = __commonJS({
   }
 });
 
-// node_modules/tsyringe/node_modules/tslib/tslib.es6.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/node_modules/tslib/tslib.es6.js
 var tslib_es6_exports2 = {};
 __export(tslib_es6_exports2, {
   __assign: () => __assign2,
@@ -13479,7 +13479,7 @@ function __classPrivateFieldSet2(receiver, privateMap, value) {
 }
 var extendStatics2, __assign2;
 var init_tslib_es62 = __esm({
-  "node_modules/tsyringe/node_modules/tslib/tslib.es6.js"() {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/node_modules/tslib/tslib.es6.js"() {
     extendStatics2 = function(d, b) {
       extendStatics2 = Object.setPrototypeOf || { __proto__: [] } instanceof Array && function(d2, b2) {
         d2.__proto__ = b2;
@@ -13501,9 +13501,9 @@ var init_tslib_es62 = __esm({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/types/lifecycle.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/types/lifecycle.js
 var require_lifecycle = __commonJS({
-  "node_modules/tsyringe/dist/cjs/types/lifecycle.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/types/lifecycle.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var Lifecycle;
@@ -13517,9 +13517,9 @@ var require_lifecycle = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/types/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/types/index.js
 var require_types4 = __commonJS({
-  "node_modules/tsyringe/dist/cjs/types/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/types/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var lifecycle_1 = require_lifecycle();
@@ -13529,9 +13529,9 @@ var require_types4 = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/reflection-helpers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/reflection-helpers.js
 var require_reflection_helpers = __commonJS({
-  "node_modules/tsyringe/dist/cjs/reflection-helpers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/reflection-helpers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.defineInjectionTokenMetadata = exports.getParamInfo = exports.INJECTION_TOKEN_METADATA_KEY = void 0;
@@ -13560,9 +13560,9 @@ var require_reflection_helpers = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/class-provider.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/class-provider.js
 var require_class_provider = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/class-provider.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/class-provider.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isClassProvider = void 0;
@@ -13573,9 +13573,9 @@ var require_class_provider = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/factory-provider.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/factory-provider.js
 var require_factory_provider = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/factory-provider.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/factory-provider.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isFactoryProvider = void 0;
@@ -13586,9 +13586,9 @@ var require_factory_provider = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/lazy-helpers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/lazy-helpers.js
 var require_lazy_helpers = __commonJS({
-  "node_modules/tsyringe/dist/cjs/lazy-helpers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/lazy-helpers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.delay = exports.DelayedConstructor = void 0;
@@ -13646,9 +13646,9 @@ var require_lazy_helpers = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/injection-token.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/injection-token.js
 var require_injection_token = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/injection-token.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/injection-token.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isConstructorToken = exports.isTransformDescriptor = exports.isTokenDescriptor = exports.isNormalToken = void 0;
@@ -13672,9 +13672,9 @@ var require_injection_token = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/token-provider.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/token-provider.js
 var require_token_provider = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/token-provider.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/token-provider.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isTokenProvider = void 0;
@@ -13685,9 +13685,9 @@ var require_token_provider = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/value-provider.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/value-provider.js
 var require_value_provider = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/value-provider.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/value-provider.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isValueProvider = void 0;
@@ -13698,9 +13698,9 @@ var require_value_provider = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/index.js
 var require_providers = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var class_provider_1 = require_class_provider();
@@ -13726,9 +13726,9 @@ var require_providers = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/providers/provider.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/provider.js
 var require_provider = __commonJS({
-  "node_modules/tsyringe/dist/cjs/providers/provider.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/providers/provider.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isProvider = void 0;
@@ -13743,9 +13743,9 @@ var require_provider = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/registry-base.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/registry-base.js
 var require_registry_base = __commonJS({
-  "node_modules/tsyringe/dist/cjs/registry-base.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/registry-base.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var RegistryBase = class {
@@ -13788,9 +13788,9 @@ var require_registry_base = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/registry.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/registry.js
 var require_registry2 = __commonJS({
-  "node_modules/tsyringe/dist/cjs/registry.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/registry.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var registry_base_1 = require_registry_base();
@@ -13800,9 +13800,9 @@ var require_registry2 = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/resolution-context.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/resolution-context.js
 var require_resolution_context = __commonJS({
-  "node_modules/tsyringe/dist/cjs/resolution-context.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/resolution-context.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var ResolutionContext = class {
@@ -13814,9 +13814,9 @@ var require_resolution_context = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/error-helpers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/error-helpers.js
 var require_error_helpers = __commonJS({
-  "node_modules/tsyringe/dist/cjs/error-helpers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/error-helpers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.formatErrorCtor = void 0;
@@ -13839,9 +13839,9 @@ var require_error_helpers = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/types/disposable.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/types/disposable.js
 var require_disposable = __commonJS({
-  "node_modules/tsyringe/dist/cjs/types/disposable.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/types/disposable.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.isDisposable = void 0;
@@ -13858,9 +13858,9 @@ var require_disposable = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/interceptors.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/interceptors.js
 var require_interceptors = __commonJS({
-  "node_modules/tsyringe/dist/cjs/interceptors.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/interceptors.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PostResolutionInterceptors = exports.PreResolutionInterceptors = void 0;
@@ -13881,9 +13881,9 @@ var require_interceptors = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/dependency-container.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/dependency-container.js
 var require_dependency_container = __commonJS({
-  "node_modules/tsyringe/dist/cjs/dependency-container.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/dependency-container.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.instance = exports.typeInfo = void 0;
@@ -14199,9 +14199,9 @@ var require_dependency_container = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/auto-injectable.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/auto-injectable.js
 var require_auto_injectable = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/auto-injectable.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/auto-injectable.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var reflection_helpers_1 = require_reflection_helpers();
@@ -14238,9 +14238,9 @@ var require_auto_injectable = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/inject.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject.js
 var require_inject = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/inject.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var reflection_helpers_1 = require_reflection_helpers();
@@ -14256,9 +14256,9 @@ var require_inject = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/injectable.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/injectable.js
 var require_injectable = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/injectable.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/injectable.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var reflection_helpers_1 = require_reflection_helpers();
@@ -14282,9 +14282,9 @@ var require_injectable = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/registry.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/registry.js
 var require_registry3 = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/registry.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/registry.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es62(), __toCommonJS(tslib_es6_exports2));
@@ -14302,9 +14302,9 @@ var require_registry3 = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/singleton.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/singleton.js
 var require_singleton = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/singleton.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/singleton.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var injectable_1 = require_injectable();
@@ -14319,9 +14319,9 @@ var require_singleton = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/inject-all.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject-all.js
 var require_inject_all = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/inject-all.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject-all.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var reflection_helpers_1 = require_reflection_helpers();
@@ -14337,9 +14337,9 @@ var require_inject_all = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/inject-all-with-transform.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject-all-with-transform.js
 var require_inject_all_with_transform = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/inject-all-with-transform.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject-all-with-transform.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var reflection_helpers_1 = require_reflection_helpers();
@@ -14356,9 +14356,9 @@ var require_inject_all_with_transform = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/inject-with-transform.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject-with-transform.js
 var require_inject_with_transform = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/inject-with-transform.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/inject-with-transform.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var reflection_helpers_1 = require_reflection_helpers();
@@ -14372,9 +14372,9 @@ var require_inject_with_transform = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/scoped.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/scoped.js
 var require_scoped = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/scoped.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/scoped.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var injectable_1 = require_injectable();
@@ -14391,9 +14391,9 @@ var require_scoped = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/decorators/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/index.js
 var require_decorators2 = __commonJS({
-  "node_modules/tsyringe/dist/cjs/decorators/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/decorators/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var auto_injectable_1 = require_auto_injectable();
@@ -14435,9 +14435,9 @@ var require_decorators2 = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/factories/instance-caching-factory.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/instance-caching-factory.js
 var require_instance_caching_factory = __commonJS({
-  "node_modules/tsyringe/dist/cjs/factories/instance-caching-factory.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/instance-caching-factory.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function instanceCachingFactory(factoryFunc) {
@@ -14453,9 +14453,9 @@ var require_instance_caching_factory = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/factories/instance-per-container-caching-factory.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/instance-per-container-caching-factory.js
 var require_instance_per_container_caching_factory = __commonJS({
-  "node_modules/tsyringe/dist/cjs/factories/instance-per-container-caching-factory.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/instance-per-container-caching-factory.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function instancePerContainerCachingFactory(factoryFunc) {
@@ -14473,9 +14473,9 @@ var require_instance_per_container_caching_factory = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/factories/predicate-aware-class-factory.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/predicate-aware-class-factory.js
 var require_predicate_aware_class_factory = __commonJS({
-  "node_modules/tsyringe/dist/cjs/factories/predicate-aware-class-factory.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/predicate-aware-class-factory.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     function predicateAwareClassFactory(predicate, trueConstructor, falseConstructor, useCaching = true) {
@@ -14497,9 +14497,9 @@ var require_predicate_aware_class_factory = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/factories/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/index.js
 var require_factories = __commonJS({
-  "node_modules/tsyringe/dist/cjs/factories/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/factories/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var instance_caching_factory_1 = require_instance_caching_factory();
@@ -14517,9 +14517,9 @@ var require_factories = __commonJS({
   }
 });
 
-// node_modules/tsyringe/dist/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/index.js
 var require_cjs8 = __commonJS({
-  "node_modules/tsyringe/dist/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/tsyringe/dist/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es62(), __toCommonJS(tslib_es6_exports2));
@@ -14544,9 +14544,9 @@ var require_cjs8 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/attribute.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/attribute.js
 var require_attribute3 = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/attribute.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/attribute.js"(exports) {
     "use strict";
     var PKCS12AttrSet_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -14586,9 +14586,9 @@ var require_attribute3 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/authenticated_safe.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/authenticated_safe.js
 var require_authenticated_safe = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/authenticated_safe.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/authenticated_safe.js"(exports) {
     "use strict";
     var AuthenticatedSafe_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -14612,9 +14612,9 @@ var require_authenticated_safe = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/object_identifiers.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/object_identifiers.js
 var require_object_identifiers6 = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/object_identifiers.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/object_identifiers.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_bagtypes = exports.id_pbewithSHAAnd40BitRC2_CBC = exports.id_pbeWithSHAAnd128BitRC2_CBC = exports.id_pbeWithSHAAnd2_KeyTripleDES_CBC = exports.id_pbeWithSHAAnd3_KeyTripleDES_CBC = exports.id_pbeWithSHAAnd40BitRC4 = exports.id_pbeWithSHAAnd128BitRC4 = exports.id_pkcs_12PbeIds = exports.id_pkcs_12 = exports.id_pkcs = exports.id_rsadsi = void 0;
@@ -14632,9 +14632,9 @@ var require_object_identifiers6 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/types.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/types.js
 var require_types5 = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/types.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/types.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_pkcs_9 = exports.id_SafeContents = exports.id_SecretBag = exports.id_CRLBag = exports.id_certBag = exports.id_pkcs8ShroudedKeyBag = exports.id_keyBag = void 0;
@@ -14649,9 +14649,9 @@ var require_types5 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/cert_bag.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/cert_bag.js
 var require_cert_bag = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/cert_bag.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/cert_bag.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_sdsiCertificate = exports.id_x509Certificate = exports.id_certTypes = exports.CertBag = void 0;
@@ -14681,9 +14681,9 @@ var require_cert_bag = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/crl_bag.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/crl_bag.js
 var require_crl_bag = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/crl_bag.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/crl_bag.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.id_x509CRL = exports.id_crlTypes = exports.CRLBag = void 0;
@@ -14712,9 +14712,9 @@ var require_crl_bag = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pkcs8/build/cjs/encrypted_private_key_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs8/build/cjs/encrypted_private_key_info.js
 var require_encrypted_private_key_info = __commonJS({
-  "node_modules/@peculiar/asn1-pkcs8/build/cjs/encrypted_private_key_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs8/build/cjs/encrypted_private_key_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.EncryptedPrivateKeyInfo = exports.EncryptedData = void 0;
@@ -14741,9 +14741,9 @@ var require_encrypted_private_key_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pkcs8/build/cjs/private_key_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs8/build/cjs/private_key_info.js
 var require_private_key_info = __commonJS({
-  "node_modules/@peculiar/asn1-pkcs8/build/cjs/private_key_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs8/build/cjs/private_key_info.js"(exports) {
     "use strict";
     var Attributes_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -14801,9 +14801,9 @@ var require_private_key_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pkcs8/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs8/build/cjs/index.js
 var require_cjs9 = __commonJS({
-  "node_modules/@peculiar/asn1-pkcs8/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs8/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -14812,9 +14812,9 @@ var require_cjs9 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/key_bag.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/key_bag.js
 var require_key_bag = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/key_bag.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/key_bag.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.KeyBag = void 0;
@@ -14830,9 +14830,9 @@ var require_key_bag = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/pkcs8_shrouded_key_bag.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/pkcs8_shrouded_key_bag.js
 var require_pkcs8_shrouded_key_bag = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/pkcs8_shrouded_key_bag.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/pkcs8_shrouded_key_bag.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PKCS8ShroudedKeyBag = void 0;
@@ -14848,9 +14848,9 @@ var require_pkcs8_shrouded_key_bag = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/secret_bag.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/secret_bag.js
 var require_secret_bag = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/secret_bag.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/secret_bag.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.SecretBag = void 0;
@@ -14876,9 +14876,9 @@ var require_secret_bag = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/bags/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/index.js
 var require_bags = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/bags/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/bags/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -14891,9 +14891,9 @@ var require_bags = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/mac_data.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/mac_data.js
 var require_mac_data = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/mac_data.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/mac_data.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.MacData = void 0;
@@ -14924,9 +14924,9 @@ var require_mac_data = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/pfx.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/pfx.js
 var require_pfx = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/pfx.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/pfx.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.PFX = void 0;
@@ -14958,9 +14958,9 @@ var require_pfx = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/safe_bag.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/safe_bag.js
 var require_safe_bag = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/safe_bag.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/safe_bag.js"(exports) {
     "use strict";
     var SafeContents_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -15009,9 +15009,9 @@ var require_safe_bag = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pfx/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/index.js
 var require_cjs10 = __commonJS({
-  "node_modules/@peculiar/asn1-pfx/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pfx/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -15025,9 +15025,9 @@ var require_cjs10 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-pkcs9/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs9/build/cjs/index.js
 var require_cjs11 = __commonJS({
-  "node_modules/@peculiar/asn1-pkcs9/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-pkcs9/build/cjs/index.js"(exports) {
     "use strict";
     var ExtensionRequest_1;
     var ExtendedCertificateAttributes_1;
@@ -15334,9 +15334,9 @@ var require_cjs11 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-csr/build/cjs/attributes.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/attributes.js
 var require_attributes2 = __commonJS({
-  "node_modules/@peculiar/asn1-csr/build/cjs/attributes.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/attributes.js"(exports) {
     "use strict";
     var Attributes_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -15360,9 +15360,9 @@ var require_attributes2 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-csr/build/cjs/certification_request_info.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/certification_request_info.js
 var require_certification_request_info = __commonJS({
-  "node_modules/@peculiar/asn1-csr/build/cjs/certification_request_info.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/certification_request_info.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CertificationRequestInfo = void 0;
@@ -15400,9 +15400,9 @@ var require_certification_request_info = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-csr/build/cjs/certification_request.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/certification_request.js
 var require_certification_request = __commonJS({
-  "node_modules/@peculiar/asn1-csr/build/cjs/certification_request.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/certification_request.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.CertificationRequest = void 0;
@@ -15435,9 +15435,9 @@ var require_certification_request = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-csr/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/index.js
 var require_cjs12 = __commonJS({
-  "node_modules/@peculiar/asn1-csr/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-csr/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -15447,9 +15447,9 @@ var require_cjs12 = __commonJS({
   }
 });
 
-// node_modules/@peculiar/x509/build/x509.cjs.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/x509/build/x509.cjs.js
 var require_x509_cjs = __commonJS({
-  "node_modules/@peculiar/x509/build/x509.cjs.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/x509/build/x509.cjs.js"(exports) {
     "use strict";
     require_Reflect();
     var asn1Schema = require_cjs2();
@@ -16954,10 +16954,10 @@ var require_x509_cjs = __commonJS({
           const value = asn1Schema.AsnConvert.parse(this.value, asn1X509__namespace.SubjectKeyIdentifier);
           this.keyId = pvtsutils.Convert.ToHex(value);
         } else {
-          const identifier2 = typeof args[0] === "string" ? pvtsutils.Convert.FromHex(args[0]) : args[0];
-          const value = new asn1X509__namespace.SubjectKeyIdentifier(identifier2);
+          const identifier3 = typeof args[0] === "string" ? pvtsutils.Convert.FromHex(args[0]) : args[0];
+          const value = new asn1X509__namespace.SubjectKeyIdentifier(identifier3);
           super(asn1X509__namespace.id_ce_subjectKeyIdentifier, args[1], asn1Schema.AsnConvert.serialize(value));
-          this.keyId = pvtsutils.Convert.ToHex(identifier2);
+          this.keyId = pvtsutils.Convert.ToHex(identifier3);
         }
       }
       toTextObject() {
@@ -18726,9 +18726,9 @@ var require_x509_cjs = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-android/build/cjs/key_description.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/key_description.js
 var require_key_description = __commonJS({
-  "node_modules/@peculiar/asn1-android/build/cjs/key_description.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/key_description.js"(exports) {
     "use strict";
     var IntegerSet_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -19251,9 +19251,9 @@ var require_key_description = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-android/build/cjs/nonstandard.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/nonstandard.js
 var require_nonstandard = __commonJS({
-  "node_modules/@peculiar/asn1-android/build/cjs/nonstandard.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/nonstandard.js"(exports) {
     "use strict";
     var NonStandardAuthorizationList_1;
     Object.defineProperty(exports, "__esModule", { value: true });
@@ -19364,9 +19364,9 @@ var require_nonstandard = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-android/build/cjs/attestation.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/attestation.js
 var require_attestation = __commonJS({
-  "node_modules/@peculiar/asn1-android/build/cjs/attestation.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/attestation.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     exports.AttestationApplicationId = exports.AttestationPackageInfo = void 0;
@@ -19409,9 +19409,9 @@ var require_attestation = __commonJS({
   }
 });
 
-// node_modules/@peculiar/asn1-android/build/cjs/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/index.js
 var require_cjs13 = __commonJS({
-  "node_modules/@peculiar/asn1-android/build/cjs/index.js"(exports) {
+  "../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@peculiar/asn1-android/build/cjs/index.js"(exports) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     var tslib_1 = (init_tslib_es6(), __toCommonJS(tslib_es6_exports));
@@ -19421,7 +19421,7 @@ var require_cjs13 = __commonJS({
   }
 });
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoBase64URL.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoBase64URL.js
 var isoBase64URL_exports = {};
 __export(isoBase64URL_exports, {
   fromBuffer: () => fromBuffer,
@@ -19434,7 +19434,7 @@ __export(isoBase64URL_exports, {
   trimPadding: () => trimPadding
 });
 
-// node_modules/@hexagon/base64/src/base64.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@hexagon/base64/src/base64.js
 var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 var charsUrl = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
 var genLookup = (target) => {
@@ -19508,7 +19508,7 @@ base64.validate = (encoded, urlMode) => {
 base64.base64 = base64;
 var base64_default = base64;
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoBase64URL.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoBase64URL.js
 function toBuffer(base64urlString, from = "base64url") {
   const _buffer = base64_default.toArrayBuffer(base64urlString, from === "base64url");
   return new Uint8Array(_buffer);
@@ -19539,14 +19539,14 @@ function trimPadding(input) {
   return input.replace(/=/g, "");
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCBOR.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCBOR.js
 var isoCBOR_exports = {};
 __export(isoCBOR_exports, {
   decodeFirst: () => decodeFirst,
   encode: () => encode
 });
 
-// node_modules/@levischuck/tiny-cbor/esm/cbor/cbor_internal.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@levischuck/tiny-cbor/esm/cbor/cbor_internal.js
 function decodeLength(data, argument, index) {
   if (argument < 24) {
     return [argument, 1];
@@ -19645,7 +19645,7 @@ function encodeLength(major, argument) {
   }
 }
 
-// node_modules/@levischuck/tiny-cbor/esm/cbor/cbor.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@levischuck/tiny-cbor/esm/cbor/cbor.js
 var CBORTag = class {
   /**
    * Wrap a value with a tag number.
@@ -19972,7 +19972,7 @@ function encodeCBOR(data) {
   return output;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCBOR.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCBOR.js
 function decodeFirst(input) {
   const _input = new Uint8Array(input);
   const decoded = decodePartialCBOR(_input, 0);
@@ -19983,7 +19983,7 @@ function encode(input) {
   return encodeCBOR(input);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/index.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/index.js
 var isoCrypto_exports = {};
 __export(isoCrypto_exports, {
   digest: () => digest,
@@ -19991,7 +19991,7 @@ __export(isoCrypto_exports, {
   verify: () => verify
 });
 
-// node_modules/@simplewebauthn/server/esm/helpers/cose.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/cose.js
 function isCOSEPublicKeyOKP(cosePublicKey) {
   const kty = cosePublicKey.get(COSEKEYS.kty);
   return isCOSEKty(kty) && kty === COSEKTY.OKP;
@@ -20062,7 +20062,7 @@ function isCOSEAlg(alg) {
   return Object.values(COSEALG).indexOf(alg) >= 0;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/mapCoseAlgToWebCryptoHashAlgName.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/mapCoseAlgToWebCryptoHashAlgName.js
 function mapCoseAlgToWebCryptoHashAlgName(alg) {
   if ([COSEALG.RS1].indexOf(alg) >= 0) {
     return "SHA-1";
@@ -20076,7 +20076,7 @@ function mapCoseAlgToWebCryptoHashAlgName(alg) {
   throw new Error(`Could not map COSE alg value of ${alg} to a WebCrypto hash alg name`);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/getWebCrypto.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/getWebCrypto.js
 var webCrypto = void 0;
 function getWebCrypto() {
   const toResolve = new Promise((resolve, reject) => {
@@ -20107,7 +20107,7 @@ var _getWebCryptoInternals = {
   }
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/digest.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/digest.js
 async function digest(data, algorithm) {
   const WebCrypto = await getWebCrypto();
   const subtleAlgorithm = mapCoseAlgToWebCryptoHashAlgName(algorithm);
@@ -20115,14 +20115,14 @@ async function digest(data, algorithm) {
   return new Uint8Array(hashed);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/getRandomValues.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/getRandomValues.js
 async function getRandomValues(array) {
   const WebCrypto = await getWebCrypto();
   WebCrypto.getRandomValues(array);
   return array;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/convertAAGUIDToString.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/convertAAGUIDToString.js
 function convertAAGUIDToString(aaguid) {
   const hex = isoUint8Array_exports.toHex(aaguid);
   const segments = [
@@ -20140,7 +20140,7 @@ function convertAAGUIDToString(aaguid) {
   return segments.join("-");
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/convertCOSEtoPKCS.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/convertCOSEtoPKCS.js
 function convertCOSEtoPKCS(cosePublicKey) {
   const struct = isoCBOR_exports.decodeFirst(cosePublicKey);
   const tag = Uint8Array.from([4]);
@@ -20155,7 +20155,7 @@ function convertCOSEtoPKCS(cosePublicKey) {
   return isoUint8Array_exports.concat([tag, x]);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/decodeAttestationObject.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/decodeAttestationObject.js
 function decodeAttestationObject(attestationObject) {
   return _decodeAttestationObjectInternals.stubThis(isoCBOR_exports.decodeFirst(attestationObject));
 }
@@ -20163,7 +20163,7 @@ var _decodeAttestationObjectInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/decodeClientDataJSON.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/decodeClientDataJSON.js
 function decodeClientDataJSON(data) {
   const toString = isoBase64URL_exports.toUTF8String(data);
   const clientData = JSON.parse(toString);
@@ -20173,7 +20173,7 @@ var _decodeClientDataJSONInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/decodeCredentialPublicKey.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/decodeCredentialPublicKey.js
 function decodeCredentialPublicKey(publicKey) {
   return _decodeCredentialPublicKeyInternals.stubThis(isoCBOR_exports.decodeFirst(publicKey));
 }
@@ -20181,7 +20181,7 @@ var _decodeCredentialPublicKeyInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/generateChallenge.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/generateChallenge.js
 async function generateChallenge() {
   const challenge = new Uint8Array(32);
   await isoCrypto_exports.getRandomValues(challenge);
@@ -20191,7 +20191,7 @@ var _generateChallengeInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/generateUserID.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/generateUserID.js
 async function generateUserID() {
   const newUserID = new Uint8Array(32);
   await isoCrypto_exports.getRandomValues(newUserID);
@@ -20201,7 +20201,7 @@ var _generateUserIDInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/getCertificateInfo.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/getCertificateInfo.js
 var import_asn1_schema = __toESM(require_cjs2(), 1);
 var import_asn1_x509 = __toESM(require_cjs3(), 1);
 var issuerSubjectIDKey = {
@@ -20265,10 +20265,10 @@ function issuerSubjectToString(input) {
   return parts.join(" : ");
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/isCertRevoked.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/isCertRevoked.js
 var import_x509 = __toESM(require_x509_cjs(), 1);
 
-// node_modules/@simplewebauthn/server/esm/helpers/fetch.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/fetch.js
 function fetch(url) {
   return _fetchInternals.stubThis(url);
 }
@@ -20276,7 +20276,7 @@ var _fetchInternals = {
   stubThis: (url) => globalThis.fetch(url)
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/isCertRevoked.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/isCertRevoked.js
 var cacheRevokedCerts = {};
 async function isCertRevoked(cert) {
   const { extensions } = cert;
@@ -20348,7 +20348,7 @@ async function isCertRevoked(cert) {
   return false;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/decodeAuthenticatorExtensions.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/decodeAuthenticatorExtensions.js
 function decodeAuthenticatorExtensions(extensionData) {
   let toCBOR;
   try {
@@ -20371,7 +20371,7 @@ function convertMapToObjectDeep(input) {
   return mapped;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/parseAuthenticatorData.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/parseAuthenticatorData.js
 function parseAuthenticatorData(authData) {
   if (authData.byteLength < 37) {
     throw new Error(`Authenticator data was ${authData.byteLength} bytes, expected at least 37 bytes`);
@@ -20460,16 +20460,16 @@ var _parseAuthenticatorDataInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/toHash.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/toHash.js
 function toHash(data, algorithm = -7) {
   if (typeof data === "string") {
     data = isoUint8Array_exports.fromUTF8String(data);
   }
-  const digest2 = isoCrypto_exports.digest(data, algorithm);
-  return digest2;
+  const digest3 = isoCrypto_exports.digest(data, algorithm);
+  return digest3;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/validateCertificatePath.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/validateCertificatePath.js
 var import_x5092 = __toESM(require_x509_cjs(), 1);
 async function validateCertificatePath(x5cCertsPEM, trustAnchorsPEM = []) {
   if (trustAnchorsPEM.length === 0) {
@@ -20579,13 +20579,13 @@ var InvalidCertificatePath = class extends Error {
   }
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/convertX509PublicKeyToCOSE.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/convertX509PublicKeyToCOSE.js
 var import_asn1_schema2 = __toESM(require_cjs2(), 1);
 var import_asn1_x5092 = __toESM(require_cjs3(), 1);
 var import_asn1_ecc = __toESM(require_cjs6(), 1);
 var import_asn1_rsa = __toESM(require_cjs7(), 1);
 
-// node_modules/@simplewebauthn/server/esm/helpers/mapX509SignatureAlgToCOSEAlg.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/mapX509SignatureAlgToCOSEAlg.js
 function mapX509SignatureAlgToCOSEAlg(signatureAlgorithm) {
   let alg;
   if (signatureAlgorithm === "1.2.840.10045.4.3.2") {
@@ -20608,7 +20608,7 @@ function mapX509SignatureAlgToCOSEAlg(signatureAlgorithm) {
   return alg;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/convertX509PublicKeyToCOSE.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/convertX509PublicKeyToCOSE.js
 function convertX509PublicKeyToCOSE(x509Certificate) {
   let cosePublicKey = /* @__PURE__ */ new Map();
   const x509 = import_asn1_schema2.AsnParser.parse(x509Certificate, import_asn1_x5092.Certificate);
@@ -20662,7 +20662,7 @@ function convertX509PublicKeyToCOSE(x509Certificate) {
   return cosePublicKey;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/verifySignature.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/verifySignature.js
 function verifySignature(opts) {
   const { signature, data, credentialPublicKey, x509Certificate, hashAlgorithm } = opts;
   if (!x509Certificate && !credentialPublicKey) {
@@ -20688,7 +20688,7 @@ var _verifySignatureInternals = {
   stubThis: (value) => value
 };
 
-// node_modules/@simplewebauthn/server/esm/metadata/parseJWT.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/metadata/parseJWT.js
 function parseJWT(jwt) {
   const parts = jwt.split(".");
   return [
@@ -20698,7 +20698,7 @@ function parseJWT(jwt) {
   ];
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/mapJWSAlgToCOSEAlg.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/mapJWSAlgToCOSEAlg.js
 function mapJWSAlgToCOSEAlg(alg) {
   let algCOSE;
   if (alg === "ES256") {
@@ -20719,14 +20719,14 @@ function mapJWSAlgToCOSEAlg(alg) {
   return algCOSE;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/importJWKKey.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/importJWKKey.js
 async function importJWKKey(opts) {
   const WebCrypto = await getWebCrypto();
   const { keyData, algorithm } = opts;
   return WebCrypto.subtle.importKey("jwk", keyData, algorithm, false, ["verify"]);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyEC2.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyEC2.js
 async function verifyEC2(opts) {
   const { cosePublicKey, signature, data, shaHashOverride } = opts;
   const WebCrypto = await getWebCrypto();
@@ -20785,7 +20785,7 @@ async function verifyEC2(opts) {
   return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/mapCoseAlgToWebCryptoKeyAlgName.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/mapCoseAlgToWebCryptoKeyAlgName.js
 function mapCoseAlgToWebCryptoKeyAlgName(alg) {
   if ([COSEALG.EdDSA].indexOf(alg) >= 0) {
     return "Ed25519";
@@ -20805,7 +20805,7 @@ function mapCoseAlgToWebCryptoKeyAlgName(alg) {
   throw new Error(`Could not map COSE alg value of ${alg} to a WebCrypto key alg name`);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyRSA.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyRSA.js
 async function verifyRSA(opts) {
   const { cosePublicKey, signature, data, shaHashOverride } = opts;
   const WebCrypto = await getWebCrypto();
@@ -20871,7 +20871,7 @@ async function verifyRSA(opts) {
   return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
 }
 
-// node_modules/@simplewebauthn/server/esm/metadata/verifyJWT.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/metadata/verifyJWT.js
 function verifyJWT(jwt, leafCert) {
   const [header, payload, signature] = jwt.split(".");
   const certCOSE = convertX509PublicKeyToCOSE(leafCert);
@@ -20898,13 +20898,13 @@ function verifyJWT(jwt, leafCert) {
   throw new Error(`JWT verification with public key of kty ${kty} is not supported by this method`);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/convertPEMToBytes.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/convertPEMToBytes.js
 function convertPEMToBytes(pem) {
   const certBase64 = pem.replace("-----BEGIN CERTIFICATE-----", "").replace("-----END CERTIFICATE-----", "").replace(/[\n ]/g, "");
   return isoBase64URL_exports.toBuffer(certBase64, "base64");
 }
 
-// node_modules/@simplewebauthn/server/esm/metadata/verifyMDSBlob.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/metadata/verifyMDSBlob.js
 async function verifyMDSBlob(blob) {
   const parsedJWT = parseJWT(blob);
   const header = parsedJWT[0];
@@ -20944,7 +20944,7 @@ async function verifyMDSBlob(blob) {
   };
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyAKP.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyAKP.js
 async function verifyAKP(opts) {
   const { cosePublicKey, signature, data } = opts;
   const WebCrypto = await getWebCrypto();
@@ -20980,7 +20980,7 @@ async function verifyAKP(opts) {
   return WebCrypto.subtle.verify(webCryptoAlg, key, signature, data);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyOKP.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verifyOKP.js
 async function verifyOKP(opts) {
   const { cosePublicKey, signature, data } = opts;
   const WebCrypto = await getWebCrypto();
@@ -21023,7 +21023,7 @@ async function verifyOKP(opts) {
   return WebCrypto.subtle.verify(verifyAlgorithm, key, signature, data);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/unwrapEC2Signature.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/unwrapEC2Signature.js
 var import_asn1_schema3 = __toESM(require_cjs2(), 1);
 var import_asn1_ecc2 = __toESM(require_cjs6(), 1);
 function unwrapEC2Signature(signature, crv) {
@@ -21066,7 +21066,7 @@ function toNormalizedBytes(bytes, componentLength) {
   return normalizedBytes;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verify.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/verify.js
 function verify(opts) {
   const { cosePublicKey, signature, data, shaHashOverride } = opts;
   if (isCOSEPublicKeyEC2(cosePublicKey)) {
@@ -21092,7 +21092,7 @@ function verify(opts) {
   throw new Error(`Signature verification with public key of kty ${kty} is not supported by this method`);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoUint8Array.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoUint8Array.js
 var isoUint8Array_exports = {};
 __export(isoUint8Array_exports, {
   areEqual: () => areEqual,
@@ -21150,7 +21150,7 @@ function toDataView(array) {
   return new DataView(array.buffer, array.byteOffset, array.length);
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/convertCertBufferToPEM.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/convertCertBufferToPEM.js
 function convertCertBufferToPEM(certBuffer) {
   let b64cert;
   if (typeof certBuffer === "string") {
@@ -21176,7 +21176,7 @@ ${PEMKey}-----END CERTIFICATE-----
   return PEMKey;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/runtimeSupportsWebCryptoKeyAlg.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/iso/isoCrypto/runtimeSupportsWebCryptoKeyAlg.js
 function runtimeSupportsWebCryptoKeyAlg(alg) {
   const globalSubtleCrypto = globalThis.SubtleCrypto;
   if (typeof globalSubtleCrypto.supports !== "function") {
@@ -21189,7 +21189,7 @@ function runtimeSupportsWebCryptoKeyAlg(alg) {
   }
 }
 
-// node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/android-safetynet.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/android-safetynet.js
 var GlobalSign_Root_CA = `-----BEGIN CERTIFICATE-----
 MIIDdTCCAl2gAwIBAgILBAAAAAABFUtaw5QwDQYJKoZIhvcNAQEFBQAwVzELMAkG
 A1UEBhMCQkUxGTAXBgNVBAoTEEdsb2JhbFNpZ24gbnYtc2ExEDAOBgNVBAsTB1Jv
@@ -21213,7 +21213,7 @@ HMUfpIBvFSDJ3gyICh3WZlXi/EjJKSZp4A==
 -----END CERTIFICATE-----
 `;
 
-// node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/android-key.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/android-key.js
 var Google_Hardware_Attestation_Root_1 = `-----BEGIN CERTIFICATE-----
 MIIFYDCCA0igAwIBAgIJAOj6GWMU0voYMA0GCSqGSIb3DQEBCwUAMBsxGTAXBgNV
 BAUTEGY5MjAwOWU4NTNiNmIwNDUwHhcNMTYwNTI2MTYyODUyWhcNMjYwNTI0MTYy
@@ -21342,7 +21342,7 @@ w1IdYIg2Wxg7yHcQZemFQg==
 -----END CERTIFICATE-----
 `;
 
-// node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/apple.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/apple.js
 var Apple_WebAuthn_Root_CA = `-----BEGIN CERTIFICATE-----
 MIICEjCCAZmgAwIBAgIQaB0BbHo84wIlpQGUKEdXcTAKBggqhkjOPQQDAzBLMR8w
 HQYDVQQDDBZBcHBsZSBXZWJBdXRobiBSb290IENBMRMwEQYDVQQKDApBcHBsZSBJ
@@ -21359,7 +21359,7 @@ jAGGiQIwHFj+dJZYUJR786osByBelJYsVZd2GbHQu209b5RCmGQ21gpSAk9QZW4B
 -----END CERTIFICATE-----
 `;
 
-// node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/mds.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/services/defaultRootCerts/mds.js
 var GlobalSign_Root_CA_R3 = `-----BEGIN CERTIFICATE-----
 MIIDXzCCAkegAwIBAgILBAAAAAABIVhTCKIwDQYJKoZIhvcNAQELBQAwTDEgMB4G
 A1UECxMXR2xvYmFsU2lnbiBSb290IENBIC0gUjMxEzARBgNVBAoTCkdsb2JhbFNp
@@ -21415,7 +21415,7 @@ vouXsXgxT7PntgMTzlSdriVZzH81Xwj3QEUxeCp6
 -----END CERTIFICATE-----
 `;
 
-// node_modules/@simplewebauthn/server/esm/services/settingsService.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/services/settingsService.js
 var BaseSettingsService = class {
   constructor() {
     Object.defineProperty(this, "pemCertificates", {
@@ -21434,7 +21434,7 @@ var BaseSettingsService = class {
     this._runtimeSupportsPQC = runtimeSupportsWebCryptoKeyAlg("ML-DSA-44");
   }
   setRootCertificates(opts) {
-    const { identifier: identifier2, certificates } = opts;
+    const { identifier: identifier3, certificates } = opts;
     const newCertificates = [];
     for (const cert of certificates) {
       if (cert instanceof Uint8Array) {
@@ -21443,11 +21443,11 @@ var BaseSettingsService = class {
         newCertificates.push(cert);
       }
     }
-    this.pemCertificates.set(identifier2, newCertificates);
+    this.pemCertificates.set(identifier3, newCertificates);
   }
   getRootCertificates(opts) {
-    const { identifier: identifier2 } = opts;
-    return this.pemCertificates.get(identifier2) ?? [];
+    const { identifier: identifier3 } = opts;
+    return this.pemCertificates.get(identifier3) ?? [];
   }
   runtimeSupportsPQC() {
     return this._runtimeSupportsPQC;
@@ -21479,7 +21479,7 @@ SettingsService.setRootCertificates({
   ]
 });
 
-// node_modules/@simplewebauthn/server/esm/registration/generateRegistrationOptions.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/generateRegistrationOptions.js
 var defaultAuthenticatorSelection = {
   residentKey: "preferred",
   userVerification: "preferred"
@@ -21563,7 +21563,7 @@ async function generateRegistrationOptions(options) {
   };
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/parseBackupFlags.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/parseBackupFlags.js
 function parseBackupFlags({ be, bs }) {
   const credentialBackedUp = bs;
   let credentialDeviceType = "singleDevice";
@@ -21582,7 +21582,7 @@ var InvalidBackupFlags = class extends Error {
   }
 };
 
-// node_modules/@simplewebauthn/server/esm/helpers/matchExpectedRPID.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/matchExpectedRPID.js
 async function matchExpectedRPID(rpIDHash, expectedRPIDs) {
   try {
     const matchedRPID = await Promise.any(expectedRPIDs.map((expected) => {
@@ -21613,7 +21613,7 @@ var UnexpectedRPIDHash = class extends Error {
   }
 };
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationFIDOU2F.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationFIDOU2F.js
 async function verifyAttestationFIDOU2F(options) {
   const { attStmt, clientDataHash, rpIdHash, credentialID, credentialPublicKey, aaguid, rootCertificates } = options;
   const reservedByte = Uint8Array.from([0]);
@@ -21651,7 +21651,7 @@ async function verifyAttestationFIDOU2F(options) {
   });
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/validateExtFIDOGenCEAAGUID.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/validateExtFIDOGenCEAAGUID.js
 var import_asn1_schema4 = __toESM(require_cjs2(), 1);
 var id_fido_gen_ce_aaguid = "1.3.6.1.4.1.45724.1.1.4";
 function validateExtFIDOGenCEAAGUID(certExtensions, aaguid) {
@@ -21673,7 +21673,7 @@ function validateExtFIDOGenCEAAGUID(certExtensions, aaguid) {
   return true;
 }
 
-// node_modules/@simplewebauthn/server/esm/helpers/logging.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/helpers/logging.js
 var DefaultNoopLogger = {
   debug() {
   },
@@ -21701,7 +21701,7 @@ function buildLoggerAllMethods(logger) {
   return toReturn;
 }
 
-// node_modules/@simplewebauthn/server/esm/services/metadataService.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/services/metadataService.js
 var NonRefreshingMDS = {
   url: "",
   no: 0,
@@ -21914,7 +21914,7 @@ var BaseMetadataService = class {
 };
 var MetadataService = new BaseMetadataService();
 
-// node_modules/@simplewebauthn/server/esm/metadata/verifyAttestationWithMetadata.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/metadata/verifyAttestationWithMetadata.js
 async function verifyAttestationWithMetadata({ statement, credentialPublicKey, x5c, attestationStatementAlg }) {
   const { authenticationAlgorithms, authenticatorGetInfo, attestationRootCertificates } = statement;
   const keypairCOSEAlgs = /* @__PURE__ */ new Set();
@@ -22010,7 +22010,7 @@ function stringifyCOSEInfo(info) {
   return toReturn;
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationPacked.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationPacked.js
 async function verifyAttestationPacked(options) {
   const { attStmt, clientDataHash, authData, credentialPublicKey, aaguid, rootCertificates } = options;
   const sig = attStmt.get("sig");
@@ -22103,7 +22103,7 @@ async function verifyAttestationPacked(options) {
   return verified;
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationAndroidSafetyNet.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationAndroidSafetyNet.js
 async function verifyAttestationAndroidSafetyNet(options) {
   const { attStmt, clientDataHash, authData, aaguid, rootCertificates, verifyTimestampMS = true, credentialPublicKey, attestationSafetyNetEnforceCTSCheck } = options;
   const alg = attStmt.get("alg");
@@ -22179,11 +22179,11 @@ async function verifyAttestationAndroidSafetyNet(options) {
   return verified;
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/verifyAttestationTPM.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/verifyAttestationTPM.js
 var import_asn1_schema5 = __toESM(require_cjs2(), 1);
 var import_asn1_x5093 = __toESM(require_cjs3(), 1);
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/constants.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/constants.js
 var TPM_ST = {
   196: "TPM_ST_RSP_COMMAND",
   32768: "TPM_ST_NULL",
@@ -22300,7 +22300,7 @@ var TPM_ECC_CURVE_COSE_CRV_MAP = {
   // p256
 };
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/parseCertInfo.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/parseCertInfo.js
 function parseCertInfo(certInfo) {
   let pointer = 0;
   const dataView = isoUint8Array_exports.toDataView(certInfo);
@@ -22347,7 +22347,7 @@ function parseCertInfo(certInfo) {
   };
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/parsePubArea.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/parsePubArea.js
 function parsePubArea(pubArea) {
   let pointer = 0;
   const dataView = isoUint8Array_exports.toDataView(pubArea);
@@ -22418,13 +22418,13 @@ function parsePubArea(pubArea) {
   };
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/isValidTPMManufacturerID.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/isValidTPMManufacturerID.js
 function getTPMManufacturerInfo(id) {
   const _normalized = `id:${id.substring(3).toUpperCase()}`;
   return TPM_MANUFACTURERS[_normalized];
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/verifyAttestationTPM.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/tpm/verifyAttestationTPM.js
 async function verifyAttestationTPM(options) {
   const { aaguid, attStmt, authData, credentialPublicKey, clientDataHash, rootCertificates } = options;
   const ver = attStmt.get("ver");
@@ -22655,7 +22655,7 @@ function attestedNameAlgToCOSEAlg(alg) {
   throw new Error(`Unexpected TPM attested name alg ${alg}`);
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationAndroidKey.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationAndroidKey.js
 var import_asn1_schema6 = __toESM(require_cjs2(), 1);
 var import_asn1_x5094 = __toESM(require_cjs3(), 1);
 var import_asn1_android = __toESM(require_cjs13(), 1);
@@ -22732,7 +22732,7 @@ async function verifyAttestationAndroidKey(options) {
   });
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationApple.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifications/verifyAttestationApple.js
 var import_asn1_schema7 = __toESM(require_cjs2(), 1);
 var import_asn1_x5095 = __toESM(require_cjs3(), 1);
 async function verifyAttestationApple(options) {
@@ -22770,7 +22770,7 @@ async function verifyAttestationApple(options) {
   return true;
 }
 
-// node_modules/@simplewebauthn/server/esm/registration/verifyRegistrationResponse.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/registration/verifyRegistrationResponse.js
 async function verifyRegistrationResponse(options) {
   const { response, expectedChallenge, expectedOrigin, expectedRPID, expectedType, requireUserPresence = true, requireUserVerification = true, supportedAlgorithmIDs = defaultSupportedAlgorithmIDs, attestationSafetyNetEnforceCTSCheck = true } = options;
   const { id, rawId, type: credentialType, response: attestationResponse } = response;
@@ -22925,7 +22925,7 @@ async function verifyRegistrationResponse(options) {
   };
 }
 
-// node_modules/@simplewebauthn/server/esm/authentication/generateAuthenticationOptions.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/authentication/generateAuthenticationOptions.js
 async function generateAuthenticationOptions(options) {
   const { allowCredentials, challenge = await generateChallenge(), timeout = 6e4, userVerification = "preferred", extensions, rpID } = options;
   let _challenge = challenge;
@@ -22951,7 +22951,7 @@ async function generateAuthenticationOptions(options) {
   };
 }
 
-// node_modules/@simplewebauthn/server/esm/authentication/verifyAuthenticationResponse.js
+// ../../../Users/luguangyi/Downloads/GuangyiWorkSpaceNative/BackendRepository/node_modules/@simplewebauthn/server/esm/authentication/verifyAuthenticationResponse.js
 async function verifyAuthenticationResponse(options) {
   const { response, expectedChallenge, expectedOrigin, expectedRPID, expectedType, expectedTopOrigin, credential, requireUserVerification = true, advancedFIDOConfig } = options;
   const { id, rawId, type: credentialType, response: assertionResponse } = response;
@@ -23097,7 +23097,7 @@ import http2 from "node:http";
 import { isDeepStrictEqual } from "node:util";
 import http22 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
-import { randomBytes as randomBytes2, randomUUID as randomUUID3, createHash as createHash2, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
+import { randomBytes as randomBytes2, randomUUID as randomUUID3, createHash as createHash3, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -27199,10 +27199,10 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
   }
   function publish(owner, key, expected, bytes, doc) {
     rateLimit("course-owner:" + owner, 36e5, 120);
-    const digest2 = hash(Buffer.concat([Buffer.from(String(expected) + "\n"), bytes]));
+    const digest3 = hash(Buffer.concat([Buffer.from(String(expected) + "\n"), bytes]));
     const prior = db.prepare("SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?").get(owner, key);
     if (prior) {
-      if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
+      if (prior.body_hash !== digest3) fail2("IDEMPOTENCY_CONFLICT", 409);
       return { ...JSON.parse(prior.result), title: doc.title, replayed: true };
     }
     const old = db.prepare("SELECT revision,deleted FROM courses WHERE owner_id=? AND id=?").get(owner, doc.id);
@@ -27211,7 +27211,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     if (db.prepare("SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?").get(owner).n >= 2e4) fail2("COURSE_PUBLICATION_LIMIT");
     const result = { id: doc.id, title: doc.title, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
     db.prepare("INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at").run(owner, doc.id, result.revision, JSON.stringify(doc), result.updatedAt);
-    db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result), now());
+    db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest3, JSON.stringify(result), now());
     return { ...result, replayed: false };
   }
   const runningUsers = /* @__PURE__ */ new Set();
@@ -27367,13 +27367,13 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         const mutation = uuid3(value.mutationID), lessonID = uuid3(value.lessonID), blockID = value.blockID === void 0 ? null : uuid3(value.blockID);
         if (!Number.isSafeInteger(value.courseRevision) || value.courseRevision < 1 || blockID === null && typeof value.completed !== "boolean" || value.completed !== void 0 && typeof value.completed !== "boolean") fail2("INVALID_COURSE_PROGRESS");
         if (blockID === null && (value.selectedOptionIDs !== void 0 || value.text !== void 0)) fail2("INVALID_COURSE_PROGRESS");
-        const digest2 = hash(bytes);
+        const digest3 = hash(bytes);
         const result = transaction(() => {
           const actor = userFor(request), { ownerID } = workspaceAccess(request), row = course(ownerID, id), doc = JSON.parse(row.document);
           if (row.revision !== value.courseRevision) fail2("COURSE_REVISION_CONFLICT", 409);
           const prior = db.prepare("SELECT * FROM course_progress_mutations WHERE user_id=? AND owner_id=? AND course_id=? AND mutation_id=?").get(actor, ownerID, id, mutation);
           if (prior) {
-            if (prior.body_hash !== digest2) fail2("IDEMPOTENCY_CONFLICT", 409);
+            if (prior.body_hash !== digest3) fail2("IDEMPOTENCY_CONFLICT", 409);
             return progress(actor, ownerID, id, doc);
           }
           const lesson = doc.lessons.find((lesson2) => lesson2.id === lessonID);
@@ -27395,7 +27395,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
           const serialized = JSON.stringify(state);
           if (Buffer.byteLength(serialized) > 2 * limit) fail2("COURSE_PROGRESS_TOO_LARGE");
           db.prepare("INSERT INTO course_progress VALUES(?,?,?,?) ON CONFLICT(user_id,owner_id,course_id) DO UPDATE SET state=excluded.state").run(actor, ownerID, id, serialized);
-          db.prepare("INSERT INTO course_progress_mutations VALUES(?,?,?,?,?,?)").run(actor, ownerID, id, mutation, digest2, "{}");
+          db.prepare("INSERT INTO course_progress_mutations VALUES(?,?,?,?,?,?)").run(actor, ownerID, id, mutation, digest3, "{}");
           return state;
         });
         respond(response, 200, { data: result });
@@ -27403,6 +27403,1526 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       }
     }
     fail2("NOT_FOUND", 404);
+  };
+}
+
+// Server/app-content.mjs
+import { createHash as createHash2 } from "node:crypto";
+
+// Server/AppContent/demo-course.json
+var demo_course_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "demo-course",
+  kind: "course",
+  version: 3,
+  minimumContentVersion: 1,
+  payload: {
+    id: "8343F80B-F43C-4901-B585-A67647EA9700",
+    lessons: [
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0100",
+            text: "\u5148\u8BB0\u5F55\u8981\u505A\u7684\u4E8B\uFF0C\u518D\u9009\u62E9\u771F\u6B63\u91CD\u8981\u7684\u4E8B\u3002\u4E3A\u6BCF\u9879\u4EFB\u52A1\u4FDD\u7559\u5408\u7406\u7684\u65F6\u95F4\uFF0C\u4E5F\u7ED9\u81EA\u5DF1\u7559\u4E00\u70B9\u7A7A\u767D\u3002",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0101",
+            text: "\u8BD5\u4E00\u8BD5\uFF1A\u9009\u51FA\u4ECA\u5929\u6700\u91CD\u8981\u7684\u4E00\u4EF6\u4E8B\uFF0C\u4E3A\u5B83\u5B89\u6392\u4E00\u4E2A\u4E0D\u88AB\u6253\u6270\u7684\u65F6\u6BB5\u3002",
+            type: "callout"
+          },
+          {
+            caption: "\u793A\u4F8B\uFF1A\u4E00\u5929\u7684\u65F6\u95F4\u5206\u914D\uFF08\u5C0F\u65F6\uFF09",
+            chartType: "bar",
+            id: "8343F80B-F43C-4901-B585-A67647EA0102",
+            points: [
+              {
+                label: "\u5B66\u4E60",
+                value: 5
+              },
+              {
+                label: "\u8FD0\u52A8",
+                value: 1
+              },
+              {
+                label: "\u4F11\u606F",
+                value: 8
+              },
+              {
+                label: "\u5176\u4ED6",
+                value: 10
+              }
+            ],
+            type: "chart"
+          },
+          {
+            correctOptionIDs: [
+              "a"
+            ],
+            explanation: "\u5148\u786E\u5B9A\u91CD\u70B9\uFF0C\u518D\u4E3A\u4EFB\u52A1\u7559\u51FA\u7F13\u51B2\u3002",
+            id: "8343F80B-F43C-4901-B585-A67647EA0103",
+            options: [
+              {
+                id: "a",
+                text: "\u5148\u6311\u9009\u6700\u91CD\u8981\u7684\u4EFB\u52A1"
+              },
+              {
+                id: "b",
+                text: "\u628A\u6240\u6709\u65F6\u95F4\u90FD\u6392\u6EE1"
+              }
+            ],
+            questionType: "singleChoice",
+            text: "\u54EA\u4E00\u79CD\u5B89\u6392\u66F4\u9002\u5408\u5F00\u59CB\u4ECA\u5929\uFF1F",
+            type: "question"
+          }
+        ],
+        id: "8343F80B-F43C-4901-B585-A67647EA9701",
+        title: "\u628A\u4E00\u5929\u5B89\u6392\u5F97\u66F4\u4ECE\u5BB9"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0200",
+            text: "\u590D\u76D8\u7684\u76EE\u7684\uFF0C\u662F\u627E\u5230\u9002\u5408\u81EA\u5DF1\u7684\u8282\u594F\u3002\u6BCF\u5929\u8BB0\u5F55\u4E00\u70B9\u8FDB\u5C55\uFF0C\u6301\u7EED\u6BD4\u5B8C\u7F8E\u66F4\u91CD\u8981\u3002",
+            type: "text"
+          },
+          {
+            caption: "\u793A\u4F8B\uFF1A\u4E00\u5468\u7684\u4E13\u6CE8\u65F6\u957F\uFF08\u5206\u949F\uFF09",
+            chartType: "line",
+            id: "8343F80B-F43C-4901-B585-A67647EA0201",
+            points: [
+              {
+                label: "\u5468\u4E00",
+                value: 35
+              },
+              {
+                label: "\u5468\u4E8C",
+                value: 45
+              },
+              {
+                label: "\u5468\u4E09",
+                value: 40
+              },
+              {
+                label: "\u5468\u56DB",
+                value: 55
+              }
+            ],
+            type: "chart"
+          },
+          {
+            correctOptionIDs: [
+              "a",
+              "b"
+            ],
+            explanation: "\u7559\u51FA\u4F11\u606F\u548C\u8C03\u6574\u7684\u7A7A\u95F4\uFF0C\u8BA1\u5212\u624D\u80FD\u6301\u7EED\u3002",
+            id: "8343F80B-F43C-4901-B585-A67647EA0202",
+            options: [
+              {
+                id: "a",
+                text: "\u5B89\u6392\u4F11\u606F"
+              },
+              {
+                id: "b",
+                text: "\u5B9A\u671F\u590D\u76D8"
+              },
+              {
+                id: "c",
+                text: "\u6C38\u8FDC\u4E0D\u5141\u8BB8\u8BA1\u5212\u53D8\u5316"
+              }
+            ],
+            questionType: "multipleChoice",
+            text: "\u54EA\u4E9B\u4E60\u60EF\u6709\u52A9\u4E8E\u4FDD\u6301\u8282\u594F\uFF1F",
+            type: "question"
+          },
+          {
+            explanation: "\u8FD9\u9053\u9898\u6CA1\u6709\u6807\u51C6\u7B54\u6848\u3002\u5199\u4E0B\u81EA\u5DF1\u7684\u60F3\u6CD5\uFF0C\u5C31\u8FC8\u51FA\u4E86\u7B2C\u4E00\u6B65\u3002",
+            id: "8343F80B-F43C-4901-B585-A67647EA0203",
+            input: {
+              kind: "text",
+              maxLines: 5,
+              minLines: 2,
+              placeholder: "\u4F8B\u5982\uFF1A\u8BFB\u5B8C\u4E00\u7AE0\uFF0C\u6216\u6574\u7406\u4ECA\u5929\u7684\u7B14\u8BB0"
+            },
+            questionType: "shortAnswer",
+            text: "\u5199\u4E0B\u4E00\u4EF6\u4ECA\u5929\u60F3\u5B8C\u6210\u7684\u5C0F\u4E8B\u3002",
+            type: "question"
+          }
+        ],
+        id: "8343F80B-F43C-4901-B585-A67647EA9702",
+        title: "\u5EFA\u7ACB\u81EA\u5DF1\u7684\u8282\u594F"
+      },
+      {
+        blocks: [
+          {
+            focusLines: [
+              4,
+              5
+            ],
+            focusSpans: [
+              {
+                line: 4,
+                text: "count"
+              },
+              {
+                line: 5,
+                text: "++"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0300",
+            presentation: {
+              kind: "markdown",
+              markdown: {
+                source: "## \u8BA9\u53D8\u91CF\u589E\u52A0\u4E00\u6B21\n`++count` \u4F1A\u628A\u53D8\u91CF\u7684\u503C\u52A0\u4E0A **1**\u3002\u5148\u9884\u6D4B\u8F93\u51FA\uFF0C\u518D\u70B9\u51FB\u4E0B\u65B9\u6F14\u793A\u9A8C\u8BC1\u3002\n\n```cpp\n#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count; // \u8F93\u51FA 1\n}\n```\n\u6BCF\u6B21\u6267\u884C\u9012\u589E\u8BED\u53E5\uFF0C\u90FD\u662F\u5728\u539F\u6765\u7684\u503C\u4E0A\u518D\u52A0\u4E00\u3002"
+              }
+            },
+            text: "\u6574\u6570\u53D8\u91CF count \u4ECE 0 \u5F00\u59CB\u3002\u6267\u884C ++count \u540E\u53D8\u6210 1\uFF0Cstd::cout \u4F1A\u8F93\u51FA 1\u3002",
+            title: "\u4ECE\u4E00\u884C\u4EE3\u7801\u5F00\u59CB",
+            type: "text"
+          },
+          {
+            focusLines: [
+              4,
+              5
+            ],
+            focusSpans: [
+              {
+                line: 4,
+                text: "0"
+              },
+              {
+                line: 5,
+                text: "count"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0301",
+            presentation: {
+              kind: "svg",
+              svg: {
+                height: 200,
+                source: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-label="count \u4ECE 0 \u589E\u52A0\u5230 1">\n  <style>text{font-family:system-ui,sans-serif;fill:#24372f}.box{fill:#e7efe8;stroke:#548467;stroke-width:2}.arrow{stroke:#548467;stroke-width:3;fill:none}</style>\n  <rect class="box" x="15" y="35" width="105" height="105" rx="18"/>\n  <text x="67" y="65" text-anchor="middle" font-size="16">count</text><text x="67" y="114" text-anchor="middle" font-size="42">0</text>\n  <path class="arrow" d="M135 90H220M210 80L220 90L210 100"/>\n  <text x="177" y="66" text-anchor="middle" font-size="16">++count</text>\n  <rect class="box" x="240" y="35" width="105" height="105" rx="18"/>\n  <text x="292" y="65" text-anchor="middle" font-size="16">count</text><text x="292" y="114" text-anchor="middle" font-size="42">1</text>\n</svg>'
+              }
+            },
+            text: "\u53D8\u91CF count \u53EF\u4EE5\u770B\u6210\u4E00\u4E2A\u6709\u540D\u79F0\u7684\u76D2\u5B50\u3002\u521D\u59CB\u76D2\u5B50\u91CC\u662F 0\uFF0C\u6267\u884C ++count \u540E\uFF0C\u76D2\u5B50\u91CC\u7684\u503C\u53D8\u6210 1\u3002",
+            title: "\u53D8\u91CF\u5982\u4F55\u53D8\u5316",
+            type: "text"
+          },
+          {
+            focusLines: [
+              5
+            ],
+            focusSpans: [
+              {
+                line: 5,
+                text: "++count"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0302",
+            presentation: {
+              html: {
+                height: 280,
+                source: `<!doctype html><html lang="zh-CN"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:20px;font:16px system-ui,sans-serif;color:light-dark(#24372f,#e5eee7);background:transparent}
+.demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}
+.actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}
+@media(prefers-reduced-motion:reduce){.value{transition:none}}
+</style></head><body><section class="demo" aria-label="\u53D8\u91CF\u9012\u589E\u6F14\u793A"><code>int count = <output id="inline">0</output>;</code><output id="value" class="value" aria-live="polite">0</output><div class="actions"><button id="increment">\u6267\u884C ++count</button><button id="reset" class="secondary">\u91CD\u7F6E</button></div><label><input type="checkbox" id="reduce">\u51CF\u5C11\u52A8\u6001</label></section><script>
+(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function show(){value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,9999);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()})})();
+</script></body></html>`
+              },
+              kind: "html"
+            },
+            text: "\u4E92\u52A8\u793A\u4F8B\u4ECE count = 0 \u5F00\u59CB\u3002\u70B9\u51FB\u6267\u884C ++count\uFF0C\u503C\u589E\u52A0 1\uFF1B\u70B9\u51FB\u91CD\u7F6E\uFF0C\u503C\u56DE\u5230 0\u3002\u5F00\u542F\u51CF\u5C11\u52A8\u6001\u540E\uFF0C\u6570\u5B57\u53D8\u5316\u4E0D\u4F7F\u7528\u7F29\u653E\u52A8\u753B\u3002",
+            title: "\u4EB2\u624B\u8FD0\u884C\u4E00\u6B21",
+            type: "callout"
+          }
+        ],
+        estimatedMinutes: 5,
+        id: "8343F80B-F43C-4901-B585-A67647EA9703",
+        objectives: [
+          "\u8BFB\u61C2\u4E00\u4E2A\u5B8C\u6574\u7684 C++ \u9012\u589E\u793A\u4F8B\u3002",
+          "\u7528\u793A\u610F\u56FE\u548C\u4EA4\u4E92\u89C2\u5BDF\u53D8\u91CF\u53D8\u5316\u3002"
+        ],
+        referenceCode: {
+          annotations: [
+            {
+              line: 5,
+              text: "\u524D\u7F6E\u9012\u589E\uFF1A\u5148\u628A count \u589E\u52A0 1\u3002"
+            }
+          ],
+          expectedOutput: "1",
+          filename: "counter.cpp",
+          highlightLines: [
+            5
+          ],
+          highlightSpans: [
+            {
+              line: 5,
+              text: "++"
+            }
+          ],
+          language: "cpp",
+          source: "#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count;\n}"
+        },
+        title: "\u4EE3\u7801\u4E0E\u4E92\u52A8\u6F14\u793A"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0400",
+            presentation: {
+              code: {
+                annotations: [
+                  {
+                    line: 3,
+                    text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
+                  }
+                ],
+                expectedOutput: "6",
+                filename: "sum.js",
+                highlightLines: [
+                  3
+                ],
+                highlightSpans: [
+                  {
+                    line: 3,
+                    occurrence: 2,
+                    text: "total"
+                  }
+                ],
+                language: "javascript",
+                source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+              },
+              kind: "code"
+            },
+            text: "\u8FD9\u6BB5\u7A0B\u5E8F\u628A 1\u30012\u30013 \u4F9D\u6B21\u52A0\u8FDB total\u3002\u5B8C\u6574\u7A0B\u5E8F\u4F1A\u4E00\u76F4\u4FDD\u7559\u5728\u4E0A\u65B9\uFF1B\u84DD\u8272\u6807\u8BB0\u4F1A\u8DDF\u968F\u8BB2\u89E3\uFF0C\u7CBE\u786E\u5230\u53D8\u91CF\u6216\u8FD0\u7B97\u7B26\u3002",
+            title: "\u5B8C\u6574\u7A0B\u5E8F\u968F\u65F6\u53EF\u770B",
+            type: "text"
+          },
+          {
+            focusLines: [
+              3
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                occurrence: 2,
+                text: "total"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0401",
+            text: "total = total + i \u53F3\u4FA7\u5148\u8BA1\u7B97\uFF0C\u5DE6\u4FA7\u540E\u63A5\u6536\u3002\u73B0\u5728\u53EA\u6807\u8BB0\u53F3\u4FA7\u7B2C\u4E8C\u6B21\u51FA\u73B0\u7684 total\uFF0C\u5B83\u8868\u793A\u7D2F\u52A0\u524D\u7684\u65E7\u503C\u3002",
+            title: "\u540C\u4E00\u4E2A\u53D8\u91CF\uFF0C\u4E24\u4E2A\u4F4D\u7F6E",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0402",
+            presentation: {
+              kind: "trace",
+              trace: {
+                variants: [
+                  {
+                    code: {
+                      annotations: [
+                        {
+                          line: 3,
+                          text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
+                        }
+                      ],
+                      expectedOutput: "6",
+                      filename: "sum.js",
+                      highlightLines: [
+                        3
+                      ],
+                      highlightSpans: [
+                        {
+                          line: 3,
+                          occurrence: 2,
+                          text: "total"
+                        }
+                      ],
+                      language: "javascript",
+                      source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+                    },
+                    frames: [
+                      {
+                        focusSpans: [
+                          {
+                            line: 1,
+                            text: "0"
+                          }
+                        ],
+                        line: 1,
+                        note: "total \u4ECE 0 \u5F00\u59CB\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            scope: "\u7A0B\u5E8F",
+                            value: "0"
+                          }
+                        ],
+                        title: "\u5148\u51C6\u5907\u4E00\u4E2A\u603B\u6570"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 2,
+                            text: "i <= 3"
+                          }
+                        ],
+                        line: 2,
+                        note: "i \u53D6 1\uFF0C\u6EE1\u8DB3 i <= 3\uFF0C\u53EF\u4EE5\u8FDB\u5165\u5FAA\u73AF\u4F53\u3002",
+                        objects: [
+                          {
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "0"
+                          },
+                          {
+                            changed: true,
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "1"
+                          }
+                        ],
+                        title: "\u7B2C\u4E00\u6B21\u5FAA\u73AF"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "total + i"
+                          }
+                        ],
+                        line: 3,
+                        note: "\u53F3\u4FA7\u7B97\u51FA 0 + 1\uFF0C\u518D\u628A\u7ED3\u679C 1 \u5199\u56DE total\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "1"
+                          },
+                          {
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "1"
+                          }
+                        ],
+                        title: "\u7B2C\u4E00\u6B21\u76F8\u52A0"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 3,
+                            occurrence: 2,
+                            text: "total"
+                          },
+                          {
+                            line: 3,
+                            text: "i"
+                          }
+                        ],
+                        line: 3,
+                        note: "i \u589E\u52A0\u5230 2\u3002\u8FD9\u4E00\u6B21\uFF0C\u65E7\u7684 total \u662F 1\uFF1B1 + 2 \u5F97\u5230 3\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "3"
+                          },
+                          {
+                            changed: true,
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "2"
+                          }
+                        ],
+                        title: "\u7B2C\u4E8C\u6B21\u76F8\u52A0"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "="
+                          }
+                        ],
+                        line: 3,
+                        note: "i \u589E\u52A0\u5230 3\uFF0Ctotal \u7531 3 + 3 \u53D8\u6210 6\u3002\u4E4B\u540E i \u53D8\u4E3A 4\uFF0C\u5FAA\u73AF\u7ED3\u675F\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "6"
+                          },
+                          {
+                            changed: true,
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "3"
+                          }
+                        ],
+                        title: "\u7B2C\u4E09\u6B21\u76F8\u52A0"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 5,
+                            text: "total"
+                          }
+                        ],
+                        line: 5,
+                        note: "\u7A0B\u5E8F\u8F93\u51FA total \u7684\u6700\u7EC8\u503C 6\u3002",
+                        objects: [
+                          {
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "6"
+                          }
+                        ],
+                        output: "6",
+                        title: "\u8F93\u51FA\u6700\u7EC8\u7ED3\u679C"
+                      }
+                    ],
+                    id: "sum",
+                    title: "\u7D2F\u52A0 1 \u5230 3"
+                  }
+                ]
+              }
+            },
+            text: "\u70B9\u51FB\u6267\u884C\u4E0B\u4E00\u6B65\uFF0C\u89C2\u5BDF i\u3001total \u4E0E\u8F93\u51FA\u5982\u4F55\u53D8\u5316\uFF1B\u4E5F\u53EF\u4EE5\u9000\u56DE\u4E0A\u4E00\u5E27\u5BF9\u7167\u3002",
+            title: "\u4E00\u6B65\u4E00\u6B65\u89C2\u5BDF",
+            type: "text"
+          },
+          {
+            acceptedAnswers: [
+              "6"
+            ],
+            explanation: "0 + 1 + 2 + 3 = 6\u3002\u8F93\u5165\u540E\u70B9\u7EE7\u7EED\uFF0C\u4E5F\u4F1A\u5148\u68C0\u67E5\u8FD9\u9053\u9898\u3002",
+            focusLines: [
+              5
+            ],
+            focusSpans: [
+              {
+                line: 5,
+                text: "total"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0403",
+            input: {
+              kind: "integer",
+              maxLines: 3,
+              minLines: 2,
+              placeholder: "\u6700\u7EC8\u7684 total"
+            },
+            questionType: "shortAnswer",
+            text: "\u56DE\u770B\u4E0A\u65B9\u7A0B\u5E8F\uFF1A\u5FAA\u73AF\u7ED3\u675F\u540E\uFF0Ctotal \u7684\u503C\u662F\u591A\u5C11\uFF1F\u53EA\u8F93\u5165\u4E00\u4E2A\u6574\u6570\u3002",
+            type: "question"
+          }
+        ],
+        estimatedMinutes: 4,
+        id: "8343F80B-F43C-4901-B585-A67647EA9704",
+        objectives: [
+          "\u8BA9\u5B8C\u6574\u7A0B\u5E8F\u4E0E\u5F53\u524D\u8BB2\u89E3\u4FDD\u6301\u5BF9\u5E94\u3002",
+          "\u6309\u53D8\u91CF\u3001\u8868\u8FBE\u5F0F\u548C\u884C\u53F7\u89C2\u5BDF\u72B6\u6001\u53D8\u5316\u3002"
+        ],
+        referenceCode: {
+          annotations: [
+            {
+              line: 3,
+              text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
+            }
+          ],
+          expectedOutput: "6",
+          filename: "sum.js",
+          highlightLines: [
+            3
+          ],
+          highlightSpans: [
+            {
+              line: 3,
+              occurrence: 2,
+              text: "total"
+            }
+          ],
+          language: "javascript",
+          source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+        },
+        title: "\u770B\u7740\u7A0B\u5E8F\uFF0C\u9010\u6B65\u63A8\u6F14"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0500",
+            text: "\u8FD9\u91CC\u7684\u7EC3\u4E60\u53EF\u4EE5\u76F4\u63A5\u5728\u672C\u673A\u8FD0\u884C\u3002\u6570\u5B57\u9898\u4F7F\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u7A0B\u5E8F\u9898\u4F7F\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u586B\u5199\u7B54\u6848\u540E\uFF0C\u53EF\u70B9\u8FD0\u884C\u4EE3\u7801\uFF0C\u4E5F\u53EF\u70B9\u5E95\u90E8\u7EE7\u7EED\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
+            title: "\u4ECE\u8F93\u5165\u5230\u7ED3\u679C",
+            type: "callout"
+          },
+          {
+            acceptedAnswers: [
+              "4"
+            ],
+            execution: {
+              expectedOutput: "1\n2\n3",
+              language: "javascript",
+              template: "for (let i = 1; i < {{ANSWER}}; i++) {\n    console.log(i);\n}"
+            },
+            explanation: "\u6761\u4EF6\u662F i < 4\uFF0C\u6240\u4EE5\u5FAA\u73AF\u4F53\u4F1A\u6267\u884C i = 1\u30012\u30013\u3002",
+            focusLines: [
+              1
+            ],
+            focusSpans: [
+              {
+                line: 1,
+                text: "{{ANSWER}}"
+              }
+            ],
+            hints: [
+              "\u6CE8\u610F\u6761\u4EF6\u4E2D\u7684 < \u4E0D\u5305\u542B\u53F3\u4FA7\u7684\u6570\u3002"
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0501",
+            input: {
+              kind: "integer",
+              maxLines: 3,
+              minLines: 2,
+              placeholder: "\u586B\u5165\u7ED3\u675F\u503C"
+            },
+            questionType: "shortAnswer",
+            text: "\u8865\u5168\u5FAA\u73AF\u7684\u7ED3\u675F\u503C\uFF0C\u4F7F\u7A0B\u5E8F\u4F9D\u6B21\u8F93\u51FA 1\u30012\u30013\u3002\u53EA\u586B\u4E00\u4E2A\u6574\u6570\u3002",
+            title: "\u6574\u6570\u586B\u7A7A",
+            type: "question"
+          },
+          {
+            acceptedAnswers: [
+              "0.5"
+            ],
+            execution: {
+              expectedOutput: "1",
+              language: "javascript",
+              template: "console.log(2 * ({{ANSWER}}));"
+            },
+            explanation: "2 \xD7 0.5 = 1\uFF1B\u8BD5\u7740\u8FD0\u884C\uFF0C\u770B\u770B\u5B9E\u9645\u8F93\u51FA\u3002",
+            focusLines: [
+              1
+            ],
+            focusSpans: [
+              {
+                line: 1,
+                text: "{{ANSWER}}"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0502",
+            input: {
+              kind: "decimal",
+              maxLines: 3,
+              minLines: 2,
+              placeholder: "\u4F8B\u5982 0.5"
+            },
+            questionType: "shortAnswer",
+            text: "\u4E00\u6761\u7EF3\u5B50\u957F 2 \u7C73\uFF0C\u53D6\u5B83\u7684\u591A\u5C11\u500D\u6070\u597D\u662F 1 \u7C73\uFF1F\u586B\u4E00\u4E2A\u5C0F\u6570\uFF0C\u8BA9\u7A0B\u5E8F\u8F93\u51FA 1\u3002",
+            title: "\u5C0F\u6570\u8F93\u5165",
+            type: "question"
+          },
+          {
+            answerFormat: "code",
+            code: {
+              annotations: [
+                {
+                  line: 2,
+                  text: "\u8FD9\u91CC\u4ECD\u8FD4\u56DE\u539F\u6570\uFF0C\u8BF7\u5728\u4E0B\u9762\u7684\u7F16\u8F91\u5668\u4E2D\u6539\u6210\u8FD4\u56DE\u4E24\u500D\u3002"
+                }
+              ],
+              expectedOutput: "6",
+              filename: "double.js",
+              highlightLines: [
+                2
+              ],
+              highlightSpans: [
+                {
+                  line: 2,
+                  text: "value"
+                }
+              ],
+              language: "javascript",
+              source: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
+              stdin: "3"
+            },
+            execution: {
+              expectedOutput: "6",
+              language: "javascript",
+              stdin: "3"
+            },
+            explanation: "\u628A return value \u6539\u6210 return value * 2\uFF0C\u518D\u8FD0\u884C\u68C0\u67E5\u7ED3\u679C\u3002",
+            hints: [
+              "\u4FDD\u7559\u51FD\u6570\u540D double \u548C\u53C2\u6570 value\u3002",
+              "return \u540E\u5199 value * 2\u3002"
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0503",
+            input: {
+              kind: "code",
+              language: "javascript",
+              maxLines: 12,
+              minLines: 5,
+              placeholder: "\u8865\u5168 double \u51FD\u6570",
+              starterCode: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));"
+            },
+            questionType: "shortAnswer",
+            text: "\u4FEE\u6539 double \u51FD\u6570\uFF0C\u8BA9\u5B83\u8FD4\u56DE\u53C2\u6570\u7684\u4E24\u500D\u3002\u9ED8\u8BA4\u7A0B\u5E8F\u8F93\u5165\u662F 3\uFF0C\u8FD0\u884C\u540E\u5E94\u8F93\u51FA 6\u3002\u4E5F\u53EF\u4EE5\u5C55\u5F00\u7A0B\u5E8F\u8F93\u5165\uFF0C\u6362\u4E2A\u6570\u518D\u8BD5\u3002",
+            title: "\u5728\u4EE3\u7801\u7F16\u8F91\u5668\u4E2D\u5B8C\u6210\u51FD\u6570",
+            type: "question"
+          }
+        ],
+        estimatedMinutes: 5,
+        id: "8343F80B-F43C-4901-B585-A67647EA9705",
+        objectives: [
+          "\u4F53\u9A8C\u9002\u914D\u6574\u6570\u3001\u5C0F\u6570\u4E0E\u6E90\u7801\u7684\u8F93\u5165\u65B9\u5F0F\u3002",
+          "\u4FEE\u6539\u6E90\u7801\u548C\u7A0B\u5E8F\u8F93\u5165\uFF0C\u68C0\u67E5\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\u3002"
+        ],
+        referenceCode: {
+          annotations: [
+            {
+              line: 2,
+              text: "\u8FD9\u91CC\u4ECD\u8FD4\u56DE\u539F\u6570\uFF0C\u8BF7\u5728\u4E0B\u9762\u7684\u7F16\u8F91\u5668\u4E2D\u6539\u6210\u8FD4\u56DE\u4E24\u500D\u3002"
+            }
+          ],
+          expectedOutput: "6",
+          filename: "double.js",
+          highlightLines: [
+            2
+          ],
+          highlightSpans: [
+            {
+              line: 2,
+              text: "value"
+            }
+          ],
+          language: "javascript",
+          source: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
+          stdin: "3"
+        },
+        title: "\u586B\u6570\u5B57\uFF0C\u5199\u4EE3\u7801\uFF0C\u771F\u6B63\u8FD0\u884C"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0600",
+            presentation: {
+              kind: "table",
+              table: {
+                columns: [
+                  "\u8F6E\u6B21",
+                  "i",
+                  "total"
+                ],
+                rows: [
+                  [
+                    "\u5F00\u59CB",
+                    "\u2014",
+                    "0"
+                  ],
+                  [
+                    "\u7B2C\u4E00\u8F6E",
+                    "1",
+                    "1"
+                  ],
+                  [
+                    "\u7B2C\u4E8C\u8F6E",
+                    "2",
+                    "3"
+                  ],
+                  [
+                    "\u7B2C\u4E09\u8F6E",
+                    "3",
+                    "6"
+                  ]
+                ]
+              }
+            },
+            text: "\u628A\u53D8\u91CF\u7684\u53D8\u5316\u6574\u7406\u6210\u8868\u683C\uFF1A\u7B2C\u4E00\u8F6E\u540E total \u662F 1\uFF0C\u7B2C\u4E8C\u8F6E\u662F 3\uFF0C\u7B2C\u4E09\u8F6E\u662F 6\u3002",
+            title: "\u7528\u8868\u683C\u5BF9\u7167\u6BCF\u4E00\u8F6E",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0601",
+            presentation: {
+              kind: "steps",
+              steps: [
+                {
+                  code: {
+                    language: "javascript",
+                    source: "let total = 0;\nlet i = 1;"
+                  },
+                  text: "\u603B\u6570\u4ECE 0 \u5F00\u59CB\uFF0Ci \u4ECE 1 \u5F00\u59CB\u3002",
+                  title: "\u786E\u5B9A\u8D77\u70B9"
+                },
+                {
+                  code: {
+                    language: "javascript",
+                    source: "total = total + i;"
+                  },
+                  text: "i <= 3 \u65F6\uFF0C\u628A\u672C\u8F6E\u7684 i \u52A0\u8FDB total\u3002",
+                  title: "\u5224\u65AD\u5E76\u7D2F\u52A0"
+                },
+                {
+                  code: {
+                    language: "javascript",
+                    source: "i++;"
+                  },
+                  text: "i \u589E\u52A0 1\uFF0C\u91CD\u65B0\u5224\u65AD\u6761\u4EF6\uFF1B\u4E0D\u6EE1\u8DB3\u65F6\u9000\u51FA\u3002",
+                  title: "\u66F4\u65B0\u540E\u518D\u5224\u65AD"
+                }
+              ]
+            },
+            text: "\u8BFB\u5FAA\u73AF\u65F6\uFF0C\u5148\u770B\u8D77\u70B9\uFF0C\u518D\u770B\u6761\u4EF6\uFF0C\u518D\u7B97\u5FAA\u73AF\u4F53\uFF0C\u6700\u540E\u56DE\u5230\u66F4\u65B0\u6B65\u9AA4\u3002",
+            title: "\u628A\u8FC7\u7A0B\u62C6\u6210\u5C0F\u6B65",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0602",
+            presentation: {
+              items: [
+                {
+                  code: {
+                    language: "javascript",
+                    source: "for (let i = 1; i <= 3; i++) {\n    total += i;\n}"
+                  },
+                  text: "i \u4F9D\u6B21\u53D6 1\u30012\u30013\uFF0C\u603B\u548C\u4E3A 6\u3002",
+                  title: "\u5305\u542B\u8FB9\u754C"
+                },
+                {
+                  code: {
+                    language: "javascript",
+                    source: "for (let i = 1; i < 3; i++) {\n    total += i;\n}"
+                  },
+                  text: "i \u53EA\u53D6 1\u30012\uFF0C\u603B\u548C\u4E3A 3\u3002",
+                  title: "\u4E0D\u5305\u542B\u8FB9\u754C"
+                }
+              ],
+              kind: "comparison"
+            },
+            text: "i <= 3 \u4F1A\u5305\u542B 3\uFF1Bi < 3 \u4E0D\u5305\u542B 3\u3002\u53EA\u5DEE\u4E00\u4E2A\u7B49\u53F7\uFF0C\u5FAA\u73AF\u6B21\u6570\u548C\u7ED3\u679C\u5C31\u4E0D\u540C\u3002",
+            title: "\u5BF9\u7167\u4E24\u79CD\u6761\u4EF6",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0603",
+            presentation: {
+              cards: [
+                {
+                  back: "\u5148\u8BA1\u7B97\u53F3\u4FA7 total + i\uFF0C\u518D\u628A\u7ED3\u679C\u5199\u56DE\u5DE6\u4FA7 total\u3002",
+                  front: "total = total + i \u5148\u8BA1\u7B97\u54EA\u4E00\u8FB9\uFF1F"
+                },
+                {
+                  back: "\u4E0D\u5305\u542B\u3002\u82E5\u4ECE 1 \u5F00\u59CB\uFF0C\u6BCF\u6B21\u52A0 1\uFF0C\u5FAA\u73AF\u4F53\u91CC\u4F1A\u7528\u5230 1\u30012\u30013\u3002",
+                  front: "i < 4 \u5305\u542B 4 \u5417\uFF1F"
+                },
+                {
+                  back: "\u8FD0\u884C\u5B83\uFF0C\u5BF9\u7167\u8F93\u51FA\uFF1B\u518D\u6362\u4E00\u7EC4\u8F93\u5165\uFF0C\u68C0\u67E5\u7ED3\u679C\u662F\u5426\u4ECD\u7B26\u5408\u9884\u671F\u3002",
+                  front: "\u600E\u6837\u786E\u8BA4\u5199\u7684\u7A0B\u5E8F\u771F\u7684\u53EF\u7528\uFF1F"
+                }
+              ],
+              kind: "flashcards"
+            },
+            text: "\u5148\u60F3\u4E00\u60F3\uFF0C\u518D\u7FFB\u5F00\u5361\u7247\u6838\u5BF9\u3002\u80FD\u591F\u4E0D\u770B\u89E3\u6790\u8BF4\u51FA\u7406\u7531\uFF0C\u5C31\u8BF4\u660E\u7406\u89E3\u66F4\u624E\u5B9E\u4E86\u3002",
+            title: "\u7FFB\u5F00\u5361\u7247\uFF0C\u68C0\u67E5\u8BB0\u5FC6",
+            type: "text"
+          }
+        ],
+        estimatedMinutes: 3,
+        id: "8343F80B-F43C-4901-B585-A67647EA9706",
+        objectives: [
+          "\u7528\u8868\u683C\u3001\u5206\u6B65\u548C\u5BF9\u7167\u590D\u4E60\u540C\u4E00\u4E2A\u6982\u5FF5\u3002",
+          "\u901A\u8FC7\u7FFB\u5361\u81EA\u6D4B\uFF0C\u68C0\u67E5\u7406\u89E3\u3002"
+        ],
+        title: "\u6362\u4E00\u79CD\u65B9\u5F0F\uFF0C\u5DE9\u56FA\u7406\u89E3"
+      }
+    ],
+    protocol: "WORKSHOP-COURSE/1",
+    summary: "\u4ECE\u4E00\u5929\u7684\u5B89\u6392\u5230\u4EE3\u7801\u5B9E\u4F5C\uFF1A\u4F53\u9A8C\u56FE\u8868\u3001Markdown\u3001SVG\u3001HTML \u52A8\u753B\u3001\u7A0B\u5E8F\u63A8\u6F14\u3001\u7CBE\u786E\u6807\u8BB0\u548C\u53EF\u8FD0\u884C\u7EC3\u4E60\u3002",
+    title: "\u4ECE\u5BB9\u7684\u4E00\u5929"
+  }
+};
+
+// Server/AppContent/cpp-value-reference.json
+var cpp_value_reference_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "cpp-value-reference",
+  kind: "course",
+  version: 2,
+  minimumContentVersion: 1,
+  payload: {
+    protocol: "WORKSHOP-COURSE/1",
+    id: "4543387c-55ed-50f7-8803-823439cb4fe6",
+    title: "C++ \xB7 \u4E00\u4E2A &\uFF0C\u4E24\u79CD\u7ED3\u679C",
+    summary: "\u4E00\u884C\u4EE3\u7801\uFF0C\u4E00\u6B21\u53D8\u5316\u3002\u7528\u4E94\u6B65\u770B\u6E05\u526F\u672C\u4E0E\u522B\u540D\u3002",
+    lessons: [
+      {
+        id: "18c3575f-5194-5af9-8cfd-cc78554da7b0",
+        title: "\u6539\u7684\u662F\u526F\u672C\uFF0C\u8FD8\u662F\u539F\u503C\uFF1F",
+        estimatedMinutes: 7,
+        objectives: [
+          "\u5206\u6E05\u72EC\u7ACB\u526F\u672C\u548C\u540C\u4E00\u5BF9\u8C61\u7684\u522B\u540D\u3002",
+          "\u5224\u65AD\u51FD\u6570\u4F1A\u4E0D\u4F1A\u6539\u53D8\u8C03\u7528\u8005\u7684 int \u53D8\u91CF\u3002"
+        ],
+        referenceCode: {
+          language: "cpp",
+          source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
+          filename: "award.cpp"
+        },
+        blocks: [
+          {
+            id: "4ce800ff-75f5-51c7-8621-892f8cd0079e",
+            type: "question",
+            title: "\u5148\u731C\u4E00\u731C",
+            text: "\u8C03\u7528 award \u540E\uFF0Cscore \u662F\u591A\u5C11\uFF1F",
+            questionType: "singleChoice",
+            code: {
+              language: "cpp",
+              source: "void award(int points) {\n    points += 3;\n}\nint main() {\n    int score = 7;\n    award(score);\n    // \u73B0\u5728 score \u662F\u591A\u5C11\uFF1F\n}",
+              filename: "prediction.cpp"
+            },
+            focusLines: [
+              1,
+              2
+            ],
+            focusSpans: [
+              {
+                line: 1,
+                text: "int points"
+              },
+              {
+                line: 2,
+                text: "points"
+              }
+            ],
+            options: [
+              {
+                id: "seven",
+                text: "7"
+              },
+              {
+                id: "ten",
+                text: "10"
+              }
+            ],
+            correctOptionIDs: [
+              "seven"
+            ],
+            hints: [
+              "\u89C2\u5BDF points \u7684\u58F0\u660E\uFF1Aint\uFF0C\u8FD8\u662F int&\uFF1F"
+            ],
+            explanation: "\u662F 7\u3002points \u662F\u72EC\u7ACB\u526F\u672C\u3002\u63A5\u4E0B\u6765\u53EA\u770B\u8FD9\u4E2A\u533A\u522B\u662F\u600E\u6837\u53D1\u751F\u7684\u3002"
+          },
+          {
+            id: "e8501c91-9182-56db-aee9-282b13dd5a85",
+            type: "text",
+            title: "\u8DDF\u7740\u503C\u8D70",
+            text: "\u56FA\u5B9A\u7A0B\u5E8F\u7684\u6559\u5B66\u63A8\u6F14\u3002\u5148\u770B\u503C\u4F20\u9012\uFF0C\u518D\u5207\u6362\u5F15\u7528\u4F20\u9012\uFF1B\u6BCF\u6B21\u53EA\u89C2\u5BDF\u5F53\u524D\u4E00\u6B65\u3002",
+            presentation: {
+              kind: "trace",
+              trace: {
+                variants: [
+                  {
+                    id: "value",
+                    title: "\u503C\u4F20\u9012",
+                    code: {
+                      language: "cpp",
+                      source: "#include <iostream>\n\nvoid award(int points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
+                      filename: "award.cpp",
+                      highlightLines: [
+                        3
+                      ],
+                      highlightSpans: [
+                        {
+                          line: 3,
+                          text: "int points"
+                        }
+                      ]
+                    },
+                    frames: [
+                      {
+                        title: "\u4ECE 7 \u5F00\u59CB",
+                        line: 8,
+                        note: "main \u4E2D\u521B\u5EFA\u4E86 score\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 8,
+                            text: "score"
+                          },
+                          {
+                            line: 8,
+                            text: "7"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u590D\u5236\u4E00\u4EFD",
+                        line: 3,
+                        note: "points \u5F97\u5230\u6570\u503C 7\uFF0C\u662F\u53E6\u4E00\u4E2A\u5BF9\u8C61\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          },
+                          {
+                            id: "points",
+                            names: [
+                              "points"
+                            ],
+                            value: "7",
+                            scope: "award",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "int points"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u53EA\u6539\u526F\u672C",
+                        line: 4,
+                        note: "\u52A0\u4E0A 3 \u7684\u662F points\uFF0Cscore \u4ECD\u662F 7\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          },
+                          {
+                            id: "points",
+                            names: [
+                              "points"
+                            ],
+                            value: "10",
+                            scope: "award",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 4,
+                            text: "points"
+                          },
+                          {
+                            line: 4,
+                            text: "bonus"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u51FD\u6570\u8FD4\u56DE",
+                        line: 5,
+                        note: "points \u968F\u51FD\u6570\u7ED3\u675F\uFF0Cscore \u7559\u5728 main\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u8F93\u51FA 7",
+                        line: 10,
+                        note: "\u8F93\u51FA\u7684\u662F score\uFF0C\u5B83\u4E00\u76F4\u6CA1\u6709\u6539\u53D8\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          }
+                        ],
+                        output: "7",
+                        focusSpans: [
+                          {
+                            line: 10,
+                            text: "score"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    id: "reference",
+                    title: "\u5F15\u7528\u4F20\u9012",
+                    code: {
+                      language: "cpp",
+                      source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
+                      filename: "award.cpp",
+                      highlightLines: [
+                        3
+                      ],
+                      highlightSpans: [
+                        {
+                          line: 3,
+                          text: "int&"
+                        },
+                        {
+                          line: 3,
+                          text: "points"
+                        }
+                      ]
+                    },
+                    frames: [
+                      {
+                        title: "\u4ECE 7 \u5F00\u59CB",
+                        line: 8,
+                        note: "\u4ECD\u7136\u4ECE\u540C\u4E00\u4E2A\u521D\u503C\u5F00\u59CB\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 8,
+                            text: "score"
+                          },
+                          {
+                            line: 8,
+                            text: "7"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u591A\u4E00\u4E2A\u540D\u5B57",
+                        line: 3,
+                        note: "points \u7ED1\u5B9A\u5230 score\uFF0C\u4E24\u4E2A\u540D\u5B57\u6307\u540C\u4E00\u4E2A\u5BF9\u8C61\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score",
+                              "points"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "int&"
+                          },
+                          {
+                            line: 3,
+                            text: "points"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u6539\u5230\u539F\u503C",
+                        line: 4,
+                        note: "\u901A\u8FC7 points \u52A0 3\uFF0Cscore \u4E5F\u5C31\u53D8\u6210 10\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score",
+                              "points"
+                            ],
+                            value: "10",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 4,
+                            text: "points"
+                          },
+                          {
+                            line: 4,
+                            text: "bonus"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u51FD\u6570\u8FD4\u56DE",
+                        line: 5,
+                        note: "\u540D\u5B57 points \u4E0D\u518D\u53EF\u7528\uFF0C\u539F\u5BF9\u8C61\u4ECD\u7136\u5B58\u5728\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "10",
+                            scope: "main",
+                            changed: false
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u8F93\u51FA 10",
+                        line: 10,
+                        note: "score \u7684\u65B0\u503C\u662F 10\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "10",
+                            scope: "main",
+                            changed: false
+                          }
+                        ],
+                        output: "10",
+                        focusSpans: [
+                          {
+                            line: 10,
+                            text: "score"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            id: "a65cec5b-0762-5f6e-95a5-e91d0c9daa04",
+            type: "question",
+            title: "\u518D\u52A0\u4E00\u6B21\u5462\uFF1F",
+            text: "\u73B0\u5728 points \u662F\u5F15\u7528\u3002\u8FDE\u7EED\u52A0 3\u3001\u518D\u52A0 2\uFF0C\u6700\u540E\u8F93\u51FA\u591A\u5C11\uFF1F",
+            questionType: "shortAnswer",
+            answerFormat: "output",
+            code: {
+              language: "cpp",
+              source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    award(score, 2);\n    std::cout << score;\n}",
+              highlightLines: [
+                3,
+                9,
+                10
+              ]
+            },
+            input: {
+              kind: "integer",
+              placeholder: "\u8F93\u5165\u6700\u540E\u8F93\u51FA\u7684\u6574\u6570",
+              minLines: 2,
+              maxLines: 2
+            },
+            focusLines: [
+              3,
+              9,
+              10
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                text: "int&"
+              },
+              {
+                line: 9,
+                text: "3"
+              },
+              {
+                line: 10,
+                text: "2"
+              }
+            ],
+            acceptedAnswers: [
+              "12"
+            ],
+            hints: [
+              "\u4E24\u6B21\u8C03\u7528\u4FEE\u6539\u7684\u90FD\u662F main \u4E2D\u7684\u540C\u4E00\u4E2A score\u3002"
+            ],
+            explanation: "\u8F93\u51FA 12\uFF1A7 + 3 + 2\u3002\u4E24\u6B21\u8C03\u7528\u91CC\u7684 points \u90FD\u662F score \u7684\u522B\u540D\u3002"
+          },
+          {
+            id: "e7926659-025a-5901-b72e-94e8824aa61a",
+            type: "question",
+            title: "\u8F6E\u5230\u4F60\u6539\u539F\u503C",
+            text: "\u5199\u4E00\u4E2A void doubleScore(...)\uFF0C\u8BA9\u4F20\u5165\u7684 int \u53D8\u91CF\u7FFB\u500D\u3002\u53EA\u5199\u51FD\u6570\u5B9A\u4E49\u3002\u63D0\u4EA4\u540E\u81EA\u884C\u6838\u5BF9\u3002",
+            questionType: "shortAnswer",
+            answerFormat: "code",
+            code: {
+              language: "cpp",
+              source: "#include <iostream>\n\nvoid doubleScore(int score) {\n    // \u4FEE\u6539\u5F62\u53C2\uFF0C\u5E76\u8BA9\u4F20\u5165\u7684\u53D8\u91CF\u7FFB\u500D\n}\n\nint main() {\n    int score = 7;\n    doubleScore(score);\n    std::cout << score;\n}",
+              filename: "double-score.cpp"
+            },
+            input: {
+              kind: "code",
+              language: "cpp",
+              placeholder: "\u4FEE\u6539\u51FD\u6570\uFF0C\u8BA9\u5B83\u6539\u53D8\u8C03\u7528\u8005\u7684\u53D8\u91CF",
+              starterCode: "void doubleScore(int score) {\n    // \u4FEE\u6539\u5F62\u53C2\uFF0C\u5E76\u8BA9\u4F20\u5165\u7684\u53D8\u91CF\u7FFB\u500D\n}",
+              minLines: 5,
+              maxLines: 10
+            },
+            focusLines: [
+              3,
+              4
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                text: "int score"
+              }
+            ],
+            hints: [
+              "\u8981\u4FEE\u6539\u8C03\u7528\u8005\u7684\u53D8\u91CF\uFF0C\u5F62\u53C2\u9700\u8981 int&\u3002"
+            ],
+            explanation: "\u53C2\u8003\u5B9E\u73B0\uFF1A\nvoid doubleScore(int& score) {\n    score *= 2;\n}\n\n\u6838\u5BF9\u4E24\u70B9\uFF1A\u5F62\u53C2\u4F7F\u7528 int&\uFF1B\u51FD\u6570\u4F53\u4FEE\u6539\u4E86\u8FD9\u4E2A\u5F62\u53C2\u3002\u53C2\u6570\u540D\u548C\u7B49\u4EF7\u5199\u6CD5\u53EF\u4EE5\u4E0D\u540C\u3002\u672C\u9898\u4E0D\u7F16\u8BD1\uFF0C\u4E5F\u4E0D\u6309\u53C2\u8003\u6587\u672C\u5224\u5BF9\u9519\u3002"
+          },
+          {
+            id: "04147008-fca8-55e3-8352-8d5039ab4c3d",
+            type: "callout",
+            title: "\u53EA\u8BB0\u4F4F\u8FD9\u4E00\u70B9",
+            text: "int points\uFF1A\u53E6\u590D\u5236\u4E00\u4E2A\u503C\u3002\nint& points\uFF1A\u7ED9\u539F\u5BF9\u8C61\u4E00\u4E2A\u522B\u540D\u3002\n\u8981\u77E5\u9053\u6539\u4E86\u8C01\uFF0C\u5148\u770B\u5F62\u53C2\u58F0\u660E\u3002",
+            focusLines: [
+              3
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                text: "int&"
+              },
+              {
+                line: 3,
+                text: "points"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+};
+
+// Server/AppContent/welcome-tutorial.json
+var welcome_tutorial_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "welcome-tutorial",
+  kind: "tutorial",
+  version: 1,
+  minimumContentVersion: 1,
+  payload: {
+    pages: [
+      {
+        id: "home",
+        title: "\u628A\u8981\u505A\u7684\u4E8B\uFF0C\n\u653E\u5728\u4E00\u8D77\u3002",
+        subtitle: "\u9996\u9875\u628A\u4E34\u8FD1\u622A\u6B62\u548C\u63A5\u4E0B\u6765\u7684\u5B89\u6392\u653E\u5728\u773C\u524D\u3002\u70B9\u53F3\u4E0A\u89D2 +\uFF0C\u8BB0\u4E0B\u65B0\u7684\u4E8B\u9879\u3002",
+        sectionTitle: "\u9996\u9875",
+        symbol: "house"
+      },
+      {
+        id: "timeline",
+        title: "\u987A\u7740\u65F6\u95F4\uFF0C\n\u770B\u6E05\u6BCF\u4E00\u5929\u3002",
+        subtitle: "\u4E0A\u4E0B\u6D4F\u89C8\u65F6\u95F4\u6BB5\uFF0C\u4E5F\u80FD\u5207\u6362\u6210\u65E5\u5386\u3002\u8BA1\u5212\u4E0E\u622A\u6B62\uFF0C\u6CBF\u65F6\u95F4\u81EA\u7136\u5C55\u5F00\u3002",
+        sectionTitle: "\u65F6\u95F4\u7EBF",
+        symbol: "chart.bar.xaxis"
+      },
+      {
+        id: "projects",
+        title: "\u4ECE\u4E00\u4EF6\u4E8B\uFF0C\n\u5230\u6574\u4E2A\u9879\u76EE\u3002",
+        subtitle: "\u9879\u76EE\u7EC4\u6536\u7EB3\u76F8\u5173\u5185\u5BB9\uFF1B\u5207\u6362\u5230\u4E8B\u9879\u6216\u622A\u6B62\u4E8B\u9879\uFF0C\u5C31\u80FD\u6309\u65F6\u95F4\u96C6\u4E2D\u7BA1\u7406\u3002",
+        sectionTitle: "\u9879\u76EE",
+        symbol: "folder"
+      },
+      {
+        id: "account",
+        title: "\u5728\u4F60\u7684\u8BBE\u5907\u95F4\uFF0C\n\u63A5\u7740\u4F7F\u7528\u3002",
+        subtitle: "\u767B\u5F55\u6216\u6CE8\u518C\uFF0C\u5408\u5E76\u672C\u673A\u4E0E\u4E91\u7AEF\u5185\u5BB9\u3002\u5728 iPhone \u6216 Mac \u4E0A\uFF0C\u90FD\u53EF\u4EE5\u7EE7\u7EED\u3002",
+        sectionTitle: "\u4F60\u7684\u8D26\u6237",
+        symbol: "person.crop.circle"
+      }
+    ]
+  }
+};
+
+// Server/AppContent/course-tutorial.json
+var course_tutorial_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "course-tutorial",
+  kind: "tutorial",
+  version: 1,
+  minimumContentVersion: 1,
+  payload: {
+    pages: [
+      {
+        id: "import",
+        title: "\u628A\u60F3\u5B66\u7684\uFF0C\u53D8\u6210\u8BFE\u7A0B\u3002",
+        subtitle: "\u8D44\u6599\u3001\u95EE\u9898\u6216\u5B66\u4E60\u76EE\u6807\uFF0C\u90FD\u53EF\u4EE5\u6210\u4E3A\u6709\u56FE\u89E3\u3001\u6F14\u793A\u548C\u7EC3\u4E60\u7684\u4E00\u8282\u8282\u8BFE\u3002",
+        symbol: "sparkles"
+      },
+      {
+        id: "code",
+        title: "\u770B\u7740\u4EE3\u7801\uFF0C\u4E00\u6B65\u6B65\u7406\u89E3\u3002",
+        subtitle: "\u5B8C\u6574\u7A0B\u5E8F\u4F1A\u7559\u5728\u4E0A\u65B9\uFF1B\u8BB2\u5230\u54EA\u91CC\uFF0C\u5C31\u6807\u8BB0\u5BF9\u5E94\u7684\u884C\u3001\u53D8\u91CF\u6216\u5B57\u7B26\u3002",
+        symbol: "curlybraces"
+      },
+      {
+        id: "practice",
+        title: "\u52A8\u624B\u4F5C\u7B54\uFF0C\u8FD0\u884C\u9A8C\u8BC1\u3002",
+        subtitle: "\u6570\u5B57\u9898\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u4EE3\u7801\u9898\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u652F\u6301\u8FD0\u884C\u7684\u7EC3\u4E60\u8FD8\u53EF\u6838\u5BF9\u5B9E\u9645\u8F93\u51FA\uFF1B\u70B9\u7EE7\u7EED\u4F1A\u5148\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
+        symbol: "play.rectangle"
+      },
+      {
+        id: "progress",
+        title: "\u968F\u65F6\u56DE\u6765\uFF0C\u63A5\u7740\u5B66\u3002",
+        subtitle: "\u5B66\u4E60\u8FDB\u5EA6\u4F1A\u81EA\u52A8\u4FDD\u5B58\uFF0C\u661F\u6807\u6536\u85CF\u5E38\u5B66\u7684\u8BFE\u7A0B\u3002\u6F14\u793A\u8BFE\u548C\u6307\u5357\u4E5F\u4F1A\u5728\u540E\u53F0\u83B7\u5F97\u5185\u5BB9\u66F4\u65B0\u3002",
+        symbol: "bookmark"
+      }
+    ]
+  }
+};
+
+// Server/AppContent/announcement.json
+var announcement_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "announcement",
+  kind: "announcement",
+  version: 1,
+  minimumContentVersion: 1,
+  payload: {
+    id: "announcement",
+    title: "\u6F14\u793A\u8BFE\u7A0B\u5DF2\u6269\u5145",
+    message: "\u65B0\u589E\u9010\u6B65\u63A8\u6F14\u3001\u5B57\u7B26\u6807\u8BB0\u3001\u6570\u5B57\u8F93\u5165\u548C\u53EF\u8FD0\u884C\u7EC3\u4E60\u3002\u4EE5\u540E\u6F14\u793A\u8BFE\u4E0E\u6307\u5357\u7684\u5185\u5BB9\u66F4\u65B0\u4F1A\u81EA\u52A8\u9001\u8FBE\u3002"
+  }
+};
+
+// Server/AppContent/catalog.mjs
+var catalog_default = [demo_course_default, cpp_value_reference_default, welcome_tutorial_default, course_tutorial_default, announcement_default];
+
+// Server/app-content.mjs
+var appContentProtocol = "WORKSHOP-CONTENT/1";
+var appContentPath = "/api/native/v1/app-content";
+var identifier2 = /^[a-z0-9][a-z0-9-]{0,79}$/;
+var kindIdentifier = /^[a-z][a-z0-9-]{0,39}$/;
+var digest2 = (bytes) => createHash2("sha256").update(bytes).digest("hex");
+var packageLimit = 1024 * 1024;
+var catalogLimit = 4 * 1024 * 1024;
+function encodedPackage(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value) || value.protocol !== appContentProtocol || typeof value.id !== "string" || !identifier2.test(value.id) || typeof value.kind !== "string" || !kindIdentifier.test(value.kind) || !Number.isSafeInteger(value.version) || value.version < 1 || !Number.isSafeInteger(value.minimumContentVersion) || value.minimumContentVersion < 1 || !value.payload || typeof value.payload !== "object" || Array.isArray(value.payload)) {
+    throw new Error("INVALID_PUBLISHED_APP_CONTENT");
+  }
+  const bytes = Buffer.from(JSON.stringify(value), "utf8");
+  if (bytes.length > packageLimit) throw new Error("PUBLISHED_APP_CONTENT_TOO_LARGE");
+  const { id, kind, version, minimumContentVersion } = value;
+  const sha256 = digest2(bytes);
+  return { bytes, entry: { id, kind, version, minimumContentVersion, sha256, byteCount: bytes.length }, etag: `"${sha256}"` };
+}
+function matchesETag(header, etag) {
+  return typeof header === "string" && header.split(",").some((value) => {
+    const candidate = value.trim();
+    return candidate === "*" || candidate.replace(/^W\//, "") === etag;
+  });
+}
+function createAppContentAPI(content = catalog_default) {
+  if (!Array.isArray(content) || content.length > 32) throw new Error("INVALID_PUBLISHED_APP_CONTENT");
+  const packages = /* @__PURE__ */ new Map();
+  let totalBytes = 0;
+  for (const value of content) {
+    const packet = encodedPackage(value);
+    if (packages.has(packet.entry.id)) throw new Error("DUPLICATE_PUBLISHED_APP_CONTENT");
+    totalBytes += packet.bytes.length;
+    if (totalBytes > catalogLimit) throw new Error("PUBLISHED_APP_CONTENT_CATALOG_TOO_LARGE");
+    packages.set(packet.entry.id, packet);
+  }
+  const entries = [...packages.values()].map((value) => value.entry).sort((left, right) => left.id < right.id ? -1 : left.id > right.id ? 1 : 0);
+  const revision = digest2(Buffer.from(JSON.stringify(entries), "utf8"));
+  const manifest = Buffer.from(JSON.stringify({ protocol: appContentProtocol, revision, entries }), "utf8");
+  const manifestETag = `"${digest2(manifest)}"`;
+  const headers2 = {
+    "Content-Type": "application/json; charset=utf-8",
+    "Cache-Control": "public, max-age=300, must-revalidate",
+    "Referrer-Policy": "no-referrer",
+    "X-Content-Type-Options": "nosniff",
+    "Cross-Origin-Resource-Policy": "same-origin"
+  };
+  function failure(response, status, code, extraHeaders = {}) {
+    response.writeHead(status, { ...headers2, "Cache-Control": "no-store", ...extraHeaders });
+    response.end(JSON.stringify({ error: code }));
+  }
+  return function appContentAPI2(request, response, path) {
+    if (path !== appContentPath && !path.startsWith(appContentPath + "/")) return false;
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      request.resume();
+      failure(response, 405, "APP_CONTENT_READ_ONLY", { Allow: "GET, HEAD" });
+      return true;
+    }
+    let bytes = manifest, etag = manifestETag;
+    if (path !== appContentPath) {
+      const id = path.slice(appContentPath.length + 1);
+      const packet = identifier2.test(id) ? packages.get(id) : void 0;
+      if (!packet) {
+        failure(response, 404, "APP_CONTENT_NOT_FOUND");
+        return true;
+      }
+      ({ bytes, etag } = packet);
+    }
+    if (matchesETag(request.headers["if-none-match"], etag)) {
+      response.writeHead(304, { ...headers2, ETag: etag });
+      response.end();
+      return true;
+    }
+    response.writeHead(200, { ...headers2, ETag: etag, "Content-Length": bytes.length });
+    response.end(request.method === "HEAD" ? void 0 : bytes);
+    return true;
   };
 }
 
@@ -27742,13 +29262,14 @@ curl --fail-with-body -X POST '${endpoint}' \\
 }
 
 // Server/server.source.mjs
+var appContentAPI = createAppContentAPI();
 var deploymentRevision = "unversioned";
 try {
   deploymentRevision = readFileSync(join(dirname(new URL(import.meta.url).pathname), "REVISION"), "utf8").trim();
 } catch {
 }
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = "unversioned";
-var sha = (value) => createHash2("sha256").update(value).digest("hex");
+var sha = (value) => createHash3("sha256").update(value).digest("hex");
 var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32Encode(bytes) {
   let bits = 0, value = 0, encoded = "";
@@ -27778,9 +29299,9 @@ function totpCode(secret, now = Date.now()) {
   }
   const counter = Buffer.alloc(8);
   counter.writeBigUInt64BE(BigInt(Math.floor(now / 3e4)));
-  const digest2 = createHmac("sha1", Buffer.from(bytes)).update(counter).digest();
-  const offset = digest2[digest2.length - 1] & 15;
-  return String((digest2.readUInt32BE(offset) & 2147483647) % 1e6).padStart(6, "0");
+  const digest3 = createHmac("sha1", Buffer.from(bytes)).update(counter).digest();
+  const offset = digest3[digest3.length - 1] & 15;
+  return String((digest3.readUInt32BE(offset) & 2147483647) % 1e6).padStart(6, "0");
 }
 var nativeCallbackURL = "guangyi-workspace://auth/callback";
 var webAuthValue = /^[A-Za-z0-9_-]{43}$/;
@@ -28227,6 +29748,7 @@ function createNativeServer(configuration) {
   const server = http2.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, "http://localhost"), path = url.pathname;
+      if (appContentAPI(request, response, path)) return;
       if (path === "/native-login" && (request.method === "GET" || request.method === "HEAD")) {
         sameWebOrigin(request);
         const parameters = url.searchParams, expected = ["code_challenge", "code_challenge_method", "state"];
@@ -28366,7 +29888,7 @@ function createNativeServer(configuration) {
         db.exec("BEGIN IMMEDIATE");
         try {
           const code = db.prepare("SELECT * FROM web_auth_codes WHERE hash=? AND expires>?").get(hash2, now);
-          const challenge = createHash2("sha256").update(value.codeVerifier).digest("base64url");
+          const challenge = createHash3("sha256").update(value.codeVerifier).digest("base64url");
           if (!code || !timingSafeEqual(Buffer.from(code.challenge), Buffer.from(challenge))) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
           const user = db.prepare("SELECT * FROM users WHERE id=?").get(code.user_id);
           if (!user) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
@@ -28386,7 +29908,7 @@ function createNativeServer(configuration) {
         const requestID = request.headers["idempotency-key"];
         if (typeof requestID !== "string" || !uuid2.test(requestID)) throw new APIError(400, "IDEMPOTENCY_KEY_REQUIRED");
         const { bytes, text } = await textBody(request);
-        const digest2 = sha(bytes), key = requestID.toLowerCase();
+        const digest3 = sha(bytes), key = requestID.toLowerCase();
         let result, owner, repeated = false;
         db.exec("BEGIN IMMEDIATE");
         try {
@@ -28395,7 +29917,7 @@ function createNativeServer(configuration) {
           textRateLimit("account:" + owner, 36e5, 120);
           const prior = db.prepare("SELECT body_hash,result FROM text_imports WHERE user_id=? AND idempotency_key=?").get(owner, key);
           if (prior) {
-            if (prior.body_hash !== digest2) throw new APIError(409, "IDEMPOTENCY_CONFLICT");
+            if (prior.body_hash !== digest3) throw new APIError(409, "IDEMPOTENCY_CONFLICT");
             result = JSON.parse(prior.result);
             repeated = true;
           } else {
@@ -28408,7 +29930,7 @@ function createNativeServer(configuration) {
             db.prepare("UPDATE workspaces SET revision=revision+1,snapshot=? WHERE user_id=?").run(JSON.stringify(snapshot), owner);
             db.prepare("DELETE FROM history WHERE user_id=? AND revision<?").run(owner, Math.max(0, old.revision - 4));
             result = { revision: old.revision + 1, created: additions.records.length, recordIDs: additions.records.map((item) => item.id), seriesIDs: additions.series.map((item) => item.id) };
-            db.prepare("INSERT INTO text_imports(user_id,idempotency_key,body_hash,result,created) VALUES(?,?,?,?,?)").run(owner, key, digest2, JSON.stringify(result), textNow());
+            db.prepare("INSERT INTO text_imports(user_id,idempotency_key,body_hash,result,created) VALUES(?,?,?,?,?)").run(owner, key, digest3, JSON.stringify(result), textNow());
           }
           db.prepare("UPDATE text_tokens SET last_used=? WHERE id=?").run(textNow(), credential.id);
           db.exec("COMMIT");

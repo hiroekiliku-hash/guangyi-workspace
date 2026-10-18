@@ -1,0 +1,849 @@
+{
+  "protocol": "WORKSHOP-CONTENT/1",
+  "id": "demo-course",
+  "kind": "course",
+  "version": 3,
+  "minimumContentVersion": 1,
+  "payload": {
+    "id": "8343F80B-F43C-4901-B585-A67647EA9700",
+    "lessons": [
+      {
+        "blocks": [
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0100",
+            "text": "先记录要做的事，再选择真正重要的事。为每项任务保留合理的时间，也给自己留一点空白。",
+            "type": "text"
+          },
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0101",
+            "text": "试一试：选出今天最重要的一件事，为它安排一个不被打扰的时段。",
+            "type": "callout"
+          },
+          {
+            "caption": "示例：一天的时间分配（小时）",
+            "chartType": "bar",
+            "id": "8343F80B-F43C-4901-B585-A67647EA0102",
+            "points": [
+              {
+                "label": "学习",
+                "value": 5
+              },
+              {
+                "label": "运动",
+                "value": 1
+              },
+              {
+                "label": "休息",
+                "value": 8
+              },
+              {
+                "label": "其他",
+                "value": 10
+              }
+            ],
+            "type": "chart"
+          },
+          {
+            "correctOptionIDs": [
+              "a"
+            ],
+            "explanation": "先确定重点，再为任务留出缓冲。",
+            "id": "8343F80B-F43C-4901-B585-A67647EA0103",
+            "options": [
+              {
+                "id": "a",
+                "text": "先挑选最重要的任务"
+              },
+              {
+                "id": "b",
+                "text": "把所有时间都排满"
+              }
+            ],
+            "questionType": "singleChoice",
+            "text": "哪一种安排更适合开始今天？",
+            "type": "question"
+          }
+        ],
+        "id": "8343F80B-F43C-4901-B585-A67647EA9701",
+        "title": "把一天安排得更从容"
+      },
+      {
+        "blocks": [
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0200",
+            "text": "复盘的目的，是找到适合自己的节奏。每天记录一点进展，持续比完美更重要。",
+            "type": "text"
+          },
+          {
+            "caption": "示例：一周的专注时长（分钟）",
+            "chartType": "line",
+            "id": "8343F80B-F43C-4901-B585-A67647EA0201",
+            "points": [
+              {
+                "label": "周一",
+                "value": 35
+              },
+              {
+                "label": "周二",
+                "value": 45
+              },
+              {
+                "label": "周三",
+                "value": 40
+              },
+              {
+                "label": "周四",
+                "value": 55
+              }
+            ],
+            "type": "chart"
+          },
+          {
+            "correctOptionIDs": [
+              "a",
+              "b"
+            ],
+            "explanation": "留出休息和调整的空间，计划才能持续。",
+            "id": "8343F80B-F43C-4901-B585-A67647EA0202",
+            "options": [
+              {
+                "id": "a",
+                "text": "安排休息"
+              },
+              {
+                "id": "b",
+                "text": "定期复盘"
+              },
+              {
+                "id": "c",
+                "text": "永远不允许计划变化"
+              }
+            ],
+            "questionType": "multipleChoice",
+            "text": "哪些习惯有助于保持节奏？",
+            "type": "question"
+          },
+          {
+            "explanation": "这道题没有标准答案。写下自己的想法，就迈出了第一步。",
+            "id": "8343F80B-F43C-4901-B585-A67647EA0203",
+            "input": {
+              "kind": "text",
+              "maxLines": 5,
+              "minLines": 2,
+              "placeholder": "例如：读完一章，或整理今天的笔记"
+            },
+            "questionType": "shortAnswer",
+            "text": "写下一件今天想完成的小事。",
+            "type": "question"
+          }
+        ],
+        "id": "8343F80B-F43C-4901-B585-A67647EA9702",
+        "title": "建立自己的节奏"
+      },
+      {
+        "blocks": [
+          {
+            "focusLines": [
+              4,
+              5
+            ],
+            "focusSpans": [
+              {
+                "line": 4,
+                "text": "count"
+              },
+              {
+                "line": 5,
+                "text": "++"
+              }
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0300",
+            "presentation": {
+              "kind": "markdown",
+              "markdown": {
+                "source": "## 让变量增加一次\n`++count` 会把变量的值加上 **1**。先预测输出，再点击下方演示验证。\n\n```cpp\n#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count; // 输出 1\n}\n```\n每次执行递增语句，都是在原来的值上再加一。"
+              }
+            },
+            "text": "整数变量 count 从 0 开始。执行 ++count 后变成 1，std::cout 会输出 1。",
+            "title": "从一行代码开始",
+            "type": "text"
+          },
+          {
+            "focusLines": [
+              4,
+              5
+            ],
+            "focusSpans": [
+              {
+                "line": 4,
+                "text": "0"
+              },
+              {
+                "line": 5,
+                "text": "count"
+              }
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0301",
+            "presentation": {
+              "kind": "svg",
+              "svg": {
+                "height": 200,
+                "source": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 360 180\" role=\"img\" aria-label=\"count 从 0 增加到 1\">\n  <style>text{font-family:system-ui,sans-serif;fill:#24372f}.box{fill:#e7efe8;stroke:#548467;stroke-width:2}.arrow{stroke:#548467;stroke-width:3;fill:none}</style>\n  <rect class=\"box\" x=\"15\" y=\"35\" width=\"105\" height=\"105\" rx=\"18\"/>\n  <text x=\"67\" y=\"65\" text-anchor=\"middle\" font-size=\"16\">count</text><text x=\"67\" y=\"114\" text-anchor=\"middle\" font-size=\"42\">0</text>\n  <path class=\"arrow\" d=\"M135 90H220M210 80L220 90L210 100\"/>\n  <text x=\"177\" y=\"66\" text-anchor=\"middle\" font-size=\"16\">++count</text>\n  <rect class=\"box\" x=\"240\" y=\"35\" width=\"105\" height=\"105\" rx=\"18\"/>\n  <text x=\"292\" y=\"65\" text-anchor=\"middle\" font-size=\"16\">count</text><text x=\"292\" y=\"114\" text-anchor=\"middle\" font-size=\"42\">1</text>\n</svg>"
+              }
+            },
+            "text": "变量 count 可以看成一个有名称的盒子。初始盒子里是 0，执行 ++count 后，盒子里的值变成 1。",
+            "title": "变量如何变化",
+            "type": "text"
+          },
+          {
+            "focusLines": [
+              5
+            ],
+            "focusSpans": [
+              {
+                "line": 5,
+                "text": "++count"
+              }
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0302",
+            "presentation": {
+              "html": {
+                "height": 280,
+                "source": "<!doctype html><html lang=\"zh-CN\"><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>\n:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:20px;font:16px system-ui,sans-serif;color:light-dark(#24372f,#e5eee7);background:transparent}\n.demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}\n.actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}\n@media(prefers-reduced-motion:reduce){.value{transition:none}}\n</style></head><body><section class=\"demo\" aria-label=\"变量递增演示\"><code>int count = <output id=\"inline\">0</output>;</code><output id=\"value\" class=\"value\" aria-live=\"polite\">0</output><div class=\"actions\"><button id=\"increment\">执行 ++count</button><button id=\"reset\" class=\"secondary\">重置</button></div><label><input type=\"checkbox\" id=\"reduce\">减少动态</label></section><script>\n(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function show(){value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,9999);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()})})();\n</script></body></html>"
+              },
+              "kind": "html"
+            },
+            "text": "互动示例从 count = 0 开始。点击执行 ++count，值增加 1；点击重置，值回到 0。开启减少动态后，数字变化不使用缩放动画。",
+            "title": "亲手运行一次",
+            "type": "callout"
+          }
+        ],
+        "estimatedMinutes": 5,
+        "id": "8343F80B-F43C-4901-B585-A67647EA9703",
+        "objectives": [
+          "读懂一个完整的 C++ 递增示例。",
+          "用示意图和交互观察变量变化。"
+        ],
+        "referenceCode": {
+          "annotations": [
+            {
+              "line": 5,
+              "text": "前置递增：先把 count 增加 1。"
+            }
+          ],
+          "expectedOutput": "1",
+          "filename": "counter.cpp",
+          "highlightLines": [
+            5
+          ],
+          "highlightSpans": [
+            {
+              "line": 5,
+              "text": "++"
+            }
+          ],
+          "language": "cpp",
+          "source": "#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count;\n}"
+        },
+        "title": "代码与互动演示"
+      },
+      {
+        "blocks": [
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0400",
+            "presentation": {
+              "code": {
+                "annotations": [
+                  {
+                    "line": 3,
+                    "text": "先读取右边的旧值，再把相加的结果写回左边。"
+                  }
+                ],
+                "expectedOutput": "6",
+                "filename": "sum.js",
+                "highlightLines": [
+                  3
+                ],
+                "highlightSpans": [
+                  {
+                    "line": 3,
+                    "occurrence": 2,
+                    "text": "total"
+                  }
+                ],
+                "language": "javascript",
+                "source": "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+              },
+              "kind": "code"
+            },
+            "text": "这段程序把 1、2、3 依次加进 total。完整程序会一直保留在上方；蓝色标记会跟随讲解，精确到变量或运算符。",
+            "title": "完整程序随时可看",
+            "type": "text"
+          },
+          {
+            "focusLines": [
+              3
+            ],
+            "focusSpans": [
+              {
+                "line": 3,
+                "occurrence": 2,
+                "text": "total"
+              }
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0401",
+            "text": "total = total + i 右侧先计算，左侧后接收。现在只标记右侧第二次出现的 total，它表示累加前的旧值。",
+            "title": "同一个变量，两个位置",
+            "type": "text"
+          },
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0402",
+            "presentation": {
+              "kind": "trace",
+              "trace": {
+                "variants": [
+                  {
+                    "code": {
+                      "annotations": [
+                        {
+                          "line": 3,
+                          "text": "先读取右边的旧值，再把相加的结果写回左边。"
+                        }
+                      ],
+                      "expectedOutput": "6",
+                      "filename": "sum.js",
+                      "highlightLines": [
+                        3
+                      ],
+                      "highlightSpans": [
+                        {
+                          "line": 3,
+                          "occurrence": 2,
+                          "text": "total"
+                        }
+                      ],
+                      "language": "javascript",
+                      "source": "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+                    },
+                    "frames": [
+                      {
+                        "focusSpans": [
+                          {
+                            "line": 1,
+                            "text": "0"
+                          }
+                        ],
+                        "line": 1,
+                        "note": "total 从 0 开始。",
+                        "objects": [
+                          {
+                            "changed": true,
+                            "id": "total",
+                            "names": [
+                              "total"
+                            ],
+                            "scope": "程序",
+                            "value": "0"
+                          }
+                        ],
+                        "title": "先准备一个总数"
+                      },
+                      {
+                        "focusSpans": [
+                          {
+                            "line": 2,
+                            "text": "i <= 3"
+                          }
+                        ],
+                        "line": 2,
+                        "note": "i 取 1，满足 i <= 3，可以进入循环体。",
+                        "objects": [
+                          {
+                            "id": "total",
+                            "names": [
+                              "total"
+                            ],
+                            "value": "0"
+                          },
+                          {
+                            "changed": true,
+                            "id": "i",
+                            "names": [
+                              "i"
+                            ],
+                            "value": "1"
+                          }
+                        ],
+                        "title": "第一次循环"
+                      },
+                      {
+                        "focusSpans": [
+                          {
+                            "line": 3,
+                            "text": "total + i"
+                          }
+                        ],
+                        "line": 3,
+                        "note": "右侧算出 0 + 1，再把结果 1 写回 total。",
+                        "objects": [
+                          {
+                            "changed": true,
+                            "id": "total",
+                            "names": [
+                              "total"
+                            ],
+                            "value": "1"
+                          },
+                          {
+                            "id": "i",
+                            "names": [
+                              "i"
+                            ],
+                            "value": "1"
+                          }
+                        ],
+                        "title": "第一次相加"
+                      },
+                      {
+                        "focusSpans": [
+                          {
+                            "line": 3,
+                            "occurrence": 2,
+                            "text": "total"
+                          },
+                          {
+                            "line": 3,
+                            "text": "i"
+                          }
+                        ],
+                        "line": 3,
+                        "note": "i 增加到 2。这一次，旧的 total 是 1；1 + 2 得到 3。",
+                        "objects": [
+                          {
+                            "changed": true,
+                            "id": "total",
+                            "names": [
+                              "total"
+                            ],
+                            "value": "3"
+                          },
+                          {
+                            "changed": true,
+                            "id": "i",
+                            "names": [
+                              "i"
+                            ],
+                            "value": "2"
+                          }
+                        ],
+                        "title": "第二次相加"
+                      },
+                      {
+                        "focusSpans": [
+                          {
+                            "line": 3,
+                            "text": "="
+                          }
+                        ],
+                        "line": 3,
+                        "note": "i 增加到 3，total 由 3 + 3 变成 6。之后 i 变为 4，循环结束。",
+                        "objects": [
+                          {
+                            "changed": true,
+                            "id": "total",
+                            "names": [
+                              "total"
+                            ],
+                            "value": "6"
+                          },
+                          {
+                            "changed": true,
+                            "id": "i",
+                            "names": [
+                              "i"
+                            ],
+                            "value": "3"
+                          }
+                        ],
+                        "title": "第三次相加"
+                      },
+                      {
+                        "focusSpans": [
+                          {
+                            "line": 5,
+                            "text": "total"
+                          }
+                        ],
+                        "line": 5,
+                        "note": "程序输出 total 的最终值 6。",
+                        "objects": [
+                          {
+                            "id": "total",
+                            "names": [
+                              "total"
+                            ],
+                            "value": "6"
+                          }
+                        ],
+                        "output": "6",
+                        "title": "输出最终结果"
+                      }
+                    ],
+                    "id": "sum",
+                    "title": "累加 1 到 3"
+                  }
+                ]
+              }
+            },
+            "text": "点击执行下一步，观察 i、total 与输出如何变化；也可以退回上一帧对照。",
+            "title": "一步一步观察",
+            "type": "text"
+          },
+          {
+            "acceptedAnswers": [
+              "6"
+            ],
+            "explanation": "0 + 1 + 2 + 3 = 6。输入后点继续，也会先检查这道题。",
+            "focusLines": [
+              5
+            ],
+            "focusSpans": [
+              {
+                "line": 5,
+                "text": "total"
+              }
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0403",
+            "input": {
+              "kind": "integer",
+              "maxLines": 3,
+              "minLines": 2,
+              "placeholder": "最终的 total"
+            },
+            "questionType": "shortAnswer",
+            "text": "回看上方程序：循环结束后，total 的值是多少？只输入一个整数。",
+            "type": "question"
+          }
+        ],
+        "estimatedMinutes": 4,
+        "id": "8343F80B-F43C-4901-B585-A67647EA9704",
+        "objectives": [
+          "让完整程序与当前讲解保持对应。",
+          "按变量、表达式和行号观察状态变化。"
+        ],
+        "referenceCode": {
+          "annotations": [
+            {
+              "line": 3,
+              "text": "先读取右边的旧值，再把相加的结果写回左边。"
+            }
+          ],
+          "expectedOutput": "6",
+          "filename": "sum.js",
+          "highlightLines": [
+            3
+          ],
+          "highlightSpans": [
+            {
+              "line": 3,
+              "occurrence": 2,
+              "text": "total"
+            }
+          ],
+          "language": "javascript",
+          "source": "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+        },
+        "title": "看着程序，逐步推演"
+      },
+      {
+        "blocks": [
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0500",
+            "text": "这里的练习可以直接在本机运行。数字题使用数字键盘，程序题使用代码编辑器。填写答案后，可点运行代码，也可点底部继续提交当前答案。",
+            "title": "从输入到结果",
+            "type": "callout"
+          },
+          {
+            "acceptedAnswers": [
+              "4"
+            ],
+            "execution": {
+              "expectedOutput": "1\n2\n3",
+              "language": "javascript",
+              "template": "for (let i = 1; i < {{ANSWER}}; i++) {\n    console.log(i);\n}"
+            },
+            "explanation": "条件是 i < 4，所以循环体会执行 i = 1、2、3。",
+            "focusLines": [
+              1
+            ],
+            "focusSpans": [
+              {
+                "line": 1,
+                "text": "{{ANSWER}}"
+              }
+            ],
+            "hints": [
+              "注意条件中的 < 不包含右侧的数。"
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0501",
+            "input": {
+              "kind": "integer",
+              "maxLines": 3,
+              "minLines": 2,
+              "placeholder": "填入结束值"
+            },
+            "questionType": "shortAnswer",
+            "text": "补全循环的结束值，使程序依次输出 1、2、3。只填一个整数。",
+            "title": "整数填空",
+            "type": "question"
+          },
+          {
+            "acceptedAnswers": [
+              "0.5"
+            ],
+            "execution": {
+              "expectedOutput": "1",
+              "language": "javascript",
+              "template": "console.log(2 * ({{ANSWER}}));"
+            },
+            "explanation": "2 × 0.5 = 1；试着运行，看看实际输出。",
+            "focusLines": [
+              1
+            ],
+            "focusSpans": [
+              {
+                "line": 1,
+                "text": "{{ANSWER}}"
+              }
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0502",
+            "input": {
+              "kind": "decimal",
+              "maxLines": 3,
+              "minLines": 2,
+              "placeholder": "例如 0.5"
+            },
+            "questionType": "shortAnswer",
+            "text": "一条绳子长 2 米，取它的多少倍恰好是 1 米？填一个小数，让程序输出 1。",
+            "title": "小数输入",
+            "type": "question"
+          },
+          {
+            "answerFormat": "code",
+            "code": {
+              "annotations": [
+                {
+                  "line": 2,
+                  "text": "这里仍返回原数，请在下面的编辑器中改成返回两倍。"
+                }
+              ],
+              "expectedOutput": "6",
+              "filename": "double.js",
+              "highlightLines": [
+                2
+              ],
+              "highlightSpans": [
+                {
+                  "line": 2,
+                  "text": "value"
+                }
+              ],
+              "language": "javascript",
+              "source": "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
+              "stdin": "3"
+            },
+            "execution": {
+              "expectedOutput": "6",
+              "language": "javascript",
+              "stdin": "3"
+            },
+            "explanation": "把 return value 改成 return value * 2，再运行检查结果。",
+            "hints": [
+              "保留函数名 double 和参数 value。",
+              "return 后写 value * 2。"
+            ],
+            "id": "8343F80B-F43C-4901-B585-A67647EA0503",
+            "input": {
+              "kind": "code",
+              "language": "javascript",
+              "maxLines": 12,
+              "minLines": 5,
+              "placeholder": "补全 double 函数",
+              "starterCode": "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));"
+            },
+            "questionType": "shortAnswer",
+            "text": "修改 double 函数，让它返回参数的两倍。默认程序输入是 3，运行后应输出 6。也可以展开程序输入，换个数再试。",
+            "title": "在代码编辑器中完成函数",
+            "type": "question"
+          }
+        ],
+        "estimatedMinutes": 5,
+        "id": "8343F80B-F43C-4901-B585-A67647EA9705",
+        "objectives": [
+          "体验适配整数、小数与源码的输入方式。",
+          "修改源码和程序输入，检查真实运行结果。"
+        ],
+        "referenceCode": {
+          "annotations": [
+            {
+              "line": 2,
+              "text": "这里仍返回原数，请在下面的编辑器中改成返回两倍。"
+            }
+          ],
+          "expectedOutput": "6",
+          "filename": "double.js",
+          "highlightLines": [
+            2
+          ],
+          "highlightSpans": [
+            {
+              "line": 2,
+              "text": "value"
+            }
+          ],
+          "language": "javascript",
+          "source": "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
+          "stdin": "3"
+        },
+        "title": "填数字，写代码，真正运行"
+      },
+      {
+        "blocks": [
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0600",
+            "presentation": {
+              "kind": "table",
+              "table": {
+                "columns": [
+                  "轮次",
+                  "i",
+                  "total"
+                ],
+                "rows": [
+                  [
+                    "开始",
+                    "—",
+                    "0"
+                  ],
+                  [
+                    "第一轮",
+                    "1",
+                    "1"
+                  ],
+                  [
+                    "第二轮",
+                    "2",
+                    "3"
+                  ],
+                  [
+                    "第三轮",
+                    "3",
+                    "6"
+                  ]
+                ]
+              }
+            },
+            "text": "把变量的变化整理成表格：第一轮后 total 是 1，第二轮是 3，第三轮是 6。",
+            "title": "用表格对照每一轮",
+            "type": "text"
+          },
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0601",
+            "presentation": {
+              "kind": "steps",
+              "steps": [
+                {
+                  "code": {
+                    "language": "javascript",
+                    "source": "let total = 0;\nlet i = 1;"
+                  },
+                  "text": "总数从 0 开始，i 从 1 开始。",
+                  "title": "确定起点"
+                },
+                {
+                  "code": {
+                    "language": "javascript",
+                    "source": "total = total + i;"
+                  },
+                  "text": "i <= 3 时，把本轮的 i 加进 total。",
+                  "title": "判断并累加"
+                },
+                {
+                  "code": {
+                    "language": "javascript",
+                    "source": "i++;"
+                  },
+                  "text": "i 增加 1，重新判断条件；不满足时退出。",
+                  "title": "更新后再判断"
+                }
+              ]
+            },
+            "text": "读循环时，先看起点，再看条件，再算循环体，最后回到更新步骤。",
+            "title": "把过程拆成小步",
+            "type": "text"
+          },
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0602",
+            "presentation": {
+              "items": [
+                {
+                  "code": {
+                    "language": "javascript",
+                    "source": "for (let i = 1; i <= 3; i++) {\n    total += i;\n}"
+                  },
+                  "text": "i 依次取 1、2、3，总和为 6。",
+                  "title": "包含边界"
+                },
+                {
+                  "code": {
+                    "language": "javascript",
+                    "source": "for (let i = 1; i < 3; i++) {\n    total += i;\n}"
+                  },
+                  "text": "i 只取 1、2，总和为 3。",
+                  "title": "不包含边界"
+                }
+              ],
+              "kind": "comparison"
+            },
+            "text": "i <= 3 会包含 3；i < 3 不包含 3。只差一个等号，循环次数和结果就不同。",
+            "title": "对照两种条件",
+            "type": "text"
+          },
+          {
+            "id": "8343F80B-F43C-4901-B585-A67647EA0603",
+            "presentation": {
+              "cards": [
+                {
+                  "back": "先计算右侧 total + i，再把结果写回左侧 total。",
+                  "front": "total = total + i 先计算哪一边？"
+                },
+                {
+                  "back": "不包含。若从 1 开始，每次加 1，循环体里会用到 1、2、3。",
+                  "front": "i < 4 包含 4 吗？"
+                },
+                {
+                  "back": "运行它，对照输出；再换一组输入，检查结果是否仍符合预期。",
+                  "front": "怎样确认写的程序真的可用？"
+                }
+              ],
+              "kind": "flashcards"
+            },
+            "text": "先想一想，再翻开卡片核对。能够不看解析说出理由，就说明理解更扎实了。",
+            "title": "翻开卡片，检查记忆",
+            "type": "text"
+          }
+        ],
+        "estimatedMinutes": 3,
+        "id": "8343F80B-F43C-4901-B585-A67647EA9706",
+        "objectives": [
+          "用表格、分步和对照复习同一个概念。",
+          "通过翻卡自测，检查理解。"
+        ],
+        "title": "换一种方式，巩固理解"
+      }
+    ],
+    "protocol": "WORKSHOP-COURSE/1",
+    "summary": "从一天的安排到代码实作：体验图表、Markdown、SVG、HTML 动画、程序推演、精确标记和可运行练习。",
+    "title": "从容的一天"
+  }
+}

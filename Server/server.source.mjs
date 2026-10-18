@@ -11,9 +11,12 @@ import { isIP } from 'node:net';
 import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords, webAsset } from './web.mjs';
 import { createCourseAPI } from './courses.mjs';
 import { createCourseExecutionClient } from './course-execution.mjs';
+import { createAppContentAPI } from './app-content.mjs';
 import { parseCalendarText, calendarTextPrompt, TextImportError, textImportPath, textImportProtocol, textImportLimit } from './text-ingress.mjs';
 
 export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
+
+const appContentAPI = createAppContentAPI();
 
 let deploymentRevision = 'unversioned';
 try { deploymentRevision = readFileSync(join(dirname(new URL(import.meta.url).pathname), 'REVISION'), 'utf8').trim(); } catch {}
@@ -422,6 +425,7 @@ export function createNativeServer(configuration) {
   const server = http.createServer(async (request, response) => {
     try {
       const url = new URL(request.url, 'http://localhost'), path = url.pathname;
+      if (appContentAPI(request, response, path)) return;
       if (path === '/native-login' && (request.method === 'GET' || request.method === 'HEAD')) {
         sameWebOrigin(request);
         const parameters = url.searchParams, expected = ['code_challenge', 'code_challenge_method', 'state'];
