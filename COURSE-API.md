@@ -2,15 +2,15 @@
 
 课程内容独立于日程快照。服务器保存课程，App 登录后在“课程”页获取并缓存；课程发布不会创建事项、提醒或重复日程。当前提供 JSON 文档协议，同时接受包含相同 JSON 的 UTF-8 纯文本。
 
-`WORKSHOP-COURSE/1` 现提供 `structured-1` 可选扩展：结构化代码、Markdown、内联 SVG、离线 HTML/CSS/JavaScript 互动动画、表格、分步推演、对照、记忆卡片，以及带源码和提示的练习。旧文档无需迁移；本次扩展提供内容与互动能力，具体视觉呈现由客户端实现。
+`WORKSHOP-COURSE/1` 现提供 `structured-2`：新增原生程序推演 `trace`，继续支持结构化代码、Markdown、SVG、离线 HTML、表格、分步、对照、记忆卡片与练习。作者提供语义数据，客户端统一布局和交互；新课程不要求旧客户端可读。
 
 ## AI 互动教学要求
 
-自动上传版与手动导入版提示词共用同一套教学约定。编程课默认在前两个实质课时内包含状态可改变的 HTML 实验，适合动手观察的核心概念课时继续配对应实验；纯阅读或不适合交互时可说明原因。代码框、静态图或选择题本身不替代状态实验。
+自动上传版与手动导入版提示词共用一套约定：**每屏一个问题、一个变化，先清楚再丰富**。编程课围绕一个短程序，按“预测 → 单步观察 → 迁移题 → 自行改写”展开，通常 4–6 块即可。不要为形式丰富而堆叠完整源码、参数面板、输出、对照、时间轴、重复标签与多种练习。
 
-提示词附带完整可发布示例：修改初值、加一、减一、重置，实际绑定事件，并同步更新数值、赋值表达式和执行轨迹，后接原生练习题。AI 应按主题扩展为分支选择、循环单步、列表增删、函数参数、策略切换或滑块图形等；每个操作须有具体观察任务与可检查反馈，不能只画按钮或留交互逻辑占位。
+逐步语义优先用原生 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释，App 聚焦当前执行行，完整代码按需展开。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
 
-组件以 `text/callout.presentation.kind=html` 提供，普通正文、Markdown 围栏和 Code 源码不执行。内部状态只在本次演示中使用；正式作答和进度使用 `question`。资源、体积和沙盒约束保持不变。以上是生成引导，不是服务器对课程教学质量的强制判定；已发布课程需要按更新协议重新生成或修改后发布。
+不再要求前两课或每节课包含 HTML。只有连续拖动等原生结构无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 源码不执行，正式作答与进度使用 `question`。提示词附一个简洁的“原生 trace → 迁移题”完整示例；以上属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
 
 ## 身份与账户
 
@@ -20,7 +20,7 @@
 
 由登录 session 管理密钥：
 
-- `GET /api/native/v1/integrations/course-tokens`：返回 `credentials`、`endpoint`、`protocol`、`schemaURL`、`extensionVersion`（`structured-1`）、`prompt`（密钥位置为 `{{API_KEY}}`）、`manualPrompt`（纯生成教程提示词，不含凭据，获取时不创建密钥）。
+- `GET /api/native/v1/integrations/course-tokens`：返回 `credentials`、`endpoint`、`protocol`、`schemaURL`、`extensionVersion`（`structured-2`）、`prompt`（密钥位置为 `{{API_KEY}}`）、`manualPrompt`（纯生成教程提示词，不含凭据，获取时不创建密钥）。
 - `POST` 相同地址，JSON `{ "name": "课程发布" }`（name 可省略）：201 返回 `credential`、`accessToken`、`endpoint`、`protocol`、`schemaURL`、`extensionVersion`。
 - `DELETE` 相同地址，JSON `{ "id": "密钥 UUID" }`：撤销自己的密钥。
 
@@ -114,20 +114,21 @@ curl --fail-with-body 'https://workspace.kdfz.com.cn/api/integrations/v1/courses
 
 mutationID 以学习者、空间、课程隔离；同 ID 同正文重试不会再次修改，返回当前进度（避免旧响应倒退当前界面），同 ID 不同正文 409。每课程每学习者最多 20000 个不同 mutation，进度总大小最多 2 MiB。保存过程在读完正文后于事务内重新验证 session 和关联权限。此版本使用拉取同步，不依赖 APNs，不向关闭的 App 承诺即时更新。
 
-## 结构化扩展 `structured-1`
+## 结构化扩展 `structured-2`
 
-### 兼容与发现
+### 版本与发现
 
-基础 `protocol` 仍为 `WORKSHOP-COURSE/1`。现有五个 `type`、三种 `questionType`、UUID、revision、幂等与完成条件保持兼容。新字段全部可选，普通课程仍按原方式读写。
+基础 `protocol` 仍为 `WORKSHOP-COURSE/1`，元数据 `extensionVersion` 为 `structured-2`。五个 `type`、三种 `questionType`、UUID、revision、幂等和完成条件保留；新增 trace 需要支持该版本的客户端。旧结构仍可读写，但新内容不再要求旧客户端展示等价效果。
 
 `GET /api/integrations/v1/courses/schema` 返回不含账户数据的 JSON Schema，**直接返回 Schema 对象，不使用 `data` 包裹**。课程凭据元数据同时返回 `schemaURL` 与 `extensionVersion`。离线版本见 [Server/course.schema.json](Server/course.schema.json)，完整可导入的 C++ 例子见 [Server/Fixtures/course-programming.json](Server/Fixtures/course-programming.json)。Schema 表达字段与长度上界；全局 UUID 唯一、表格行宽、有效代码行号等跨字段条件仍由服务端与 Swift 验证。
 
 课时可增加 `objectives:[String]`（最多 6 条，每条 1–500）和 `estimatedMinutes`（1–180 的整数）。任意块可增加非空 `title`（最多 240）。它们用于内容组织，不改变完成条件。
 
-`text` / `callout` 可增加 `presentation`。必须保留完整、有阅读价值的 `text` 作为兼容退路；旧展示端可继续阅读，支持扩展的界面优先展示结构化内容，避免重复输出两份正文。不要只在退路写“见代码”或“见上图”。
+`text` / `callout` 可增加 `presentation`。`text` 保留简短、有教学意义的摘要，无需重复完整源码、逐帧状态或整个表格；客户端优先展示结构化内容，避免一屏重复输出两份正文。
 
 | `presentation.kind` | 唯一对应内容 | 适合用途 |
 |---|---|---|
+| `trace` | `trace:{variants:[{id,title,code,frames}]}` | 原生单步程序推演、对象身份与别名 |
 | `code` | `code: Code` | 源码、输入输出、行高亮与注解 |
 | `table` | `table:{columns:[String],rows:[[String]]}` | 变量追踪、地址与值、复杂度对比 |
 | `steps` | `steps:[{title,text,code?}]` | 分步讲解、函数调用过程、执行推演 |
@@ -139,13 +140,57 @@ mutationID 以学习者、空间、课程隔离；同 ID 同正文重试不会�
 
 `presentation` 只允许 `kind` 和对应的一个载荷字段，不混放多个形式，不任意递归嵌套。表格 1–8 列、1–60 行，每行格数必须与列数一致；列名非空最多 120，单元格可空最多 2000。步骤 1–20 项，对照 2–4 项；每项 `title` 非空最多 240，`text` 非空最多 4000，`code` 可省略。记忆卡 1–20 张，`front` 非空最多 2000、`back` 非空最多 4000。所有长度按 UTF-16 代码单元计。
 
+### 原生程序推演 `trace`
+
+```json
+{
+  "kind": "trace",
+  "trace": {
+    "variants": [{
+      "id": "reference",
+      "title": "引用传递",
+      "code": {"language": "cpp", "source": "void award(int& points) {\n    points += 3;\n}"},
+      "frames": [
+        {"title": "绑定别名", "line": 1, "note": "points 与 score 是同一个对象的两个名字。", "objects": [{"id": "score", "names": ["score", "points"], "value": "7", "scope": "main"}]},
+        {"title": "修改原值", "line": 2, "note": "通过 points 修改，原对象也变成 10。", "objects": [{"id": "score", "names": ["score", "points"], "value": "10", "scope": "main", "changed": true}]}
+      ]
+    }]
+  }
+}
+```
+
+`variants` 1–4 项且 id 唯一；每项 `frames` 2–24 帧。variant 必填 `id/title/code/frames`；frame 必填 `title/line/note/objects`，可有 `output`。frame 表示执行当前行之后的状态，`line` 必须在本 variant 的源码中有效。函数返回帧可以指向其右花括号。
+
+每帧 `objects` 1–4 项且 id 唯一。对象必填 `id/names/value`，可有 `scope/changed`；同一 variant 中对象 id 应跨帧保持稳定。variant/object id 为 1–40 个 ASCII 字母、数字、下划线或连字符。`names` 1–3 个非空字符串，每个最多 80，作者应避免重复，表示**同一个对象**的名字；作用域结束时移除失效名字或对象。`value` 非空最多 120，`scope` 非空最多 80，`changed` 为布尔值。variant/frame 的 `title` 非空最多 120；`note` 非空最多 400（生成时默认一句不超过 60 字），`output` 可空最多 2000，仅在产生输出时提供。
+
+载荷不接受布局、坐标、颜色或按钮字段。客户端控制切换、单步、回退、完整代码展开和视觉层级。这是作者提供的教学状态，不声称编译或运行过源码。值/引用传参示范见 [Shared/LearningLabs/CppValueReference.json](Shared/LearningLabs/CppValueReference.json)。
+
 ### 富内容与离线演示
 
-`markdown.source` 非空最多 20000 个 UTF-16 代码单元；`html.source` / `svg.source` 非空最多 60000。HTML/SVG 的 `height` 可省略，提供时为 120–640 的整数（显示点），Markdown 不接受 height。三种载荷只允许表中字段，HTML/SVG 均须保留完整 `text` 退路。示例见 [Server/Fixtures/course-rich.json](Server/Fixtures/course-rich.json)。
+`markdown.source` 非空最多 20000 个 UTF-16 代码单元；`html.source` / `svg.source` 非空最多 60000。HTML/SVG 的 `height` 可省略，提供时为 120–640 的整数（显示点），Markdown 不接受 height。三种载荷只允许表中字段，HTML/SVG 的 `text` 用简短摘要说明实验目的。示例见 [Server/Fixtures/course-rich.json](Server/Fixtures/course-rich.json)。
 
-编程课优先用 `Code` 专用代码框，或 Markdown 的带语言名围栏。HTML 用于可实际操作的概念演示，例如指针指向、排序交换、递归栈和时间复杂度，不假称运行了原生 C++/Python。SVG 通过 viewBox 适配移动屏，适合代替图片。HTML 可使用完全内联的样式、脚本和 canvas，无需安装插件或下载资源。演示应尊重 `prefers-reduced-motion`，动画附暂停/重置控制，避免固定宽度和无休止后台循环。
+编程课的逐步状态优先 `trace`，静态源码用 `Code` 或 Markdown 的带语言名围栏。HTML 仅用于原生结构无法表达的特殊交互，不假称运行了原生 C++/Python。SVG 通过 viewBox 适配移动屏，适合代替图片。HTML 可使用完全内联的样式、脚本和 canvas，无需安装插件或下载资源。演示应尊重 `prefers-reduced-motion`，动画附暂停/重置控制，避免固定宽度和无休止后台循环。
 
-客户端隔离渲染富内容：不提供账号信息、凭据或原生桥接，使用非持久网页数据；沙盒和 CSP 禁止网络请求、外链脚本/样式/字体、导航、嵌入、图片、音频、视频及 worker。作者不要使用 CDN、iframe/object/embed、data/base64、SVG image/foreignObject 或任何外链资源。Markdown 不启用原始 HTML，也不加载图片；要交互请使用 html presentation。服务器只验证字段、限额并存储源码，不运行它，也不靠字符串黑名单判断教学源码。沙盒允许内联 JavaScript 演示，不代表可访问服务器、App 数据或设备能力。
+互动内容应把状态计算与绘制分开：滑块/拖动先更新模型数据，再通过 `requestAnimationFrame` 合并绘制；避免每次输入都替换整个 `innerHTML`，复用 SVG/DOM 节点，先集中读取布局再写入，动画优先用 `transform`/`opacity`。长计算拆成每批约 4ms 的小步骤并主动让出执行机会，轨迹/节点数要有上限。按 `performance.now()` 的时间差计算运动，不能把定时回调次数当成真实经过时间。
+
+新版客户端提供可选的离线 `window.WorkshopRuntime`（不含任何账户、存储或网络权限）：`invalidate(key, render)` 为同一 key 在下一帧只保留最新绘制，`cancelInvalidation(key)` 取消，`await yield()` 等待下一帧让出执行；`active` 和 `workshopvisibilitychange` 事件的 `detail.active` 表示当前是否可见。使用时先检测是否存在，旧客户端退回原生 `requestAnimationFrame`。正常动画直接用 `requestAnimationFrame`；新版会保留状态并暂停离屏的计时/动画，回到屏幕不补跑积压的帧。小于 16ms 的重复计时共用每帧约 4ms 的计算预算，耗时的单次 JavaScript 回调无法被抢占，仍需作者拆分。
+
+```js
+const slider = document.querySelector('input[type="range"]');
+let value = Number(slider.value), pending = false;
+function render() { document.querySelector('output').textContent = String(value); }
+slider.addEventListener('input', () => {
+  value = Number(slider.value); // 同步记录最新模型状态
+  if (window.WorkshopRuntime) WorkshopRuntime.invalidate('model', render);
+  else if (!pending) {
+    pending = true;
+    requestAnimationFrame(() => { pending = false; render(); });
+  }
+});
+```
+
+
+客户端隔离渲染富内容：不提供账号信息、凭据或原生桥接，使用非持久网页数据；沙盒和 CSP 禁止网络请求、外链脚本/样式/字体、导航、嵌入、图片、音频、视频及 worker。作者不要使用 CDN、iframe/object/embed、data/base64、SVG image/foreignObject 或任何外链资源。Markdown 不启用原始 HTML，也不加载图片；特殊交互可使用 html presentation；逐步程序语义优先原生 trace。服务器只验证字段、限额并存储源码，不运行它，也不靠字符串黑名单判断教学源码。沙盒允许内联 JavaScript 演示，不代表可访问服务器、App 数据或设备能力。
 
 单课程仍最多 1 MiB，不提供图片/视频上传或转码服务，默认不用旧 image 块。丰富形式优先靠文字、矢量和短脚本完成，避免给小服务器增加媒体存储与传输负担。
 
@@ -204,7 +249,7 @@ Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation`
 
 ## 给 Agent 的约定
 
-优先遵从用户指定；未指定时自行决定课时拆分、块类型和练习形式。形式尽量丰富，按教学需要组合代码框、Markdown、SVG、HTML 交互动画和练习；优先用内联矢量代替图片。图表用于真正有数据的内容，不为装饰填入虚构统计。不得凭空编造参考答案或版权图片来源。发布已获用户请求授权时直接执行；只在无法决定教学目标、目标账户或会覆盖未知版本等实质问题时询问。新建课程生成新 UUID，更新保留已有结构 ID 并使用已知 revision；重试保留原 key、字节正文和 If-Match。只有 HTTP 成功后才报告已发布；把版本冲突解释为需要获取最新课程后再编辑。App 可复制的权威提示词由服务器 `coursePrompt` 输出，自动填入端点，并在本地替换密钥占位符。
+优先遵从用户指定；未指定时自行决定课时拆分、块类型和练习形式。优先清楚简短的原生教学序列，逐步程序语义用 trace；按需要补充代码框、Markdown、SVG 和练习，HTML 只用于原生无法表达的特殊交互。图表用于真正有数据的内容，不为装饰填入虚构统计。不得凭空编造参考答案或版权图片来源。发布已获用户请求授权时直接执行；只在无法决定教学目标、目标账户或会覆盖未知版本等实质问题时询问。新建课程生成新 UUID，更新保留已有结构 ID 并使用已知 revision；重试保留原 key、字节正文和 If-Match。只有 HTTP 成功后才报告已发布；把版本冲突解释为需要获取最新课程后再编辑。App 可复制的权威提示词由服务器 `coursePrompt` 输出，自动填入端点，并在本地替换密钥占位符。
 
 ## 教学提示词与无网络导入
 

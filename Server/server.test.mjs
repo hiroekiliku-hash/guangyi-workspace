@@ -1074,59 +1074,39 @@ async function publishCourse(base, accessToken, course, { key = randomUUID(), re
     'Content-Type': 'application/json', 'Idempotency-Key': key, ...(revision === undefined ? {} : { 'If-Match': '"' + revision + '"' }), ...headers }, body: raw ?? JSON.stringify(course) });
   return { status: response.status, value: await response.json() };
 }
-test('course generation prompts include a valid stateful experiment whose controls update the displayed state', async () => {
+test('course generation prompts prioritize a compact native trace and self-checked code', async () => {
   await withTextIngress(async ({ native, session, instance }) => {
     const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
     let example;
     for (const prompt of [metadata.prompt, metadata.manualPrompt]) {
-      assert.match(prompt, /前两个实质课时内安排至少一个能改变状态的 HTML 互动实验/);
-      assert.match(prompt, /不能只画出按钮、滑块而不绑定事件/);
-      assert.match(prompt, /预测→操作→观察变化→解释→换参数重试/);
-      assert.match(prompt, /真实 addEventListener 事件绑定、计算逻辑和 DOM 更新/);
-      assert.match(prompt, /至少提供重置/);
-      assert.match(prompt, /不是省略互动的理由/);
-      assert.match(prompt, /code.source 不执行，不代表 html.source 内联 script 不能运行/);
+      assert.match(prompt, /编程课优先使用原生 trace/);
+      assert.match(prompt, /每屏一个问题、一个变化/);
+      assert.match(prompt, /默认每帧最多展示 2 个对象/);
+      assert.match(prompt, /默认不超过 60 字/);
+      assert.match(prompt, /由 App 决定布局/);
+      assert.match(prompt, /不要求每节课包含 HTML/);
+      assert.match(prompt, /开放代码题默认自行核对/);
+      assert.match(prompt, /不能把代码文本匹配当作通用代码判分/);
+      assert.doesNotMatch(prompt, /前两个实质课时内安排至少一个|每个实验必须落到.*kind:"html"/);
       const fences = [...prompt.matchAll(/```json\n([\s\S]+?)\n```/g)];
-      assert.equal(fences.length, 1, 'each prompt contains one complete, unambiguous JSON example');
+      assert.equal(fences.length, 1, 'each workflow includes one complete JSON example');
       const parsed = JSON.parse(fences[0][1]);
-      if (example) assert.deepEqual(parsed, example, 'manual and automatic workflows teach the same valid example');
+      if (example) assert.deepEqual(parsed, example);
       else example = parsed;
     }
     assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_tokens').get().n, 0);
     assert.equal((await native('courses', { auth: session, method: 'POST', headers: { 'Idempotency-Key': randomUUID() }, body: example })).status, 201);
     const downloaded = (await native('courses/' + example.id, { auth: session })).value.data.course;
-    assert.deepEqual(downloaded, example, 'the production validator accepts and preserves the full teaching example');
-    const html = downloaded.lessons[0].blocks.find(block => block.presentation?.kind === 'html').presentation.html.source;
-    assert.equal(html, example.lessons[0].blocks[1].presentation.html.source);
-    const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)];
-    assert.equal(scripts.length, 1);
-    // Execute only the trusted, built-in prompt fixture above, never user-submitted course source.
-    const { createContext, runInContext } = await import('node:vm');
-    const nodes = Object.fromEntries(['initial', 'count-value', 'assignment', 'trace', 'increment', 'decrement', 'reset'].map(id => [id, {
-      value: id === 'initial' ? '0' : '', textContent: '', listeners: {},
-      addEventListener(event, handler) { assert.equal(typeof handler, 'function'); this.listeners[event] = handler; }
-    }]));
-    const context = createContext({ document: { getElementById(id) { assert.ok(nodes[id], 'the fixture references a known element'); return nodes[id]; } }, nodes }, { codeGeneration: { strings: false, wasm: false } });
-    runInContext(scripts[0][1], context, { timeout: 1000 });
-    function displayed(expected, tracePattern) {
-      assert.equal(nodes['count-value'].textContent, String(expected));
-      assert.equal(nodes.assignment.textContent, 'count = ' + expected);
-      assert.match(nodes.trace.textContent, tracePattern);
-    }
-    function fire(id, event = 'click') {
-      assert.equal(typeof nodes[id].listeners[event], 'function', id + ' binds a real event handler');
-      runInContext('nodes[' + JSON.stringify(id) + '].listeners[' + JSON.stringify(event) + ']()', context, { timeout: 1000 });
-    }
-    displayed(0, /先预测/);
-    fire('increment'); displayed(1, /旧值 0 \+ 1 → 新值 1/);
-    fire('increment'); displayed(2, /旧值 1 \+ 1 → 新值 2/);
-    fire('decrement'); displayed(1, /旧值 2 - 1 → 新值 1/);
-    fire('reset'); displayed(0, /从初值 0 开始/);
-    nodes.initial.value = '2'; fire('initial', 'change'); displayed(2, /从初值 2 开始/);
-    fire('increment'); displayed(3, /旧值 2 \+ 1 → 新值 3/);
-    fire('increment'); displayed(4, /旧值 3 \+ 1 → 新值 4/);
-    nodes.initial.value = '99'; fire('initial', 'change'); displayed(99, /从初值 99 开始/);
-    fire('increment'); displayed(99, /已到演示范围/);
+    assert.deepEqual(downloaded, example, 'native trace survives production validation and publication');
+    const blocks = downloaded.lessons[0].blocks;
+    assert.deepEqual(blocks.map(block => block.presentation?.kind ?? block.type), ['trace', 'question']);
+    const variant = blocks[0].presentation.trace.variants[0];
+    assert.match(variant.code.source, /#include <iostream>/);
+    assert.deepEqual(variant.frames.map(frame => frame.line), [3, 4, 5]);
+    assert.deepEqual(variant.frames.map(frame => frame.objects[0].value), ['2', '3', '3']);
+    assert.deepEqual(variant.frames.map(frame => frame.objects[0].id), ['count', 'count', 'count']);
+    assert.equal(variant.frames.at(-1).output, '3');
+    assert.ok(variant.frames.every(frame => frame.objects.length <= 2 && frame.note.length <= 60));
   });
 });
 
@@ -1658,8 +1638,8 @@ test('course structured extensions round-trip C++ data and expose a static stric
     assert.equal(schemaResponse.headers.get('x-content-type-options'), 'nosniff');
     const schema = await schemaResponse.json();
     assert.equal(schema.properties.protocol.const, 'WORKSHOP-COURSE/1');
-    assert.equal(schema['x-workshop-extensionVersion'], 'structured-1');
-    assert.deepEqual(schema.$defs.presentation.oneOf.map(value => value.properties.kind.const), ['code', 'table', 'steps', 'comparison', 'flashcards', 'markdown', 'html', 'svg']);
+    assert.equal(schema['x-workshop-extensionVersion'], 'structured-2');
+    assert.deepEqual(schema.$defs.presentation.oneOf.map(value => value.properties.kind.const), ['code', 'table', 'steps', 'comparison', 'flashcards', 'markdown', 'html', 'svg', 'trace']);
     assert.deepEqual(Object.keys(schema.$defs.lesson.properties).sort(), ['blocks', 'estimatedMinutes', 'id', 'objectives', 'title']);
     assert.equal(schema.$defs.code.properties.source.maxLength, 20000);
     const languagePattern = new RegExp(schema.$defs.code.properties.language.pattern);
@@ -1676,7 +1656,7 @@ test('course structured extensions round-trip C++ data and expose a static stric
     assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM course_tokens').get().n, 0);
     const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
     assert.equal(metadata.schemaURL, 'https://text-import.test/api/integrations/v1/courses/schema');
-    assert.equal(metadata.extensionVersion, 'structured-1');
+    assert.equal(metadata.extensionVersion, 'structured-2');
     assert.match(metadata.prompt, /GET https:\/\/text-import\.test\/api\/integrations\/v1\/courses\/schema/);
     assert.match(metadata.manualPrompt, /#include <iostream>/);
     assert.match(metadata.manualPrompt, /comparison/); assert.match(metadata.manualPrompt, /flashcards/); assert.match(metadata.manualPrompt, /不编译、不执行/);

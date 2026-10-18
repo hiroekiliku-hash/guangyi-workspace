@@ -1,10 +1,10 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
-  "title": "WORKSHOP-COURSE/1 with structured-1 rich presentations",
-  "description": "A backward-compatible curriculum data contract. Native code is displayed as data; explicit HTML/SVG rich presentations run only in the isolated offline client sandbox. The server never executes curriculum source.",
+  "title": "WORKSHOP-COURSE/1 with structured-2 native teaching traces",
+  "description": "A curriculum data contract with author-written native teaching traces. New trace content requires a supporting client. Native code is displayed as data; explicit HTML/SVG presentations run only in the isolated offline client sandbox. The server never executes curriculum source.",
   "$comment": "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references.",
-  "x-workshop-extensionVersion": "structured-1",
+  "x-workshop-extensionVersion": "structured-2",
   "type": "object",
   "properties": {
     "protocol": {
@@ -460,6 +460,22 @@
           "required": [
             "kind",
             "svg"
+          ],
+          "additionalProperties": false
+        },
+        {
+          "type": "object",
+          "properties": {
+            "kind": {
+              "const": "trace"
+            },
+            "trace": {
+              "$ref": "#/$defs/trace"
+            }
+          },
+          "required": [
+            "kind",
+            "trace"
           ],
           "additionalProperties": false
         }
@@ -1203,6 +1219,179 @@
         "source"
       ],
       "additionalProperties": false
+    },
+    "traceIdentifier": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9_-]{1,40}(?![\\s\\S])"
+    },
+    "traceObject": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/traceIdentifier"
+        },
+        "names": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 80,
+            "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+            "x-workshop-maxUTF16Length": 80,
+            "minLength": 1,
+            "allOf": [
+              {
+                "pattern": "\\S"
+              }
+            ]
+          },
+          "minItems": 1,
+          "maxItems": 3
+        },
+        "value": {
+          "type": "string",
+          "maxLength": 120,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 120,
+          "minLength": 1,
+          "allOf": [
+            {
+              "pattern": "\\S"
+            }
+          ]
+        },
+        "scope": {
+          "type": "string",
+          "maxLength": 80,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 80,
+          "minLength": 1,
+          "allOf": [
+            {
+              "pattern": "\\S"
+            }
+          ]
+        },
+        "changed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "names",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "traceFrame": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 120,
+          "minLength": 1,
+          "allOf": [
+            {
+              "pattern": "\\S"
+            }
+          ]
+        },
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20001
+        },
+        "note": {
+          "type": "string",
+          "maxLength": 400,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 400,
+          "minLength": 1,
+          "allOf": [
+            {
+              "pattern": "\\S"
+            }
+          ]
+        },
+        "objects": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/traceObject"
+          },
+          "minItems": 1,
+          "maxItems": 4
+        },
+        "output": {
+          "type": "string",
+          "maxLength": 2000,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 2000
+        }
+      },
+      "required": [
+        "title",
+        "line",
+        "note",
+        "objects"
+      ],
+      "additionalProperties": false
+    },
+    "traceVariant": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/traceIdentifier"
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 120,
+          "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
+          "x-workshop-maxUTF16Length": 120,
+          "minLength": 1,
+          "allOf": [
+            {
+              "pattern": "\\S"
+            }
+          ]
+        },
+        "code": {
+          "$ref": "#/$defs/code"
+        },
+        "frames": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/traceFrame"
+          },
+          "minItems": 2,
+          "maxItems": 24
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "code",
+        "frames"
+      ],
+      "additionalProperties": false
+    },
+    "trace": {
+      "type": "object",
+      "properties": {
+        "variants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/traceVariant"
+          },
+          "minItems": 1,
+          "maxItems": 4
+        }
+      },
+      "required": [
+        "variants"
+      ],
+      "additionalProperties": false,
+      "$comment": "Author-written teaching frames; never a claim that source was compiled. Variant IDs and per-frame object IDs must be unique. Frame.line must reference a source line in its variant. The API performs these semantic checks."
     }
   }
 }
