@@ -9,6 +9,9 @@ Group=workshop-course-api
 EnvironmentFile=/etc/workshop-course-runner.env
 Environment=COURSE_RUNNER_SOCKET=/run/workshop-course-runner/runner.sock
 ExecStart=/opt/workshop-course-runner/node /opt/workshop-course-runner/runner.mjs
+ExecStopPost=/opt/workshop-course-runner/node /opt/workshop-course-runner/runner.mjs --cleanup
+KillMode=mixed
+TimeoutStopSec=25
 RuntimeDirectory=workshop-course-runner
 RuntimeDirectoryMode=0750
 UMask=0007

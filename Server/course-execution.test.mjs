@@ -8,7 +8,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createCourseAPI, courseManualPrompt } from './courses.mjs';
 import { createCourseExecutionClient } from './course-execution.mjs';
-import { createDockerCourseRunner, dockerCourseArguments, createCourseRunnerServer } from './CourseRunner/runner.mjs';
+import { createDockerCourseRunner, dockerCourseArguments, cleanupDockerCourseContainers, createCourseRunnerServer } from './CourseRunner/runner.mjs';
 
 const completed = (stdout = '5') => ({ status: 'completed', stdout, stderr: '', exitCode: 0, durationMs: 3 });
 const question = () => ({ id: randomUUID(), type: 'question', text: '输出 5。', questionType: 'shortAnswer', answerFormat: 'code', input: { kind: 'code', language: 'javascript', minLines: 2, maxLines: 24 }, execution: { language: 'javascript', expectedOutput: '5' } });
@@ -115,9 +115,11 @@ test('unconfigured or failed runner returns unavailable, while concurrent user r
 test('Docker runner uses fixed commands, pinned image and all required containment flags', async () => {
   const image = 'sha256:' + 'a'.repeat(64), name = 'workshop-run-' + randomUUID();
   const args = dockerCourseArguments(image, name);
-  for (const flag of ['--pull=never', '--network=none', '--read-only', '--user=10001:10001', '--cap-drop=ALL', '--security-opt=no-new-privileges=true', '--memory=256m', '--memory-swap=256m', '--cpus=0.5', '--pids-limit=48', '--log-driver=none']) assert.ok(args.includes(flag));
+  for (const flag of ['--pull=never', '--network=none', '--read-only', '--user=10001:10001', '--cap-drop=ALL', '--security-opt=no-new-privileges=true', '--memory=256m', '--memory-swap=256m', '--cpus=0.5', '--pids-limit=48', '--log-driver=none', 'fsize=8388608:8388608', 'workshop.course-runner.instance=guangyi-workspace']) assert.ok(args.includes(flag));
   assert.equal(args.includes('--privileged'), false); assert.equal(args.includes('--volume'), false); assert.equal(args.includes('--mount'), false);
   assert.throws(() => dockerCourseArguments('node:latest', name));
+  assert.throws(() => dockerCourseArguments(image, name, 'other/instance'));
+  assert.ok(dockerCourseArguments(image, name, 'separate-runner').includes('workshop.course-runner.instance=separate-runner'));
   const calls = []; const run = createDockerCourseRunner({ image, execute: async (...call) => { calls.push(call); return { code: 0, stdout: Buffer.from(JSON.stringify(completed())), stderr: Buffer.alloc(0) }; } });
   assert.equal((await run({ language: 'cpp', source: 'int main(){}', stdin: '' })).status, 'completed');
   assert.deepEqual(calls[1][1].slice(0, 2), ['rm', '--force']);
@@ -130,6 +132,68 @@ test('Docker runner cleans up on timeout, output flood and malformed container r
     const run = createDockerCourseRunner({ image, execute: async (_binary, args) => { if (args[0] === 'rm') { removals++; return {}; } return raw; } });
     assert.equal((await run({ language: 'python', source: 'print(1)', stdin: '' })).status, expected); assert.equal(removals, 1);
   }
+});
+test('runner cleanup uses the configured binary and both instance labels, then verifies no containers remain', async () => {
+  const docker = '/opt/workshop-course-runner/docker-cli', instance = 'test-instance', id = 'c'.repeat(64), calls = [];
+  let removed = false;
+  const execute = async (binary, args) => {
+    assert.equal(binary, docker); calls.push(args);
+    if (args[0] === 'rm') { assert.deepEqual(args, ['rm', '--force', id]); removed = true; return { code: 0 }; }
+    assert.deepEqual(args, ['ps', '--all', '--no-trunc', '--filter', 'label=workshop.course-runner=1', '--filter', 'label=workshop.course-runner.instance=test-instance', '--format', '{{.ID}}']);
+    return { code: 0, stdout: Buffer.from(removed ? '' : id + '\n') };
+  };
+  assert.equal(await cleanupDockerCourseContainers({ docker, instance, execute }), 1);
+  assert.equal(calls.length, 3);
+});
+test('runner cleanup rejects invalid selectors, engine errors, malformed IDs and incomplete removal', async () => {
+  const id = 'd'.repeat(64);
+  for (const settings of [{ docker: 'docker' }, { docker: '/bad\0binary' }, { instance: '' }, { instance: 'bad=selector' }]) {
+    await assert.rejects(cleanupDockerCourseContainers({ ...settings, execute: async () => { throw new Error('must not execute'); } }), /INVALID_RUNNER_CONFIGURATION/);
+  }
+  for (const failure of ['list', 'listTimeout', 'listOverflow', 'invalidID', 'remove', 'remaining']) {
+    let lists = 0;
+    await assert.rejects(cleanupDockerCourseContainers({ execute: async (_binary, args) => {
+      if (args[0] === 'rm') return { code: failure === 'remove' ? 1 : 0 };
+      lists++;
+      if (failure === 'list') return { code: 1 };
+      if (failure === 'listTimeout') return { code: 0, timedOut: true };
+      if (failure === 'listOverflow') return { code: 0, overflow: true };
+      return { code: 0, stdout: Buffer.from(failure === 'invalidID' ? 'unexpected ID' : (lists === 1 || failure === 'remaining' ? id : '')) };
+    } }), /RUNNER_CLEANUP_FAILED/, failure);
+  }
+});
+test('runner stop blocks new submissions, drains active work and performs one instance sweep', async () => {
+  const image = 'sha256:' + 'e'.repeat(64), calls = [];
+  let release, entered;
+  const started = new Promise(resolve => { entered = resolve; });
+  const gate = new Promise(resolve => { release = resolve; });
+  const run = createDockerCourseRunner({ image, instance: 'stop-test', execute: async (_binary, args) => {
+    calls.push(args);
+    if (args[0] === 'run') { entered(); await gate; return { code: 0, stdout: Buffer.from(JSON.stringify(completed())) }; }
+    return { code: 0, stdout: Buffer.alloc(0) };
+  } });
+  const payload = { language: 'python', source: 'print(5)', stdin: '' };
+  const first = run(payload); await started;
+  const stopped = run.stop(); assert.equal(run.stop(), stopped);
+  assert.equal((await run(payload)).status, 'unavailable');
+  assert.equal(calls.filter(args => args[0] === 'ps').length, 0, 'do not sweep before a pending container creation finishes');
+  release(); assert.equal((await first).status, 'completed'); await stopped;
+  assert.equal(calls.filter(args => args[0] === 'run').length, 1);
+  assert.equal(calls.filter(args => args[0] === 'ps').length, 2);
+  assert.ok(calls.filter(args => args[0] === 'ps').every(args => args.includes('label=workshop.course-runner.instance=stop-test')));
+  assert.equal((await run(payload)).status, 'unavailable');
+});
+test('failed request cleanup or stop cleanup permanently closes runner admission', async () => {
+  const image = 'sha256:' + 'f'.repeat(64), payload = { language: 'python', source: 'print(5)', stdin: '' };
+  let started = 0;
+  const run = createDockerCourseRunner({ image, execute: async (_binary, args) => {
+    if (args[0] === 'run') { started++; return { code: 0, stdout: Buffer.from(JSON.stringify(completed())) }; }
+    if (args[0] === 'rm') return { code: 1 };
+    return { code: 0, stdout: Buffer.from('f'.repeat(64)) };
+  } });
+  await run(payload); assert.equal((await run(payload)).status, 'unavailable'); assert.equal(started, 1);
+  await assert.rejects(run.stop(), /RUNNER_CLEANUP_FAILED/);
+  assert.equal((await run(payload)).status, 'unavailable');
 });
 test('Unix socket client bounds output, omits untrusted grades and reports an unavailable runner honestly', async () => {
   assert.equal((await createCourseExecutionClient()({})).status, 'unavailable');
