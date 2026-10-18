@@ -95,7 +95,7 @@ API 主进程不运行编译器、解释器、shell，也不连接 Docker socket
 在专用 runner 账户/主机准备 Docker（推荐 rootless）。需要 Linux、cgroup v2、systemd cgroup 驱动、默认 seccomp，以及 CPU/内存/swap/PID 限制有效；启动前检查，不满足时拒绝启动。官方资源限制说明：[Docker run](https://docs.docker.com/engine/containers/run/)、[Rootless cgroup 条件](https://docs.docker.com/engine/security/rootless/tips/)。容器共享宿主内核；面向不受信任的公网账户开放前，宜在专用运行节点或额外内核沙盒运行，不把账户数据库挂到该节点。
 
 1. 在 runner 主机构建已审阅镜像：`docker build --platform linux/amd64 -t workshop-course-runner:reviewed Server/CourseRunner`。
-2. 使用 `docker image inspect --format '{{.Id}}' workshop-course-runner:reviewed` 获取镜像 ID。配置只接受 `sha256:` 加 64 位十六进制的固定镜像 ID；运行时 `--pull=never`，不临时安装依赖。
+2. 使用 `docker image inspect --format '{{.Id}}' workshop-course-runner:reviewed` 获取镜像 ID。配置只接受 `sha256:` 加 64 位十六进制的固定镜像 ID；运行时 `--pull=never`，不临时安装依赖。此配方固定 Linux amd64 基础镜像摘要；构建网络较慢时可追加 `--build-arg DEBIAN_MIRROR=http://mirrors.tencentyun.com`，仅替换 Debian 下载站点，保留 Debian Release/包摘要与签名验证。镜像只在管理员构建期间联网。
 3. 将 runner.mjs 和专用 Node 可执行文件放在 `/opt/workshop-course-runner`。创建独立 `workshop-runner` 用户和 `workshop-course-api` 组，使 API 用户只加入后者。若使用 rootless Docker，runner 用户须为该引擎的所属用户；在环境文件设置对应 DOCKER_HOST 与必要的 XDG_RUNTIME_DIR。
 4. 将已核对的 systemd 示例与环境文件安装到独立路径。环境文件至少包含 `COURSE_RUNNER_IMAGE=sha256:...`、`COURSE_RUNNER_DOCKER=/opt/workshop-course-runner/docker-cli`、`COURSE_RUNNER_CONCURRENCY=1`；Docker CLI 必须使用实际安装的绝对路径，不依赖系统的 `/usr/bin/docker`。服务上限只允许 1–2 并发。
 5. 每个独立服务使用固定的 `COURSE_RUNNER_INSTANCE`，默认 `guangyi-workspace`；允许小写字母开头、后接小写字母/数字/连字符，总长不超过 64 字符。同一引擎上的其他 runner 必须使用不同实例名，同一实例不得同时启动多个服务。新容器同时带 `workshop.course-runner=1` 和 `workshop.course-runner.instance=<实例名>`，清扫只选择同时匹配这两个 label 的容器，不触碰其他实例或其他项目。
