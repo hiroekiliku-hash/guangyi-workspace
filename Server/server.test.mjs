@@ -1085,7 +1085,7 @@ test('course generation prompts prioritize a compact native trace and self-check
       assert.match(prompt, /默认不超过 60 字/);
       assert.match(prompt, /由 App 决定布局/);
       assert.match(prompt, /不要求每节课包含 HTML/);
-      assert.match(prompt, /开放代码题默认自行核对/);
+      assert.match(prompt, /开放代码题省略 acceptedAnswers/);
       assert.match(prompt, /不能把代码文本匹配当作通用代码判分/);
       assert.doesNotMatch(prompt, /前两个实质课时内安排至少一个|每个实验必须落到.*kind:"html"/);
       const fences = [...prompt.matchAll(/```json\n([\s\S]+?)\n```/g)];
@@ -1099,7 +1099,13 @@ test('course generation prompts prioritize a compact native trace and self-check
     const downloaded = (await native('courses/' + example.id, { auth: session })).value.data.course;
     assert.deepEqual(downloaded, example, 'native trace survives production validation and publication');
     const blocks = downloaded.lessons[0].blocks;
-    assert.deepEqual(blocks.map(block => block.presentation?.kind ?? block.type), ['trace', 'question']);
+    assert.deepEqual(blocks.slice(0, 2).map(block => block.presentation?.kind ?? block.type), ['trace', 'question']);
+    const runnable = blocks.filter(block => block.execution);
+    assert.deepEqual(runnable.map(block => [block.input.kind, block.execution.language, block.execution.template !== undefined]),
+      [['integer', 'python', true], ['code', 'cpp', true], ['code', 'python', false], ['code', 'cpp', false]]);
+    assert.ok(runnable.every(block => typeof block.execution.stdin === 'string' && typeof block.execution.expectedOutput === 'string'));
+    assert.ok(runnable.filter(block => block.execution.template).every(block => block.execution.template.split('{{ANSWER}}').length === 2));
+    assert.ok(runnable.filter(block => block.input.kind === 'code').every(block => block.input.language === block.execution.language && block.acceptedAnswers === undefined));
     const variant = blocks[0].presentation.trace.variants[0];
     assert.match(variant.code.source, /#include <iostream>/);
     assert.deepEqual(variant.frames.map(frame => frame.line), [3, 4, 5]);
