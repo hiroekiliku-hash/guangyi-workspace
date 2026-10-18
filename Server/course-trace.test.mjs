@@ -14,8 +14,9 @@ function harness() {
   db.exec('CREATE TABLE users(id INTEGER PRIMARY KEY); INSERT INTO users VALUES(1)');
   class APIError extends Error { constructor(status, code) { super(code); this.status = status; } }
   const handle = createCourseAPI({ db, userFor: () => 1, workspaceAccess: () => ({ ownerID: 1 }), sameWebOrigin: () => {}, respond: (response, status, body) => Object.assign(response, { status, body }), APIError, origin: 'https://example.invalid', rateLimit: () => {}, peer: () => 'test' });
-  return { db, async publish(presentation) {
+  return { db, async publish(presentation, configure = () => {}) {
     const document = { protocol: 'WORKSHOP-COURSE/1', id: randomUUID(), title: '传参实验', summary: '', lessons: [{ id: randomUUID(), title: '引用', blocks: [{ id: randomUUID(), type: 'text', text: '逐帧观察对象变化。', presentation }] }] };
+    configure(document);
     const request = Readable.from([Buffer.from(JSON.stringify(document))]);
     request.method = 'POST'; request.headers = { 'content-type': 'application/json', 'idempotency-key': randomUUID() };
     const response = {};
@@ -61,5 +62,52 @@ test('trace rejects mixed payloads, unknown nested fields, missing and null valu
       x => { delete x.variants[0].frames[0].note; },
       x => { x.variants[0].frames[0].objects[0].changed = null; }
     ]) { const value = trace(); mutate(value); assert.equal((await h.publish({ kind: 'trace', trace: value })).status, 422); }
+  } finally { h.db.close(); }
+});
+test('persistent reference programs and block focus survive publication with source precedence', async () => {
+  const h = harness();
+  const code = lines => ({ language: 'cpp', source: Array.from({ length: lines }, (_, i) => `line ${i + 1}`).join('\n') });
+  const text = (focusLines, presentation) => ({ id: randomUUID(), type: 'text', text: '观察当前程序。', focusLines, ...(presentation ? { presentation } : {}) });
+  try {
+    const cases = [
+      d => { d.referenceCode = { language: 'cpp', source: 'a\r\nb\rc\nd', highlightLines: [2] }; d.lessons[0].blocks = [text([4])]; },
+      d => { d.referenceCode = code(8); d.lessons[0].referenceCode = code(6); d.lessons[0].blocks = [text([6])]; },
+      d => { d.lessons[0].referenceCode = code(6); d.lessons[0].blocks = [text([2], { kind: 'code', code: code(2) })]; },
+      d => { d.lessons[0].referenceCode = code(6); d.lessons[0].blocks[0].focusLines = [3]; d.lessons[0].blocks[0].presentation = { kind: 'trace', trace: trace() }; },
+      d => { d.lessons[0].referenceCode = code(6); d.lessons[0].blocks = [{ id: randomUUID(), type: 'question', text: '填写整数。', questionType: 'shortAnswer', input: { kind: 'integer' }, execution: { language: 'python', template: 'n = {{ANSWER}}\nprint(n)' }, focusLines: [2] }]; },
+      d => { d.lessons[0].blocks = [text([1]), text([], { kind: 'code', code: code(1) })]; },
+      d => { d.lessons[0].blocks = [text([], { kind: 'code', code: code(2) }), text([2]), text([], { kind: 'code', code: code(4) })]; },
+      d => { d.lessons[0].blocks = [text([])]; },
+      d => { d.lessons[0].referenceCode = code(201); d.lessons[0].blocks = [text(Array.from({ length: 200 }, (_, i) => i + 1))]; }
+    ];
+    for (const [index, configure] of cases.entries()) {
+      assert.equal((await h.publish(undefined, configure)).status, 201, 'valid reference context ' + index);
+      const saved = JSON.parse(h.db.prepare('SELECT document FROM courses ORDER BY rowid DESC LIMIT 1').get().document);
+      assert.ok(saved.lessons[0].blocks.every(block => Array.isArray(block.focusLines)));
+      if (index === 0) assert.equal(saved.referenceCode.source, 'a\r\nb\rc\nd', 'original code newlines are preserved');
+      if (index === 4) assert.match(saved.lessons[0].blocks[0].execution.template, /\{\{ANSWER\}\}/, 'reference rendering never fills the answer');
+    }
+  } finally { h.db.close(); }
+});
+test('focus lines reject invalid values and out-of-bounds effective sources without crossing lessons', async () => {
+  const h = harness();
+  const code = n => ({ language: 'cpp', source: Array(n).fill('x').join('\n') });
+  const question = (focusLines, extra = {}) => ({ id: randomUUID(), type: 'question', text: '填写答案。', questionType: 'shortAnswer', focusLines, ...extra });
+  const cases = [
+    ...[null, '1', [0], [true], [1.5], [1, 1], [2], Array(201).fill(1)].map(lines => d => { d.referenceCode = code(1); d.lessons[0].blocks[0].focusLines = lines; }),
+    d => { d.lessons[0].blocks[0].focusLines = [1]; },
+    d => { d.referenceCode = null; }, d => { d.lessons[0].referenceCode = { ...code(1), secret: true }; },
+    d => { d.referenceCode = code(8); d.lessons[0].referenceCode = code(2); d.lessons[0].blocks[0].focusLines = [3]; },
+    d => { d.lessons[0].referenceCode = code(8); d.lessons[0].blocks = [question([3], { code: code(2), execution: { language: 'cpp', template: 'x;\nx;\n{{ANSWER}}' } })]; },
+    d => { d.lessons[0].referenceCode = code(8); d.lessons[0].blocks[0].presentation = { kind: 'code', code: code(2) }; d.lessons[0].blocks[0].focusLines = [3]; },
+    d => { d.lessons[0].referenceCode = code(8); d.lessons[0].blocks[0].presentation = { kind: 'trace', trace: trace() }; d.lessons[0].blocks[0].focusLines = [4]; },
+    d => { d.lessons[0].referenceCode = code(8); d.lessons[0].blocks = [question([2], { input: { kind: 'integer' }, execution: { language: 'python', template: 'print({{ANSWER}})' } })]; },
+    d => { d.lessons[0].blocks = [question([], { code: code(2) }), question([3]), question([], { code: code(4) })]; },
+    d => { d.lessons[0].blocks[0].focusLines = [1]; d.lessons.push({ id: randomUUID(), title: '另一课时', blocks: [question([], { code: code(8) })] }); },
+    d => { d.lessons[0].blocks = [question([1]), { id: randomUUID(), type: 'text', text: '缺少代码。', presentation: { kind: 'code' } }]; }
+  ];
+  try {
+    for (const [index, configure] of cases.entries()) assert.equal((await h.publish(undefined, configure)).status, 422, 'invalid focus context ' + index);
+    assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM courses').get().n, 0, 'invalid focus never publishes partial documents');
   } finally { h.db.close(); }
 });

@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
-  "title": "WORKSHOP-COURSE/1 with structured-2 teaching traces and typed executable questions",
-  "description": "A curriculum data contract with author-written native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
+  "title": "WORKSHOP-COURSE/1 with structured-2 teaching traces, persistent source and typed executable questions",
+  "description": "A curriculum data contract with persistent course/lesson reference code, line-focused blocks, native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
   "$comment": "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references. Question maxLines >= minLines and matching explicit input/execution languages are checked by the server and Swift client.",
   "x-workshop-extensionVersion": "structured-2",
   "type": "object",
@@ -38,6 +38,9 @@
       },
       "minItems": 1,
       "maxItems": 40
+    },
+    "referenceCode": {
+      "$ref": "#/$defs/code"
     }
   },
   "required": [
@@ -516,6 +519,9 @@
         },
         "presentation": {
           "$ref": "#/$defs/presentation"
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -560,6 +566,9 @@
         },
         "presentation": {
           "$ref": "#/$defs/presentation"
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -613,6 +622,9 @@
           "maxLength": 2000,
           "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
           "x-workshop-maxUTF16Length": 2000
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -662,6 +674,9 @@
           "maxLength": 2000,
           "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
           "x-workshop-maxUTF16Length": 2000
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -754,6 +769,9 @@
           "minItems": 1,
           "maxItems": 12,
           "uniqueItems": true
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -873,6 +891,9 @@
         },
         "execution": {
           "$ref": "#/$defs/execution"
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -1198,6 +1219,9 @@
         },
         "execution": {
           "$ref": "#/$defs/execution"
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -1524,6 +1548,9 @@
         },
         "execution": {
           "$ref": "#/$defs/execution"
+        },
+        "focusLines": {
+          "$ref": "#/$defs/focusLines"
         }
       },
       "required": [
@@ -1837,6 +1864,9 @@
           },
           "minItems": 1,
           "maxItems": 80
+        },
+        "referenceCode": {
+          "$ref": "#/$defs/code"
         }
       },
       "required": [
@@ -2215,6 +2245,18 @@
       ],
       "additionalProperties": false,
       "$comment": "Only explicit short-answer execution is enabled. Template substitutes exactly one {{ANSWER}} and is required for non-code inputs. The input and execution languages must match when both are specified."
+    },
+    "focusLines": {
+      "type": "array",
+      "items": {
+        "type": "integer",
+        "minimum": 1,
+        "maximum": 20001
+      },
+      "minItems": 0,
+      "maxItems": 200,
+      "uniqueItems": true,
+      "$comment": "Nonempty lines must fit the effective visible source: current block.code, presentation.code, trace first variant.code, execution.template, lesson.referenceCode, course.referenceCode, closest preceding code-bearing block, or first following code-bearing block within the same lesson. The server/client check source bounds; an empty array may clear highlighting without code. Active trace frame.line takes precedence at runtime."
     }
   }
 }

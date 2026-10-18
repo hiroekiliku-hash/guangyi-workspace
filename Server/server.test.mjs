@@ -1087,7 +1087,9 @@ test('course generation prompts prioritize a compact native trace and self-check
       assert.match(prompt, /不要求每节课包含 HTML/);
       assert.match(prompt, /开放代码题省略 acceptedAnswers/);
       assert.match(prompt, /不能把代码文本匹配当作通用代码判分/);
-      assert.doesNotMatch(prompt, /前两个实质课时内安排至少一个|每个实验必须落到.*kind:"html"/);
+      assert.match(prompt, /始终保留一块可见的代码区/);
+      assert.match(prompt, /referenceCode/); assert.match(prompt, /focusLines/);
+      assert.doesNotMatch(prompt, /完整代码按需展开|前两个实质课时内安排至少一个|每个实验必须落到.*kind:"html"/);
       const fences = [...prompt.matchAll(/```json\n([\s\S]+?)\n```/g)];
       assert.equal(fences.length, 1, 'each workflow includes one complete JSON example');
       const parsed = JSON.parse(fences[0][1]);
@@ -1107,6 +1109,10 @@ test('course generation prompts prioritize a compact native trace and self-check
     assert.ok(runnable.filter(block => block.execution.template).every(block => block.execution.template.split('{{ANSWER}}').length === 2));
     assert.ok(runnable.filter(block => block.input.kind === 'code').every(block => block.input.language === block.execution.language && block.acceptedAnswers === undefined));
     const variant = blocks[0].presentation.trace.variants[0];
+    assert.deepEqual(downloaded.lessons[0].referenceCode, variant.code);
+    assert.deepEqual(blocks[1].focusLines, [4]);
+    assert.ok(runnable.every(block => block.focusLines.length > 0));
+    assert.ok(runnable.filter(block => !block.execution.template).every(block => block.code.source === block.input.starterCode));
     assert.match(variant.code.source, /#include <iostream>/);
     assert.deepEqual(variant.frames.map(frame => frame.line), [3, 4, 5]);
     assert.deepEqual(variant.frames.map(frame => frame.objects[0].value), ['2', '3', '3']);
@@ -1646,7 +1652,10 @@ test('course structured extensions round-trip C++ data and expose a static stric
     assert.equal(schema.properties.protocol.const, 'WORKSHOP-COURSE/1');
     assert.equal(schema['x-workshop-extensionVersion'], 'structured-2');
     assert.deepEqual(schema.$defs.presentation.oneOf.map(value => value.properties.kind.const), ['code', 'table', 'steps', 'comparison', 'flashcards', 'markdown', 'html', 'svg', 'trace']);
-    assert.deepEqual(Object.keys(schema.$defs.lesson.properties).sort(), ['blocks', 'estimatedMinutes', 'id', 'objectives', 'title']);
+    assert.deepEqual(Object.keys(schema.$defs.lesson.properties).sort(), ['blocks', 'estimatedMinutes', 'id', 'objectives', 'referenceCode', 'title']);
+    assert.equal(schema.properties.referenceCode.$ref, '#/$defs/code');
+    assert.equal(schema.$defs.focusLines.maxItems, 200); assert.equal(schema.$defs.focusLines.uniqueItems, true);
+    assert.equal(schema.$defs.textBlock.properties.focusLines.$ref, '#/$defs/focusLines');
     assert.equal(schema.$defs.code.properties.source.maxLength, 20000);
     const languagePattern = new RegExp(schema.$defs.code.properties.language.pattern);
     assert.match('c++', languagePattern); assert.doesNotMatch('cpp\n', languagePattern); assert.doesNotMatch('cpp\r', languagePattern);
