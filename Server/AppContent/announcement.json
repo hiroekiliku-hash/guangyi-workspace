@@ -1,0 +1,12 @@
+{
+  "protocol": "WORKSHOP-CONTENT/1",
+  "id": "announcement",
+  "kind": "announcement",
+  "version": 1,
+  "minimumContentVersion": 1,
+  "payload": {
+    "id": "announcement",
+    "title": "演示课程已扩充",
+    "message": "新增逐步推演、字符标记、数字输入和可运行练习。以后演示课与指南的内容更新会自动送达。"
+  }
+}

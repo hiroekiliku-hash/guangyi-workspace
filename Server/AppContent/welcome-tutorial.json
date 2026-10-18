@@ -1,0 +1,39 @@
+{
+  "protocol": "WORKSHOP-CONTENT/1",
+  "id": "welcome-tutorial",
+  "kind": "tutorial",
+  "version": 1,
+  "minimumContentVersion": 1,
+  "payload": {
+    "pages": [
+      {
+        "id": "home",
+        "title": "把要做的事，\n放在一起。",
+        "subtitle": "首页把临近截止和接下来的安排放在眼前。点右上角 +，记下新的事项。",
+        "sectionTitle": "首页",
+        "symbol": "house"
+      },
+      {
+        "id": "timeline",
+        "title": "顺着时间，\n看清每一天。",
+        "subtitle": "上下浏览时间段，也能切换成日历。计划与截止，沿时间自然展开。",
+        "sectionTitle": "时间线",
+        "symbol": "chart.bar.xaxis"
+      },
+      {
+        "id": "projects",
+        "title": "从一件事，\n到整个项目。",
+        "subtitle": "项目组收纳相关内容；切换到事项或截止事项，就能按时间集中管理。",
+        "sectionTitle": "项目",
+        "symbol": "folder"
+      },
+      {
+        "id": "account",
+        "title": "在你的设备间，\n接着使用。",
+        "subtitle": "登录或注册，合并本机与云端内容。在 iPhone 或 Mac 上，都可以继续。",
+        "sectionTitle": "你的账户",
+        "symbol": "person.crop.circle"
+      }
+    ]
+  }
+}

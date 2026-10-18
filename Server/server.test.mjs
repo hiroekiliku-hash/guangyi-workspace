@@ -29,6 +29,74 @@ async function call(path, method = 'GET', body, auth = token, revision, sourceDe
     ...(sourceDeviceID ? { 'X-Workspace-Device-ID': sourceDeviceID } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: response.status, value: await response.json() };
 }
+test('app-content public manifest has a stable revision and conditional caching', async () => {
+  const response = await fetch(origin + '/api/native/v1/app-content');
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get('content-type'), 'application/json; charset=utf-8');
+  assert.equal(response.headers.get('cache-control'), 'public, max-age=300, must-revalidate');
+  assert.equal(response.headers.get('x-content-type-options'), 'nosniff');
+  assert.equal(response.headers.get('set-cookie'), null);
+  const bytes = Buffer.from(await response.arrayBuffer());
+  const manifest = JSON.parse(bytes.toString('utf8'));
+  assert.equal(manifest.protocol, 'WORKSHOP-CONTENT/1');
+  assert.match(manifest.revision, /^[a-f0-9]{64}$/);
+  assert.ok(manifest.entries.length > 0 && manifest.entries.length <= 32);
+  assert.equal(new Set(manifest.entries.map(entry => entry.id)).size, manifest.entries.length);
+  assert.equal(manifest.revision, createHash('sha256').update(JSON.stringify(manifest.entries)).digest('hex'));
+  const etag = response.headers.get('etag');
+  assert.equal(etag, `"${createHash('sha256').update(bytes).digest('hex')}"`);
+  for (const condition of [etag, 'W/' + etag, '"unrelated", ' + etag, '*']) {
+    const cached = await fetch(origin + '/api/native/v1/app-content', { headers: { 'If-None-Match': condition } });
+    assert.equal(cached.status, 304); assert.equal(await cached.text(), ''); assert.equal(cached.headers.get('etag'), etag);
+  }
+});
+test('app-content packages match manifest bytes and integrity hashes without authentication', async () => {
+  const manifest = await (await fetch(origin + '/api/native/v1/app-content')).json();
+  let totalBytes = 0;
+  for (const entry of manifest.entries) {
+    assert.match(entry.id, /^[a-z0-9][a-z0-9-]{0,79}$/);
+    assert.match(entry.kind, /^[a-z][a-z0-9-]{0,39}$/);
+    assert.ok(Number.isSafeInteger(entry.version) && entry.version >= 1);
+    assert.ok(Number.isSafeInteger(entry.minimumContentVersion) && entry.minimumContentVersion >= 1);
+    assert.ok(entry.byteCount <= 1024 * 1024);
+    const path = origin + '/api/native/v1/app-content/' + entry.id;
+    const response = await fetch(path);
+    assert.equal(response.status, 200);
+    const bytes = Buffer.from(await response.arrayBuffer());
+    totalBytes += bytes.length;
+    assert.equal(bytes.length, entry.byteCount);
+    assert.equal(response.headers.get('content-length'), String(bytes.length));
+    assert.equal(createHash('sha256').update(bytes).digest('hex'), entry.sha256);
+    const packet = JSON.parse(bytes.toString('utf8'));
+    for (const field of ['id', 'kind', 'version', 'minimumContentVersion']) assert.equal(packet[field], entry[field]);
+    assert.equal(packet.protocol, manifest.protocol);
+    assert.ok(packet.payload && typeof packet.payload === 'object');
+    const head = await fetch(path, { method: 'HEAD' });
+    assert.equal(head.status, 200); assert.equal(await head.text(), '');
+    assert.equal(head.headers.get('content-length'), String(bytes.length));
+    assert.equal(head.headers.get('etag'), response.headers.get('etag'));
+    const unchanged = await fetch(path, { headers: { 'If-None-Match': response.headers.get('etag') } });
+    assert.equal(unchanged.status, 304); assert.equal(await unchanged.text(), '');
+  }
+  assert.ok(totalBytes <= 4 * 1024 * 1024);
+});
+test('app-content cannot upload or select arbitrary paths and does not modify account data', async () => {
+  const prior = app.db.prepare('SELECT * FROM workspaces ORDER BY user_id').all();
+  for (const method of ['POST', 'PUT', 'PATCH', 'DELETE']) {
+    const response = await fetch(origin + '/api/native/v1/app-content/demo-course', { method,
+      headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ payload: { title: 'must not publish' } }) });
+    assert.equal(response.status, 405);
+    assert.equal(response.headers.get('allow'), 'GET, HEAD');
+    assert.equal((await response.json()).error, 'APP_CONTENT_READ_ONLY');
+  }
+  for (const suffix of ['unknown', 'demo-course/extra', '%2Fetc%2Fpasswd', 'Demo-Course', 'demo-course.json', '%2e%2e%2Fserver.mjs']) {
+    const response = await fetch(origin + '/api/native/v1/app-content/' + suffix);
+    assert.equal(response.status, 404);
+    assert.equal((await response.json()).error, 'APP_CONTENT_NOT_FOUND');
+  }
+  assert.deepEqual(app.db.prepare('SELECT * FROM workspaces ORDER BY user_id').all(), prior);
+  assert.equal((await call('workspace', 'GET', undefined, '')).status, 401);
+});
 test('web countdown uses the record timezone and reports overdue values', () => {
   const timed = { dueDate: '2026-10-15T04:05:06.000Z', dateOnly: false, timezone: 'Asia/Shanghai' };
   assert.equal(effectiveDeadline(timed), Date.parse(timed.dueDate));

@@ -1,0 +1,35 @@
+{
+  "protocol": "WORKSHOP-CONTENT/1",
+  "id": "course-tutorial",
+  "kind": "tutorial",
+  "version": 1,
+  "minimumContentVersion": 1,
+  "payload": {
+    "pages": [
+      {
+        "id": "import",
+        "title": "把想学的，变成课程。",
+        "subtitle": "资料、问题或学习目标，都可以成为有图解、演示和练习的一节节课。",
+        "symbol": "sparkles"
+      },
+      {
+        "id": "code",
+        "title": "看着代码，一步步理解。",
+        "subtitle": "完整程序会留在上方；讲到哪里，就标记对应的行、变量或字符。",
+        "symbol": "curlybraces"
+      },
+      {
+        "id": "practice",
+        "title": "动手作答，运行验证。",
+        "subtitle": "数字题用数字键盘，代码题用代码编辑器。支持运行的练习还可核对实际输出；点继续会先提交当前答案。",
+        "symbol": "play.rectangle"
+      },
+      {
+        "id": "progress",
+        "title": "随时回来，接着学。",
+        "subtitle": "学习进度会自动保存，星标收藏常学的课程。演示课和指南也会在后台获得内容更新。",
+        "symbol": "bookmark"
+      }
+    ]
+  }
+}
