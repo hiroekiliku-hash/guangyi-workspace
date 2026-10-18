@@ -18,6 +18,7 @@ function courseInteractionExample() {
     lessons: [{
       id: 'c0000000-0000-4000-8000-000000000002', title: '先计算，再写回',
       objectives: ['理解赋值先计算右侧，再写回变量。', '用 Python/C++ 的填空和完整程序验证输出。'], estimatedMinutes: 12,
+      referenceCode: { language: 'cpp', source, filename: 'counter.cpp' },
       blocks: [
         { id: 'c0000000-0000-4000-8000-000000000003', type: 'text', title: '跟着一次赋值走',
           text: '这是固定程序的教学推演。count 从 2 开始，加 1 后变成 3，最后输出 3。',
@@ -29,26 +30,31 @@ function courseInteractionExample() {
             ] }] } } },
         { id: 'c0000000-0000-4000-8000-000000000004', type: 'question', title: '再更新一次',
           text: '如果输出前再执行一次 count = count + 1，会输出多少？', questionType: 'singleChoice',
+          focusLines: [4],
           options: [{ id: 'a', text: '2' }, { id: 'b', text: '3' }, { id: 'c', text: '4' }], correctOptionIDs: ['c'],
           explanation: '第一次更新后是 3，再加 1 得到 4。' },
         { id: 'c0000000-0000-4000-8000-000000000005', type: 'question', title: 'Python 数值填空',
           text: '补全增加的整数，让 count 从 2 变成 3。只填写一个整数，再运行观察输出。', questionType: 'shortAnswer',
           answerFormat: 'output', input: { kind: 'integer', placeholder: '输入增加的整数' }, acceptedAnswers: ['1'],
+          focusLines: [2],
           execution: { language: 'python', template: 'count = 2\ncount = count + {{ANSWER}}\nprint(count)\n', stdin: '', expectedOutput: '3\n' },
           explanation: '填入 1，程序输出 3。填入的数值与程序的最终输出是两件事。' },
         { id: 'c0000000-0000-4000-8000-000000000006', type: 'question', title: 'C++ 表达式填空',
           text: '补全赋值右侧的表达式，让 count 从 2 变成 3。只输入表达式，不写 main 或分号。', questionType: 'shortAnswer',
           answerFormat: 'code', input: { kind: 'code', language: 'cpp', placeholder: '填写赋值右侧的表达式', minLines: 2, maxLines: 4 },
+          focusLines: [4],
           execution: { language: 'cpp', template: '#include <iostream>\nint main() {\n    int count = 2;\n    count = {{ANSWER}};\n    std::cout << count << "\\n";\n}\n', stdin: '', expectedOutput: '3\n' },
           explanation: '例如 count + 1。用运行输出核对样例，允许等价写法，不要求源码逐字相同。' },
         { id: 'c0000000-0000-4000-8000-000000000007', type: 'question', title: 'Python 完整程序',
           text: '读取两个整数并输出它们的和。提交完整 Python 程序；样例输入 2 5，预期输出 7。', questionType: 'shortAnswer',
           answerFormat: 'code', input: { kind: 'code', language: 'python', starterCode: 'a, b = map(int, input().split())\n# TODO: 输出它们的和\n', minLines: 4, maxLines: 12 },
+          code: { language: 'python', source: 'a, b = map(int, input().split())\n# TODO: 输出它们的和\n' }, focusLines: [2],
           execution: { language: 'python', stdin: '2 5\n', expectedOutput: '7\n' },
           explanation: '在读取后用 print 输出 a + b。此运行反馈只核对这组样例，其他边界情况也要自己思考。' },
         { id: 'c0000000-0000-4000-8000-000000000008', type: 'question', title: 'C++ 完整程序',
           text: '读取两个整数并输出它们的和。提交含头文件和 main 的完整 C++ 程序；样例输入 2 5，预期输出 7。', questionType: 'shortAnswer',
           answerFormat: 'code', input: { kind: 'code', language: 'cpp', starterCode: '#include <iostream>\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // TODO: 输出它们的和\n    return 0;\n}\n', minLines: 8, maxLines: 16 },
+          code: { language: 'cpp', source: '#include <iostream>\nint main() {\n    int a, b;\n    std::cin >> a >> b;\n    // TODO: 输出它们的和\n    return 0;\n}\n' }, focusLines: [5],
           execution: { language: 'cpp', stdin: '2 5\n', expectedOutput: '7\n' },
           explanation: '用 std::cout 输出 a + b，再输出换行。完整程序直接运行学生源码，因此不设置 template。' }
       ]
@@ -61,13 +67,13 @@ function courseTeachingPrompt() {
 根据用户的主题、教材、笔记或问题推断基础、目标和课时；只有无法推断的关键条件才简短提问。遵从明确要求，不反复索要参数。按“解释概念→具体例子或图形→练习→反馈”的节奏，由浅入深，每课时一个目标。重要来源和不确定处明示，不虚构统计或参考答案。
 【先清楚，再丰富】
 每屏一个问题、一个变化。编程课优先使用原生 trace 表达逐步语义，作者只提供代码、状态和解释，由 App 决定布局、配色、字号、动画和交互；不要自造布局、坐标、颜色或按钮字段。每节围绕一个短程序连续展开：先预测→单步观察→迁移一道题→动手改写。通常 4–6 块即可，不为了形式丰富而叠加对照、闪卡、修复题、术语表。没有新的教学价值就删掉。
-trace 默认每帧最多展示 2 个对象，note 用一句话，默认不超过 60 字；每一步只解释一个变化。App 默认聚焦当前代码行和一句解释，完整代码按需展开。禁止同时铺开代码全貌、参数面板、输出面板、对照、时间轴和重复标签。相同对象的多个名字必须放在同一个 objects 项的 names 数组；不要把引用画成新的副本。对象 id 在同一 variant 的连续帧保持稳定，离开作用域时移除名字或对象。frame 表示执行对应 line 后的状态，line 必须真实存在；返回帧可定位函数右花括号。output 仅在真正产生输出的帧提供，不能混用预期输出与已发生输出。
+trace 默认每帧最多展示 2 个对象，note 用一句话，默认不超过 60 字；每一步只解释一个变化。围绕同一程序的课程或课时必须通过 referenceCode 提供完整短程序，App 始终保留一块可见的代码区；讲解、推演和做题时都能对照，不要求用户记住前页源码，也不能只露一行、把完整代码藏在展开按钮后。当前块用 focusLines 标记讲解行，trace 则用当前 frame.line 动态标记。长程序由代码区内部滚动，作者不指定高度或布局。除这块必要代码外，不同时堆叠参数面板、输出面板、对照、时间轴和重复标签。相同对象的多个名字必须放在同一个 objects 项的 names 数组；不要把引用画成新的副本。对象 id 在同一 variant 的连续帧保持稳定，离开作用域时移除名字或对象。frame 表示执行对应 line 后的状态，line 必须真实存在；返回帧可定位函数右花括号。output 仅在真正产生输出的帧提供，不能混用预期输出与已发生输出。
 【互动边界】
 trace 是作者编写、客户端逐步展示的教学推演，不是实际编译或运行 C++/Python。优先原生 trace、question、code。仅当原生形式无法表达核心交互（例如连续拖动物理参数）时，才使用显式 HTML；不要求每节课包含 HTML，不用多种控件堆出实验台。普通正文、Code、Markdown 围栏不执行。HTML 操作必须绑定实际状态更新并给明确观察任务；至少提供重置，动画附暂停/重置并尊重 prefers-reduced-motion。HTML 临时状态不保存为作答或进度，需保存的练习用 question。
 默认不要使用图片；图解优先 SVG，图表只用真实数据。禁止视频、音频、图片数据、base64。旧 image 字段仍可接受有效 HTTPS 地址，不编造 URL。
 【文档格式 structured-2】
-输出一个完整 WORKSHOP-COURSE/1 JSON 文档，未知字段拒绝。课程 {protocol,id,title,summary,lessons:[{id,title,objectives?,estimatedMinutes?,blocks:[]}]}。objectives 0–6项，每项最多500；estimatedMinutes 1–180整数。课程、课时、块 id 为同一文档内唯一 UUID。新课程生成新 UUID，修改已有课程保留结构 ID。不要把用户 ID、修订号或执行指令放入正文。
-块 type 为 text/callout/image/chart/question，每块可有 title。text/callout 必填非空 text，可加一种 presentation；结构化块的 text 是简短教学摘要，不必重复完整代码或逐帧内容，也不要求兼容旧展示端。image 必填 HTTPS url、可选 caption；chart 必填 chartType(bar/line)、points:[{label,value}]、可选 caption。
+输出一个完整 WORKSHOP-COURSE/1 JSON 文档，未知字段拒绝。课程 {protocol,id,title,summary,referenceCode?:Code,lessons:[{id,title,objectives?,estimatedMinutes?,referenceCode?:Code,blocks:[]}]}。整门课共用一个程序就放课程 referenceCode，仅本课时共用则放课时 referenceCode；切换到另一个程序时显式提供当前 code 或课时 referenceCode，不靠正文暗示。objectives 0–6项，每项最多500；estimatedMinutes 1–180整数。课程、课时、块 id 为同一文档内唯一 UUID。新课程生成新 UUID，修改已有课程保留结构 ID。不要把用户 ID、修订号或执行指令放入正文。
+块 type 为 text/callout/image/chart/question，每块可有 title 和 focusLines。focusLines 为0–200个有效、不重复的1起始整数行号，指向当前可见代码；省略保留 Code.highlightLines，[] 表示清除静态高亮。代码优先级为当前 block.code、presentation.code、trace 当前 variant.code、execution.template、课时 referenceCode、课程 referenceCode；旧课程才回退同课时最近前置代码块或首个后置代码块，不跨课时。填空程序必须显示保留 {{ANSWER}} 的完整模板，不能把 acceptedAnswers、解析或完成后的答案写进 referenceCode 来泄题；完整程序练习的 code 显示未完成骨架，而非标准答案。text/callout 必填非空 text，可加一种 presentation；结构化块的 text 是简短教学摘要，不必重复完整代码或逐帧内容，也不要求兼容旧展示端。image 必填 HTTPS url、可选 caption；chart 必填 chartType(bar/line)、points:[{label,value}]、可选 caption。
 presentation 只允许 kind 与唯一对应载荷，不能混搭：
 {kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,note,objects:[{id,names:[字符串],value,scope?,changed?}],output?}]}]}}。
 trace.variants 为1–4项、id各不相同；每项 frames 为2–24帧，每帧 objects 为1–4项且对象id不能重复。variant/object 的 id 为1–40个 ASCII 字母、数字、下划线或连字符。每个对象 names 为1–3个非空名字，作者应避免重复；value 是非空字符串最多120，scope 可选非空最多80，changed 可选布尔值。names 每项最多80；frame.title 和 variant.title 非空最多120；note 非空最多400（默认一句不超过60字）；line 为对应 code.source 的有效正整数行号；output 可空最多2000。一个对象的 names 表示同一对象的不同名字，不是多个对象。
@@ -85,8 +91,8 @@ shortAnswer 可指定 input:{kind:"text"|"integer"|"decimal"|"code",language?,pl
 开放程序题与允许等价表达式的题目省略 acceptedAnswers，依据这组运行输出反馈并给解析；expectedOutput 不是隐藏测试或完整判题系统。上传课程不会自动编译或运行；没有实际运行证据就不能宣称已编译通过。超时、编译错误或运行服务暂不可用时应如实反馈。trace 仍是人工推演，code/presentation.code 仍是展示；JavaScript 可通过 execution 在 App 本地隔离运行，不能靠普通 text/HTML 冒充真实 Python/C++ 执行。
 HTML/SVG 通过显式 presentation 进入离线沙盒；不与普通字符串拼接。完全内联，不使用 CDN、外链脚本/样式/字体、请求、导航、iframe/object/embed、SVG image/foreignObject、媒体、data/base64 或下载。HTML可运行内联CSS/JavaScript、SVG/canvas；服务器只存储。不要仿制 App 导航、账号或上传控件；适配约320px宽屏幕，控件至少44px高，事件更新先改模型再绘制，避免每次输入替换整个innerHTML，避免无限循环和后台定时器。Markdown可含标题、列表、表格、引用和带语言名的代码围栏，不启用原始HTML或图片。
 限制按 UTF-16 代码单元：JSON UTF-8最多1 MiB；1–40课时，每课1–80块；所有title240、summary2000、text/callout20000、题干和explanation4000、caption2000。图表1–60点，label120，value有限且绝对值≤10^15；选择题2–12项，选项text1000；acceptedAnswers最多20个不重复项，各项上限text500/code20000/output8000，用户答案上限4000/20000/8000；URL2048；禁止控制字符。不要新造 block.type 或把 code/hints/input/execution 放在非 question 块；input/execution仅shortAnswer可用。
-输出前核对：每一步是否只突出一个变化？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？每道 Python/C++ 编程练习是否有正确的 input 与 execution，填空是否只有一个模板标记，完整程序是否省略 template，默认 stdin 与 expectedOutput 是否匹配参考程序？不要把检查清单写进课程，也不逐项索要确认。
-下面是“原生单步推演→迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。只有这一个完整 JSON 代码块是格式示例：
+输出前核对：每一步是否只突出一个变化？是否有始终可见的完整参考程序，讲解/提问的 focusLines 与当前代码一致，trace 当前行是否真实存在？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？原生能表达时是否避免了 HTML？每道 Python/C++ 编程练习是否有正确的 input 与 execution，填空是否只有一个模板标记且公开代码不泄露答案，完整程序是否省略 template，默认 stdin 与 expectedOutput 是否匹配参考程序？不要把检查清单写进课程，也不逐项索要确认。
+下面是“共享参考程序→原生单步推演→带行高亮的迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。只有这一个完整 JSON 代码块是格式示例：
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
@@ -220,21 +226,40 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     if (execution.stdin !== undefined) string(execution.stdin, 4000, false);
     if (execution.expectedOutput !== undefined) string(execution.expectedOutput, 8000, false);
   }
+  function directReferenceCode(block) {
+    return block.code ?? block.presentation?.code ?? block.presentation?.trace?.variants[0]?.code ??
+      (block.execution?.template !== undefined ? { language: block.execution.language, source: block.execution.template } : undefined);
+  }
+  function resolvedReferenceCode(course, lesson, index) {
+    const direct = directReferenceCode(lesson.blocks[index]);
+    if (direct) return direct;
+    if (lesson.referenceCode ?? course.referenceCode) return lesson.referenceCode ?? course.referenceCode;
+    // Legacy content only: the closest preceding program remains visible through
+    // explanations and questions; an introduction may use the next program.
+    for (let before = index - 1; before >= 0; before--) {
+      const code = directReferenceCode(lesson.blocks[before]); if (code) return code;
+    }
+    for (let after = index + 1; after < lesson.blocks.length; after++) {
+      const code = directReferenceCode(lesson.blocks[after]); if (code) return code;
+    }
+  }
   function validateCourse(value) {
-    object(value, ['protocol', 'id', 'title', 'summary', 'lessons']);
+    object(value, ['protocol', 'id', 'title', 'summary', 'lessons', 'referenceCode']);
     if (value.protocol !== courseProtocol) fail('UNSUPPORTED_COURSE_PROTOCOL');
     const ids = new Set();
     const takeID = obj => { obj.id = uuid(obj.id); if (ids.has(obj.id)) fail('DUPLICATE_COURSE_ID'); ids.add(obj.id); };
     takeID(value); string(value.title, 240); string(value.summary, 2000, false); array(value.lessons, 1, 40);
+    if (value.referenceCode !== undefined) validateCode(value.referenceCode);
     for (const lesson of value.lessons) {
-      object(lesson, ['id', 'title', 'blocks', 'objectives', 'estimatedMinutes']); takeID(lesson); string(lesson.title, 240); array(lesson.blocks, 1, 80);
+      object(lesson, ['id', 'title', 'blocks', 'objectives', 'estimatedMinutes', 'referenceCode']); takeID(lesson); string(lesson.title, 240); array(lesson.blocks, 1, 80);
+      if (lesson.referenceCode !== undefined) validateCode(lesson.referenceCode);
       if (lesson.objectives !== undefined) { array(lesson.objectives, 0, 6); for (const objective of lesson.objectives) string(objective, 500); }
       if (lesson.estimatedMinutes !== undefined && (!Number.isSafeInteger(lesson.estimatedMinutes) || lesson.estimatedMinutes < 1 || lesson.estimatedMinutes > 180)) fail();
       for (const block of lesson.blocks) {
         const blockFields = { text: ['text', 'presentation'], callout: ['text', 'presentation'], image: ['url', 'caption'], chart: ['chartType', 'points', 'caption'], question: ['text', 'questionType', 'options', 'correctOptionIDs', 'acceptedAnswers', 'explanation', 'code', 'hints', 'answerFormat', 'input', 'execution'] };
         if (!block || !Object.hasOwn(blockFields, block.type)) fail('UNSUPPORTED_COURSE_BLOCK');
         const fields = blockFields[block.type];
-        object(block, ['id', 'type', 'title', ...fields]); takeID(block);
+        object(block, ['id', 'type', 'title', 'focusLines', ...fields]); takeID(block);
         if (block.title !== undefined) string(block.title, 240);
         if (block.caption !== undefined) string(block.caption, 2000, false);
         if (block.type === 'text' || block.type === 'callout' || block.type === 'question') string(block.text, block.type === 'question' ? 4000 : 20000);
@@ -267,6 +292,13 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
             if (block.correctOptionIDs.length < 1 || (block.questionType === 'singleChoice' && block.correctOptionIDs.length !== 1)) fail();
           } else fail('UNSUPPORTED_COURSE_QUESTION');
         }
+      }
+      // All candidate blocks are validated before following source references,
+      // including forward references in older documents.
+      for (const [index, block] of lesson.blocks.entries()) if (block.focusLines !== undefined) {
+        const code = resolvedReferenceCode(value, lesson, index);
+        const lineCount = code ? code.source.split(/\r\n|\r|\n/).length : 0;
+        uniqueStrings(block.focusLines, 200, line => { if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail(); });
       }
     }
     return value;
