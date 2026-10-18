@@ -24281,7 +24281,7 @@ var course_schema_default = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
   $id: "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
   title: "WORKSHOP-COURSE/1 with structured-2 teaching traces, persistent source and typed executable questions",
-  description: "A curriculum data contract with persistent course/lesson reference code, line-focused blocks, native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
+  description: "A curriculum data contract with persistent course/lesson reference code, line- and literal-span-focused blocks, native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
   $comment: "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references. Question maxLines >= minLines and matching explicit input/execution languages are checked by the server and Swift client.",
   "x-workshop-extensionVersion": "structured-2",
   type: "object",
@@ -24396,6 +24396,9 @@ var course_schema_default = {
           maxLength: 8e3,
           pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
           "x-workshop-maxUTF16Length": 8e3
+        },
+        highlightSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -24801,6 +24804,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -24848,6 +24854,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -24904,6 +24913,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -24956,6 +24968,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -25051,6 +25066,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -25173,6 +25191,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -25501,6 +25522,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -25830,6 +25854,9 @@ var course_schema_default = {
         },
         focusLines: {
           $ref: "#/$defs/focusLines"
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -26335,6 +26362,9 @@ var course_schema_default = {
           maxLength: 2e3,
           pattern: "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
           "x-workshop-maxUTF16Length": 2e3
+        },
+        focusSpans: {
+          $ref: "#/$defs/codeSpans"
         }
       },
       required: [
@@ -26535,7 +26565,51 @@ var course_schema_default = {
       minItems: 0,
       maxItems: 200,
       uniqueItems: true,
-      $comment: "Nonempty lines must fit the effective visible source: current block.code, presentation.code, trace first variant.code, execution.template, lesson.referenceCode, course.referenceCode, closest preceding code-bearing block, or first following code-bearing block within the same lesson. The server/client check source bounds; an empty array may clear highlighting without code. Active trace frame.line takes precedence at runtime."
+      $comment: "Nonempty lines must fit the effective visible source: current block.code, presentation.code, trace first variant.code, execution.template, lesson.referenceCode, course.referenceCode, closest preceding code-bearing block, or first following code-bearing block within the same lesson. The server/client check source bounds; an empty array may clear highlighting without code. Supplying block.focusLines or block.focusSpans replaces both source default highlights, treating the omitted other field as empty. Neither field inherits highlights from a neighboring legacy source. Nonempty active trace frame.focusSpans take precedence at runtime, otherwise frame.line is highlighted."
+    },
+    codeSpan: {
+      type: "object",
+      properties: {
+        line: {
+          type: "integer",
+          minimum: 1,
+          maximum: 20001
+        },
+        text: {
+          type: "string",
+          minLength: 1,
+          maxLength: 2e3,
+          "x-workshop-maxUTF16Length": 2e3,
+          pattern: "^[^\\u0000-\\u001f\\u007f-\\u009f\\u2028\\u2029]*$",
+          allOf: [
+            {
+              pattern: "\\S"
+            }
+          ]
+        },
+        occurrence: {
+          type: "integer",
+          minimum: 1,
+          maximum: 2e4,
+          default: 1
+        }
+      },
+      required: [
+        "line",
+        "text"
+      ],
+      additionalProperties: false,
+      $comment: "Exact case-sensitive literal text; no Unicode normalization or regular expressions. occurrence counts left-to-right non-overlapping matches on one CRLF/CR/LF-normalized line and defaults to 1. The selected occurrence must exist in the effective code source."
+    },
+    codeSpans: {
+      type: "array",
+      items: {
+        $ref: "#/$defs/codeSpan"
+      },
+      minItems: 0,
+      maxItems: 200,
+      uniqueItems: true,
+      $comment: "The API additionally rejects duplicate line/text/(occurrence or 1) tuples, so omitted occurrence and explicit 1 are equivalent. Different spans may overlap and render as their union. Empty arrays are allowed without a code context. Code.highlightSpans reference own source; block.focusSpans use the effective visible source; trace frame.focusSpans reference its variant source. Nonempty frame spans replace frame.line highlighting; omitted/empty spans use frame.line."
     }
   }
 };
@@ -26619,7 +26693,7 @@ function courseInteractionExample() {
       title: "\u5148\u8BA1\u7B97\uFF0C\u518D\u5199\u56DE",
       objectives: ["\u7406\u89E3\u8D4B\u503C\u5148\u8BA1\u7B97\u53F3\u4FA7\uFF0C\u518D\u5199\u56DE\u53D8\u91CF\u3002", "\u7528 Python/C++ \u7684\u586B\u7A7A\u548C\u5B8C\u6574\u7A0B\u5E8F\u9A8C\u8BC1\u8F93\u51FA\u3002"],
       estimatedMinutes: 12,
-      referenceCode: { language: "cpp", source, filename: "counter.cpp" },
+      referenceCode: { language: "cpp", source, filename: "counter.cpp", highlightSpans: [{ line: 4, text: "count", occurrence: 2 }] },
       blocks: [
         {
           id: "c0000000-0000-4000-8000-000000000003",
@@ -26629,10 +26703,10 @@ function courseInteractionExample() {
           presentation: { kind: "trace", trace: { variants: [{
             id: "assignment",
             title: "\u8D4B\u503C",
-            code: { language: "cpp", source, filename: "counter.cpp" },
+            code: { language: "cpp", source, filename: "counter.cpp", highlightSpans: [{ line: 4, text: "count", occurrence: 2 }] },
             frames: [
-              { title: "\u521B\u5EFA\u53D8\u91CF", line: 3, note: "count \u7684\u521D\u503C\u662F 2\u3002", objects: [{ id: "count", names: ["count"], value: "2", scope: "main", changed: true }] },
-              { title: "\u66F4\u65B0\u53D8\u91CF", line: 4, note: "\u5148\u8BA1\u7B97 2 + 1\uFF0C\u518D\u628A 3 \u5199\u56DE count\u3002", objects: [{ id: "count", names: ["count"], value: "3", scope: "main", changed: true }] },
+              { title: "\u521B\u5EFA\u53D8\u91CF", line: 3, focusSpans: [{ line: 3, text: "count" }], note: "count \u7684\u521D\u503C\u662F 2\u3002", objects: [{ id: "count", names: ["count"], value: "2", scope: "main", changed: true }] },
+              { title: "\u66F4\u65B0\u53D8\u91CF", line: 4, focusSpans: [{ line: 4, text: "count", occurrence: 2 }, { line: 4, text: "+" }], note: "\u5148\u8BA1\u7B97 2 + 1\uFF0C\u518D\u628A 3 \u5199\u56DE count\u3002", objects: [{ id: "count", names: ["count"], value: "3", scope: "main", changed: true }] },
               { title: "\u8F93\u51FA\u7ED3\u679C", line: 5, note: "\u8F93\u51FA\u73B0\u5728\u7684 count\uFF1A3\u3002", objects: [{ id: "count", names: ["count"], value: "3", scope: "main" }], output: "3" }
             ]
           }] } }
@@ -26643,7 +26717,7 @@ function courseInteractionExample() {
           title: "\u518D\u66F4\u65B0\u4E00\u6B21",
           text: "\u5982\u679C\u8F93\u51FA\u524D\u518D\u6267\u884C\u4E00\u6B21 count = count + 1\uFF0C\u4F1A\u8F93\u51FA\u591A\u5C11\uFF1F",
           questionType: "singleChoice",
-          focusLines: [4],
+          focusSpans: [{ line: 4, text: "count", occurrence: 2 }, { line: 4, text: "+" }],
           options: [{ id: "a", text: "2" }, { id: "b", text: "3" }, { id: "c", text: "4" }],
           correctOptionIDs: ["c"],
           explanation: "\u7B2C\u4E00\u6B21\u66F4\u65B0\u540E\u662F 3\uFF0C\u518D\u52A0 1 \u5F97\u5230 4\u3002"
@@ -26708,18 +26782,20 @@ function courseTeachingPrompt() {
 \u6839\u636E\u7528\u6237\u7684\u4E3B\u9898\u3001\u6559\u6750\u3001\u7B14\u8BB0\u6216\u95EE\u9898\u63A8\u65AD\u57FA\u7840\u3001\u76EE\u6807\u548C\u8BFE\u65F6\uFF1B\u53EA\u6709\u65E0\u6CD5\u63A8\u65AD\u7684\u5173\u952E\u6761\u4EF6\u624D\u7B80\u77ED\u63D0\u95EE\u3002\u9075\u4ECE\u660E\u786E\u8981\u6C42\uFF0C\u4E0D\u53CD\u590D\u7D22\u8981\u53C2\u6570\u3002\u6309\u201C\u89E3\u91CA\u6982\u5FF5\u2192\u5177\u4F53\u4F8B\u5B50\u6216\u56FE\u5F62\u2192\u7EC3\u4E60\u2192\u53CD\u9988\u201D\u7684\u8282\u594F\uFF0C\u7531\u6D45\u5165\u6DF1\uFF0C\u6BCF\u8BFE\u65F6\u4E00\u4E2A\u76EE\u6807\u3002\u91CD\u8981\u6765\u6E90\u548C\u4E0D\u786E\u5B9A\u5904\u660E\u793A\uFF0C\u4E0D\u865A\u6784\u7EDF\u8BA1\u6216\u53C2\u8003\u7B54\u6848\u3002
 \u3010\u5148\u6E05\u695A\uFF0C\u518D\u4E30\u5BCC\u3011
 \u6BCF\u5C4F\u4E00\u4E2A\u95EE\u9898\u3001\u4E00\u4E2A\u53D8\u5316\u3002\u7F16\u7A0B\u8BFE\u4F18\u5148\u4F7F\u7528\u539F\u751F trace \u8868\u8FBE\u9010\u6B65\u8BED\u4E49\uFF0C\u4F5C\u8005\u53EA\u63D0\u4F9B\u4EE3\u7801\u3001\u72B6\u6001\u548C\u89E3\u91CA\uFF0C\u7531 App \u51B3\u5B9A\u5E03\u5C40\u3001\u914D\u8272\u3001\u5B57\u53F7\u3001\u52A8\u753B\u548C\u4EA4\u4E92\uFF1B\u4E0D\u8981\u81EA\u9020\u5E03\u5C40\u3001\u5750\u6807\u3001\u989C\u8272\u6216\u6309\u94AE\u5B57\u6BB5\u3002\u6BCF\u8282\u56F4\u7ED5\u4E00\u4E2A\u77ED\u7A0B\u5E8F\u8FDE\u7EED\u5C55\u5F00\uFF1A\u5148\u9884\u6D4B\u2192\u5355\u6B65\u89C2\u5BDF\u2192\u8FC1\u79FB\u4E00\u9053\u9898\u2192\u52A8\u624B\u6539\u5199\u3002\u901A\u5E38 4\u20136 \u5757\u5373\u53EF\uFF0C\u4E0D\u4E3A\u4E86\u5F62\u5F0F\u4E30\u5BCC\u800C\u53E0\u52A0\u5BF9\u7167\u3001\u95EA\u5361\u3001\u4FEE\u590D\u9898\u3001\u672F\u8BED\u8868\u3002\u6CA1\u6709\u65B0\u7684\u6559\u5B66\u4EF7\u503C\u5C31\u5220\u6389\u3002
-trace \u9ED8\u8BA4\u6BCF\u5E27\u6700\u591A\u5C55\u793A 2 \u4E2A\u5BF9\u8C61\uFF0Cnote \u7528\u4E00\u53E5\u8BDD\uFF0C\u9ED8\u8BA4\u4E0D\u8D85\u8FC7 60 \u5B57\uFF1B\u6BCF\u4E00\u6B65\u53EA\u89E3\u91CA\u4E00\u4E2A\u53D8\u5316\u3002\u56F4\u7ED5\u540C\u4E00\u7A0B\u5E8F\u7684\u8BFE\u7A0B\u6216\u8BFE\u65F6\u5FC5\u987B\u901A\u8FC7 referenceCode \u63D0\u4F9B\u5B8C\u6574\u77ED\u7A0B\u5E8F\uFF0CApp \u59CB\u7EC8\u4FDD\u7559\u4E00\u5757\u53EF\u89C1\u7684\u4EE3\u7801\u533A\uFF1B\u8BB2\u89E3\u3001\u63A8\u6F14\u548C\u505A\u9898\u65F6\u90FD\u80FD\u5BF9\u7167\uFF0C\u4E0D\u8981\u6C42\u7528\u6237\u8BB0\u4F4F\u524D\u9875\u6E90\u7801\uFF0C\u4E5F\u4E0D\u80FD\u53EA\u9732\u4E00\u884C\u3001\u628A\u5B8C\u6574\u4EE3\u7801\u85CF\u5728\u5C55\u5F00\u6309\u94AE\u540E\u3002\u5F53\u524D\u5757\u7528 focusLines \u6807\u8BB0\u8BB2\u89E3\u884C\uFF0Ctrace \u5219\u7528\u5F53\u524D frame.line \u52A8\u6001\u6807\u8BB0\u3002\u957F\u7A0B\u5E8F\u7531\u4EE3\u7801\u533A\u5185\u90E8\u6EDA\u52A8\uFF0C\u4F5C\u8005\u4E0D\u6307\u5B9A\u9AD8\u5EA6\u6216\u5E03\u5C40\u3002\u9664\u8FD9\u5757\u5FC5\u8981\u4EE3\u7801\u5916\uFF0C\u4E0D\u540C\u65F6\u5806\u53E0\u53C2\u6570\u9762\u677F\u3001\u8F93\u51FA\u9762\u677F\u3001\u5BF9\u7167\u3001\u65F6\u95F4\u8F74\u548C\u91CD\u590D\u6807\u7B7E\u3002\u76F8\u540C\u5BF9\u8C61\u7684\u591A\u4E2A\u540D\u5B57\u5FC5\u987B\u653E\u5728\u540C\u4E00\u4E2A objects \u9879\u7684 names \u6570\u7EC4\uFF1B\u4E0D\u8981\u628A\u5F15\u7528\u753B\u6210\u65B0\u7684\u526F\u672C\u3002\u5BF9\u8C61 id \u5728\u540C\u4E00 variant \u7684\u8FDE\u7EED\u5E27\u4FDD\u6301\u7A33\u5B9A\uFF0C\u79BB\u5F00\u4F5C\u7528\u57DF\u65F6\u79FB\u9664\u540D\u5B57\u6216\u5BF9\u8C61\u3002frame \u8868\u793A\u6267\u884C\u5BF9\u5E94 line \u540E\u7684\u72B6\u6001\uFF0Cline \u5FC5\u987B\u771F\u5B9E\u5B58\u5728\uFF1B\u8FD4\u56DE\u5E27\u53EF\u5B9A\u4F4D\u51FD\u6570\u53F3\u82B1\u62EC\u53F7\u3002output \u4EC5\u5728\u771F\u6B63\u4EA7\u751F\u8F93\u51FA\u7684\u5E27\u63D0\u4F9B\uFF0C\u4E0D\u80FD\u6DF7\u7528\u9884\u671F\u8F93\u51FA\u4E0E\u5DF2\u53D1\u751F\u8F93\u51FA\u3002
+trace \u9ED8\u8BA4\u6BCF\u5E27\u6700\u591A\u5C55\u793A 2 \u4E2A\u5BF9\u8C61\uFF0Cnote \u7528\u4E00\u53E5\u8BDD\uFF0C\u9ED8\u8BA4\u4E0D\u8D85\u8FC7 60 \u5B57\uFF1B\u6BCF\u4E00\u6B65\u53EA\u89E3\u91CA\u4E00\u4E2A\u53D8\u5316\u3002\u56F4\u7ED5\u540C\u4E00\u7A0B\u5E8F\u7684\u8BFE\u7A0B\u6216\u8BFE\u65F6\u5FC5\u987B\u901A\u8FC7 referenceCode \u63D0\u4F9B\u5B8C\u6574\u77ED\u7A0B\u5E8F\uFF0CApp \u59CB\u7EC8\u4FDD\u7559\u4E00\u5757\u53EF\u89C1\u7684\u4EE3\u7801\u533A\uFF1B\u8BB2\u89E3\u3001\u63A8\u6F14\u548C\u505A\u9898\u65F6\u90FD\u80FD\u5BF9\u7167\uFF0C\u4E0D\u8981\u6C42\u7528\u6237\u8BB0\u4F4F\u524D\u9875\u6E90\u7801\uFF0C\u4E5F\u4E0D\u80FD\u53EA\u9732\u4E00\u884C\u3001\u628A\u5B8C\u6574\u4EE3\u7801\u85CF\u5728\u5C55\u5F00\u6309\u94AE\u540E\u3002\u8BB2\u89E3\u53D8\u91CF\u3001\u64CD\u4F5C\u7B26\u6216\u8868\u8FBE\u5F0F\u65F6\uFF0C\u7528 focusSpans \u7CBE\u786E\u6807\u8BB0\uFF1B\u53EA\u6709\u6574\u884C\u90FD\u76F8\u5173\u65F6\u624D\u7528 focusLines\uFF0Ctrace \u53EF\u7528 frame.focusSpans \u52A8\u6001\u6807\u8BB0\uFF0C\u672A\u63D0\u4F9B\u7CBE\u786E\u6807\u8BB0\u65F6\u56DE\u9000 frame.line\u3002\u957F\u7A0B\u5E8F\u7531\u4EE3\u7801\u533A\u5185\u90E8\u6EDA\u52A8\uFF0C\u4F5C\u8005\u4E0D\u6307\u5B9A\u9AD8\u5EA6\u6216\u5E03\u5C40\u3002\u9664\u8FD9\u5757\u5FC5\u8981\u4EE3\u7801\u5916\uFF0C\u4E0D\u540C\u65F6\u5806\u53E0\u53C2\u6570\u9762\u677F\u3001\u8F93\u51FA\u9762\u677F\u3001\u5BF9\u7167\u3001\u65F6\u95F4\u8F74\u548C\u91CD\u590D\u6807\u7B7E\u3002\u76F8\u540C\u5BF9\u8C61\u7684\u591A\u4E2A\u540D\u5B57\u5FC5\u987B\u653E\u5728\u540C\u4E00\u4E2A objects \u9879\u7684 names \u6570\u7EC4\uFF1B\u4E0D\u8981\u628A\u5F15\u7528\u753B\u6210\u65B0\u7684\u526F\u672C\u3002\u5BF9\u8C61 id \u5728\u540C\u4E00 variant \u7684\u8FDE\u7EED\u5E27\u4FDD\u6301\u7A33\u5B9A\uFF0C\u79BB\u5F00\u4F5C\u7528\u57DF\u65F6\u79FB\u9664\u540D\u5B57\u6216\u5BF9\u8C61\u3002frame \u8868\u793A\u6267\u884C\u5BF9\u5E94 line \u540E\u7684\u72B6\u6001\uFF0Cline \u5FC5\u987B\u771F\u5B9E\u5B58\u5728\uFF1B\u8FD4\u56DE\u5E27\u53EF\u5B9A\u4F4D\u51FD\u6570\u53F3\u82B1\u62EC\u53F7\u3002output \u4EC5\u5728\u771F\u6B63\u4EA7\u751F\u8F93\u51FA\u7684\u5E27\u63D0\u4F9B\uFF0C\u4E0D\u80FD\u6DF7\u7528\u9884\u671F\u8F93\u51FA\u4E0E\u5DF2\u53D1\u751F\u8F93\u51FA\u3002
 \u3010\u4E92\u52A8\u8FB9\u754C\u3011
 trace \u662F\u4F5C\u8005\u7F16\u5199\u3001\u5BA2\u6237\u7AEF\u9010\u6B65\u5C55\u793A\u7684\u6559\u5B66\u63A8\u6F14\uFF0C\u4E0D\u662F\u5B9E\u9645\u7F16\u8BD1\u6216\u8FD0\u884C C++/Python\u3002\u4F18\u5148\u539F\u751F trace\u3001question\u3001code\u3002\u4EC5\u5F53\u539F\u751F\u5F62\u5F0F\u65E0\u6CD5\u8868\u8FBE\u6838\u5FC3\u4EA4\u4E92\uFF08\u4F8B\u5982\u8FDE\u7EED\u62D6\u52A8\u7269\u7406\u53C2\u6570\uFF09\u65F6\uFF0C\u624D\u4F7F\u7528\u663E\u5F0F HTML\uFF1B\u4E0D\u8981\u6C42\u6BCF\u8282\u8BFE\u5305\u542B HTML\uFF0C\u4E0D\u7528\u591A\u79CD\u63A7\u4EF6\u5806\u51FA\u5B9E\u9A8C\u53F0\u3002\u666E\u901A\u6B63\u6587\u3001Code\u3001Markdown \u56F4\u680F\u4E0D\u6267\u884C\u3002HTML \u64CD\u4F5C\u5FC5\u987B\u7ED1\u5B9A\u5B9E\u9645\u72B6\u6001\u66F4\u65B0\u5E76\u7ED9\u660E\u786E\u89C2\u5BDF\u4EFB\u52A1\uFF1B\u81F3\u5C11\u63D0\u4F9B\u91CD\u7F6E\uFF0C\u52A8\u753B\u9644\u6682\u505C/\u91CD\u7F6E\u5E76\u5C0A\u91CD prefers-reduced-motion\u3002HTML \u4E34\u65F6\u72B6\u6001\u4E0D\u4FDD\u5B58\u4E3A\u4F5C\u7B54\u6216\u8FDB\u5EA6\uFF0C\u9700\u4FDD\u5B58\u7684\u7EC3\u4E60\u7528 question\u3002
 \u9ED8\u8BA4\u4E0D\u8981\u4F7F\u7528\u56FE\u7247\uFF1B\u56FE\u89E3\u4F18\u5148 SVG\uFF0C\u56FE\u8868\u53EA\u7528\u771F\u5B9E\u6570\u636E\u3002\u7981\u6B62\u89C6\u9891\u3001\u97F3\u9891\u3001\u56FE\u7247\u6570\u636E\u3001base64\u3002\u65E7 image \u5B57\u6BB5\u4ECD\u53EF\u63A5\u53D7\u6709\u6548 HTTPS \u5730\u5740\uFF0C\u4E0D\u7F16\u9020 URL\u3002
 \u3010\u6587\u6863\u683C\u5F0F structured-2\u3011
 \u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u672A\u77E5\u5B57\u6BB5\u62D2\u7EDD\u3002\u8BFE\u7A0B {protocol,id,title,summary,referenceCode?:Code,lessons:[{id,title,objectives?,estimatedMinutes?,referenceCode?:Code,blocks:[]}]}\u3002\u6574\u95E8\u8BFE\u5171\u7528\u4E00\u4E2A\u7A0B\u5E8F\u5C31\u653E\u8BFE\u7A0B referenceCode\uFF0C\u4EC5\u672C\u8BFE\u65F6\u5171\u7528\u5219\u653E\u8BFE\u65F6 referenceCode\uFF1B\u5207\u6362\u5230\u53E6\u4E00\u4E2A\u7A0B\u5E8F\u65F6\u663E\u5F0F\u63D0\u4F9B\u5F53\u524D code \u6216\u8BFE\u65F6 referenceCode\uFF0C\u4E0D\u9760\u6B63\u6587\u6697\u793A\u3002objectives 0\u20136\u9879\uFF0C\u6BCF\u9879\u6700\u591A500\uFF1BestimatedMinutes 1\u2013180\u6574\u6570\u3002\u8BFE\u7A0B\u3001\u8BFE\u65F6\u3001\u5757 id \u4E3A\u540C\u4E00\u6587\u6863\u5185\u552F\u4E00 UUID\u3002\u65B0\u8BFE\u7A0B\u751F\u6210\u65B0 UUID\uFF0C\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u4FDD\u7559\u7ED3\u6784 ID\u3002\u4E0D\u8981\u628A\u7528\u6237 ID\u3001\u4FEE\u8BA2\u53F7\u6216\u6267\u884C\u6307\u4EE4\u653E\u5165\u6B63\u6587\u3002
-\u5757 type \u4E3A text/callout/image/chart/question\uFF0C\u6BCF\u5757\u53EF\u6709 title \u548C focusLines\u3002focusLines \u4E3A0\u2013200\u4E2A\u6709\u6548\u3001\u4E0D\u91CD\u590D\u76841\u8D77\u59CB\u6574\u6570\u884C\u53F7\uFF0C\u6307\u5411\u5F53\u524D\u53EF\u89C1\u4EE3\u7801\uFF1B\u7701\u7565\u4FDD\u7559 Code.highlightLines\uFF0C[] \u8868\u793A\u6E05\u9664\u9759\u6001\u9AD8\u4EAE\u3002\u4EE3\u7801\u4F18\u5148\u7EA7\u4E3A\u5F53\u524D block.code\u3001presentation.code\u3001trace \u5F53\u524D variant.code\u3001execution.template\u3001\u8BFE\u65F6 referenceCode\u3001\u8BFE\u7A0B referenceCode\uFF1B\u65E7\u8BFE\u7A0B\u624D\u56DE\u9000\u540C\u8BFE\u65F6\u6700\u8FD1\u524D\u7F6E\u4EE3\u7801\u5757\u6216\u9996\u4E2A\u540E\u7F6E\u4EE3\u7801\u5757\uFF0C\u4E0D\u8DE8\u8BFE\u65F6\u3002\u586B\u7A7A\u7A0B\u5E8F\u5FC5\u987B\u663E\u793A\u4FDD\u7559 {{ANSWER}} \u7684\u5B8C\u6574\u6A21\u677F\uFF0C\u4E0D\u80FD\u628A acceptedAnswers\u3001\u89E3\u6790\u6216\u5B8C\u6210\u540E\u7684\u7B54\u6848\u5199\u8FDB referenceCode \u6765\u6CC4\u9898\uFF1B\u5B8C\u6574\u7A0B\u5E8F\u7EC3\u4E60\u7684 code \u663E\u793A\u672A\u5B8C\u6210\u9AA8\u67B6\uFF0C\u800C\u975E\u6807\u51C6\u7B54\u6848\u3002text/callout \u5FC5\u586B\u975E\u7A7A text\uFF0C\u53EF\u52A0\u4E00\u79CD presentation\uFF1B\u7ED3\u6784\u5316\u5757\u7684 text \u662F\u7B80\u77ED\u6559\u5B66\u6458\u8981\uFF0C\u4E0D\u5FC5\u91CD\u590D\u5B8C\u6574\u4EE3\u7801\u6216\u9010\u5E27\u5185\u5BB9\uFF0C\u4E5F\u4E0D\u8981\u6C42\u517C\u5BB9\u65E7\u5C55\u793A\u7AEF\u3002image \u5FC5\u586B HTTPS url\u3001\u53EF\u9009 caption\uFF1Bchart \u5FC5\u586B chartType(bar/line)\u3001points:[{label,value}]\u3001\u53EF\u9009 caption\u3002
+\u5757 type \u4E3A text/callout/image/chart/question\uFF0C\u6BCF\u5757\u53EF\u6709 title\u3001focusLines \u548C focusSpans\u3002focusLines \u4E3A0\u2013200\u4E2A\u6709\u6548\u3001\u4E0D\u91CD\u590D\u76841\u8D77\u59CB\u6574\u6570\u884C\u53F7\uFF0C\u6307\u5411\u5F53\u524D\u53EF\u89C1\u4EE3\u7801\u3002focusLines/focusSpans \u53EA\u8981\u51FA\u73B0\u4EFB\u4E00\u4E2A\uFF0C\u4E24\u4E2A\u9759\u6001\u7126\u70B9\u90FD\u4EE5\u8BE5\u5757\u4E3A\u51C6\uFF0C\u672A\u7ED9\u7684\u53E6\u4E00\u4E2A\u6309\u7A7A\u6570\u7EC4\uFF1B\u4E24\u4E2A\u90FD\u7701\u7565\u624D\u7EE7\u627F\u663E\u5F0F\u4EE3\u7801\u6E90\u7684 highlightLines/highlightSpans\u3002[] \u53EF\u6E05\u9664\u9AD8\u4EAE\u4E14\u5141\u8BB8\u65E0\u4EE3\u7801\uFF1B\u65E7\u8BFE\u7A0B\u90BB\u5C45\u56DE\u9000\u4E0D\u7EE7\u627F\u90BB\u5C45\u4E24\u79CD\u9AD8\u4EAE\u3002\u4EE3\u7801\u4F18\u5148\u7EA7\u4E3A\u5F53\u524D block.code\u3001presentation.code\u3001trace \u5F53\u524D variant.code\u3001execution.template\u3001\u8BFE\u65F6 referenceCode\u3001\u8BFE\u7A0B referenceCode\uFF1B\u65E7\u8BFE\u7A0B\u624D\u56DE\u9000\u540C\u8BFE\u65F6\u6700\u8FD1\u524D\u7F6E\u4EE3\u7801\u5757\u6216\u9996\u4E2A\u540E\u7F6E\u4EE3\u7801\u5757\uFF0C\u4E0D\u8DE8\u8BFE\u65F6\u3002\u586B\u7A7A\u7A0B\u5E8F\u5FC5\u987B\u663E\u793A\u4FDD\u7559 {{ANSWER}} \u7684\u5B8C\u6574\u6A21\u677F\uFF0C\u4E0D\u80FD\u628A acceptedAnswers\u3001\u89E3\u6790\u6216\u5B8C\u6210\u540E\u7684\u7B54\u6848\u5199\u8FDB referenceCode \u6765\u6CC4\u9898\uFF1B\u5B8C\u6574\u7A0B\u5E8F\u7EC3\u4E60\u7684 code \u663E\u793A\u672A\u5B8C\u6210\u9AA8\u67B6\uFF0C\u800C\u975E\u6807\u51C6\u7B54\u6848\u3002text/callout \u5FC5\u586B\u975E\u7A7A text\uFF0C\u53EF\u52A0\u4E00\u79CD presentation\uFF1B\u7ED3\u6784\u5316\u5757\u7684 text \u662F\u7B80\u77ED\u6559\u5B66\u6458\u8981\uFF0C\u4E0D\u5FC5\u91CD\u590D\u5B8C\u6574\u4EE3\u7801\u6216\u9010\u5E27\u5185\u5BB9\uFF0C\u4E5F\u4E0D\u8981\u6C42\u517C\u5BB9\u65E7\u5C55\u793A\u7AEF\u3002image \u5FC5\u586B HTTPS url\u3001\u53EF\u9009 caption\uFF1Bchart \u5FC5\u586B chartType(bar/line)\u3001points:[{label,value}]\u3001\u53EF\u9009 caption\u3002
 presentation \u53EA\u5141\u8BB8 kind \u4E0E\u552F\u4E00\u5BF9\u5E94\u8F7D\u8377\uFF0C\u4E0D\u80FD\u6DF7\u642D\uFF1A
-{kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,note,objects:[{id,names:[\u5B57\u7B26\u4E32],value,scope?,changed?}],output?}]}]}}\u3002
+{kind:"trace",trace:{variants:[{id,title,code:Code,frames:[{title,line,focusSpans?,note,objects:[{id,names:[\u5B57\u7B26\u4E32],value,scope?,changed?}],output?}]}]}}\u3002
 trace.variants \u4E3A1\u20134\u9879\u3001id\u5404\u4E0D\u76F8\u540C\uFF1B\u6BCF\u9879 frames \u4E3A2\u201324\u5E27\uFF0C\u6BCF\u5E27 objects \u4E3A1\u20134\u9879\u4E14\u5BF9\u8C61id\u4E0D\u80FD\u91CD\u590D\u3002variant/object \u7684 id \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002\u6BCF\u4E2A\u5BF9\u8C61 names \u4E3A1\u20133\u4E2A\u975E\u7A7A\u540D\u5B57\uFF0C\u4F5C\u8005\u5E94\u907F\u514D\u91CD\u590D\uFF1Bvalue \u662F\u975E\u7A7A\u5B57\u7B26\u4E32\u6700\u591A120\uFF0Cscope \u53EF\u9009\u975E\u7A7A\u6700\u591A80\uFF0Cchanged \u53EF\u9009\u5E03\u5C14\u503C\u3002names \u6BCF\u9879\u6700\u591A80\uFF1Bframe.title \u548C variant.title \u975E\u7A7A\u6700\u591A120\uFF1Bnote \u975E\u7A7A\u6700\u591A400\uFF08\u9ED8\u8BA4\u4E00\u53E5\u4E0D\u8D85\u8FC760\u5B57\uFF09\uFF1Bline \u4E3A\u5BF9\u5E94 code.source \u7684\u6709\u6548\u6B63\u6574\u6570\u884C\u53F7\uFF1Boutput \u53EF\u7A7A\u6700\u591A2000\u3002\u4E00\u4E2A\u5BF9\u8C61\u7684 names \u8868\u793A\u540C\u4E00\u5BF9\u8C61\u7684\u4E0D\u540C\u540D\u5B57\uFF0C\u4E0D\u662F\u591A\u4E2A\u5BF9\u8C61\u3002
 \u73B0\u6709\u5F62\u5F0F\u6309\u9700\u4F7F\u7528\uFF1A{kind:"code",code:Code}\uFF1B{kind:"table",table:{columns:[\u5B57\u7B26\u4E32],rows:[[\u5B57\u7B26\u4E32]]}}\uFF0C1\u20138\u5217\u30011\u201360\u884C\uFF0C\u6BCF\u884C\u4E0E\u5217\u6570\u4E00\u81F4\uFF1B{kind:"steps",steps:[{title,text,code?}]}\uFF0C1\u201320\u6B65\uFF1B{kind:"comparison",items:[{title,text,code?}]}\uFF0C2\u20134\u9879\uFF1B{kind:"flashcards",cards:[{front,back}]}\uFF0C1\u201320\u5F20\uFF1B{kind:"markdown",markdown:{source}}\uFF1B{kind:"html",html:{source,height?}}\uFF1B{kind:"svg",svg:{source,height?}}\u3002steps/comparison \u6BCF\u9879 title240\u3001text4000\uFF1Btable\u5217\u540D120\u3001\u5355\u5143\u683C2000\uFF1Bflashcards.front2000\u3001back4000\u3002markdown.source \u975E\u7A7A\u6700\u591A20000\uFF1Bhtml.source/svg.source \u975E\u7A7A\u6700\u591A60000\uFF1Bheight \u53EF\u7701\u7565\uFF0C\u63D0\u4F9B\u65F6\u4E3A120\u2013640\u6574\u6570\uFF0CMarkdown\u4E0D\u63A5\u53D7height\u3002
-Code={language,source,filename?,highlightLines?,annotations?,stdin?,expectedOutput?}\u3002language \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u3001+\u3001.\u6216-\uFF08C++\u7528 cpp \u6216 c++\uFF09\uFF1Bsource \u975E\u7A7A\u6700\u591A20000\uFF0C\u4FDD\u7559\u6362\u884C\u4E0E\u7F29\u8FDB\uFF0C\u4E0D\u653E Markdown \u56F4\u680F\u3002filename240\uFF1BhighlightLines \u4E3A0\u2013200\u4E2A\u6709\u6548\u3001\u4E0D\u91CD\u590D\u7684\u6B63\u6574\u6570\u884C\u53F7\uFF1Bannotations \u4E3A0\u201340\u4E2A {line,text}\uFF0C\u884C\u53F7\u6709\u6548\u4E14\u4E0D\u91CD\u590D\u3001text2000\uFF1Bstdin \u53EF\u7A7A\u6700\u591A4000\uFF0CexpectedOutput \u53EF\u7A7A\u6700\u591A8000\u3002\u884C\u6309 CRLF/CR/LF \u5212\u5206\u3002#include <iostream>\u3001template<typename T>\u3001a < b \u90FD\u662F\u6570\u636E\uFF0C\u5141\u8BB8\u539F\u6837\u5199\u5165\u5B57\u7B26\u4E32\u3002\u666E\u901A Code \u5C55\u793A\u4E0D\u7F16\u8BD1\u3001\u4E0D\u6267\u884C\uFF0C\u4E5F\u4E0D\u9A8C\u8BC1\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\uFF0C\u4E0D\u80FD\u58F0\u79F0\u5DF2\u8FD0\u884C\u3002\u53EA\u6709\u4E0B\u9762\u663E\u5F0F execution \u7684\u4F5C\u7B54\u9898\u53EF\u4EE5\u5B9E\u9645\u8FD0\u884C\u3002
+Code={language,source,filename?,highlightLines?,highlightSpans?,annotations?,stdin?,expectedOutput?}\u3002language \u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u3001+\u3001.\u6216-\uFF08C++\u7528 cpp \u6216 c++\uFF09\uFF1Bsource \u975E\u7A7A\u6700\u591A20000\uFF0C\u4FDD\u7559\u6362\u884C\u4E0E\u7F29\u8FDB\uFF0C\u4E0D\u653E Markdown \u56F4\u680F\u3002filename240\uFF1BhighlightLines \u4E3A0\u2013200\u4E2A\u6709\u6548\u3001\u4E0D\u91CD\u590D\u7684\u6B63\u6574\u6570\u884C\u53F7\uFF1Bannotations \u4E3A0\u201340\u4E2A {line,text}\uFF0C\u884C\u53F7\u6709\u6548\u4E14\u4E0D\u91CD\u590D\u3001text2000\uFF1Bstdin \u53EF\u7A7A\u6700\u591A4000\uFF0CexpectedOutput \u53EF\u7A7A\u6700\u591A8000\u3002\u884C\u6309 CRLF/CR/LF \u5212\u5206\u3002#include <iostream>\u3001template<typename T>\u3001a < b \u90FD\u662F\u6570\u636E\uFF0C\u5141\u8BB8\u539F\u6837\u5199\u5165\u5B57\u7B26\u4E32\u3002\u666E\u901A Code \u5C55\u793A\u4E0D\u7F16\u8BD1\u3001\u4E0D\u6267\u884C\uFF0C\u4E5F\u4E0D\u9A8C\u8BC1\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\uFF0C\u4E0D\u80FD\u58F0\u79F0\u5DF2\u8FD0\u884C\u3002\u53EA\u6709\u4E0B\u9762\u663E\u5F0F execution \u7684\u4F5C\u7B54\u9898\u53EF\u4EE5\u5B9E\u9645\u8FD0\u884C\u3002
+\u3010\u4EE3\u7801\u7CBE\u786E\u6807\u8BB0\u3011
+Code.highlightSpans\u3001\u6240\u6709\u5757\u7684 focusSpans\u3001trace \u6BCF\u5E27\u7684 focusSpans \u90FD\u53EF\u63D0\u4F9B0\u2013200\u4E2A Span={line,text,occurrence?}\u3002\u9700\u8981\u89E3\u91CA\u67D0\u4E2A\u53D8\u91CF\u540D\u3001\u5173\u952E\u5B57\u3001\u8FD0\u7B97\u7B26\u3001\u4E2D\u6587\u3001emoji \u6216\u8FDE\u7EED\u8868\u8FBE\u5F0F\u65F6\u4E3B\u52A8\u4F7F\u7528\u5B83\uFF0C\u4E0D\u5FC5\u628A\u6574\u884C\u6D82\u4EAE\uFF1B\u53EA\u6807\u8BB0\u672C\u6B65\u6700\u91CD\u8981\u7684\u4E00\u4E24\u5904\uFF0C\u4E0D\u9010\u5B57\u6807\u5168\u7A0B\u5E8F\uFF0C\u4E5F\u4E0D\u7F16\u9020\u5217\u53F7/\u989C\u8272/\u6B63\u5219\u5B57\u6BB5\u3002line \u4ECE1\u8D77\uFF0Ctext \u662F\u8BE5\u884C\u5B9E\u9645\u5B58\u5728\u3001\u533A\u5206\u5927\u5C0F\u5199\u7684\u7CBE\u786E\u5B57\u9762\u7247\u6BB5\uFF0C\u975E\u7A7A\u4E14\u4E0D\u5168\u4E3A\u7A7A\u767D\u3001\u6700\u591A2000\u4E2AUTF-16\u4EE3\u7801\u5355\u5143\uFF0C\u4E0D\u542B\u6362\u884C\u6216\u63A7\u5236\u5B57\u7B26\uFF1B\u5339\u914D\u4E0D\u505AUnicode\u89C4\u8303\u5316\u3002occurrence \u4E3A1\u201320000\u6574\u6570\uFF0C\u7701\u7565\u9ED8\u8BA41\uFF0C\u5728\u540C\u4E00\u884C\u6309\u4ECE\u5DE6\u5230\u53F3\u3001\u4E92\u4E0D\u91CD\u53E0\u7684\u51FA\u73B0\u6B21\u6570\u5B9A\u4F4D\uFF1B\u91CD\u590D\u8BCD\u9700\u8981\u663E\u5F0F occurrence\uFF0C\u4E0D\u9760\u5217\u6570\u6216\u6A21\u7CCA\u8BED\u4E49\u731C\u6D4B\u3002\u4F8B\u5982\u5728 count = count + 1; \u8FD9\u4E00\u884C\uFF0C{line:4,text:"count",occurrence:2} \u53EA\u6807\u8BB0\u53F3\u4FA7 count\uFF0C{line:4,text:"+"} \u6807\u8BB0\u52A0\u53F7\u3002\u4E0D\u540C\u6807\u8BB0\u53EF\u4EE5\u91CD\u53E0\uFF0CApp \u5408\u5E76\u663E\u793A\uFF1B\u76F8\u540C line/text/\u9ED8\u8BA4\u5316 occurrence \u7684\u91CD\u590D\u9879\u62D2\u7EDD\uFF08\u7701\u7565\u4E0E1\u76F8\u540C\uFF09\u3002Code \u6807\u8BB0\u5BF9\u81EA\u5DF1\u7684 source \u6821\u9A8C\uFF0C\u5757\u6807\u8BB0\u5BF9\u4E0A\u8FF0\u5B9E\u9645\u53EF\u89C1\u4EE3\u7801\u6821\u9A8C\uFF1Btrace \u6BCF\u5E27\u6807\u8BB0\u5BF9\u6240\u5728 variant.code \u6821\u9A8C\uFF0Cframe.focusSpans \u975E\u7A7A\u65F6\u53EA\u805A\u7126\u8FD9\u4E9B\u7247\u6BB5\uFF0C\u7701\u7565\u6216[]\u65F6\u56DE\u9000\u5FC5\u586B frame.line\u3002\u4E0D\u80FD\u5F15\u7528\u53E6\u4E00\u6BB5\u7A0B\u5E8F\u3001\u8DE8\u884C\u7247\u6BB5\u6216\u4E0D\u5B58\u5728\u7684\u7B2CN\u6B21\u51FA\u73B0\uFF1B\u7CBE\u786E\u6807\u8BB0\u4E0D\u8FD0\u884C\u4EE3\u7801\uFF0C\u4E5F\u4E0D\u63D0\u4F9B\u7B54\u6848\u3002
 question \u5FC5\u586B text\u3001questionType(singleChoice/multipleChoice/shortAnswer)\uFF0C\u53EF\u6709 explanation\u3001code:Code\u3001hints\uFF080\u20135\u9879\uFF0C\u6BCF\u9879\u6700\u591A2000\uFF09\u3002\u9009\u62E9\u9898\u5FC5\u586B options:[{id,text}]\u3001correctOptionIDs\uFF0C\u53EA\u5F15\u7528\u5DF2\u6709\u9009\u9879\uFF1B\u5355\u9009\u6070\u597D\u4E00\u4E2A\u6B63\u786E\u9879\uFF0C\u591A\u9009\u81F3\u5C11\u4E00\u4E2A\uFF1B\u4E0D\u63A5\u53D7 acceptedAnswers/answerFormat\u3002\u9009\u9879id\u4E3A1\u201340\u4E2A ASCII \u5B57\u6BCD\u3001\u6570\u5B57\u3001\u4E0B\u5212\u7EBF\u6216\u8FDE\u5B57\u7B26\u3002shortAnswer \u4E0D\u63A5\u53D7 options/correctOptionIDs\uFF1B\u53EF\u6709 acceptedAnswers \u548C answerFormat(text/code/output)\uFF0C\u9ED8\u8BA4text\u3002text\u6BD4\u8F83\u5FFD\u7565\u5927\u5C0F\u5199\u3001\u5408\u5E76\u7A7A\u767D\uFF1Bcode/output\u4EC5\u7EDF\u4E00\u6362\u884C\u5E76\u53BB\u6389\u9996\u5C3E\u7A7A\u767D\uFF0C\u4ECD\u662F\u6587\u672C\u6BD4\u8F83\u3002\u5F00\u653E\u4EE3\u7801\u9898\u7701\u7565 acceptedAnswers\uFF0C\u4F7F\u7528 execution \u7684\u6837\u4F8B\u8F93\u51FA\u53CD\u9988\uFF0C\u5E76\u5728\u89E3\u6790\u7ED9\u53C2\u8003\u5B9E\u73B0\u4E0E\u68C0\u67E5\u70B9\uFF1B\u4E0D\u80FD\u628A\u4EE3\u7801\u6587\u672C\u5339\u914D\u5F53\u4F5C\u901A\u7528\u4EE3\u7801\u5224\u5206\u3002\u53EA\u6709\u7B54\u6848\u786E\u5B9E\u552F\u4E00\u7684\u8865\u5168\u9898\u624D\u7ED9 code \u53C2\u8003\u6587\u672C\uFF0C\u5E76\u8BF4\u660E\u6BD4\u8F83\u5C40\u9650\u3002\u6BCF\u8BFE\u5B8C\u6210\u53EA\u8981\u6C42\u6BCF\u9898\u6709\u6548\u4F5C\u7B54\uFF0C\u4E0D\u8981\u6C42\u5168\u5BF9\u3002
 \u3010\u4F5C\u7B54\u8F93\u5165\u4E0E\u771F\u5B9E\u8FD0\u884C\u3011
 shortAnswer \u53EF\u6307\u5B9A input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}\u3002\u6570\u5B57\u7B54\u6848\u5FC5\u987B\u7528 integer \u6216 decimal\uFF0C\u8BA9 App \u4F7F\u7528\u4E24\u884C\u6570\u5B57\u952E\u76D8\uFF1B\u4EE3\u7801\u7EC3\u4E60\u7528 code\uFF0C\u8BA9 App \u63D0\u4F9B\u6709\u8BED\u6CD5\u989C\u8272\u7684\u591A\u884C\u7F16\u8F91\u5668\u3002input.language \u4EC5 code \u53EF\u7528\uFF0C\u9650\u5B9A javascript/python/cpp\uFF1BstarterCode \u4EC5 code \u53EF\u7528\u3001\u53EF\u7A7A\u6700\u591A20000\uFF1Bplaceholder \u53EF\u7A7A\u6700\u591A500\u3002minLines/maxLines \u4E3A2\u201324\u6574\u6570\u4E14min\u2264max\uFF1B\u6570\u5B57\u8F93\u5165\u4ECD\u4F1A\u7D27\u51D1\u663E\u793A\u3002integer \u4EC5\u53EF\u5E26\u6B63\u8D1F\u53F7\u7684\u5341\u8FDB\u5236\u6574\u6570\uFF1Bdecimal \u53EF\u5E26\u6B63\u8D1F\u53F7\u4E0E\u5C0F\u6570\u70B9\u3001\u4E0D\u63A5\u53D7\u79D1\u5B66\u8BB0\u6570\u3001\u9017\u53F7\u3001NaN/Infinity\u3002\u4E0D\u8981\u628A\u8981\u6C42\u8F93\u5165\u6570\u5B57\u7684\u9898\u76EE\u4FDD\u7559\u6210\u666E\u901A\u957F\u6587\u672C\u6846\u3002\u65E7\u6587\u6863\u7701\u7565input\u4ECD\u517C\u5BB9\uFF1Bexecution\u5B58\u5728\u6216answerFormat=code\u65F6\u63A8\u65AD\u4E3Acode\uFF0C\u5176\u4ED6\u9ED8\u8BA4text\u3002
@@ -26732,8 +26808,8 @@ shortAnswer \u53EF\u6307\u5B9A input:{kind:"text"|"integer"|"decimal"|"code",lan
 \u5F00\u653E\u7A0B\u5E8F\u9898\u4E0E\u5141\u8BB8\u7B49\u4EF7\u8868\u8FBE\u5F0F\u7684\u9898\u76EE\u7701\u7565 acceptedAnswers\uFF0C\u4F9D\u636E\u8FD9\u7EC4\u8FD0\u884C\u8F93\u51FA\u53CD\u9988\u5E76\u7ED9\u89E3\u6790\uFF1BexpectedOutput \u4E0D\u662F\u9690\u85CF\u6D4B\u8BD5\u6216\u5B8C\u6574\u5224\u9898\u7CFB\u7EDF\u3002\u4E0A\u4F20\u8BFE\u7A0B\u4E0D\u4F1A\u81EA\u52A8\u7F16\u8BD1\u6216\u8FD0\u884C\uFF1B\u6CA1\u6709\u5B9E\u9645\u8FD0\u884C\u8BC1\u636E\u5C31\u4E0D\u80FD\u5BA3\u79F0\u5DF2\u7F16\u8BD1\u901A\u8FC7\u3002\u8D85\u65F6\u3001\u7F16\u8BD1\u9519\u8BEF\u6216\u8FD0\u884C\u670D\u52A1\u6682\u4E0D\u53EF\u7528\u65F6\u5E94\u5982\u5B9E\u53CD\u9988\u3002trace \u4ECD\u662F\u4EBA\u5DE5\u63A8\u6F14\uFF0Ccode/presentation.code \u4ECD\u662F\u5C55\u793A\uFF1BJavaScript \u53EF\u901A\u8FC7 execution \u5728 App \u672C\u5730\u9694\u79BB\u8FD0\u884C\uFF0C\u4E0D\u80FD\u9760\u666E\u901A text/HTML \u5192\u5145\u771F\u5B9E Python/C++ \u6267\u884C\u3002
 HTML/SVG \u901A\u8FC7\u663E\u5F0F presentation \u8FDB\u5165\u79BB\u7EBF\u6C99\u76D2\uFF1B\u4E0D\u4E0E\u666E\u901A\u5B57\u7B26\u4E32\u62FC\u63A5\u3002\u5B8C\u5168\u5185\u8054\uFF0C\u4E0D\u4F7F\u7528 CDN\u3001\u5916\u94FE\u811A\u672C/\u6837\u5F0F/\u5B57\u4F53\u3001\u8BF7\u6C42\u3001\u5BFC\u822A\u3001iframe/object/embed\u3001SVG image/foreignObject\u3001\u5A92\u4F53\u3001data/base64 \u6216\u4E0B\u8F7D\u3002HTML\u53EF\u8FD0\u884C\u5185\u8054CSS/JavaScript\u3001SVG/canvas\uFF1B\u670D\u52A1\u5668\u53EA\u5B58\u50A8\u3002\u4E0D\u8981\u4EFF\u5236 App \u5BFC\u822A\u3001\u8D26\u53F7\u6216\u4E0A\u4F20\u63A7\u4EF6\uFF1B\u9002\u914D\u7EA6320px\u5BBD\u5C4F\u5E55\uFF0C\u63A7\u4EF6\u81F3\u5C1144px\u9AD8\uFF0C\u4E8B\u4EF6\u66F4\u65B0\u5148\u6539\u6A21\u578B\u518D\u7ED8\u5236\uFF0C\u907F\u514D\u6BCF\u6B21\u8F93\u5165\u66FF\u6362\u6574\u4E2AinnerHTML\uFF0C\u907F\u514D\u65E0\u9650\u5FAA\u73AF\u548C\u540E\u53F0\u5B9A\u65F6\u5668\u3002Markdown\u53EF\u542B\u6807\u9898\u3001\u5217\u8868\u3001\u8868\u683C\u3001\u5F15\u7528\u548C\u5E26\u8BED\u8A00\u540D\u7684\u4EE3\u7801\u56F4\u680F\uFF0C\u4E0D\u542F\u7528\u539F\u59CBHTML\u6216\u56FE\u7247\u3002
 \u9650\u5236\u6309 UTF-16 \u4EE3\u7801\u5355\u5143\uFF1AJSON UTF-8\u6700\u591A1 MiB\uFF1B1\u201340\u8BFE\u65F6\uFF0C\u6BCF\u8BFE1\u201380\u5757\uFF1B\u6240\u6709title240\u3001summary2000\u3001text/callout20000\u3001\u9898\u5E72\u548Cexplanation4000\u3001caption2000\u3002\u56FE\u88681\u201360\u70B9\uFF0Clabel120\uFF0Cvalue\u6709\u9650\u4E14\u7EDD\u5BF9\u503C\u226410^15\uFF1B\u9009\u62E9\u98982\u201312\u9879\uFF0C\u9009\u9879text1000\uFF1BacceptedAnswers\u6700\u591A20\u4E2A\u4E0D\u91CD\u590D\u9879\uFF0C\u5404\u9879\u4E0A\u9650text500/code20000/output8000\uFF0C\u7528\u6237\u7B54\u6848\u4E0A\u96504000/20000/8000\uFF1BURL2048\uFF1B\u7981\u6B62\u63A7\u5236\u5B57\u7B26\u3002\u4E0D\u8981\u65B0\u9020 block.type \u6216\u628A code/hints/input/execution \u653E\u5728\u975E question \u5757\uFF1Binput/execution\u4EC5shortAnswer\u53EF\u7528\u3002
-\u8F93\u51FA\u524D\u6838\u5BF9\uFF1A\u6BCF\u4E00\u6B65\u662F\u5426\u53EA\u7A81\u51FA\u4E00\u4E2A\u53D8\u5316\uFF1F\u662F\u5426\u6709\u59CB\u7EC8\u53EF\u89C1\u7684\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\uFF0C\u8BB2\u89E3/\u63D0\u95EE\u7684 focusLines \u4E0E\u5F53\u524D\u4EE3\u7801\u4E00\u81F4\uFF0Ctrace \u5F53\u524D\u884C\u662F\u5426\u771F\u5B9E\u5B58\u5728\uFF1F\u5BF9\u8C61\u8EAB\u4EFD\u548C\u5F15\u7528\u522B\u540D\u662F\u5426\u4E00\u81F4\uFF1F\u4EE3\u7801\u884C\u53F7\u3001\u6570\u503C\u3001\u8F93\u51FA\u4E0E\u7EC3\u4E60\u7B54\u6848\u662F\u5426\u5BF9\u5E94\uFF1F\u539F\u751F\u80FD\u8868\u8FBE\u65F6\u662F\u5426\u907F\u514D\u4E86 HTML\uFF1F\u6BCF\u9053 Python/C++ \u7F16\u7A0B\u7EC3\u4E60\u662F\u5426\u6709\u6B63\u786E\u7684 input \u4E0E execution\uFF0C\u586B\u7A7A\u662F\u5426\u53EA\u6709\u4E00\u4E2A\u6A21\u677F\u6807\u8BB0\u4E14\u516C\u5F00\u4EE3\u7801\u4E0D\u6CC4\u9732\u7B54\u6848\uFF0C\u5B8C\u6574\u7A0B\u5E8F\u662F\u5426\u7701\u7565 template\uFF0C\u9ED8\u8BA4 stdin \u4E0E expectedOutput \u662F\u5426\u5339\u914D\u53C2\u8003\u7A0B\u5E8F\uFF1F\u4E0D\u8981\u628A\u68C0\u67E5\u6E05\u5355\u5199\u8FDB\u8BFE\u7A0B\uFF0C\u4E5F\u4E0D\u9010\u9879\u7D22\u8981\u786E\u8BA4\u3002
-\u4E0B\u9762\u662F\u201C\u5171\u4EAB\u53C2\u8003\u7A0B\u5E8F\u2192\u539F\u751F\u5355\u6B65\u63A8\u6F14\u2192\u5E26\u884C\u9AD8\u4EAE\u7684\u8FC1\u79FB\u9009\u62E9\u9898\u2192Python \u6570\u503C\u586B\u7A7A\u2192C++ \u8868\u8FBE\u5F0F\u586B\u7A7A\u2192\u4E24\u79CD\u8BED\u8A00\u5B8C\u6574\u7A0B\u5E8F\u9898\u201D\u7684\u5B8C\u6574\u6709\u6548\u793A\u4F8B\uFF0C\u542B\u56DB\u9053\u53EF\u8FD0\u884C\u9898\u3002\u5B83\u5C55\u793A\u534F\u8BAE\u5199\u6CD5\uFF0C\u4E0D\u8981\u6C42\u6BCF\u4E2A\u8BFE\u65F6\u540C\u65F6\u6559\u6388\u4E24\u79CD\u8BED\u8A00\u6216\u7167\u642C\u5168\u90E8\u9898\u578B\uFF1B\u6309\u7528\u6237\u4E3B\u9898\u8BBE\u8BA1\uFF0C\u4E0D\u7167\u642C\u6807\u9898\u3001UUID\u6216\u77E5\u8BC6\u70B9\u3002\u53EA\u6709\u8FD9\u4E00\u4E2A\u5B8C\u6574 JSON \u4EE3\u7801\u5757\u662F\u683C\u5F0F\u793A\u4F8B\uFF1A
+\u8F93\u51FA\u524D\u6838\u5BF9\uFF1A\u6BCF\u4E00\u6B65\u662F\u5426\u53EA\u7A81\u51FA\u4E00\u4E2A\u53D8\u5316\uFF1F\u662F\u5426\u6709\u59CB\u7EC8\u53EF\u89C1\u7684\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\uFF0C\u8BB2\u89E3/\u63D0\u95EE\u7684 focusLines/focusSpans \u4E0E\u5F53\u524D\u4EE3\u7801\u4E00\u81F4\uFF0C\u91CD\u590D\u8BCD occurrence \u662F\u5426\u6B63\u786E\uFF0Ctrace \u5F53\u524D\u884C\u548C\u7CBE\u786E\u7247\u6BB5\u662F\u5426\u771F\u5B9E\u5B58\u5728\uFF1F\u5BF9\u8C61\u8EAB\u4EFD\u548C\u5F15\u7528\u522B\u540D\u662F\u5426\u4E00\u81F4\uFF1F\u4EE3\u7801\u884C\u53F7\u3001\u6570\u503C\u3001\u8F93\u51FA\u4E0E\u7EC3\u4E60\u7B54\u6848\u662F\u5426\u5BF9\u5E94\uFF1F\u539F\u751F\u80FD\u8868\u8FBE\u65F6\u662F\u5426\u907F\u514D\u4E86 HTML\uFF1F\u6BCF\u9053 Python/C++ \u7F16\u7A0B\u7EC3\u4E60\u662F\u5426\u6709\u6B63\u786E\u7684 input \u4E0E execution\uFF0C\u586B\u7A7A\u662F\u5426\u53EA\u6709\u4E00\u4E2A\u6A21\u677F\u6807\u8BB0\u4E14\u516C\u5F00\u4EE3\u7801\u4E0D\u6CC4\u9732\u7B54\u6848\uFF0C\u5B8C\u6574\u7A0B\u5E8F\u662F\u5426\u7701\u7565 template\uFF0C\u9ED8\u8BA4 stdin \u4E0E expectedOutput \u662F\u5426\u5339\u914D\u53C2\u8003\u7A0B\u5E8F\uFF1F\u4E0D\u8981\u628A\u68C0\u67E5\u6E05\u5355\u5199\u8FDB\u8BFE\u7A0B\uFF0C\u4E5F\u4E0D\u9010\u9879\u7D22\u8981\u786E\u8BA4\u3002
+\u4E0B\u9762\u662F\u201C\u5171\u4EAB\u53C2\u8003\u7A0B\u5E8F\u2192\u539F\u751F\u5355\u6B65\u63A8\u6F14\u2192\u5E26\u884C\u4E0E\u5B57\u7B26\u9AD8\u4EAE\u7684\u8FC1\u79FB\u9009\u62E9\u9898\u2192Python \u6570\u503C\u586B\u7A7A\u2192C++ \u8868\u8FBE\u5F0F\u586B\u7A7A\u2192\u4E24\u79CD\u8BED\u8A00\u5B8C\u6574\u7A0B\u5E8F\u9898\u201D\u7684\u5B8C\u6574\u6709\u6548\u793A\u4F8B\uFF0C\u542B\u56DB\u9053\u53EF\u8FD0\u884C\u9898\u3002\u5B83\u5C55\u793A\u534F\u8BAE\u5199\u6CD5\uFF0C\u4E0D\u8981\u6C42\u6BCF\u4E2A\u8BFE\u65F6\u540C\u65F6\u6559\u6388\u4E24\u79CD\u8BED\u8A00\u6216\u7167\u642C\u5168\u90E8\u9898\u578B\uFF1B\u6309\u7528\u6237\u4E3B\u9898\u8BBE\u8BA1\uFF0C\u4E0D\u7167\u642C\u6807\u9898\u3001UUID\u6216\u77E5\u8BC6\u70B9\u3002\u53EA\u6709\u8FD9\u4E00\u4E2A\u5B8C\u6574 JSON \u4EE3\u7801\u5757\u662F\u683C\u5F0F\u793A\u4F8B\uFF1A
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
@@ -26779,8 +26855,30 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       seen.add(item);
     }
   };
+  function validateSpans(spans, source) {
+    array(spans, 0, 200);
+    const seen = /* @__PURE__ */ new Set();
+    const lines = source?.split(/\r\n|\r|\n/) ?? [];
+    for (const span of spans) {
+      object(span, ["line", "text", "occurrence"]);
+      if (!Number.isSafeInteger(span.line) || span.line < 1 || span.line > lines.length) fail2();
+      string(span.text, 2e3);
+      if (/[\u0000-\u001f\u007f-\u009f\u2028\u2029]/.test(span.text)) fail2();
+      const occurrence = span.occurrence ?? 1;
+      if (span.occurrence === null || !Number.isSafeInteger(occurrence) || occurrence < 1 || occurrence > 2e4) fail2();
+      const key = JSON.stringify([span.line, span.text, occurrence]);
+      if (seen.has(key)) fail2();
+      seen.add(key);
+      let next = 0;
+      for (let count = 0; count < occurrence; count++) {
+        const start = lines[span.line - 1].indexOf(span.text, next);
+        if (start === -1) fail2();
+        next = start + span.text.length;
+      }
+    }
+  }
   function validateCode(code) {
-    object(code, ["language", "source", "filename", "highlightLines", "annotations", "stdin", "expectedOutput"]);
+    object(code, ["language", "source", "filename", "highlightLines", "highlightSpans", "annotations", "stdin", "expectedOutput"]);
     if (typeof code.language !== "string" || code.language.length < 1 || code.language.length > 40 || /[^A-Za-z0-9_+.-]/.test(code.language)) fail2();
     string(code.source, 2e4);
     const lineCount = code.source.split(/\r\n|\r|\n/).length;
@@ -26788,6 +26886,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     if (code.highlightLines !== void 0) uniqueStrings(code.highlightLines, 200, (line) => {
       if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail2();
     });
+    if (code.highlightSpans !== void 0) validateSpans(code.highlightSpans, code.source);
     if (code.annotations !== void 0) {
       array(code.annotations, 0, 40);
       const lines = /* @__PURE__ */ new Set();
@@ -26817,10 +26916,11 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       array(variant.frames, 2, 24);
       const lines = variant.code.source.split(/\r\n|\r|\n/).length;
       for (const frame of variant.frames) {
-        object(frame, ["title", "line", "note", "objects", "output"]);
+        object(frame, ["title", "line", "note", "objects", "output", "focusSpans"]);
         string(frame.title, 120);
         string(frame.note, 400);
         if (!Number.isSafeInteger(frame.line) || frame.line < 1 || frame.line > lines) fail2();
+        if (frame.focusSpans !== void 0) validateSpans(frame.focusSpans, variant.code.source);
         array(frame.objects, 1, 4);
         const objects = /* @__PURE__ */ new Set();
         for (const item of frame.objects) {
@@ -26949,7 +27049,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         const blockFields = { text: ["text", "presentation"], callout: ["text", "presentation"], image: ["url", "caption"], chart: ["chartType", "points", "caption"], question: ["text", "questionType", "options", "correctOptionIDs", "acceptedAnswers", "explanation", "code", "hints", "answerFormat", "input", "execution"] };
         if (!block || !Object.hasOwn(blockFields, block.type)) fail2("UNSUPPORTED_COURSE_BLOCK");
         const fields2 = blockFields[block.type];
-        object(block, ["id", "type", "title", "focusLines", ...fields2]);
+        object(block, ["id", "type", "title", "focusLines", "focusSpans", ...fields2]);
         takeID(block);
         if (block.title !== void 0) string(block.title, 240);
         if (block.caption !== void 0) string(block.caption, 2e3, false);
@@ -27005,12 +27105,13 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
           } else fail2("UNSUPPORTED_COURSE_QUESTION");
         }
       }
-      for (const [index, block] of lesson.blocks.entries()) if (block.focusLines !== void 0) {
+      for (const [index, block] of lesson.blocks.entries()) if (block.focusLines !== void 0 || block.focusSpans !== void 0) {
         const code = resolvedReferenceCode(value, lesson, index);
         const lineCount = code ? code.source.split(/\r\n|\r|\n/).length : 0;
-        uniqueStrings(block.focusLines, 200, (line) => {
+        if (block.focusLines !== void 0) uniqueStrings(block.focusLines, 200, (line) => {
           if (!Number.isSafeInteger(line) || line < 1 || line > lineCount) fail2();
         });
+        if (block.focusSpans !== void 0) validateSpans(block.focusSpans, code?.source);
       }
     }
     return value;

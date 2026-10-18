@@ -1089,6 +1089,8 @@ test('course generation prompts prioritize a compact native trace and self-check
       assert.match(prompt, /不能把代码文本匹配当作通用代码判分/);
       assert.match(prompt, /始终保留一块可见的代码区/);
       assert.match(prompt, /referenceCode/); assert.match(prompt, /focusLines/);
+      assert.match(prompt, /focusSpans/); assert.match(prompt, /highlightSpans/);
+      assert.match(prompt, /互不重叠的出现次数/); assert.match(prompt, /不必把整行涂亮/);
       assert.doesNotMatch(prompt, /完整代码按需展开|前两个实质课时内安排至少一个|每个实验必须落到.*kind:"html"/);
       const fences = [...prompt.matchAll(/```json\n([\s\S]+?)\n```/g)];
       assert.equal(fences.length, 1, 'each workflow includes one complete JSON example');
@@ -1110,7 +1112,10 @@ test('course generation prompts prioritize a compact native trace and self-check
     assert.ok(runnable.filter(block => block.input.kind === 'code').every(block => block.input.language === block.execution.language && block.acceptedAnswers === undefined));
     const variant = blocks[0].presentation.trace.variants[0];
     assert.deepEqual(downloaded.lessons[0].referenceCode, variant.code);
-    assert.deepEqual(blocks[1].focusLines, [4]);
+    assert.equal(blocks[1].focusLines, undefined, 'precise focus does not require whole-line highlighting');
+    assert.deepEqual(blocks[1].focusSpans, [{ line: 4, text: 'count', occurrence: 2 }, { line: 4, text: '+' }]);
+    assert.deepEqual(variant.frames[1].focusSpans, blocks[1].focusSpans);
+    assert.equal(variant.frames[2].focusSpans, undefined, 'frames retain a line-only fallback');
     assert.ok(runnable.every(block => block.focusLines.length > 0));
     assert.ok(runnable.filter(block => !block.execution.template).every(block => block.code.source === block.input.starterCode));
     assert.match(variant.code.source, /#include <iostream>/);
@@ -1656,6 +1661,10 @@ test('course structured extensions round-trip C++ data and expose a static stric
     assert.equal(schema.properties.referenceCode.$ref, '#/$defs/code');
     assert.equal(schema.$defs.focusLines.maxItems, 200); assert.equal(schema.$defs.focusLines.uniqueItems, true);
     assert.equal(schema.$defs.textBlock.properties.focusLines.$ref, '#/$defs/focusLines');
+    assert.equal(schema.$defs.code.properties.highlightSpans.$ref, '#/$defs/codeSpans');
+    assert.equal(schema.$defs.textBlock.properties.focusSpans.$ref, '#/$defs/codeSpans');
+    assert.equal(schema.$defs.traceFrame.properties.focusSpans.$ref, '#/$defs/codeSpans');
+    assert.equal(schema.$defs.codeSpans.maxItems, 200); assert.equal(schema.$defs.codeSpan.properties.occurrence.default, 1);
     assert.equal(schema.$defs.code.properties.source.maxLength, 20000);
     const languagePattern = new RegExp(schema.$defs.code.properties.language.pattern);
     assert.match('c++', languagePattern); assert.doesNotMatch('cpp\n', languagePattern); assert.doesNotMatch('cpp\r', languagePattern);

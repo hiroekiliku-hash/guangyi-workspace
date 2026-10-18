@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://workspace.kdfz.com.cn/api/integrations/v1/courses/schema",
   "title": "WORKSHOP-COURSE/1 with structured-2 teaching traces, persistent source and typed executable questions",
-  "description": "A curriculum data contract with persistent course/lesson reference code, line-focused blocks, native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
+  "description": "A curriculum data contract with persistent course/lesson reference code, line- and literal-span-focused blocks, native teaching traces and typed question inputs. Source is displayed as data unless a short-answer question explicitly configures execution. HTML/SVG presentations remain in the isolated offline client sandbox; publication and progress storage do not execute source.",
   "$comment": "MaxLengths are additionally enforced in UTF-16 code units by the server and Swift client. JSON Schema counts Unicode code points. The API also enforces the 1 MiB UTF-8 document limit, global case-insensitive UUID uniqueness, code line references, table row widths and option references. Question maxLines >= minLines and matching explicit input/execution languages are checked by the server and Swift client.",
   "x-workshop-extensionVersion": "structured-2",
   "type": "object",
@@ -117,6 +117,9 @@
           "maxLength": 8000,
           "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
           "x-workshop-maxUTF16Length": 8000
+        },
+        "highlightSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -522,6 +525,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -569,6 +575,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -625,6 +634,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -677,6 +689,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -772,6 +787,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -894,6 +912,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -1222,6 +1243,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -1551,6 +1575,9 @@
         },
         "focusLines": {
           "$ref": "#/$defs/focusLines"
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -2056,6 +2083,9 @@
           "maxLength": 2000,
           "pattern": "^[^\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f]*$",
           "x-workshop-maxUTF16Length": 2000
+        },
+        "focusSpans": {
+          "$ref": "#/$defs/codeSpans"
         }
       },
       "required": [
@@ -2256,7 +2286,51 @@
       "minItems": 0,
       "maxItems": 200,
       "uniqueItems": true,
-      "$comment": "Nonempty lines must fit the effective visible source: current block.code, presentation.code, trace first variant.code, execution.template, lesson.referenceCode, course.referenceCode, closest preceding code-bearing block, or first following code-bearing block within the same lesson. The server/client check source bounds; an empty array may clear highlighting without code. Active trace frame.line takes precedence at runtime."
+      "$comment": "Nonempty lines must fit the effective visible source: current block.code, presentation.code, trace first variant.code, execution.template, lesson.referenceCode, course.referenceCode, closest preceding code-bearing block, or first following code-bearing block within the same lesson. The server/client check source bounds; an empty array may clear highlighting without code. Supplying block.focusLines or block.focusSpans replaces both source default highlights, treating the omitted other field as empty. Neither field inherits highlights from a neighboring legacy source. Nonempty active trace frame.focusSpans take precedence at runtime, otherwise frame.line is highlighted."
+    },
+    "codeSpan": {
+      "type": "object",
+      "properties": {
+        "line": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20001
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 2000,
+          "x-workshop-maxUTF16Length": 2000,
+          "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f\\u2028\\u2029]*$",
+          "allOf": [
+            {
+              "pattern": "\\S"
+            }
+          ]
+        },
+        "occurrence": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 20000,
+          "default": 1
+        }
+      },
+      "required": [
+        "line",
+        "text"
+      ],
+      "additionalProperties": false,
+      "$comment": "Exact case-sensitive literal text; no Unicode normalization or regular expressions. occurrence counts left-to-right non-overlapping matches on one CRLF/CR/LF-normalized line and defaults to 1. The selected occurrence must exist in the effective code source."
+    },
+    "codeSpans": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/codeSpan"
+      },
+      "minItems": 0,
+      "maxItems": 200,
+      "uniqueItems": true,
+      "$comment": "The API additionally rejects duplicate line/text/(occurrence or 1) tuples, so omitted occurrence and explicit 1 are equivalent. Different spans may overlap and render as their union. Empty arrays are allowed without a code context. Code.highlightSpans reference own source; block.focusSpans use the effective visible source; trace frame.focusSpans reference its variant source. Nonempty frame spans replace frame.line highlighting; omitted/empty spans use frame.line."
     }
   }
 }

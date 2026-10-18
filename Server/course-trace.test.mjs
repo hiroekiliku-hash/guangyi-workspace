@@ -111,3 +111,53 @@ test('focus lines reject invalid values and out-of-bounds effective sources with
     assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM courses').get().n, 0, 'invalid focus never publishes partial documents');
   } finally { h.db.close(); }
 });
+test('literal code spans retain Unicode, repeated occurrences and overlaps in shared source and trace frames', async () => {
+  const h = harness();
+  const source = 'count = count + 1;\r\n变量 = "😀";\rtext = "a+b";\nprint("aaaa");';
+  const spans = [{ line: 1, text: 'count', occurrence: 2 }, { line: 1, text: '+' }, { line: 1, text: 'count + 1' },
+    { line: 2, text: '变量' }, { line: 2, text: '😀' }, { line: 3, text: 'a+b' }, { line: 4, text: 'aa', occurrence: 2 }];
+  try {
+    const created = await h.publish(undefined, d => {
+      d.referenceCode = { language: 'python', source, highlightSpans: spans };
+      d.lessons[0].blocks[0].focusSpans = spans;
+    });
+    assert.equal(created.status, 201);
+    let saved = JSON.parse(h.db.prepare('SELECT document FROM courses ORDER BY rowid DESC LIMIT 1').get().document);
+    assert.equal(saved.referenceCode.source, source);
+    assert.deepEqual(saved.referenceCode.highlightSpans, spans);
+    assert.deepEqual(saved.lessons[0].blocks[0].focusSpans, spans);
+    const value = trace(); value.variants[0].frames[0].focusSpans = [{ line: 1, text: '=' }]; value.variants[0].frames[1].focusSpans = [];
+    assert.equal((await h.publish({ kind: 'trace', trace: value })).status, 201);
+    saved = JSON.parse(h.db.prepare('SELECT document FROM courses ORDER BY rowid DESC LIMIT 1').get().document);
+    assert.deepEqual(saved.lessons[0].blocks[0].presentation.trace, value);
+    assert.equal((await h.publish(undefined, d => { d.lessons[0].blocks[0].focusSpans = []; })).status, 201, 'empty block spans clear focus without a code context');
+    const boundary = Array.from({ length: 200 }, (_, i) => ({ line: 1, text: 'x', occurrence: i + 1 }));
+    assert.equal((await h.publish(undefined, d => { d.referenceCode = { language: 'text', source: 'x'.repeat(200), highlightSpans: boundary }; })).status, 201);
+    assert.equal((await h.publish(undefined, d => { d.referenceCode = { language: 'text', source: '😀'.repeat(1000), highlightSpans: [{ line: 1, text: '😀'.repeat(1000) }] }; })).status, 201);
+  } finally { h.db.close(); }
+});
+test('literal code spans reject unmatched text, ambiguous duplicates, invalid bounds and wrong source contexts', async () => {
+  const h = harness();
+  const code = { language: 'cpp', source: 'count = count + 1;\naaa\né' };
+  const bad = [null, {}, Array(201).fill({ line: 1, text: 'count' }),
+    [null], [{ line: 1, text: 'count', extra: true }], [{ text: 'count' }], [{ line: 1 }],
+    ...[0, true, 1.5, '1', 4].map(line => [{ line, text: 'count' }]),
+    ...['', ' ', '\t', '\n', '\r', '\u0000', '\u007f', '\u0085', '\u2028', '\u2029', '😀'.repeat(1001), 'COUNT', 'not there', 'count.*', 'count + 1;\naaa'].map(text => [{ line: 1, text }]),
+    ...[0, null, true, 1.5, '1', 20001, 3].map(occurrence => [{ line: 1, text: 'count', occurrence }]),
+    [{ line: 1, text: 'count' }, { line: 1, text: 'count', occurrence: 1 }],
+    [{ line: 2, text: 'aa', occurrence: 2 }], [{ line: 3, text: 'e\u0301' }]
+  ];
+  try {
+    for (const [index, spans] of bad.entries()) {
+      assert.equal((await h.publish(undefined, d => { d.referenceCode = { ...code, highlightSpans: spans }; })).status, 422, 'invalid source span ' + index);
+      assert.equal((await h.publish(undefined, d => { d.referenceCode = code; d.lessons[0].blocks[0].focusSpans = spans; })).status, 422, 'invalid block span ' + index);
+    }
+    for (const configure of [
+      d => { d.lessons[0].blocks[0].focusSpans = [{ line: 1, text: 'count' }]; },
+      d => { d.referenceCode = code; d.lessons[0].referenceCode = { language: 'python', source: 'other = 1' }; d.lessons[0].blocks[0].focusSpans = [{ line: 1, text: 'count' }]; },
+      d => { d.referenceCode = code; d.lessons[0].blocks = [{ id: randomUUID(), type: 'question', text: '填写整数。', questionType: 'shortAnswer', input: { kind: 'integer' }, execution: { language: 'python', template: 'print({{ANSWER}})' }, focusSpans: [{ line: 1, text: 'count' }] }]; },
+      d => { d.referenceCode = code; const t = trace(); t.variants[0].frames[0].focusSpans = [{ line: 1, text: 'count' }]; d.lessons[0].blocks[0].presentation = { kind: 'trace', trace: t }; }
+    ]) assert.equal((await h.publish(undefined, configure)).status, 422, 'span resolves against actual current program');
+    assert.equal(h.db.prepare('SELECT COUNT(*) AS n FROM courses').get().n, 0, 'invalid spans cannot publish partial courses');
+  } finally { h.db.close(); }
+});
