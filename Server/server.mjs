@@ -16166,7 +16166,7 @@ var require_x509_cjs = __commonJS({
       }
       toJSON() {
         var _a2;
-        const json = [];
+        const json2 = [];
         for (const rdn of this.asn) {
           const jsonItem = {};
           for (const attr of rdn) {
@@ -16174,9 +16174,9 @@ var require_x509_cjs = __commonJS({
             (_a2 = jsonItem[type]) !== null && _a2 !== void 0 ? _a2 : jsonItem[type] = [];
             jsonItem[type].push(attr.value.anyValue ? `#${pvtsutils.Convert.ToHex(attr.value.anyValue)}` : attr.value.toString());
           }
-          json.push(jsonItem);
+          json2.push(jsonItem);
         }
-        return json;
+        return json2;
       }
       fromString(data) {
         const asn = new asn1X509.Name();
@@ -24276,6 +24276,1445 @@ function webAsset(path) {
 // Server/courses.mjs
 import { randomBytes, randomUUID, createHash } from "node:crypto";
 
+// Server/AppContent/demo-course.json
+var demo_course_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "demo-course",
+  kind: "course",
+  version: 3,
+  minimumContentVersion: 1,
+  payload: {
+    id: "8343F80B-F43C-4901-B585-A67647EA9700",
+    lessons: [
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0100",
+            text: "\u5148\u8BB0\u5F55\u8981\u505A\u7684\u4E8B\uFF0C\u518D\u9009\u62E9\u771F\u6B63\u91CD\u8981\u7684\u4E8B\u3002\u4E3A\u6BCF\u9879\u4EFB\u52A1\u4FDD\u7559\u5408\u7406\u7684\u65F6\u95F4\uFF0C\u4E5F\u7ED9\u81EA\u5DF1\u7559\u4E00\u70B9\u7A7A\u767D\u3002",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0101",
+            text: "\u8BD5\u4E00\u8BD5\uFF1A\u9009\u51FA\u4ECA\u5929\u6700\u91CD\u8981\u7684\u4E00\u4EF6\u4E8B\uFF0C\u4E3A\u5B83\u5B89\u6392\u4E00\u4E2A\u4E0D\u88AB\u6253\u6270\u7684\u65F6\u6BB5\u3002",
+            type: "callout"
+          },
+          {
+            caption: "\u793A\u4F8B\uFF1A\u4E00\u5929\u7684\u65F6\u95F4\u5206\u914D\uFF08\u5C0F\u65F6\uFF09",
+            chartType: "bar",
+            id: "8343F80B-F43C-4901-B585-A67647EA0102",
+            points: [
+              {
+                label: "\u5B66\u4E60",
+                value: 5
+              },
+              {
+                label: "\u8FD0\u52A8",
+                value: 1
+              },
+              {
+                label: "\u4F11\u606F",
+                value: 8
+              },
+              {
+                label: "\u5176\u4ED6",
+                value: 10
+              }
+            ],
+            type: "chart"
+          },
+          {
+            correctOptionIDs: [
+              "a"
+            ],
+            explanation: "\u5148\u786E\u5B9A\u91CD\u70B9\uFF0C\u518D\u4E3A\u4EFB\u52A1\u7559\u51FA\u7F13\u51B2\u3002",
+            id: "8343F80B-F43C-4901-B585-A67647EA0103",
+            options: [
+              {
+                id: "a",
+                text: "\u5148\u6311\u9009\u6700\u91CD\u8981\u7684\u4EFB\u52A1"
+              },
+              {
+                id: "b",
+                text: "\u628A\u6240\u6709\u65F6\u95F4\u90FD\u6392\u6EE1"
+              }
+            ],
+            questionType: "singleChoice",
+            text: "\u54EA\u4E00\u79CD\u5B89\u6392\u66F4\u9002\u5408\u5F00\u59CB\u4ECA\u5929\uFF1F",
+            type: "question"
+          }
+        ],
+        id: "8343F80B-F43C-4901-B585-A67647EA9701",
+        title: "\u628A\u4E00\u5929\u5B89\u6392\u5F97\u66F4\u4ECE\u5BB9"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0200",
+            text: "\u590D\u76D8\u7684\u76EE\u7684\uFF0C\u662F\u627E\u5230\u9002\u5408\u81EA\u5DF1\u7684\u8282\u594F\u3002\u6BCF\u5929\u8BB0\u5F55\u4E00\u70B9\u8FDB\u5C55\uFF0C\u6301\u7EED\u6BD4\u5B8C\u7F8E\u66F4\u91CD\u8981\u3002",
+            type: "text"
+          },
+          {
+            caption: "\u793A\u4F8B\uFF1A\u4E00\u5468\u7684\u4E13\u6CE8\u65F6\u957F\uFF08\u5206\u949F\uFF09",
+            chartType: "line",
+            id: "8343F80B-F43C-4901-B585-A67647EA0201",
+            points: [
+              {
+                label: "\u5468\u4E00",
+                value: 35
+              },
+              {
+                label: "\u5468\u4E8C",
+                value: 45
+              },
+              {
+                label: "\u5468\u4E09",
+                value: 40
+              },
+              {
+                label: "\u5468\u56DB",
+                value: 55
+              }
+            ],
+            type: "chart"
+          },
+          {
+            correctOptionIDs: [
+              "a",
+              "b"
+            ],
+            explanation: "\u7559\u51FA\u4F11\u606F\u548C\u8C03\u6574\u7684\u7A7A\u95F4\uFF0C\u8BA1\u5212\u624D\u80FD\u6301\u7EED\u3002",
+            id: "8343F80B-F43C-4901-B585-A67647EA0202",
+            options: [
+              {
+                id: "a",
+                text: "\u5B89\u6392\u4F11\u606F"
+              },
+              {
+                id: "b",
+                text: "\u5B9A\u671F\u590D\u76D8"
+              },
+              {
+                id: "c",
+                text: "\u6C38\u8FDC\u4E0D\u5141\u8BB8\u8BA1\u5212\u53D8\u5316"
+              }
+            ],
+            questionType: "multipleChoice",
+            text: "\u54EA\u4E9B\u4E60\u60EF\u6709\u52A9\u4E8E\u4FDD\u6301\u8282\u594F\uFF1F",
+            type: "question"
+          },
+          {
+            explanation: "\u8FD9\u9053\u9898\u6CA1\u6709\u6807\u51C6\u7B54\u6848\u3002\u5199\u4E0B\u81EA\u5DF1\u7684\u60F3\u6CD5\uFF0C\u5C31\u8FC8\u51FA\u4E86\u7B2C\u4E00\u6B65\u3002",
+            id: "8343F80B-F43C-4901-B585-A67647EA0203",
+            input: {
+              kind: "text",
+              maxLines: 5,
+              minLines: 2,
+              placeholder: "\u4F8B\u5982\uFF1A\u8BFB\u5B8C\u4E00\u7AE0\uFF0C\u6216\u6574\u7406\u4ECA\u5929\u7684\u7B14\u8BB0"
+            },
+            questionType: "shortAnswer",
+            text: "\u5199\u4E0B\u4E00\u4EF6\u4ECA\u5929\u60F3\u5B8C\u6210\u7684\u5C0F\u4E8B\u3002",
+            type: "question"
+          }
+        ],
+        id: "8343F80B-F43C-4901-B585-A67647EA9702",
+        title: "\u5EFA\u7ACB\u81EA\u5DF1\u7684\u8282\u594F"
+      },
+      {
+        blocks: [
+          {
+            focusLines: [
+              4,
+              5
+            ],
+            focusSpans: [
+              {
+                line: 4,
+                text: "count"
+              },
+              {
+                line: 5,
+                text: "++"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0300",
+            presentation: {
+              kind: "markdown",
+              markdown: {
+                source: "## \u8BA9\u53D8\u91CF\u589E\u52A0\u4E00\u6B21\n`++count` \u4F1A\u628A\u53D8\u91CF\u7684\u503C\u52A0\u4E0A **1**\u3002\u5148\u9884\u6D4B\u8F93\u51FA\uFF0C\u518D\u70B9\u51FB\u4E0B\u65B9\u6F14\u793A\u9A8C\u8BC1\u3002\n\n```cpp\n#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count; // \u8F93\u51FA 1\n}\n```\n\u6BCF\u6B21\u6267\u884C\u9012\u589E\u8BED\u53E5\uFF0C\u90FD\u662F\u5728\u539F\u6765\u7684\u503C\u4E0A\u518D\u52A0\u4E00\u3002"
+              }
+            },
+            text: "\u6574\u6570\u53D8\u91CF count \u4ECE 0 \u5F00\u59CB\u3002\u6267\u884C ++count \u540E\u53D8\u6210 1\uFF0Cstd::cout \u4F1A\u8F93\u51FA 1\u3002",
+            title: "\u4ECE\u4E00\u884C\u4EE3\u7801\u5F00\u59CB",
+            type: "text"
+          },
+          {
+            focusLines: [
+              4,
+              5
+            ],
+            focusSpans: [
+              {
+                line: 4,
+                text: "0"
+              },
+              {
+                line: 5,
+                text: "count"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0301",
+            presentation: {
+              kind: "svg",
+              svg: {
+                height: 200,
+                source: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-label="count \u4ECE 0 \u589E\u52A0\u5230 1">\n  <style>text{font-family:system-ui,sans-serif;fill:#24372f}.box{fill:#e7efe8;stroke:#548467;stroke-width:2}.arrow{stroke:#548467;stroke-width:3;fill:none}</style>\n  <rect class="box" x="15" y="35" width="105" height="105" rx="18"/>\n  <text x="67" y="65" text-anchor="middle" font-size="16">count</text><text x="67" y="114" text-anchor="middle" font-size="42">0</text>\n  <path class="arrow" d="M135 90H220M210 80L220 90L210 100"/>\n  <text x="177" y="66" text-anchor="middle" font-size="16">++count</text>\n  <rect class="box" x="240" y="35" width="105" height="105" rx="18"/>\n  <text x="292" y="65" text-anchor="middle" font-size="16">count</text><text x="292" y="114" text-anchor="middle" font-size="42">1</text>\n</svg>'
+              }
+            },
+            text: "\u53D8\u91CF count \u53EF\u4EE5\u770B\u6210\u4E00\u4E2A\u6709\u540D\u79F0\u7684\u76D2\u5B50\u3002\u521D\u59CB\u76D2\u5B50\u91CC\u662F 0\uFF0C\u6267\u884C ++count \u540E\uFF0C\u76D2\u5B50\u91CC\u7684\u503C\u53D8\u6210 1\u3002",
+            title: "\u53D8\u91CF\u5982\u4F55\u53D8\u5316",
+            type: "text"
+          },
+          {
+            focusLines: [
+              5
+            ],
+            focusSpans: [
+              {
+                line: 5,
+                text: "++count"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0302",
+            presentation: {
+              html: {
+                height: 280,
+                source: `<!doctype html><html lang="zh-CN"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
+:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:20px;font:16px system-ui,sans-serif;color:light-dark(#24372f,#e5eee7);background:transparent}
+.demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}
+.actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}
+@media(prefers-reduced-motion:reduce){.value{transition:none}}
+</style></head><body><section class="demo" aria-label="\u53D8\u91CF\u9012\u589E\u6F14\u793A"><code>int count = <output id="inline">0</output>;</code><output id="value" class="value" aria-live="polite">0</output><div class="actions"><button id="increment">\u6267\u884C ++count</button><button id="reset" class="secondary">\u91CD\u7F6E</button></div><label><input type="checkbox" id="reduce">\u51CF\u5C11\u52A8\u6001</label></section><script>
+(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function show(){value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,9999);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()})})();
+</script></body></html>`
+              },
+              kind: "html"
+            },
+            text: "\u4E92\u52A8\u793A\u4F8B\u4ECE count = 0 \u5F00\u59CB\u3002\u70B9\u51FB\u6267\u884C ++count\uFF0C\u503C\u589E\u52A0 1\uFF1B\u70B9\u51FB\u91CD\u7F6E\uFF0C\u503C\u56DE\u5230 0\u3002\u5F00\u542F\u51CF\u5C11\u52A8\u6001\u540E\uFF0C\u6570\u5B57\u53D8\u5316\u4E0D\u4F7F\u7528\u7F29\u653E\u52A8\u753B\u3002",
+            title: "\u4EB2\u624B\u8FD0\u884C\u4E00\u6B21",
+            type: "callout"
+          }
+        ],
+        estimatedMinutes: 5,
+        id: "8343F80B-F43C-4901-B585-A67647EA9703",
+        objectives: [
+          "\u8BFB\u61C2\u4E00\u4E2A\u5B8C\u6574\u7684 C++ \u9012\u589E\u793A\u4F8B\u3002",
+          "\u7528\u793A\u610F\u56FE\u548C\u4EA4\u4E92\u89C2\u5BDF\u53D8\u91CF\u53D8\u5316\u3002"
+        ],
+        referenceCode: {
+          annotations: [
+            {
+              line: 5,
+              text: "\u524D\u7F6E\u9012\u589E\uFF1A\u5148\u628A count \u589E\u52A0 1\u3002"
+            }
+          ],
+          expectedOutput: "1",
+          filename: "counter.cpp",
+          highlightLines: [
+            5
+          ],
+          highlightSpans: [
+            {
+              line: 5,
+              text: "++"
+            }
+          ],
+          language: "cpp",
+          source: "#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count;\n}"
+        },
+        title: "\u4EE3\u7801\u4E0E\u4E92\u52A8\u6F14\u793A"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0400",
+            presentation: {
+              code: {
+                annotations: [
+                  {
+                    line: 3,
+                    text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
+                  }
+                ],
+                expectedOutput: "6",
+                filename: "sum.js",
+                highlightLines: [
+                  3
+                ],
+                highlightSpans: [
+                  {
+                    line: 3,
+                    occurrence: 2,
+                    text: "total"
+                  }
+                ],
+                language: "javascript",
+                source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+              },
+              kind: "code"
+            },
+            text: "\u8FD9\u6BB5\u7A0B\u5E8F\u628A 1\u30012\u30013 \u4F9D\u6B21\u52A0\u8FDB total\u3002\u5B8C\u6574\u7A0B\u5E8F\u4F1A\u4E00\u76F4\u4FDD\u7559\u5728\u4E0A\u65B9\uFF1B\u84DD\u8272\u6807\u8BB0\u4F1A\u8DDF\u968F\u8BB2\u89E3\uFF0C\u7CBE\u786E\u5230\u53D8\u91CF\u6216\u8FD0\u7B97\u7B26\u3002",
+            title: "\u5B8C\u6574\u7A0B\u5E8F\u968F\u65F6\u53EF\u770B",
+            type: "text"
+          },
+          {
+            focusLines: [
+              3
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                occurrence: 2,
+                text: "total"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0401",
+            text: "total = total + i \u53F3\u4FA7\u5148\u8BA1\u7B97\uFF0C\u5DE6\u4FA7\u540E\u63A5\u6536\u3002\u73B0\u5728\u53EA\u6807\u8BB0\u53F3\u4FA7\u7B2C\u4E8C\u6B21\u51FA\u73B0\u7684 total\uFF0C\u5B83\u8868\u793A\u7D2F\u52A0\u524D\u7684\u65E7\u503C\u3002",
+            title: "\u540C\u4E00\u4E2A\u53D8\u91CF\uFF0C\u4E24\u4E2A\u4F4D\u7F6E",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0402",
+            presentation: {
+              kind: "trace",
+              trace: {
+                variants: [
+                  {
+                    code: {
+                      annotations: [
+                        {
+                          line: 3,
+                          text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
+                        }
+                      ],
+                      expectedOutput: "6",
+                      filename: "sum.js",
+                      highlightLines: [
+                        3
+                      ],
+                      highlightSpans: [
+                        {
+                          line: 3,
+                          occurrence: 2,
+                          text: "total"
+                        }
+                      ],
+                      language: "javascript",
+                      source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+                    },
+                    frames: [
+                      {
+                        focusSpans: [
+                          {
+                            line: 1,
+                            text: "0"
+                          }
+                        ],
+                        line: 1,
+                        note: "total \u4ECE 0 \u5F00\u59CB\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            scope: "\u7A0B\u5E8F",
+                            value: "0"
+                          }
+                        ],
+                        title: "\u5148\u51C6\u5907\u4E00\u4E2A\u603B\u6570"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 2,
+                            text: "i <= 3"
+                          }
+                        ],
+                        line: 2,
+                        note: "i \u53D6 1\uFF0C\u6EE1\u8DB3 i <= 3\uFF0C\u53EF\u4EE5\u8FDB\u5165\u5FAA\u73AF\u4F53\u3002",
+                        objects: [
+                          {
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "0"
+                          },
+                          {
+                            changed: true,
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "1"
+                          }
+                        ],
+                        title: "\u7B2C\u4E00\u6B21\u5FAA\u73AF"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "total + i"
+                          }
+                        ],
+                        line: 3,
+                        note: "\u53F3\u4FA7\u7B97\u51FA 0 + 1\uFF0C\u518D\u628A\u7ED3\u679C 1 \u5199\u56DE total\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "1"
+                          },
+                          {
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "1"
+                          }
+                        ],
+                        title: "\u7B2C\u4E00\u6B21\u76F8\u52A0"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 3,
+                            occurrence: 2,
+                            text: "total"
+                          },
+                          {
+                            line: 3,
+                            text: "i"
+                          }
+                        ],
+                        line: 3,
+                        note: "i \u589E\u52A0\u5230 2\u3002\u8FD9\u4E00\u6B21\uFF0C\u65E7\u7684 total \u662F 1\uFF1B1 + 2 \u5F97\u5230 3\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "3"
+                          },
+                          {
+                            changed: true,
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "2"
+                          }
+                        ],
+                        title: "\u7B2C\u4E8C\u6B21\u76F8\u52A0"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "="
+                          }
+                        ],
+                        line: 3,
+                        note: "i \u589E\u52A0\u5230 3\uFF0Ctotal \u7531 3 + 3 \u53D8\u6210 6\u3002\u4E4B\u540E i \u53D8\u4E3A 4\uFF0C\u5FAA\u73AF\u7ED3\u675F\u3002",
+                        objects: [
+                          {
+                            changed: true,
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "6"
+                          },
+                          {
+                            changed: true,
+                            id: "i",
+                            names: [
+                              "i"
+                            ],
+                            value: "3"
+                          }
+                        ],
+                        title: "\u7B2C\u4E09\u6B21\u76F8\u52A0"
+                      },
+                      {
+                        focusSpans: [
+                          {
+                            line: 5,
+                            text: "total"
+                          }
+                        ],
+                        line: 5,
+                        note: "\u7A0B\u5E8F\u8F93\u51FA total \u7684\u6700\u7EC8\u503C 6\u3002",
+                        objects: [
+                          {
+                            id: "total",
+                            names: [
+                              "total"
+                            ],
+                            value: "6"
+                          }
+                        ],
+                        output: "6",
+                        title: "\u8F93\u51FA\u6700\u7EC8\u7ED3\u679C"
+                      }
+                    ],
+                    id: "sum",
+                    title: "\u7D2F\u52A0 1 \u5230 3"
+                  }
+                ]
+              }
+            },
+            text: "\u70B9\u51FB\u6267\u884C\u4E0B\u4E00\u6B65\uFF0C\u89C2\u5BDF i\u3001total \u4E0E\u8F93\u51FA\u5982\u4F55\u53D8\u5316\uFF1B\u4E5F\u53EF\u4EE5\u9000\u56DE\u4E0A\u4E00\u5E27\u5BF9\u7167\u3002",
+            title: "\u4E00\u6B65\u4E00\u6B65\u89C2\u5BDF",
+            type: "text"
+          },
+          {
+            acceptedAnswers: [
+              "6"
+            ],
+            explanation: "0 + 1 + 2 + 3 = 6\u3002\u8F93\u5165\u540E\u70B9\u7EE7\u7EED\uFF0C\u4E5F\u4F1A\u5148\u68C0\u67E5\u8FD9\u9053\u9898\u3002",
+            focusLines: [
+              5
+            ],
+            focusSpans: [
+              {
+                line: 5,
+                text: "total"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0403",
+            input: {
+              kind: "integer",
+              maxLines: 3,
+              minLines: 2,
+              placeholder: "\u6700\u7EC8\u7684 total"
+            },
+            questionType: "shortAnswer",
+            text: "\u56DE\u770B\u4E0A\u65B9\u7A0B\u5E8F\uFF1A\u5FAA\u73AF\u7ED3\u675F\u540E\uFF0Ctotal \u7684\u503C\u662F\u591A\u5C11\uFF1F\u53EA\u8F93\u5165\u4E00\u4E2A\u6574\u6570\u3002",
+            type: "question"
+          }
+        ],
+        estimatedMinutes: 4,
+        id: "8343F80B-F43C-4901-B585-A67647EA9704",
+        objectives: [
+          "\u8BA9\u5B8C\u6574\u7A0B\u5E8F\u4E0E\u5F53\u524D\u8BB2\u89E3\u4FDD\u6301\u5BF9\u5E94\u3002",
+          "\u6309\u53D8\u91CF\u3001\u8868\u8FBE\u5F0F\u548C\u884C\u53F7\u89C2\u5BDF\u72B6\u6001\u53D8\u5316\u3002"
+        ],
+        referenceCode: {
+          annotations: [
+            {
+              line: 3,
+              text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
+            }
+          ],
+          expectedOutput: "6",
+          filename: "sum.js",
+          highlightLines: [
+            3
+          ],
+          highlightSpans: [
+            {
+              line: 3,
+              occurrence: 2,
+              text: "total"
+            }
+          ],
+          language: "javascript",
+          source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
+        },
+        title: "\u770B\u7740\u7A0B\u5E8F\uFF0C\u9010\u6B65\u63A8\u6F14"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0500",
+            text: "\u8FD9\u91CC\u7684\u7EC3\u4E60\u53EF\u4EE5\u76F4\u63A5\u5728\u672C\u673A\u8FD0\u884C\u3002\u6570\u5B57\u9898\u4F7F\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u7A0B\u5E8F\u9898\u4F7F\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u586B\u5199\u7B54\u6848\u540E\uFF0C\u53EF\u70B9\u8FD0\u884C\u4EE3\u7801\uFF0C\u4E5F\u53EF\u70B9\u5E95\u90E8\u7EE7\u7EED\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
+            title: "\u4ECE\u8F93\u5165\u5230\u7ED3\u679C",
+            type: "callout"
+          },
+          {
+            acceptedAnswers: [
+              "4"
+            ],
+            execution: {
+              expectedOutput: "1\n2\n3",
+              language: "javascript",
+              template: "for (let i = 1; i < {{ANSWER}}; i++) {\n    console.log(i);\n}"
+            },
+            explanation: "\u6761\u4EF6\u662F i < 4\uFF0C\u6240\u4EE5\u5FAA\u73AF\u4F53\u4F1A\u6267\u884C i = 1\u30012\u30013\u3002",
+            focusLines: [
+              1
+            ],
+            focusSpans: [
+              {
+                line: 1,
+                text: "{{ANSWER}}"
+              }
+            ],
+            hints: [
+              "\u6CE8\u610F\u6761\u4EF6\u4E2D\u7684 < \u4E0D\u5305\u542B\u53F3\u4FA7\u7684\u6570\u3002"
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0501",
+            input: {
+              kind: "integer",
+              maxLines: 3,
+              minLines: 2,
+              placeholder: "\u586B\u5165\u7ED3\u675F\u503C"
+            },
+            questionType: "shortAnswer",
+            text: "\u8865\u5168\u5FAA\u73AF\u7684\u7ED3\u675F\u503C\uFF0C\u4F7F\u7A0B\u5E8F\u4F9D\u6B21\u8F93\u51FA 1\u30012\u30013\u3002\u53EA\u586B\u4E00\u4E2A\u6574\u6570\u3002",
+            title: "\u6574\u6570\u586B\u7A7A",
+            type: "question"
+          },
+          {
+            acceptedAnswers: [
+              "0.5"
+            ],
+            execution: {
+              expectedOutput: "1",
+              language: "javascript",
+              template: "console.log(2 * ({{ANSWER}}));"
+            },
+            explanation: "2 \xD7 0.5 = 1\uFF1B\u8BD5\u7740\u8FD0\u884C\uFF0C\u770B\u770B\u5B9E\u9645\u8F93\u51FA\u3002",
+            focusLines: [
+              1
+            ],
+            focusSpans: [
+              {
+                line: 1,
+                text: "{{ANSWER}}"
+              }
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0502",
+            input: {
+              kind: "decimal",
+              maxLines: 3,
+              minLines: 2,
+              placeholder: "\u4F8B\u5982 0.5"
+            },
+            questionType: "shortAnswer",
+            text: "\u4E00\u6761\u7EF3\u5B50\u957F 2 \u7C73\uFF0C\u53D6\u5B83\u7684\u591A\u5C11\u500D\u6070\u597D\u662F 1 \u7C73\uFF1F\u586B\u4E00\u4E2A\u5C0F\u6570\uFF0C\u8BA9\u7A0B\u5E8F\u8F93\u51FA 1\u3002",
+            title: "\u5C0F\u6570\u8F93\u5165",
+            type: "question"
+          },
+          {
+            answerFormat: "code",
+            code: {
+              annotations: [
+                {
+                  line: 2,
+                  text: "\u8FD9\u91CC\u4ECD\u8FD4\u56DE\u539F\u6570\uFF0C\u8BF7\u5728\u4E0B\u9762\u7684\u7F16\u8F91\u5668\u4E2D\u6539\u6210\u8FD4\u56DE\u4E24\u500D\u3002"
+                }
+              ],
+              expectedOutput: "6",
+              filename: "double.js",
+              highlightLines: [
+                2
+              ],
+              highlightSpans: [
+                {
+                  line: 2,
+                  text: "value"
+                }
+              ],
+              language: "javascript",
+              source: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
+              stdin: "3"
+            },
+            execution: {
+              expectedOutput: "6",
+              language: "javascript",
+              stdin: "3"
+            },
+            explanation: "\u628A return value \u6539\u6210 return value * 2\uFF0C\u518D\u8FD0\u884C\u68C0\u67E5\u7ED3\u679C\u3002",
+            hints: [
+              "\u4FDD\u7559\u51FD\u6570\u540D double \u548C\u53C2\u6570 value\u3002",
+              "return \u540E\u5199 value * 2\u3002"
+            ],
+            id: "8343F80B-F43C-4901-B585-A67647EA0503",
+            input: {
+              kind: "code",
+              language: "javascript",
+              maxLines: 12,
+              minLines: 5,
+              placeholder: "\u8865\u5168 double \u51FD\u6570",
+              starterCode: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));"
+            },
+            questionType: "shortAnswer",
+            text: "\u4FEE\u6539 double \u51FD\u6570\uFF0C\u8BA9\u5B83\u8FD4\u56DE\u53C2\u6570\u7684\u4E24\u500D\u3002\u9ED8\u8BA4\u7A0B\u5E8F\u8F93\u5165\u662F 3\uFF0C\u8FD0\u884C\u540E\u5E94\u8F93\u51FA 6\u3002\u4E5F\u53EF\u4EE5\u5C55\u5F00\u7A0B\u5E8F\u8F93\u5165\uFF0C\u6362\u4E2A\u6570\u518D\u8BD5\u3002",
+            title: "\u5728\u4EE3\u7801\u7F16\u8F91\u5668\u4E2D\u5B8C\u6210\u51FD\u6570",
+            type: "question"
+          }
+        ],
+        estimatedMinutes: 5,
+        id: "8343F80B-F43C-4901-B585-A67647EA9705",
+        objectives: [
+          "\u4F53\u9A8C\u9002\u914D\u6574\u6570\u3001\u5C0F\u6570\u4E0E\u6E90\u7801\u7684\u8F93\u5165\u65B9\u5F0F\u3002",
+          "\u4FEE\u6539\u6E90\u7801\u548C\u7A0B\u5E8F\u8F93\u5165\uFF0C\u68C0\u67E5\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\u3002"
+        ],
+        referenceCode: {
+          annotations: [
+            {
+              line: 2,
+              text: "\u8FD9\u91CC\u4ECD\u8FD4\u56DE\u539F\u6570\uFF0C\u8BF7\u5728\u4E0B\u9762\u7684\u7F16\u8F91\u5668\u4E2D\u6539\u6210\u8FD4\u56DE\u4E24\u500D\u3002"
+            }
+          ],
+          expectedOutput: "6",
+          filename: "double.js",
+          highlightLines: [
+            2
+          ],
+          highlightSpans: [
+            {
+              line: 2,
+              text: "value"
+            }
+          ],
+          language: "javascript",
+          source: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
+          stdin: "3"
+        },
+        title: "\u586B\u6570\u5B57\uFF0C\u5199\u4EE3\u7801\uFF0C\u771F\u6B63\u8FD0\u884C"
+      },
+      {
+        blocks: [
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0600",
+            presentation: {
+              kind: "table",
+              table: {
+                columns: [
+                  "\u8F6E\u6B21",
+                  "i",
+                  "total"
+                ],
+                rows: [
+                  [
+                    "\u5F00\u59CB",
+                    "\u2014",
+                    "0"
+                  ],
+                  [
+                    "\u7B2C\u4E00\u8F6E",
+                    "1",
+                    "1"
+                  ],
+                  [
+                    "\u7B2C\u4E8C\u8F6E",
+                    "2",
+                    "3"
+                  ],
+                  [
+                    "\u7B2C\u4E09\u8F6E",
+                    "3",
+                    "6"
+                  ]
+                ]
+              }
+            },
+            text: "\u628A\u53D8\u91CF\u7684\u53D8\u5316\u6574\u7406\u6210\u8868\u683C\uFF1A\u7B2C\u4E00\u8F6E\u540E total \u662F 1\uFF0C\u7B2C\u4E8C\u8F6E\u662F 3\uFF0C\u7B2C\u4E09\u8F6E\u662F 6\u3002",
+            title: "\u7528\u8868\u683C\u5BF9\u7167\u6BCF\u4E00\u8F6E",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0601",
+            presentation: {
+              kind: "steps",
+              steps: [
+                {
+                  code: {
+                    language: "javascript",
+                    source: "let total = 0;\nlet i = 1;"
+                  },
+                  text: "\u603B\u6570\u4ECE 0 \u5F00\u59CB\uFF0Ci \u4ECE 1 \u5F00\u59CB\u3002",
+                  title: "\u786E\u5B9A\u8D77\u70B9"
+                },
+                {
+                  code: {
+                    language: "javascript",
+                    source: "total = total + i;"
+                  },
+                  text: "i <= 3 \u65F6\uFF0C\u628A\u672C\u8F6E\u7684 i \u52A0\u8FDB total\u3002",
+                  title: "\u5224\u65AD\u5E76\u7D2F\u52A0"
+                },
+                {
+                  code: {
+                    language: "javascript",
+                    source: "i++;"
+                  },
+                  text: "i \u589E\u52A0 1\uFF0C\u91CD\u65B0\u5224\u65AD\u6761\u4EF6\uFF1B\u4E0D\u6EE1\u8DB3\u65F6\u9000\u51FA\u3002",
+                  title: "\u66F4\u65B0\u540E\u518D\u5224\u65AD"
+                }
+              ]
+            },
+            text: "\u8BFB\u5FAA\u73AF\u65F6\uFF0C\u5148\u770B\u8D77\u70B9\uFF0C\u518D\u770B\u6761\u4EF6\uFF0C\u518D\u7B97\u5FAA\u73AF\u4F53\uFF0C\u6700\u540E\u56DE\u5230\u66F4\u65B0\u6B65\u9AA4\u3002",
+            title: "\u628A\u8FC7\u7A0B\u62C6\u6210\u5C0F\u6B65",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0602",
+            presentation: {
+              items: [
+                {
+                  code: {
+                    language: "javascript",
+                    source: "for (let i = 1; i <= 3; i++) {\n    total += i;\n}"
+                  },
+                  text: "i \u4F9D\u6B21\u53D6 1\u30012\u30013\uFF0C\u603B\u548C\u4E3A 6\u3002",
+                  title: "\u5305\u542B\u8FB9\u754C"
+                },
+                {
+                  code: {
+                    language: "javascript",
+                    source: "for (let i = 1; i < 3; i++) {\n    total += i;\n}"
+                  },
+                  text: "i \u53EA\u53D6 1\u30012\uFF0C\u603B\u548C\u4E3A 3\u3002",
+                  title: "\u4E0D\u5305\u542B\u8FB9\u754C"
+                }
+              ],
+              kind: "comparison"
+            },
+            text: "i <= 3 \u4F1A\u5305\u542B 3\uFF1Bi < 3 \u4E0D\u5305\u542B 3\u3002\u53EA\u5DEE\u4E00\u4E2A\u7B49\u53F7\uFF0C\u5FAA\u73AF\u6B21\u6570\u548C\u7ED3\u679C\u5C31\u4E0D\u540C\u3002",
+            title: "\u5BF9\u7167\u4E24\u79CD\u6761\u4EF6",
+            type: "text"
+          },
+          {
+            id: "8343F80B-F43C-4901-B585-A67647EA0603",
+            presentation: {
+              cards: [
+                {
+                  back: "\u5148\u8BA1\u7B97\u53F3\u4FA7 total + i\uFF0C\u518D\u628A\u7ED3\u679C\u5199\u56DE\u5DE6\u4FA7 total\u3002",
+                  front: "total = total + i \u5148\u8BA1\u7B97\u54EA\u4E00\u8FB9\uFF1F"
+                },
+                {
+                  back: "\u4E0D\u5305\u542B\u3002\u82E5\u4ECE 1 \u5F00\u59CB\uFF0C\u6BCF\u6B21\u52A0 1\uFF0C\u5FAA\u73AF\u4F53\u91CC\u4F1A\u7528\u5230 1\u30012\u30013\u3002",
+                  front: "i < 4 \u5305\u542B 4 \u5417\uFF1F"
+                },
+                {
+                  back: "\u8FD0\u884C\u5B83\uFF0C\u5BF9\u7167\u8F93\u51FA\uFF1B\u518D\u6362\u4E00\u7EC4\u8F93\u5165\uFF0C\u68C0\u67E5\u7ED3\u679C\u662F\u5426\u4ECD\u7B26\u5408\u9884\u671F\u3002",
+                  front: "\u600E\u6837\u786E\u8BA4\u5199\u7684\u7A0B\u5E8F\u771F\u7684\u53EF\u7528\uFF1F"
+                }
+              ],
+              kind: "flashcards"
+            },
+            text: "\u5148\u60F3\u4E00\u60F3\uFF0C\u518D\u7FFB\u5F00\u5361\u7247\u6838\u5BF9\u3002\u80FD\u591F\u4E0D\u770B\u89E3\u6790\u8BF4\u51FA\u7406\u7531\uFF0C\u5C31\u8BF4\u660E\u7406\u89E3\u66F4\u624E\u5B9E\u4E86\u3002",
+            title: "\u7FFB\u5F00\u5361\u7247\uFF0C\u68C0\u67E5\u8BB0\u5FC6",
+            type: "text"
+          }
+        ],
+        estimatedMinutes: 3,
+        id: "8343F80B-F43C-4901-B585-A67647EA9706",
+        objectives: [
+          "\u7528\u8868\u683C\u3001\u5206\u6B65\u548C\u5BF9\u7167\u590D\u4E60\u540C\u4E00\u4E2A\u6982\u5FF5\u3002",
+          "\u901A\u8FC7\u7FFB\u5361\u81EA\u6D4B\uFF0C\u68C0\u67E5\u7406\u89E3\u3002"
+        ],
+        title: "\u6362\u4E00\u79CD\u65B9\u5F0F\uFF0C\u5DE9\u56FA\u7406\u89E3"
+      }
+    ],
+    protocol: "WORKSHOP-COURSE/1",
+    summary: "\u4ECE\u4E00\u5929\u7684\u5B89\u6392\u5230\u4EE3\u7801\u5B9E\u4F5C\uFF1A\u4F53\u9A8C\u56FE\u8868\u3001Markdown\u3001SVG\u3001HTML \u52A8\u753B\u3001\u7A0B\u5E8F\u63A8\u6F14\u3001\u7CBE\u786E\u6807\u8BB0\u548C\u53EF\u8FD0\u884C\u7EC3\u4E60\u3002",
+    title: "\u4ECE\u5BB9\u7684\u4E00\u5929"
+  }
+};
+
+// Server/AppContent/cpp-value-reference.json
+var cpp_value_reference_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "cpp-value-reference",
+  kind: "course",
+  version: 2,
+  minimumContentVersion: 1,
+  payload: {
+    protocol: "WORKSHOP-COURSE/1",
+    id: "4543387c-55ed-50f7-8803-823439cb4fe6",
+    title: "C++ \xB7 \u4E00\u4E2A &\uFF0C\u4E24\u79CD\u7ED3\u679C",
+    summary: "\u4E00\u884C\u4EE3\u7801\uFF0C\u4E00\u6B21\u53D8\u5316\u3002\u7528\u4E94\u6B65\u770B\u6E05\u526F\u672C\u4E0E\u522B\u540D\u3002",
+    lessons: [
+      {
+        id: "18c3575f-5194-5af9-8cfd-cc78554da7b0",
+        title: "\u6539\u7684\u662F\u526F\u672C\uFF0C\u8FD8\u662F\u539F\u503C\uFF1F",
+        estimatedMinutes: 7,
+        objectives: [
+          "\u5206\u6E05\u72EC\u7ACB\u526F\u672C\u548C\u540C\u4E00\u5BF9\u8C61\u7684\u522B\u540D\u3002",
+          "\u5224\u65AD\u51FD\u6570\u4F1A\u4E0D\u4F1A\u6539\u53D8\u8C03\u7528\u8005\u7684 int \u53D8\u91CF\u3002"
+        ],
+        referenceCode: {
+          language: "cpp",
+          source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
+          filename: "award.cpp"
+        },
+        blocks: [
+          {
+            id: "4ce800ff-75f5-51c7-8621-892f8cd0079e",
+            type: "question",
+            title: "\u5148\u731C\u4E00\u731C",
+            text: "\u8C03\u7528 award \u540E\uFF0Cscore \u662F\u591A\u5C11\uFF1F",
+            questionType: "singleChoice",
+            code: {
+              language: "cpp",
+              source: "void award(int points) {\n    points += 3;\n}\nint main() {\n    int score = 7;\n    award(score);\n    // \u73B0\u5728 score \u662F\u591A\u5C11\uFF1F\n}",
+              filename: "prediction.cpp"
+            },
+            focusLines: [
+              1,
+              2
+            ],
+            focusSpans: [
+              {
+                line: 1,
+                text: "int points"
+              },
+              {
+                line: 2,
+                text: "points"
+              }
+            ],
+            options: [
+              {
+                id: "seven",
+                text: "7"
+              },
+              {
+                id: "ten",
+                text: "10"
+              }
+            ],
+            correctOptionIDs: [
+              "seven"
+            ],
+            hints: [
+              "\u89C2\u5BDF points \u7684\u58F0\u660E\uFF1Aint\uFF0C\u8FD8\u662F int&\uFF1F"
+            ],
+            explanation: "\u662F 7\u3002points \u662F\u72EC\u7ACB\u526F\u672C\u3002\u63A5\u4E0B\u6765\u53EA\u770B\u8FD9\u4E2A\u533A\u522B\u662F\u600E\u6837\u53D1\u751F\u7684\u3002"
+          },
+          {
+            id: "e8501c91-9182-56db-aee9-282b13dd5a85",
+            type: "text",
+            title: "\u8DDF\u7740\u503C\u8D70",
+            text: "\u56FA\u5B9A\u7A0B\u5E8F\u7684\u6559\u5B66\u63A8\u6F14\u3002\u5148\u770B\u503C\u4F20\u9012\uFF0C\u518D\u5207\u6362\u5F15\u7528\u4F20\u9012\uFF1B\u6BCF\u6B21\u53EA\u89C2\u5BDF\u5F53\u524D\u4E00\u6B65\u3002",
+            presentation: {
+              kind: "trace",
+              trace: {
+                variants: [
+                  {
+                    id: "value",
+                    title: "\u503C\u4F20\u9012",
+                    code: {
+                      language: "cpp",
+                      source: "#include <iostream>\n\nvoid award(int points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
+                      filename: "award.cpp",
+                      highlightLines: [
+                        3
+                      ],
+                      highlightSpans: [
+                        {
+                          line: 3,
+                          text: "int points"
+                        }
+                      ]
+                    },
+                    frames: [
+                      {
+                        title: "\u4ECE 7 \u5F00\u59CB",
+                        line: 8,
+                        note: "main \u4E2D\u521B\u5EFA\u4E86 score\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 8,
+                            text: "score"
+                          },
+                          {
+                            line: 8,
+                            text: "7"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u590D\u5236\u4E00\u4EFD",
+                        line: 3,
+                        note: "points \u5F97\u5230\u6570\u503C 7\uFF0C\u662F\u53E6\u4E00\u4E2A\u5BF9\u8C61\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          },
+                          {
+                            id: "points",
+                            names: [
+                              "points"
+                            ],
+                            value: "7",
+                            scope: "award",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "int points"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u53EA\u6539\u526F\u672C",
+                        line: 4,
+                        note: "\u52A0\u4E0A 3 \u7684\u662F points\uFF0Cscore \u4ECD\u662F 7\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          },
+                          {
+                            id: "points",
+                            names: [
+                              "points"
+                            ],
+                            value: "10",
+                            scope: "award",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 4,
+                            text: "points"
+                          },
+                          {
+                            line: 4,
+                            text: "bonus"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u51FD\u6570\u8FD4\u56DE",
+                        line: 5,
+                        note: "points \u968F\u51FD\u6570\u7ED3\u675F\uFF0Cscore \u7559\u5728 main\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u8F93\u51FA 7",
+                        line: 10,
+                        note: "\u8F93\u51FA\u7684\u662F score\uFF0C\u5B83\u4E00\u76F4\u6CA1\u6709\u6539\u53D8\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: false
+                          }
+                        ],
+                        output: "7",
+                        focusSpans: [
+                          {
+                            line: 10,
+                            text: "score"
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    id: "reference",
+                    title: "\u5F15\u7528\u4F20\u9012",
+                    code: {
+                      language: "cpp",
+                      source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
+                      filename: "award.cpp",
+                      highlightLines: [
+                        3
+                      ],
+                      highlightSpans: [
+                        {
+                          line: 3,
+                          text: "int&"
+                        },
+                        {
+                          line: 3,
+                          text: "points"
+                        }
+                      ]
+                    },
+                    frames: [
+                      {
+                        title: "\u4ECE 7 \u5F00\u59CB",
+                        line: 8,
+                        note: "\u4ECD\u7136\u4ECE\u540C\u4E00\u4E2A\u521D\u503C\u5F00\u59CB\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 8,
+                            text: "score"
+                          },
+                          {
+                            line: 8,
+                            text: "7"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u591A\u4E00\u4E2A\u540D\u5B57",
+                        line: 3,
+                        note: "points \u7ED1\u5B9A\u5230 score\uFF0C\u4E24\u4E2A\u540D\u5B57\u6307\u540C\u4E00\u4E2A\u5BF9\u8C61\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score",
+                              "points"
+                            ],
+                            value: "7",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 3,
+                            text: "int&"
+                          },
+                          {
+                            line: 3,
+                            text: "points"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u6539\u5230\u539F\u503C",
+                        line: 4,
+                        note: "\u901A\u8FC7 points \u52A0 3\uFF0Cscore \u4E5F\u5C31\u53D8\u6210 10\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score",
+                              "points"
+                            ],
+                            value: "10",
+                            scope: "main",
+                            changed: true
+                          }
+                        ],
+                        focusSpans: [
+                          {
+                            line: 4,
+                            text: "points"
+                          },
+                          {
+                            line: 4,
+                            text: "bonus"
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u51FD\u6570\u8FD4\u56DE",
+                        line: 5,
+                        note: "\u540D\u5B57 points \u4E0D\u518D\u53EF\u7528\uFF0C\u539F\u5BF9\u8C61\u4ECD\u7136\u5B58\u5728\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "10",
+                            scope: "main",
+                            changed: false
+                          }
+                        ]
+                      },
+                      {
+                        title: "\u8F93\u51FA 10",
+                        line: 10,
+                        note: "score \u7684\u65B0\u503C\u662F 10\u3002",
+                        objects: [
+                          {
+                            id: "score",
+                            names: [
+                              "score"
+                            ],
+                            value: "10",
+                            scope: "main",
+                            changed: false
+                          }
+                        ],
+                        output: "10",
+                        focusSpans: [
+                          {
+                            line: 10,
+                            text: "score"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            id: "a65cec5b-0762-5f6e-95a5-e91d0c9daa04",
+            type: "question",
+            title: "\u518D\u52A0\u4E00\u6B21\u5462\uFF1F",
+            text: "\u73B0\u5728 points \u662F\u5F15\u7528\u3002\u8FDE\u7EED\u52A0 3\u3001\u518D\u52A0 2\uFF0C\u6700\u540E\u8F93\u51FA\u591A\u5C11\uFF1F",
+            questionType: "shortAnswer",
+            answerFormat: "output",
+            code: {
+              language: "cpp",
+              source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    award(score, 2);\n    std::cout << score;\n}",
+              highlightLines: [
+                3,
+                9,
+                10
+              ]
+            },
+            input: {
+              kind: "integer",
+              placeholder: "\u8F93\u5165\u6700\u540E\u8F93\u51FA\u7684\u6574\u6570",
+              minLines: 2,
+              maxLines: 2
+            },
+            focusLines: [
+              3,
+              9,
+              10
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                text: "int&"
+              },
+              {
+                line: 9,
+                text: "3"
+              },
+              {
+                line: 10,
+                text: "2"
+              }
+            ],
+            acceptedAnswers: [
+              "12"
+            ],
+            hints: [
+              "\u4E24\u6B21\u8C03\u7528\u4FEE\u6539\u7684\u90FD\u662F main \u4E2D\u7684\u540C\u4E00\u4E2A score\u3002"
+            ],
+            explanation: "\u8F93\u51FA 12\uFF1A7 + 3 + 2\u3002\u4E24\u6B21\u8C03\u7528\u91CC\u7684 points \u90FD\u662F score \u7684\u522B\u540D\u3002"
+          },
+          {
+            id: "e7926659-025a-5901-b72e-94e8824aa61a",
+            type: "question",
+            title: "\u8F6E\u5230\u4F60\u6539\u539F\u503C",
+            text: "\u5199\u4E00\u4E2A void doubleScore(...)\uFF0C\u8BA9\u4F20\u5165\u7684 int \u53D8\u91CF\u7FFB\u500D\u3002\u53EA\u5199\u51FD\u6570\u5B9A\u4E49\u3002\u63D0\u4EA4\u540E\u81EA\u884C\u6838\u5BF9\u3002",
+            questionType: "shortAnswer",
+            answerFormat: "code",
+            code: {
+              language: "cpp",
+              source: "#include <iostream>\n\nvoid doubleScore(int score) {\n    // \u4FEE\u6539\u5F62\u53C2\uFF0C\u5E76\u8BA9\u4F20\u5165\u7684\u53D8\u91CF\u7FFB\u500D\n}\n\nint main() {\n    int score = 7;\n    doubleScore(score);\n    std::cout << score;\n}",
+              filename: "double-score.cpp"
+            },
+            input: {
+              kind: "code",
+              language: "cpp",
+              placeholder: "\u4FEE\u6539\u51FD\u6570\uFF0C\u8BA9\u5B83\u6539\u53D8\u8C03\u7528\u8005\u7684\u53D8\u91CF",
+              starterCode: "void doubleScore(int score) {\n    // \u4FEE\u6539\u5F62\u53C2\uFF0C\u5E76\u8BA9\u4F20\u5165\u7684\u53D8\u91CF\u7FFB\u500D\n}",
+              minLines: 5,
+              maxLines: 10
+            },
+            focusLines: [
+              3,
+              4
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                text: "int score"
+              }
+            ],
+            hints: [
+              "\u8981\u4FEE\u6539\u8C03\u7528\u8005\u7684\u53D8\u91CF\uFF0C\u5F62\u53C2\u9700\u8981 int&\u3002"
+            ],
+            explanation: "\u53C2\u8003\u5B9E\u73B0\uFF1A\nvoid doubleScore(int& score) {\n    score *= 2;\n}\n\n\u6838\u5BF9\u4E24\u70B9\uFF1A\u5F62\u53C2\u4F7F\u7528 int&\uFF1B\u51FD\u6570\u4F53\u4FEE\u6539\u4E86\u8FD9\u4E2A\u5F62\u53C2\u3002\u53C2\u6570\u540D\u548C\u7B49\u4EF7\u5199\u6CD5\u53EF\u4EE5\u4E0D\u540C\u3002\u672C\u9898\u4E0D\u7F16\u8BD1\uFF0C\u4E5F\u4E0D\u6309\u53C2\u8003\u6587\u672C\u5224\u5BF9\u9519\u3002"
+          },
+          {
+            id: "04147008-fca8-55e3-8352-8d5039ab4c3d",
+            type: "callout",
+            title: "\u53EA\u8BB0\u4F4F\u8FD9\u4E00\u70B9",
+            text: "int points\uFF1A\u53E6\u590D\u5236\u4E00\u4E2A\u503C\u3002\nint& points\uFF1A\u7ED9\u539F\u5BF9\u8C61\u4E00\u4E2A\u522B\u540D\u3002\n\u8981\u77E5\u9053\u6539\u4E86\u8C01\uFF0C\u5148\u770B\u5F62\u53C2\u58F0\u660E\u3002",
+            focusLines: [
+              3
+            ],
+            focusSpans: [
+              {
+                line: 3,
+                text: "int&"
+              },
+              {
+                line: 3,
+                text: "points"
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+};
+
+// Server/AppContent/welcome-tutorial.json
+var welcome_tutorial_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "welcome-tutorial",
+  kind: "tutorial",
+  version: 1,
+  minimumContentVersion: 1,
+  payload: {
+    pages: [
+      {
+        id: "home",
+        title: "\u628A\u8981\u505A\u7684\u4E8B\uFF0C\n\u653E\u5728\u4E00\u8D77\u3002",
+        subtitle: "\u9996\u9875\u628A\u4E34\u8FD1\u622A\u6B62\u548C\u63A5\u4E0B\u6765\u7684\u5B89\u6392\u653E\u5728\u773C\u524D\u3002\u70B9\u53F3\u4E0A\u89D2 +\uFF0C\u8BB0\u4E0B\u65B0\u7684\u4E8B\u9879\u3002",
+        sectionTitle: "\u9996\u9875",
+        symbol: "house"
+      },
+      {
+        id: "timeline",
+        title: "\u987A\u7740\u65F6\u95F4\uFF0C\n\u770B\u6E05\u6BCF\u4E00\u5929\u3002",
+        subtitle: "\u4E0A\u4E0B\u6D4F\u89C8\u65F6\u95F4\u6BB5\uFF0C\u4E5F\u80FD\u5207\u6362\u6210\u65E5\u5386\u3002\u8BA1\u5212\u4E0E\u622A\u6B62\uFF0C\u6CBF\u65F6\u95F4\u81EA\u7136\u5C55\u5F00\u3002",
+        sectionTitle: "\u65F6\u95F4\u7EBF",
+        symbol: "chart.bar.xaxis"
+      },
+      {
+        id: "projects",
+        title: "\u4ECE\u4E00\u4EF6\u4E8B\uFF0C\n\u5230\u6574\u4E2A\u9879\u76EE\u3002",
+        subtitle: "\u9879\u76EE\u7EC4\u6536\u7EB3\u76F8\u5173\u5185\u5BB9\uFF1B\u5207\u6362\u5230\u4E8B\u9879\u6216\u622A\u6B62\u4E8B\u9879\uFF0C\u5C31\u80FD\u6309\u65F6\u95F4\u96C6\u4E2D\u7BA1\u7406\u3002",
+        sectionTitle: "\u9879\u76EE",
+        symbol: "folder"
+      },
+      {
+        id: "account",
+        title: "\u5728\u4F60\u7684\u8BBE\u5907\u95F4\uFF0C\n\u63A5\u7740\u4F7F\u7528\u3002",
+        subtitle: "\u767B\u5F55\u6216\u6CE8\u518C\uFF0C\u5408\u5E76\u672C\u673A\u4E0E\u4E91\u7AEF\u5185\u5BB9\u3002\u5728 iPhone \u6216 Mac \u4E0A\uFF0C\u90FD\u53EF\u4EE5\u7EE7\u7EED\u3002",
+        sectionTitle: "\u4F60\u7684\u8D26\u6237",
+        symbol: "person.crop.circle"
+      }
+    ]
+  }
+};
+
+// Server/AppContent/course-tutorial.json
+var course_tutorial_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "course-tutorial",
+  kind: "tutorial",
+  version: 1,
+  minimumContentVersion: 1,
+  payload: {
+    pages: [
+      {
+        id: "import",
+        title: "\u628A\u60F3\u5B66\u7684\uFF0C\u53D8\u6210\u8BFE\u7A0B\u3002",
+        subtitle: "\u8D44\u6599\u3001\u95EE\u9898\u6216\u5B66\u4E60\u76EE\u6807\uFF0C\u90FD\u53EF\u4EE5\u6210\u4E3A\u6709\u56FE\u89E3\u3001\u6F14\u793A\u548C\u7EC3\u4E60\u7684\u4E00\u8282\u8282\u8BFE\u3002",
+        symbol: "sparkles"
+      },
+      {
+        id: "code",
+        title: "\u770B\u7740\u4EE3\u7801\uFF0C\u4E00\u6B65\u6B65\u7406\u89E3\u3002",
+        subtitle: "\u5B8C\u6574\u7A0B\u5E8F\u4F1A\u7559\u5728\u4E0A\u65B9\uFF1B\u8BB2\u5230\u54EA\u91CC\uFF0C\u5C31\u6807\u8BB0\u5BF9\u5E94\u7684\u884C\u3001\u53D8\u91CF\u6216\u5B57\u7B26\u3002",
+        symbol: "curlybraces"
+      },
+      {
+        id: "practice",
+        title: "\u52A8\u624B\u4F5C\u7B54\uFF0C\u8FD0\u884C\u9A8C\u8BC1\u3002",
+        subtitle: "\u6570\u5B57\u9898\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u4EE3\u7801\u9898\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u652F\u6301\u8FD0\u884C\u7684\u7EC3\u4E60\u8FD8\u53EF\u6838\u5BF9\u5B9E\u9645\u8F93\u51FA\uFF1B\u70B9\u7EE7\u7EED\u4F1A\u5148\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
+        symbol: "play.rectangle"
+      },
+      {
+        id: "progress",
+        title: "\u968F\u65F6\u56DE\u6765\uFF0C\u63A5\u7740\u5B66\u3002",
+        subtitle: "\u5B66\u4E60\u8FDB\u5EA6\u4F1A\u81EA\u52A8\u4FDD\u5B58\uFF0C\u661F\u6807\u6536\u85CF\u5E38\u5B66\u7684\u8BFE\u7A0B\u3002\u6F14\u793A\u8BFE\u548C\u6307\u5357\u4E5F\u4F1A\u5728\u540E\u53F0\u83B7\u5F97\u5185\u5BB9\u66F4\u65B0\u3002",
+        symbol: "bookmark"
+      }
+    ]
+  }
+};
+
+// Server/AppContent/announcement.json
+var announcement_default = {
+  protocol: "WORKSHOP-CONTENT/1",
+  id: "announcement",
+  kind: "announcement",
+  version: 1,
+  minimumContentVersion: 1,
+  payload: {
+    id: "announcement",
+    title: "\u6F14\u793A\u8BFE\u7A0B\u5DF2\u6269\u5145",
+    message: "\u65B0\u589E\u9010\u6B65\u63A8\u6F14\u3001\u5B57\u7B26\u6807\u8BB0\u3001\u6570\u5B57\u8F93\u5165\u548C\u53EF\u8FD0\u884C\u7EC3\u4E60\u3002\u4EE5\u540E\u6F14\u793A\u8BFE\u4E0E\u6307\u5357\u7684\u5185\u5BB9\u66F4\u65B0\u4F1A\u81EA\u52A8\u9001\u8FBE\u3002"
+  }
+};
+
+// Server/AppContent/catalog.mjs
+var catalog_default = [demo_course_default, cpp_value_reference_default, welcome_tutorial_default, course_tutorial_default, announcement_default];
+
 // Server/course.schema.json
 var course_schema_default = {
   $schema: "https://json-schema.org/draft/2020-12/schema",
@@ -26614,6 +28053,545 @@ var course_schema_default = {
   }
 };
 
+// Server/courses.mjs
+import { gzip } from "node:zlib";
+import { promisify } from "node:util";
+
+// Server/course-player.mjs
+var playerProtocol = "WORKSHOP-PLAYER/1";
+var rendererVersion = "2026.10.20.1";
+var json = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+function renderCoursePlayer(course, lessonID, courseRevision) {
+  const lesson = course.lessons.find((item) => item.id.toLowerCase() === lessonID.toLowerCase());
+  if (!lesson) throw new Error("COURSE_LESSON_NOT_FOUND");
+  const data = { courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
+  return {
+    protocol: playerProtocol,
+    rendererVersion,
+    courseID: course.id,
+    lessonID: lesson.id,
+    courseRevision,
+    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${playerRuntime.toString()})(curriculum);</script></body></html>`
+  };
+}
+var playerCSS = `
+:root{color-scheme:light dark;--bg:#f7f8fa;--panel:#fff;--text:#19242d;--muted:#6a7884;--line:#dbe2e8;--accent:#52758f;--soft:#e8f0f5;--mark:#fde8a8;--input:#f3f5f7}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:17px/1.65 -apple-system,BlinkMacSystemFont,system-ui,sans-serif}body.dark{--bg:#12171c;--panel:#1b232b;--text:#edf2f6;--muted:#a6b5c1;--line:#394750;--accent:#9dc3df;--soft:#263b4a;--mark:#725820;--input:#111a21}main{max-width:1200px;margin:auto;padding:16px 20px 28px;overflow-wrap:anywhere}.heading{margin-bottom:18px}.eyebrow,.muted{color:var(--muted);font-size:.84em}h1{font-size:1.5em;line-height:1.3;margin:6px 0 16px}h2{font-size:1.15em;margin:0 0 12px}p{margin:0 0 16px;white-space:pre-wrap}.workspace{display:grid;gap:18px;align-items:start}.card{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:22px;min-width:0}.reference{position:sticky;top:10px;max-height:42vh;overflow:auto;padding:14px}.reference summary{cursor:pointer;font-weight:600}.code{font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;white-space:pre;padding:12px 0;margin:0}.code .line{display:block;min-width:max-content;padding:0 10px;border-radius:4px}.code .line.active{background:var(--soft)}.number{display:inline-block;min-width:3ch;margin-right:16px;opacity:.45;user-select:none}mark{background:var(--mark);color:inherit;border-radius:3px}.tok-comment{color:#7b8790}.tok-string{color:#9d6035}.tok-number{color:#975ab2}.tok-keyword{color:#466da6}.dark .tok-string{color:#e2ae7d}.dark .tok-number{color:#d5a2eb}.dark .tok-keyword{color:#8fbaff}.annotation{font:12px/1.5 system-ui;color:var(--muted);margin-left:20px}.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}button,select,input,textarea{font:inherit;color:inherit}button,select{min-height:44px;border-radius:14px;border:1px solid var(--line);background:var(--soft);padding:8px 14px;cursor:pointer}button[disabled]{opacity:.45;cursor:default}button.selected{outline:2px solid var(--accent);background:var(--soft)}.option{display:block;width:100%;text-align:left;background:var(--input);margin:10px 0;padding:14px}.option:before{content:'\u25CB';margin-right:12px}.option.selected:before{content:'\u25CF';color:var(--accent)}textarea,input{display:block;width:100%;resize:vertical;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:14px;outline-color:var(--accent);min-height:48px;max-height:55vh}textarea.code-input{font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}.feedback{margin-top:18px;border-left:3px solid var(--accent);padding:10px 16px;background:var(--soft);border-radius:6px}.error{color:#b83e35}.objects,.comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.object{padding:16px;border-radius:14px;background:var(--soft)}.object.changed{outline:2px solid var(--accent)}.object strong{display:block;font-size:1.8em}.output{background:var(--input);padding:14px;border-radius:12px;white-space:pre-wrap;font:14px/1.6 ui-monospace,monospace}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:.9em}td,th{text-align:left;border-bottom:1px solid var(--line);padding:10px;min-width:90px}details{margin:12px 0}summary{cursor:pointer;min-height:36px}iframe{display:block;width:100%;border:0;background:transparent;min-height:120px;border-radius:12px}svg.chart{width:100%;height:auto;max-height:360px}.flash{width:100%;padding:24px;white-space:pre-wrap}.steps{padding-left:25px}.steps li{padding-left:5px;margin-bottom:18px}.chart-label{font:12px system-ui;fill:var(--muted)}.chart-bar{fill:var(--accent)}blockquote{margin:12px 0;border-left:3px solid var(--accent);padding-left:16px;color:var(--muted)}.markdown code:not(.code){background:var(--soft);padding:2px 5px;border-radius:4px}.markdown pre{overflow:auto;white-space:pre;background:var(--input);padding:16px;border-radius:12px}.markdown p{white-space:normal}.callout{border-left:4px solid var(--accent)}@media(min-width:850px){.workspace.with-reference{grid-template-columns:minmax(280px,.85fr) minmax(360px,1.15fr)}.reference{max-height:calc(100vh - 150px)}main{padding:24px 30px 40px}}@media(orientation:landscape) and (max-height:500px){main{padding:8px 16px}.heading{margin-bottom:8px}h1{font-size:1.15em;margin:2px 0 8px}.workspace.with-reference{grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr)}.reference{max-height:calc(100vh - 90px)}.card{padding:14px}}@media(prefers-reduced-motion:no-preference){button{transition:background .15s,outline-color .15s}}`;
+function playerRuntime(data) {
+  "use strict";
+  const lesson = data.lesson, root = document.getElementById("app");
+  let index = 0, pending = null, initialized = false;
+  const drafts = /* @__PURE__ */ new Map(), saved = /* @__PURE__ */ new Map(), traceStates = /* @__PURE__ */ new Map(), runs = /* @__PURE__ */ new Map();
+  const post = (message) => window.webkit?.messageHandlers?.workshopPlayer?.postMessage(message);
+  const requestID = () => globalThis.crypto?.randomUUID?.() ?? "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16);
+    return (c === "x" ? r : r & 3 | 8).toString(16);
+  });
+  const node = (tag, text, cls) => {
+    const element = document.createElement(tag);
+    if (text !== void 0) element.textContent = text;
+    if (cls) element.className = cls;
+    return element;
+  };
+  const button = (text, action, cls) => {
+    const value = node("button", text, cls);
+    value.type = "button";
+    value.onclick = action;
+    return value;
+  };
+  const lineArray = (source) => source.replace(/\r\n|\r/g, "\n").split("\n");
+  const ownCode = (b) => b.code ?? b.presentation?.code ?? b.presentation?.trace?.variants?.[0]?.code ?? (b.execution?.template ? { language: b.execution.language, source: b.execution.template } : void 0);
+  function effectiveCode(block) {
+    const direct = ownCode(block) ?? lesson.referenceCode ?? data.referenceCode;
+    if (direct) return { code: direct, inherited: false };
+    const before = lesson.blocks.slice(0, index).reverse().map(ownCode).find(Boolean), after = lesson.blocks.slice(index + 1).map(ownCode).find(Boolean);
+    return { code: before ?? after, inherited: true };
+  }
+  function codeView(code, lines, spans) {
+    const view = node("pre", void 0, "code");
+    lineArray(code.source).forEach((text, i) => {
+      const row = node("span", void 0, "line" + (lines.includes(i + 1) ? " active" : ""));
+      row.append(node("span", String(i + 1), "number"));
+      const ranges = [];
+      for (const span of spans.filter((s) => s.line === i + 1 && s.text)) {
+        let at = 0, found = -1;
+        for (let n = 0; n < (span.occurrence ?? 1); n++) {
+          found = text.indexOf(span.text, at);
+          if (found < 0) break;
+          at = found + span.text.length;
+        }
+        if (found >= 0) ranges.push([found, found + span.text.length]);
+      }
+      const tokens = [];
+      const pattern = /\/\/.*|#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b\d+(?:\.\d+)?\b|\b(?:if|else|for|while|return|def|class|import|from|as|in|is|not|and|or|None|True|False|int|float|double|char|void|bool|auto|const|let|var|function|async|await|new|public|private|static|using|namespace|include|break|continue|switch|case|try|catch|throw|print|range)\b/g;
+      for (const match of text.matchAll(pattern)) {
+        const value = match[0], kind = value.startsWith("//") || value.startsWith("#") ? "comment" : /^['"]/.test(value) ? "string" : /^\d/.test(value) ? "number" : "keyword";
+        tokens.push([match.index, match.index + value.length, kind]);
+      }
+      let current, buffer = "";
+      const flush = () => {
+        if (buffer) {
+          const [marked, kind] = current.split("|");
+          row.append(node(marked === "1" ? "mark" : "span", buffer, kind ? "tok-" + kind : void 0));
+        }
+        buffer = "";
+      };
+      for (let x = 0; x < text.length; x++) {
+        const marked = ranges.some(([a, b]) => x >= a && x < b), kind = tokens.find(([a, b]) => x >= a && x < b)?.[2] ?? "", style = (marked ? "1" : "0") + "|" + kind;
+        if (style !== current) {
+          flush();
+          current = style;
+        }
+        buffer += text[x];
+      }
+      flush();
+      if (!text) row.append(document.createTextNode(" "));
+      const annotation = code.annotations?.find((a) => a.line === i + 1);
+      if (annotation) row.append(node("span", annotation.text, "annotation"));
+      view.append(row);
+    });
+    return view;
+  }
+  function markdown(source) {
+    const box = node("div", void 0, "markdown");
+    let fence = null, paragraph = [];
+    const inline = (parent, text) => {
+      const chunks = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/g);
+      chunks.forEach((chunk) => parent.append(chunk.startsWith("`") && chunk.endsWith("`") ? node("code", chunk.slice(1, -1)) : chunk.startsWith("**") && chunk.endsWith("**") ? node("strong", chunk.slice(2, -2)) : document.createTextNode(chunk)));
+    };
+    const flush = () => {
+      if (paragraph.length) {
+        const p = node("p");
+        inline(p, paragraph.join("\n"));
+        box.append(p);
+        paragraph = [];
+      }
+    };
+    const rows = lineArray(source);
+    for (let i = 0; i < rows.length; i++) {
+      const line = rows[i];
+      if (line.startsWith("```")) {
+        flush();
+        if (fence) {
+          box.append(node("pre", fence.join("\n")));
+          fence = null;
+        } else fence = [];
+        continue;
+      }
+      if (fence) {
+        fence.push(line);
+        continue;
+      }
+      if (!line.trim()) {
+        flush();
+        continue;
+      }
+      const heading = /^(#{1,6})\s+(.+)$/.exec(line);
+      if (heading) {
+        flush();
+        const h = node("h" + Math.min(heading[1].length + 1, 6));
+        inline(h, heading[2]);
+        box.append(h);
+        continue;
+      }
+      if (line.includes("|") && i + 1 < rows.length && /^\s*\|?[\s:|-]+\|[\s:|-]*$/.test(rows[i + 1])) {
+        flush();
+        const cells = (value) => value.trim().replace(/^\||\|$/g, "").split("|").map((x) => x.trim());
+        const table = { columns: cells(line), rows: [] };
+        i += 2;
+        while (i < rows.length && rows[i].includes("|") && rows[i].trim()) table.rows.push(cells(rows[i++]));
+        i--;
+        box.append(tableView(table));
+        continue;
+      }
+      if (/^\s*(?:[-*+] |\d+\. )/.test(line)) {
+        flush();
+        const p = node("p");
+        inline(p, "\u2022 " + line.replace(/^\s*(?:[-*+] |\d+\. )/, ""));
+        box.append(p);
+        continue;
+      }
+      if (line.startsWith("> ")) {
+        flush();
+        const q = node("blockquote");
+        inline(q, line.slice(2));
+        box.append(q);
+        continue;
+      }
+      paragraph.push(line);
+    }
+    flush();
+    if (fence) box.append(node("pre", fence.join("\n")));
+    return box;
+  }
+  function tableView(value) {
+    const scroll = node("div", void 0, "table-scroll"), table = node("table"), head = node("tr");
+    value.columns.forEach((t) => head.append(node("th", t)));
+    table.append(head);
+    value.rows.forEach((values) => {
+      const row = node("tr");
+      values.forEach((t) => row.append(node("td", t)));
+      table.append(row);
+    });
+    scroll.append(table);
+    return scroll;
+  }
+  function isolated(source, height) {
+    const frame = document.createElement("iframe");
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.setAttribute("referrerpolicy", "no-referrer");
+    frame.title = "\u79BB\u7EBF\u4E92\u52A8\u6F14\u793A";
+    frame.style.height = `${Math.max(120, Math.min(640, height ?? 320))}px`;
+    frame.srcdoc = `<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; frame-src 'none'; object-src 'none'; media-src 'none'; font-src 'none'; base-uri 'none'; form-action 'none'"><style>:root{color-scheme:light dark}body{margin:0;font:16px/1.5 system-ui;overflow-wrap:anywhere}svg{max-width:100%;height:auto}button,input,select{font:inherit;min-height:44px}</style></head><body>` + source + "</body></html>";
+    return frame;
+  }
+  function chart(block) {
+    const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
+    svg.setAttribute("viewBox", "0 0 640 330");
+    svg.classList.add("chart");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", block.title ?? "\u6570\u636E\u56FE\u8868");
+    const points = block.points, min = Math.min(0, ...points.map((p) => p.value)), max = Math.max(0, ...points.map((p) => p.value)), range = max - min || 1;
+    const y = (v) => 270 - (v - min) / range * 240, width = 580 / points.length;
+    const add = (tag, attrs, text) => {
+      const n = document.createElementNS(ns, tag);
+      Object.entries(attrs).forEach(([k, v]) => n.setAttribute(k, v));
+      if (text !== void 0) n.textContent = text;
+      svg.append(n);
+    };
+    if (block.chartType === "line") add("polyline", { points: points.map((p, i) => `${40 + (i + 0.5) * width},${y(p.value)}`).join(" "), fill: "none", stroke: "var(--accent)", "stroke-width": 3 });
+    points.forEach((p, i) => {
+      const x = 40 + (i + 0.5) * width;
+      if (block.chartType !== "line") add("rect", { x: x - width * 0.35, y: Math.min(y(p.value), y(0)), width: width * 0.7, height: Math.max(1, Math.abs(y(p.value) - y(0))), rx: 4, class: "chart-bar" });
+      else add("circle", { cx: x, cy: y(p.value), r: 4, fill: "var(--accent)" });
+      add("text", { x, y: 305, "text-anchor": "middle", class: "chart-label" }, p.label);
+      add("text", { x, y: Math.max(15, y(p.value) - 8), "text-anchor": "middle", class: "chart-label" }, String(p.value));
+    });
+    return svg;
+  }
+  function trace(block, reference) {
+    const value = block.presentation.trace, state = traceStates.get(block.id) ?? { variant: 0, frame: 0 };
+    traceStates.set(block.id, state);
+    const box = node("div"), toolbar = node("div", void 0, "toolbar");
+    if (value.variants.length > 1) {
+      const select = node("select");
+      value.variants.forEach((v, i) => {
+        const option = node("option", v.title);
+        option.value = i;
+        select.append(option);
+      });
+      select.value = state.variant;
+      select.onchange = () => {
+        state.variant = Number(select.value);
+        state.frame = 0;
+        render();
+      };
+      toolbar.append(select);
+    }
+    const variant = value.variants[state.variant], frame = variant.frames[state.frame];
+    const back = button("\u2190", () => {
+      state.frame--;
+      render();
+    });
+    back.disabled = state.frame === 0;
+    const next = button("\u6267\u884C\u4E0B\u4E00\u6B65 \u2192", () => {
+      state.frame++;
+      render();
+    });
+    next.disabled = state.frame === variant.frames.length - 1;
+    toolbar.append(back, node("span", `${state.frame + 1} / ${variant.frames.length}`, "muted"), next);
+    box.append(toolbar, node("h2", frame.title));
+    reference.replaceChildren(node("div", variant.code.filename ?? variant.code.language, "muted"), codeView(variant.code, frame.focusSpans?.length ? [] : [frame.line], frame.focusSpans ?? []));
+    const objects = node("div", void 0, "objects");
+    frame.objects.forEach((o) => {
+      const tile = node("div", void 0, "object" + (o.changed ? " changed" : ""));
+      tile.append(node("div", o.names.join(" \xB7 ")), node("strong", o.value));
+      if (o.scope) tile.append(node("div", o.scope, "muted"));
+      objects.append(tile);
+    });
+    box.append(objects, node("p", frame.note));
+    if (frame.output !== void 0) box.append(node("pre", frame.output || "\uFF08\u6682\u65E0\u8F93\u51FA\uFF09", "output"));
+    return box;
+  }
+  function presentation(block, reference) {
+    const p = block.presentation, box = node("div");
+    if (!p) return box;
+    switch (p.kind) {
+      case "code":
+        if (!reference) box.append(codeView(p.code, p.code.highlightLines ?? [], p.code.highlightSpans ?? []));
+        break;
+      case "markdown":
+        box.append(markdown(p.markdown.source));
+        break;
+      case "table":
+        box.append(tableView(p.table));
+        break;
+      case "steps": {
+        const list = node("ol", void 0, "steps");
+        p.steps.forEach((item) => {
+          const li = node("li");
+          li.append(node("h2", item.title), node("p", item.text));
+          if (item.code) li.append(codeView(item.code, item.code.highlightLines ?? [], item.code.highlightSpans ?? []));
+          list.append(li);
+        });
+        box.append(list);
+        break;
+      }
+      case "comparison": {
+        const grid = node("div", void 0, "comparison");
+        p.items.forEach((item) => {
+          const card = node("section", void 0, "card");
+          card.append(node("h2", item.title), node("p", item.text));
+          if (item.code) card.append(codeView(item.code, item.code.highlightLines ?? [], item.code.highlightSpans ?? []));
+          grid.append(card);
+        });
+        box.append(grid);
+        break;
+      }
+      case "flashcards":
+        p.cards.forEach((card) => {
+          let flipped = false;
+          const b = button(card.front, () => {
+            flipped = !flipped;
+            b.textContent = flipped ? card.back : card.front;
+            b.setAttribute("aria-pressed", String(flipped));
+          }, "flash");
+          box.append(b);
+        });
+        break;
+      case "html":
+        box.append(isolated(p.html.source, p.html.height));
+        break;
+      case "svg":
+        box.append(isolated(p.svg.source, p.svg.height));
+        break;
+      case "trace":
+        box.append(trace(block, reference));
+        break;
+      default:
+        box.append(node("p", "\u5F53\u524D\u5185\u5BB9\u6682\u65F6\u65E0\u6CD5\u663E\u793A\u3002", "muted"));
+    }
+    return box;
+  }
+  const equalAnswer = (a, b) => JSON.stringify([a?.selectedOptionIDs ?? [], a?.text ?? ""]) === JSON.stringify([b?.selectedOptionIDs ?? [], b?.text ?? ""]);
+  function draft(block) {
+    if (!drafts.has(block.id)) drafts.set(block.id, { selectedOptionIDs: [], text: block.input?.starterCode ?? "" });
+    return drafts.get(block.id);
+  }
+  function feedback(block, answer, box) {
+    const feedback2 = node("div", void 0, "feedback");
+    let correct;
+    if (block.questionType !== "shortAnswer" && block.correctOptionIDs) correct = [...answer.selectedOptionIDs].sort().join("|") === [...block.correctOptionIDs].sort().join("|");
+    if (block.questionType === "shortAnswer" && block.acceptedAnswers) correct = block.acceptedAnswers.some((text) => text.trim() === answer.text.trim());
+    feedback2.append(node("strong", correct === void 0 ? "\u56DE\u7B54\u5DF2\u4FDD\u5B58" : correct ? "\u56DE\u7B54\u6B63\u786E" : "\u518D\u5BF9\u7167\u89E3\u6790\u60F3\u4E00\u60F3"));
+    if (block.explanation) {
+      const details = node("details"), summary = node("summary", "\u67E5\u770B\u89E3\u6790");
+      details.append(summary, node("p", block.explanation));
+      feedback2.append(details);
+    }
+    box.append(feedback2);
+  }
+  function question(block, box) {
+    const answer = draft(block), committed = saved.get(block.id);
+    if (block.questionType === "shortAnswer") {
+      const kind = block.input?.kind ?? "text", input = node(kind === "integer" || kind === "decimal" ? "input" : "textarea");
+      input.setAttribute("aria-label", block.input?.placeholder ?? "\u4F60\u7684\u56DE\u7B54");
+      input.placeholder = block.input?.placeholder ?? "\u586B\u5199\u4F60\u7684\u56DE\u7B54";
+      input.value = answer.text;
+      input.maxLength = 2e4;
+      if (kind === "integer" || kind === "decimal") {
+        input.type = "text";
+        input.inputMode = kind === "integer" ? "numeric" : "decimal";
+      } else {
+        input.rows = block.input?.minLines ?? (kind === "code" ? 6 : 2);
+        input.style.maxHeight = `${Math.min(block.input?.maxLines ?? 18, 24) * 1.6 + 2}em`;
+      }
+      if (kind === "code") {
+        input.className = "code-input";
+        input.spellcheck = false;
+        input.autocapitalize = "off";
+        input.autocorrect = "off";
+        input.onkeydown = (e) => {
+          if (e.key === "Tab") {
+            e.preventDefault();
+            const a = input.selectionStart, z = input.selectionEnd;
+            input.setRangeText("    ", a, z, "end");
+            input.dispatchEvent(new Event("input"));
+          }
+        };
+      }
+      const resize = () => {
+        if (input.tagName === "TEXTAREA") {
+          input.style.height = "auto";
+          input.style.height = Math.min(input.scrollHeight, window.innerHeight * 0.48) + "px";
+        }
+      };
+      input.oninput = () => {
+        resize();
+        answer.text = input.value;
+        const f = box.querySelector(".feedback");
+        if (f) f.remove();
+        sendState();
+      };
+      box.append(input);
+      requestAnimationFrame(resize);
+      if (block.execution) {
+        const tools = node("div", void 0, "toolbar"), run = button("\u25B6 \u8FD0\u884C\u4EE3\u7801", () => {
+          if (!answer.text.trim() || pending) return;
+          const id = requestID();
+          runs.set(id, { blockID: block.id });
+          run.disabled = true;
+          post({ type: "run", requestID: id, blockID: block.id, answer: answer.text, stdin: stdin.value });
+        });
+        const details = node("details"), stdin = node("textarea");
+        stdin.rows = 2;
+        stdin.maxLength = 4e3;
+        stdin.value = block.execution.stdin ?? "";
+        stdin.setAttribute("aria-label", "\u7A0B\u5E8F\u8F93\u5165");
+        details.append(node("summary", "\u7A0B\u5E8F\u8F93\u5165"), stdin);
+        tools.append(run);
+        box.append(details, tools);
+        const result = runs.get(block.id);
+        if (result) box.append(node("pre", result, "output"));
+      }
+    } else for (const option of block.options ?? []) {
+      const selected = answer.selectedOptionIDs.includes(option.id), b = button(option.text, () => {
+        if (block.questionType === "multipleChoice") answer.selectedOptionIDs = selected ? answer.selectedOptionIDs.filter((id) => id !== option.id) : [...answer.selectedOptionIDs, option.id];
+        else answer.selectedOptionIDs = [option.id];
+        render();
+      }, "option" + (selected ? " selected" : ""));
+      b.setAttribute("aria-pressed", String(selected));
+      box.append(b);
+    }
+    if (block.hints?.length) {
+      const hints = node("details");
+      hints.append(node("summary", "\u63D0\u793A"));
+      block.hints.forEach((hint) => hints.append(node("p", hint)));
+      box.append(hints);
+    }
+    if (committed && equalAnswer(answer, committed)) feedback(block, committed, box);
+  }
+  function sendState() {
+    post({ type: "state", index, count: lesson.blocks.length, canPrevious: index > 0 || data.lessonIndex > 0, canNext: !pending });
+  }
+  function render() {
+    const block = lesson.blocks[index], heading = node("header", void 0, "heading");
+    heading.append(node("div", `${lesson.title} \xB7 ${index + 1} / ${lesson.blocks.length}`, "eyebrow"));
+    if (block.title) heading.append(node("h1", block.title));
+    const context = effectiveCode(block), workspace = node("div", void 0, "workspace" + (context.code ? " with-reference" : "")), reference = node("aside", void 0, "card reference");
+    if (context.code) {
+      const explicit = block.focusLines !== void 0 || block.focusSpans !== void 0;
+      reference.append(node("div", context.code.filename ?? `\u672C\u8282\u7A0B\u5E8F \xB7 ${context.code.language}`, "muted"), codeView(context.code, explicit ? block.focusLines ?? [] : context.inherited ? [] : context.code.highlightLines ?? [], explicit ? block.focusSpans ?? [] : context.inherited ? [] : context.code.highlightSpans ?? []));
+      workspace.append(reference);
+    }
+    const content = node("article", void 0, "card" + (block.type === "callout" ? " callout" : ""));
+    if (block.text) content.append(node("p", block.text));
+    if (block.presentation) content.append(presentation(block, context.code ? reference : null));
+    if (block.type === "question") question(block, content);
+    if (block.type === "chart") {
+      content.append(chart(block));
+      if (block.caption) content.append(node("p", block.caption, "muted"));
+    }
+    if (block.type === "image") content.append(node("p", block.caption ?? "\u672C\u8BFE\u7A0B\u7684\u5916\u90E8\u56FE\u7247\u672A\u52A0\u8F7D\u3002", "muted"));
+    if (pending) content.append(node("p", "\u6B63\u5728\u4FDD\u5B58\u2026", "muted"));
+    workspace.append(content);
+    root.replaceChildren(heading, workspace);
+    sendState();
+  }
+  function showError(message) {
+    const old = root.querySelector(".error");
+    if (old) old.remove();
+    root.append(node("p", message || "\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002", "error"));
+    sendState();
+  }
+  function advance() {
+    if (pending || !initialized) return;
+    const block = lesson.blocks[index];
+    if (block.type === "question") {
+      const answer = draft(block);
+      if (!equalAnswer(answer, saved.get(block.id)) || !saved.has(block.id)) {
+        if (block.questionType === "shortAnswer" ? !answer.text.trim() : !answer.selectedOptionIDs.length) {
+          showError("\u8BF7\u5148\u586B\u5199\u56DE\u7B54\u3002");
+          return;
+        }
+        const id = requestID();
+        pending = { id, type: "submit", blockID: block.id, answer: structuredClone(answer) };
+        post({ type: "submit", requestID: id, blockID: block.id, ...answer });
+        sendState();
+        return;
+      }
+    }
+    if (index < lesson.blocks.length - 1) {
+      index++;
+      render();
+      window.scrollTo(0, 0);
+    } else {
+      const id = requestID();
+      pending = { id, type: "complete" };
+      post({ type: "complete", requestID: id, completed: true });
+      sendState();
+    }
+  }
+  window.WorkshopPlayer = { receive(message) {
+    if (!message || typeof message.type !== "string") return;
+    if (message.type === "init") {
+      document.body.classList.toggle("dark", message.theme === "dark");
+      if (!initialized) {
+        for (const answer of message.progress?.answers ?? []) {
+          if (String(answer.lessonID).toLowerCase() === lesson.id.toLowerCase()) {
+            const block = lesson.blocks.find((b) => b.id.toLowerCase() === String(answer.blockID).toLowerCase());
+            if (block) {
+              const value = { selectedOptionIDs: answer.selectedOptionIDs ?? [], text: answer.text ?? "" };
+              saved.set(block.id, structuredClone(value));
+              drafts.set(block.id, value);
+            }
+          }
+        }
+        initialized = true;
+        render();
+      }
+      return;
+    }
+    if (message.type === "next") {
+      advance();
+      return;
+    }
+    if (message.type === "previous") {
+      if (pending) return;
+      if (index > 0) {
+        index--;
+        render();
+        window.scrollTo(0, 0);
+      } else post({ type: "navigation", direction: "previousLesson" });
+      return;
+    }
+    if (message.type === "saved" && pending && message.requestID === pending.id) {
+      const action = pending;
+      pending = null;
+      if (!message.ok) {
+        showError(message.error);
+        return;
+      }
+      if (action.type === "submit") {
+        saved.set(action.blockID, action.answer);
+        render();
+      } else {
+        post({ type: "navigation", direction: "nextLesson" });
+        sendState();
+      }
+      return;
+    }
+    if (message.type === "runResult" && runs.has(message.requestID)) {
+      const run = runs.get(message.requestID);
+      runs.delete(message.requestID);
+      const r = message.result;
+      runs.set(run.blockID, message.error ?? [r?.stdout, r?.stderr, r?.passed === void 0 ? "" : r.passed ? "\u8F93\u51FA\u7B26\u5408\u9884\u671F" : "\u8F93\u51FA\u4E0E\u9884\u671F\u4E0D\u540C", r?.status].filter(Boolean).join("\n"));
+      render();
+    }
+  } };
+  render();
+  post({ type: "ready" });
+}
+
 // Server/course-execution.mjs
 import http from "node:http";
 var courseExecutionLanguages = Object.freeze(["javascript", "python", "cpp"]);
@@ -26781,10 +28759,12 @@ function courseTeachingPrompt() {
   return `\u4F60\u662F\u5DE5\u4F5C\u574A\u7684\u8BFE\u7A0B\u8BBE\u8BA1\u4E0E\u6559\u5B66\u52A9\u624B\u3002\u4E0B\u9762\u662F\u5236\u4F5C\u8981\u6C42\uFF0C\u4E0D\u662F\u5B66\u4E60\u6750\u6599\uFF0C\u4E0D\u8981\u628A\u63D0\u793A\u8BCD\u672C\u8EAB\u6539\u5199\u6210\u8BFE\u7A0B\u3002\u7B2C\u4E00\u6B21\u6536\u5230\u65F6\uFF0C\u53EA\u7B80\u77ED\u56DE\u590D\u201C\u51C6\u5907\u597D\u4E86\uFF0C\u8BF7\u53D1\u9001\u4E0B\u4E00\u6761\u5B66\u4E60\u4E3B\u9898\u3001\u8D44\u6599\u6216\u95EE\u9898\uFF0C\u6211\u4F1A\u4E3A\u4F60\u5236\u4F5C\u53EF\u9605\u8BFB\u3001\u53EF\u4E92\u52A8\u7684\u8BFE\u7A0B\u3002\u201D\uFF0C\u7B49\u5F85\u4E0B\u4E00\u6761\u5B66\u4E60\u5185\u5BB9\u3002
 \u6839\u636E\u7528\u6237\u7684\u4E3B\u9898\u3001\u6559\u6750\u3001\u7B14\u8BB0\u6216\u95EE\u9898\u63A8\u65AD\u57FA\u7840\u3001\u76EE\u6807\u548C\u8BFE\u65F6\uFF1B\u53EA\u6709\u65E0\u6CD5\u63A8\u65AD\u7684\u5173\u952E\u6761\u4EF6\u624D\u7B80\u77ED\u63D0\u95EE\u3002\u9075\u4ECE\u660E\u786E\u8981\u6C42\uFF0C\u4E0D\u53CD\u590D\u7D22\u8981\u53C2\u6570\u3002\u6309\u201C\u89E3\u91CA\u6982\u5FF5\u2192\u5177\u4F53\u4F8B\u5B50\u6216\u56FE\u5F62\u2192\u7EC3\u4E60\u2192\u53CD\u9988\u201D\u7684\u8282\u594F\uFF0C\u7531\u6D45\u5165\u6DF1\uFF0C\u6BCF\u8BFE\u65F6\u4E00\u4E2A\u76EE\u6807\u3002\u91CD\u8981\u6765\u6E90\u548C\u4E0D\u786E\u5B9A\u5904\u660E\u793A\uFF0C\u4E0D\u865A\u6784\u7EDF\u8BA1\u6216\u53C2\u8003\u7B54\u6848\u3002
 \u3010\u5148\u6E05\u695A\uFF0C\u518D\u4E30\u5BCC\u3011
-\u6BCF\u5C4F\u4E00\u4E2A\u95EE\u9898\u3001\u4E00\u4E2A\u53D8\u5316\u3002\u7F16\u7A0B\u8BFE\u4F18\u5148\u4F7F\u7528\u539F\u751F trace \u8868\u8FBE\u9010\u6B65\u8BED\u4E49\uFF0C\u4F5C\u8005\u53EA\u63D0\u4F9B\u4EE3\u7801\u3001\u72B6\u6001\u548C\u89E3\u91CA\uFF0C\u7531 App \u51B3\u5B9A\u5E03\u5C40\u3001\u914D\u8272\u3001\u5B57\u53F7\u3001\u52A8\u753B\u548C\u4EA4\u4E92\uFF1B\u4E0D\u8981\u81EA\u9020\u5E03\u5C40\u3001\u5750\u6807\u3001\u989C\u8272\u6216\u6309\u94AE\u5B57\u6BB5\u3002\u6BCF\u8282\u56F4\u7ED5\u4E00\u4E2A\u77ED\u7A0B\u5E8F\u8FDE\u7EED\u5C55\u5F00\uFF1A\u5148\u9884\u6D4B\u2192\u5355\u6B65\u89C2\u5BDF\u2192\u8FC1\u79FB\u4E00\u9053\u9898\u2192\u52A8\u624B\u6539\u5199\u3002\u901A\u5E38 4\u20136 \u5757\u5373\u53EF\uFF0C\u4E0D\u4E3A\u4E86\u5F62\u5F0F\u4E30\u5BCC\u800C\u53E0\u52A0\u5BF9\u7167\u3001\u95EA\u5361\u3001\u4FEE\u590D\u9898\u3001\u672F\u8BED\u8868\u3002\u6CA1\u6709\u65B0\u7684\u6559\u5B66\u4EF7\u503C\u5C31\u5220\u6389\u3002
+\u3010\u670D\u52A1\u5668\u6258\u7BA1\u5B66\u4E60\u9875\u3011
+\u8BFE\u7A0B\u4ECD\u4E0A\u4F20 WORKSHOP-COURSE/1 \u7ED3\u6784\u5316 JSON\uFF0C\u4E0D\u80FD\u4E0A\u4F20\u6574\u4E2A\u53EF\u4FE1\u9875\u9762\u3001\u6865\u63A5\u811A\u672C\u6216 App \u5916\u58F3\u3002\u65B0\u5BA2\u6237\u7AEF\u4F7F\u7528 WORKSHOP-PLAYER/1\uFF1A\u670D\u52A1\u5668\u5C06\u89C4\u8303\u6570\u636E\u7F16\u6392\u4E3A\u79BB\u7EBF HTML \u5B66\u4E60\u9875\uFF1B\u6392\u7248\u3001\u4EA4\u4E92\u7EC4\u4EF6\u3001\u914D\u8272\u548C\u6559\u5B66\u5C55\u793A\u53EF\u76F4\u63A5\u4ECE\u670D\u52A1\u5668\u66F4\u65B0\u3002App \u53EA\u8D1F\u8D23\u4E0A\u4E0B\u6B65\u5BFC\u822A\u3001\u8D26\u6237\u3001\u8FDB\u5EA6\u4FDD\u5B58\u548C\u660E\u786E\u6388\u6743\u7684\u4EE3\u7801\u8FD0\u884C\u3002AI \u7684 HTML/SVG \u4ECD\u662F\u65E0\u7F51\u7EDC\u3001\u65E0\u540C\u6E90\u6743\u9650\u7684\u5185\u5D4C\u6C99\u76D2\uFF0C\u4E0D\u80FD\u8C03\u7528\u539F\u751F\u6865\u63A5\u3001\u8BBF\u95EE\u8D26\u6237\u6216\u6A21\u62DF\u4E0B\u4E00\u6B65\u63D0\u4EA4\uFF1B\u6240\u6709\u9700\u8981\u6301\u4E45\u5316\u7684\u7B54\u6848\u5FC5\u987B\u4F7F\u7528 question\u3002\u4E0D\u8981\u8981\u6C42\u7528\u6237\u518D\u6B21\u5B89\u88C5 App \u624D\u80FD\u663E\u793A\u65B0\u8BFE\u7A0B\u3002
+\u6BCF\u5C4F\u4E00\u4E2A\u95EE\u9898\u3001\u4E00\u4E2A\u53D8\u5316\u3002\u7F16\u7A0B\u8BFE\u4F18\u5148\u4F7F\u7528\u7ED3\u6784\u5316 trace \u8868\u8FBE\u9010\u6B65\u8BED\u4E49\uFF0C\u4F5C\u8005\u53EA\u63D0\u4F9B\u4EE3\u7801\u3001\u72B6\u6001\u548C\u89E3\u91CA\uFF0C\u7531 App \u51B3\u5B9A\u5E03\u5C40\u3001\u914D\u8272\u3001\u5B57\u53F7\u3001\u52A8\u753B\u548C\u4EA4\u4E92\uFF1B\u4E0D\u8981\u81EA\u9020\u5E03\u5C40\u3001\u5750\u6807\u3001\u989C\u8272\u6216\u6309\u94AE\u5B57\u6BB5\u3002\u6BCF\u8282\u56F4\u7ED5\u4E00\u4E2A\u77ED\u7A0B\u5E8F\u8FDE\u7EED\u5C55\u5F00\uFF1A\u5148\u9884\u6D4B\u2192\u5355\u6B65\u89C2\u5BDF\u2192\u8FC1\u79FB\u4E00\u9053\u9898\u2192\u52A8\u624B\u6539\u5199\u3002\u901A\u5E38 4\u20136 \u5757\u5373\u53EF\uFF0C\u4E0D\u4E3A\u4E86\u5F62\u5F0F\u4E30\u5BCC\u800C\u53E0\u52A0\u5BF9\u7167\u3001\u95EA\u5361\u3001\u4FEE\u590D\u9898\u3001\u672F\u8BED\u8868\u3002\u6CA1\u6709\u65B0\u7684\u6559\u5B66\u4EF7\u503C\u5C31\u5220\u6389\u3002
 trace \u9ED8\u8BA4\u6BCF\u5E27\u6700\u591A\u5C55\u793A 2 \u4E2A\u5BF9\u8C61\uFF0Cnote \u7528\u4E00\u53E5\u8BDD\uFF0C\u9ED8\u8BA4\u4E0D\u8D85\u8FC7 60 \u5B57\uFF1B\u6BCF\u4E00\u6B65\u53EA\u89E3\u91CA\u4E00\u4E2A\u53D8\u5316\u3002\u56F4\u7ED5\u540C\u4E00\u7A0B\u5E8F\u7684\u8BFE\u7A0B\u6216\u8BFE\u65F6\u5FC5\u987B\u901A\u8FC7 referenceCode \u63D0\u4F9B\u5B8C\u6574\u77ED\u7A0B\u5E8F\uFF0CApp \u59CB\u7EC8\u4FDD\u7559\u4E00\u5757\u53EF\u89C1\u7684\u4EE3\u7801\u533A\uFF1B\u8BB2\u89E3\u3001\u63A8\u6F14\u548C\u505A\u9898\u65F6\u90FD\u80FD\u5BF9\u7167\uFF0C\u4E0D\u8981\u6C42\u7528\u6237\u8BB0\u4F4F\u524D\u9875\u6E90\u7801\uFF0C\u4E5F\u4E0D\u80FD\u53EA\u9732\u4E00\u884C\u3001\u628A\u5B8C\u6574\u4EE3\u7801\u85CF\u5728\u5C55\u5F00\u6309\u94AE\u540E\u3002\u8BB2\u89E3\u53D8\u91CF\u3001\u64CD\u4F5C\u7B26\u6216\u8868\u8FBE\u5F0F\u65F6\uFF0C\u7528 focusSpans \u7CBE\u786E\u6807\u8BB0\uFF1B\u53EA\u6709\u6574\u884C\u90FD\u76F8\u5173\u65F6\u624D\u7528 focusLines\uFF0Ctrace \u53EF\u7528 frame.focusSpans \u52A8\u6001\u6807\u8BB0\uFF0C\u672A\u63D0\u4F9B\u7CBE\u786E\u6807\u8BB0\u65F6\u56DE\u9000 frame.line\u3002\u957F\u7A0B\u5E8F\u7531\u4EE3\u7801\u533A\u5185\u90E8\u6EDA\u52A8\uFF0C\u4F5C\u8005\u4E0D\u6307\u5B9A\u9AD8\u5EA6\u6216\u5E03\u5C40\u3002\u9664\u8FD9\u5757\u5FC5\u8981\u4EE3\u7801\u5916\uFF0C\u4E0D\u540C\u65F6\u5806\u53E0\u53C2\u6570\u9762\u677F\u3001\u8F93\u51FA\u9762\u677F\u3001\u5BF9\u7167\u3001\u65F6\u95F4\u8F74\u548C\u91CD\u590D\u6807\u7B7E\u3002\u76F8\u540C\u5BF9\u8C61\u7684\u591A\u4E2A\u540D\u5B57\u5FC5\u987B\u653E\u5728\u540C\u4E00\u4E2A objects \u9879\u7684 names \u6570\u7EC4\uFF1B\u4E0D\u8981\u628A\u5F15\u7528\u753B\u6210\u65B0\u7684\u526F\u672C\u3002\u5BF9\u8C61 id \u5728\u540C\u4E00 variant \u7684\u8FDE\u7EED\u5E27\u4FDD\u6301\u7A33\u5B9A\uFF0C\u79BB\u5F00\u4F5C\u7528\u57DF\u65F6\u79FB\u9664\u540D\u5B57\u6216\u5BF9\u8C61\u3002frame \u8868\u793A\u6267\u884C\u5BF9\u5E94 line \u540E\u7684\u72B6\u6001\uFF0Cline \u5FC5\u987B\u771F\u5B9E\u5B58\u5728\uFF1B\u8FD4\u56DE\u5E27\u53EF\u5B9A\u4F4D\u51FD\u6570\u53F3\u82B1\u62EC\u53F7\u3002output \u4EC5\u5728\u771F\u6B63\u4EA7\u751F\u8F93\u51FA\u7684\u5E27\u63D0\u4F9B\uFF0C\u4E0D\u80FD\u6DF7\u7528\u9884\u671F\u8F93\u51FA\u4E0E\u5DF2\u53D1\u751F\u8F93\u51FA\u3002
 \u3010\u4E92\u52A8\u8FB9\u754C\u3011
-trace \u662F\u4F5C\u8005\u7F16\u5199\u3001\u5BA2\u6237\u7AEF\u9010\u6B65\u5C55\u793A\u7684\u6559\u5B66\u63A8\u6F14\uFF0C\u4E0D\u662F\u5B9E\u9645\u7F16\u8BD1\u6216\u8FD0\u884C C++/Python\u3002\u4F18\u5148\u539F\u751F trace\u3001question\u3001code\u3002\u4EC5\u5F53\u539F\u751F\u5F62\u5F0F\u65E0\u6CD5\u8868\u8FBE\u6838\u5FC3\u4EA4\u4E92\uFF08\u4F8B\u5982\u8FDE\u7EED\u62D6\u52A8\u7269\u7406\u53C2\u6570\uFF09\u65F6\uFF0C\u624D\u4F7F\u7528\u663E\u5F0F HTML\uFF1B\u4E0D\u8981\u6C42\u6BCF\u8282\u8BFE\u5305\u542B HTML\uFF0C\u4E0D\u7528\u591A\u79CD\u63A7\u4EF6\u5806\u51FA\u5B9E\u9A8C\u53F0\u3002\u666E\u901A\u6B63\u6587\u3001Code\u3001Markdown \u56F4\u680F\u4E0D\u6267\u884C\u3002HTML \u64CD\u4F5C\u5FC5\u987B\u7ED1\u5B9A\u5B9E\u9645\u72B6\u6001\u66F4\u65B0\u5E76\u7ED9\u660E\u786E\u89C2\u5BDF\u4EFB\u52A1\uFF1B\u81F3\u5C11\u63D0\u4F9B\u91CD\u7F6E\uFF0C\u52A8\u753B\u9644\u6682\u505C/\u91CD\u7F6E\u5E76\u5C0A\u91CD prefers-reduced-motion\u3002HTML \u4E34\u65F6\u72B6\u6001\u4E0D\u4FDD\u5B58\u4E3A\u4F5C\u7B54\u6216\u8FDB\u5EA6\uFF0C\u9700\u4FDD\u5B58\u7684\u7EC3\u4E60\u7528 question\u3002
+trace \u662F\u4F5C\u8005\u7F16\u5199\u3001\u5BA2\u6237\u7AEF\u9010\u6B65\u5C55\u793A\u7684\u6559\u5B66\u63A8\u6F14\uFF0C\u4E0D\u662F\u5B9E\u9645\u7F16\u8BD1\u6216\u8FD0\u884C C++/Python\u3002\u4F18\u5148\u7ED3\u6784\u5316 trace\u3001question\u3001code\u3002\u4EC5\u5F53\u7ED3\u6784\u5316\u5F62\u5F0F\u65E0\u6CD5\u8868\u8FBE\u6838\u5FC3\u4EA4\u4E92\uFF08\u4F8B\u5982\u8FDE\u7EED\u62D6\u52A8\u7269\u7406\u53C2\u6570\uFF09\u65F6\uFF0C\u624D\u4F7F\u7528\u663E\u5F0F HTML\uFF1B\u4E0D\u8981\u6C42\u6BCF\u8282\u8BFE\u5305\u542B HTML\uFF0C\u4E0D\u7528\u591A\u79CD\u63A7\u4EF6\u5806\u51FA\u5B9E\u9A8C\u53F0\u3002\u666E\u901A\u6B63\u6587\u3001Code\u3001Markdown \u56F4\u680F\u4E0D\u6267\u884C\u3002HTML \u64CD\u4F5C\u5FC5\u987B\u7ED1\u5B9A\u5B9E\u9645\u72B6\u6001\u66F4\u65B0\u5E76\u7ED9\u660E\u786E\u89C2\u5BDF\u4EFB\u52A1\uFF1B\u81F3\u5C11\u63D0\u4F9B\u91CD\u7F6E\uFF0C\u52A8\u753B\u9644\u6682\u505C/\u91CD\u7F6E\u5E76\u5C0A\u91CD prefers-reduced-motion\u3002HTML \u4E34\u65F6\u72B6\u6001\u4E0D\u4FDD\u5B58\u4E3A\u4F5C\u7B54\u6216\u8FDB\u5EA6\uFF0C\u9700\u4FDD\u5B58\u7684\u7EC3\u4E60\u7528 question\u3002
 \u9ED8\u8BA4\u4E0D\u8981\u4F7F\u7528\u56FE\u7247\uFF1B\u56FE\u89E3\u4F18\u5148 SVG\uFF0C\u56FE\u8868\u53EA\u7528\u771F\u5B9E\u6570\u636E\u3002\u7981\u6B62\u89C6\u9891\u3001\u97F3\u9891\u3001\u56FE\u7247\u6570\u636E\u3001base64\u3002\u65E7 image \u5B57\u6BB5\u4ECD\u53EF\u63A5\u53D7\u6709\u6548 HTTPS \u5730\u5740\uFF0C\u4E0D\u7F16\u9020 URL\u3002
 \u3010\u6587\u6863\u683C\u5F0F structured-2\u3011
 \u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u672A\u77E5\u5B57\u6BB5\u62D2\u7EDD\u3002\u8BFE\u7A0B {protocol,id,title,summary,referenceCode?:Code,lessons:[{id,title,objectives?,estimatedMinutes?,referenceCode?:Code,blocks:[]}]}\u3002\u6574\u95E8\u8BFE\u5171\u7528\u4E00\u4E2A\u7A0B\u5E8F\u5C31\u653E\u8BFE\u7A0B referenceCode\uFF0C\u4EC5\u672C\u8BFE\u65F6\u5171\u7528\u5219\u653E\u8BFE\u65F6 referenceCode\uFF1B\u5207\u6362\u5230\u53E6\u4E00\u4E2A\u7A0B\u5E8F\u65F6\u663E\u5F0F\u63D0\u4F9B\u5F53\u524D code \u6216\u8BFE\u65F6 referenceCode\uFF0C\u4E0D\u9760\u6B63\u6587\u6697\u793A\u3002objectives 0\u20136\u9879\uFF0C\u6BCF\u9879\u6700\u591A500\uFF1BestimatedMinutes 1\u2013180\u6574\u6570\u3002\u8BFE\u7A0B\u3001\u8BFE\u65F6\u3001\u5757 id \u4E3A\u540C\u4E00\u6587\u6863\u5185\u552F\u4E00 UUID\u3002\u65B0\u8BFE\u7A0B\u751F\u6210\u65B0 UUID\uFF0C\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u4FDD\u7559\u7ED3\u6784 ID\u3002\u4E0D\u8981\u628A\u7528\u6237 ID\u3001\u4FEE\u8BA2\u53F7\u6216\u6267\u884C\u6307\u4EE4\u653E\u5165\u6B63\u6587\u3002
@@ -26808,7 +28788,7 @@ shortAnswer \u53EF\u6307\u5B9A input:{kind:"text"|"integer"|"decimal"|"code",lan
 \u5F00\u653E\u7A0B\u5E8F\u9898\u4E0E\u5141\u8BB8\u7B49\u4EF7\u8868\u8FBE\u5F0F\u7684\u9898\u76EE\u7701\u7565 acceptedAnswers\uFF0C\u4F9D\u636E\u8FD9\u7EC4\u8FD0\u884C\u8F93\u51FA\u53CD\u9988\u5E76\u7ED9\u89E3\u6790\uFF1BexpectedOutput \u4E0D\u662F\u9690\u85CF\u6D4B\u8BD5\u6216\u5B8C\u6574\u5224\u9898\u7CFB\u7EDF\u3002\u4E0A\u4F20\u8BFE\u7A0B\u4E0D\u4F1A\u81EA\u52A8\u7F16\u8BD1\u6216\u8FD0\u884C\uFF1B\u6CA1\u6709\u5B9E\u9645\u8FD0\u884C\u8BC1\u636E\u5C31\u4E0D\u80FD\u5BA3\u79F0\u5DF2\u7F16\u8BD1\u901A\u8FC7\u3002\u8D85\u65F6\u3001\u7F16\u8BD1\u9519\u8BEF\u6216\u8FD0\u884C\u670D\u52A1\u6682\u4E0D\u53EF\u7528\u65F6\u5E94\u5982\u5B9E\u53CD\u9988\u3002trace \u4ECD\u662F\u4EBA\u5DE5\u63A8\u6F14\uFF0Ccode/presentation.code \u4ECD\u662F\u5C55\u793A\uFF1BJavaScript \u53EF\u901A\u8FC7 execution \u5728 App \u672C\u5730\u9694\u79BB\u8FD0\u884C\uFF0C\u4E0D\u80FD\u9760\u666E\u901A text/HTML \u5192\u5145\u771F\u5B9E Python/C++ \u6267\u884C\u3002
 HTML/SVG \u901A\u8FC7\u663E\u5F0F presentation \u8FDB\u5165\u79BB\u7EBF\u6C99\u76D2\uFF1B\u4E0D\u4E0E\u666E\u901A\u5B57\u7B26\u4E32\u62FC\u63A5\u3002\u5B8C\u5168\u5185\u8054\uFF0C\u4E0D\u4F7F\u7528 CDN\u3001\u5916\u94FE\u811A\u672C/\u6837\u5F0F/\u5B57\u4F53\u3001\u8BF7\u6C42\u3001\u5BFC\u822A\u3001iframe/object/embed\u3001SVG image/foreignObject\u3001\u5A92\u4F53\u3001data/base64 \u6216\u4E0B\u8F7D\u3002HTML\u53EF\u8FD0\u884C\u5185\u8054CSS/JavaScript\u3001SVG/canvas\uFF1B\u670D\u52A1\u5668\u53EA\u5B58\u50A8\u3002\u4E0D\u8981\u4EFF\u5236 App \u5BFC\u822A\u3001\u8D26\u53F7\u6216\u4E0A\u4F20\u63A7\u4EF6\uFF1B\u9002\u914D\u7EA6320px\u5BBD\u5C4F\u5E55\uFF0C\u63A7\u4EF6\u81F3\u5C1144px\u9AD8\uFF0C\u4E8B\u4EF6\u66F4\u65B0\u5148\u6539\u6A21\u578B\u518D\u7ED8\u5236\uFF0C\u907F\u514D\u6BCF\u6B21\u8F93\u5165\u66FF\u6362\u6574\u4E2AinnerHTML\uFF0C\u907F\u514D\u65E0\u9650\u5FAA\u73AF\u548C\u540E\u53F0\u5B9A\u65F6\u5668\u3002Markdown\u53EF\u542B\u6807\u9898\u3001\u5217\u8868\u3001\u8868\u683C\u3001\u5F15\u7528\u548C\u5E26\u8BED\u8A00\u540D\u7684\u4EE3\u7801\u56F4\u680F\uFF0C\u4E0D\u542F\u7528\u539F\u59CBHTML\u6216\u56FE\u7247\u3002
 \u9650\u5236\u6309 UTF-16 \u4EE3\u7801\u5355\u5143\uFF1AJSON UTF-8\u6700\u591A1 MiB\uFF1B1\u201340\u8BFE\u65F6\uFF0C\u6BCF\u8BFE1\u201380\u5757\uFF1B\u6240\u6709title240\u3001summary2000\u3001text/callout20000\u3001\u9898\u5E72\u548Cexplanation4000\u3001caption2000\u3002\u56FE\u88681\u201360\u70B9\uFF0Clabel120\uFF0Cvalue\u6709\u9650\u4E14\u7EDD\u5BF9\u503C\u226410^15\uFF1B\u9009\u62E9\u98982\u201312\u9879\uFF0C\u9009\u9879text1000\uFF1BacceptedAnswers\u6700\u591A20\u4E2A\u4E0D\u91CD\u590D\u9879\uFF0C\u5404\u9879\u4E0A\u9650text500/code20000/output8000\uFF0C\u7528\u6237\u7B54\u6848\u4E0A\u96504000/20000/8000\uFF1BURL2048\uFF1B\u7981\u6B62\u63A7\u5236\u5B57\u7B26\u3002\u4E0D\u8981\u65B0\u9020 block.type \u6216\u628A code/hints/input/execution \u653E\u5728\u975E question \u5757\uFF1Binput/execution\u4EC5shortAnswer\u53EF\u7528\u3002
-\u8F93\u51FA\u524D\u6838\u5BF9\uFF1A\u6BCF\u4E00\u6B65\u662F\u5426\u53EA\u7A81\u51FA\u4E00\u4E2A\u53D8\u5316\uFF1F\u662F\u5426\u6709\u59CB\u7EC8\u53EF\u89C1\u7684\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\uFF0C\u8BB2\u89E3/\u63D0\u95EE\u7684 focusLines/focusSpans \u4E0E\u5F53\u524D\u4EE3\u7801\u4E00\u81F4\uFF0C\u91CD\u590D\u8BCD occurrence \u662F\u5426\u6B63\u786E\uFF0Ctrace \u5F53\u524D\u884C\u548C\u7CBE\u786E\u7247\u6BB5\u662F\u5426\u771F\u5B9E\u5B58\u5728\uFF1F\u5BF9\u8C61\u8EAB\u4EFD\u548C\u5F15\u7528\u522B\u540D\u662F\u5426\u4E00\u81F4\uFF1F\u4EE3\u7801\u884C\u53F7\u3001\u6570\u503C\u3001\u8F93\u51FA\u4E0E\u7EC3\u4E60\u7B54\u6848\u662F\u5426\u5BF9\u5E94\uFF1F\u539F\u751F\u80FD\u8868\u8FBE\u65F6\u662F\u5426\u907F\u514D\u4E86 HTML\uFF1F\u6BCF\u9053 Python/C++ \u7F16\u7A0B\u7EC3\u4E60\u662F\u5426\u6709\u6B63\u786E\u7684 input \u4E0E execution\uFF0C\u586B\u7A7A\u662F\u5426\u53EA\u6709\u4E00\u4E2A\u6A21\u677F\u6807\u8BB0\u4E14\u516C\u5F00\u4EE3\u7801\u4E0D\u6CC4\u9732\u7B54\u6848\uFF0C\u5B8C\u6574\u7A0B\u5E8F\u662F\u5426\u7701\u7565 template\uFF0C\u9ED8\u8BA4 stdin \u4E0E expectedOutput \u662F\u5426\u5339\u914D\u53C2\u8003\u7A0B\u5E8F\uFF1F\u4E0D\u8981\u628A\u68C0\u67E5\u6E05\u5355\u5199\u8FDB\u8BFE\u7A0B\uFF0C\u4E5F\u4E0D\u9010\u9879\u7D22\u8981\u786E\u8BA4\u3002
+\u8F93\u51FA\u524D\u6838\u5BF9\uFF1A\u6BCF\u4E00\u6B65\u662F\u5426\u53EA\u7A81\u51FA\u4E00\u4E2A\u53D8\u5316\uFF1F\u662F\u5426\u6709\u59CB\u7EC8\u53EF\u89C1\u7684\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\uFF0C\u8BB2\u89E3/\u63D0\u95EE\u7684 focusLines/focusSpans \u4E0E\u5F53\u524D\u4EE3\u7801\u4E00\u81F4\uFF0C\u91CD\u590D\u8BCD occurrence \u662F\u5426\u6B63\u786E\uFF0Ctrace \u5F53\u524D\u884C\u548C\u7CBE\u786E\u7247\u6BB5\u662F\u5426\u771F\u5B9E\u5B58\u5728\uFF1F\u5BF9\u8C61\u8EAB\u4EFD\u548C\u5F15\u7528\u522B\u540D\u662F\u5426\u4E00\u81F4\uFF1F\u4EE3\u7801\u884C\u53F7\u3001\u6570\u503C\u3001\u8F93\u51FA\u4E0E\u7EC3\u4E60\u7B54\u6848\u662F\u5426\u5BF9\u5E94\uFF1F\u7ED3\u6784\u5316\u7EC4\u4EF6\u80FD\u8868\u8FBE\u65F6\u662F\u5426\u907F\u514D\u4E86\u81EA\u5236 HTML\uFF1F\u6BCF\u9053 Python/C++ \u7F16\u7A0B\u7EC3\u4E60\u662F\u5426\u6709\u6B63\u786E\u7684 input \u4E0E execution\uFF0C\u586B\u7A7A\u662F\u5426\u53EA\u6709\u4E00\u4E2A\u6A21\u677F\u6807\u8BB0\u4E14\u516C\u5F00\u4EE3\u7801\u4E0D\u6CC4\u9732\u7B54\u6848\uFF0C\u5B8C\u6574\u7A0B\u5E8F\u662F\u5426\u7701\u7565 template\uFF0C\u9ED8\u8BA4 stdin \u4E0E expectedOutput \u662F\u5426\u5339\u914D\u53C2\u8003\u7A0B\u5E8F\uFF1F\u4E0D\u8981\u628A\u68C0\u67E5\u6E05\u5355\u5199\u8FDB\u8BFE\u7A0B\uFF0C\u4E5F\u4E0D\u9010\u9879\u7D22\u8981\u786E\u8BA4\u3002
 \u4E0B\u9762\u662F\u201C\u5171\u4EAB\u53C2\u8003\u7A0B\u5E8F\u2192\u539F\u751F\u5355\u6B65\u63A8\u6F14\u2192\u5E26\u884C\u4E0E\u5B57\u7B26\u9AD8\u4EAE\u7684\u8FC1\u79FB\u9009\u62E9\u9898\u2192Python \u6570\u503C\u586B\u7A7A\u2192C++ \u8868\u8FBE\u5F0F\u586B\u7A7A\u2192\u4E24\u79CD\u8BED\u8A00\u5B8C\u6574\u7A0B\u5E8F\u9898\u201D\u7684\u5B8C\u6574\u6709\u6548\u793A\u4F8B\uFF0C\u542B\u56DB\u9053\u53EF\u8FD0\u884C\u9898\u3002\u5B83\u5C55\u793A\u534F\u8BAE\u5199\u6CD5\uFF0C\u4E0D\u8981\u6C42\u6BCF\u4E2A\u8BFE\u65F6\u540C\u65F6\u6559\u6388\u4E24\u79CD\u8BED\u8A00\u6216\u7167\u642C\u5168\u90E8\u9898\u578B\uFF1B\u6309\u7528\u6237\u4E3B\u9898\u8BBE\u8BA1\uFF0C\u4E0D\u7167\u642C\u6807\u9898\u3001UUID\u6216\u77E5\u8BC6\u70B9\u3002\u53EA\u6709\u8FD9\u4E00\u4E2A\u5B8C\u6574 JSON \u4EE3\u7801\u5757\u662F\u683C\u5F0F\u793A\u4F8B\uFF1A
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
@@ -27215,13 +29195,76 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     return { ...result, replayed: false };
   }
   const runningUsers = /* @__PURE__ */ new Set();
+  const playerCache = /* @__PURE__ */ new Map();
+  let playerCacheBytes = 0;
+  const compressPlayer = promisify(gzip), playerCacheLimit = 16 * 1024 * 1024;
+  async function playerPackage(ownerID, row, lessonID) {
+    const key = `${ownerID}:${row.id}:${row.revision}:${lessonID}:${rendererVersion}`;
+    let entry = playerCache.get(key);
+    if (entry) {
+      playerCache.delete(key);
+      playerCache.set(key, entry);
+      return entry;
+    }
+    const value = renderCoursePlayer(JSON.parse(row.document), lessonID, row.revision);
+    if (Buffer.byteLength(value.html) > 4 * 1024 * 1024) fail2("COURSE_PLAYER_TOO_LARGE", 413);
+    const bytes = Buffer.from(JSON.stringify({ data: value })), zipped = await compressPlayer(bytes);
+    if (playerCache.has(key)) return playerCache.get(key);
+    entry = { bytes, zipped, size: bytes.length + zipped.length };
+    while (playerCacheBytes + entry.size > playerCacheLimit && playerCache.size) {
+      const oldest = playerCache.keys().next().value;
+      playerCacheBytes -= playerCache.get(oldest).size;
+      playerCache.delete(oldest);
+    }
+    if (entry.size <= playerCacheLimit) {
+      playerCache.set(key, entry);
+      playerCacheBytes += entry.size;
+    }
+    return entry;
+  }
+  function sendPlayer(request, response, result) {
+    if (typeof response.writeHead !== "function") {
+      respond(response, 200, JSON.parse(result.bytes));
+      return;
+    }
+    const acceptsGzip = String(request.headers["accept-encoding"] ?? "").split(",").some((value) => {
+      const [encoding, ...parameters] = value.trim().split(";");
+      return encoding === "gzip" && !parameters.some((value2) => /^\s*q\s*=\s*0(?:\.0*)?\s*$/i.test(value2));
+    });
+    const body = acceptsGzip ? result.zipped : result.bytes;
+    response.writeHead(200, {
+      "Content-Type": "application/json; charset=utf-8",
+      "Content-Length": body.length,
+      "Cache-Control": "private, no-store",
+      "Vary": "Accept-Encoding",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      ...acceptsGzip ? { "Content-Encoding": "gzip" } : {}
+    });
+    response.end(body);
+    return;
+  }
   return async function handle(request, response, path) {
     if (path === coursePath + "/schema" && request.method === "GET") {
       respond(response, 200, course_schema_default);
       return true;
     }
+    if (path === "/api/native/v1/course-player/demo") {
+      if (request.method !== "GET") fail2("NOT_FOUND", 404);
+      sameWebOrigin(request);
+      const query = new URL(request.url, origin).searchParams;
+      if ([...query.keys()].some((key) => !["courseID", "lessonID"].includes(key)) || query.getAll("lessonID").length !== 1 || query.getAll("courseID").length !== 1) fail2("INVALID_COURSE_PLAYER_QUERY");
+      const courseID = uuid3(query.get("courseID")), lessonID = uuid3(query.get("lessonID"));
+      const entry = catalog_default.find((entry2) => entry2.kind === "course" && String(entry2.payload.id).toLowerCase() === courseID);
+      if (!entry) fail2("COURSE_NOT_FOUND", 404);
+      const doc = entry.payload;
+      if (!doc.lessons.some((lesson) => lesson.id.toLowerCase() === lessonID)) fail2("COURSE_LESSON_NOT_FOUND", 404);
+      const result = await playerPackage("public-demo", { id: courseID, revision: entry.version, document: JSON.stringify(doc) }, lessonID);
+      sendPlayer(request, response, result);
+      return true;
+    }
     const tokens = path === "/api/native/v1/integrations/course-tokens";
-    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star|run))?)?$/.exec(path);
+    const native = /^\/api\/native\/v1\/courses(?:\/([^/]+)(\/(?:progress|star|run|player))?)?$/.exec(path);
     if (path !== coursePath && !tokens && !native) return false;
     sameWebOrigin(request);
     if (path === coursePath && request.method === "POST") {
@@ -27268,7 +29311,18 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       }
     }
     if (native) {
-      const id = native[1] ? uuid3(native[1]) : null, isProgress = native[2] === "/progress", isStar = native[2] === "/star", isRun = native[2] === "/run";
+      const id = native[1] ? uuid3(native[1]) : null, isProgress = native[2] === "/progress", isStar = native[2] === "/star", isRun = native[2] === "/run", isPlayer = native[2] === "/player";
+      if (id && isPlayer) {
+        if (request.method !== "GET") fail2("NOT_FOUND", 404);
+        const { ownerID } = workspaceAccess(request);
+        const query = new URL(request.url, origin).searchParams;
+        if ([...query.keys()].some((key) => key !== "lessonID") || query.getAll("lessonID").length !== 1) fail2("INVALID_COURSE_PLAYER_QUERY");
+        const lessonID = uuid3(query.get("lessonID")), row = course(ownerID, id), doc = JSON.parse(row.document);
+        if (!doc.lessons.some((lesson) => lesson.id.toLowerCase() === lessonID)) fail2("COURSE_LESSON_NOT_FOUND", 404);
+        const result = await playerPackage(ownerID, row, lessonID);
+        sendPlayer(request, response, result);
+        return true;
+      }
       if (id && isRun && request.method === "POST") {
         workspaceAccess(request);
         const { value } = await read(request, 128 * 1024);
@@ -27408,1447 +29462,6 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
 
 // Server/app-content.mjs
 import { createHash as createHash2 } from "node:crypto";
-
-// Server/AppContent/demo-course.json
-var demo_course_default = {
-  protocol: "WORKSHOP-CONTENT/1",
-  id: "demo-course",
-  kind: "course",
-  version: 3,
-  minimumContentVersion: 1,
-  payload: {
-    id: "8343F80B-F43C-4901-B585-A67647EA9700",
-    lessons: [
-      {
-        blocks: [
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0100",
-            text: "\u5148\u8BB0\u5F55\u8981\u505A\u7684\u4E8B\uFF0C\u518D\u9009\u62E9\u771F\u6B63\u91CD\u8981\u7684\u4E8B\u3002\u4E3A\u6BCF\u9879\u4EFB\u52A1\u4FDD\u7559\u5408\u7406\u7684\u65F6\u95F4\uFF0C\u4E5F\u7ED9\u81EA\u5DF1\u7559\u4E00\u70B9\u7A7A\u767D\u3002",
-            type: "text"
-          },
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0101",
-            text: "\u8BD5\u4E00\u8BD5\uFF1A\u9009\u51FA\u4ECA\u5929\u6700\u91CD\u8981\u7684\u4E00\u4EF6\u4E8B\uFF0C\u4E3A\u5B83\u5B89\u6392\u4E00\u4E2A\u4E0D\u88AB\u6253\u6270\u7684\u65F6\u6BB5\u3002",
-            type: "callout"
-          },
-          {
-            caption: "\u793A\u4F8B\uFF1A\u4E00\u5929\u7684\u65F6\u95F4\u5206\u914D\uFF08\u5C0F\u65F6\uFF09",
-            chartType: "bar",
-            id: "8343F80B-F43C-4901-B585-A67647EA0102",
-            points: [
-              {
-                label: "\u5B66\u4E60",
-                value: 5
-              },
-              {
-                label: "\u8FD0\u52A8",
-                value: 1
-              },
-              {
-                label: "\u4F11\u606F",
-                value: 8
-              },
-              {
-                label: "\u5176\u4ED6",
-                value: 10
-              }
-            ],
-            type: "chart"
-          },
-          {
-            correctOptionIDs: [
-              "a"
-            ],
-            explanation: "\u5148\u786E\u5B9A\u91CD\u70B9\uFF0C\u518D\u4E3A\u4EFB\u52A1\u7559\u51FA\u7F13\u51B2\u3002",
-            id: "8343F80B-F43C-4901-B585-A67647EA0103",
-            options: [
-              {
-                id: "a",
-                text: "\u5148\u6311\u9009\u6700\u91CD\u8981\u7684\u4EFB\u52A1"
-              },
-              {
-                id: "b",
-                text: "\u628A\u6240\u6709\u65F6\u95F4\u90FD\u6392\u6EE1"
-              }
-            ],
-            questionType: "singleChoice",
-            text: "\u54EA\u4E00\u79CD\u5B89\u6392\u66F4\u9002\u5408\u5F00\u59CB\u4ECA\u5929\uFF1F",
-            type: "question"
-          }
-        ],
-        id: "8343F80B-F43C-4901-B585-A67647EA9701",
-        title: "\u628A\u4E00\u5929\u5B89\u6392\u5F97\u66F4\u4ECE\u5BB9"
-      },
-      {
-        blocks: [
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0200",
-            text: "\u590D\u76D8\u7684\u76EE\u7684\uFF0C\u662F\u627E\u5230\u9002\u5408\u81EA\u5DF1\u7684\u8282\u594F\u3002\u6BCF\u5929\u8BB0\u5F55\u4E00\u70B9\u8FDB\u5C55\uFF0C\u6301\u7EED\u6BD4\u5B8C\u7F8E\u66F4\u91CD\u8981\u3002",
-            type: "text"
-          },
-          {
-            caption: "\u793A\u4F8B\uFF1A\u4E00\u5468\u7684\u4E13\u6CE8\u65F6\u957F\uFF08\u5206\u949F\uFF09",
-            chartType: "line",
-            id: "8343F80B-F43C-4901-B585-A67647EA0201",
-            points: [
-              {
-                label: "\u5468\u4E00",
-                value: 35
-              },
-              {
-                label: "\u5468\u4E8C",
-                value: 45
-              },
-              {
-                label: "\u5468\u4E09",
-                value: 40
-              },
-              {
-                label: "\u5468\u56DB",
-                value: 55
-              }
-            ],
-            type: "chart"
-          },
-          {
-            correctOptionIDs: [
-              "a",
-              "b"
-            ],
-            explanation: "\u7559\u51FA\u4F11\u606F\u548C\u8C03\u6574\u7684\u7A7A\u95F4\uFF0C\u8BA1\u5212\u624D\u80FD\u6301\u7EED\u3002",
-            id: "8343F80B-F43C-4901-B585-A67647EA0202",
-            options: [
-              {
-                id: "a",
-                text: "\u5B89\u6392\u4F11\u606F"
-              },
-              {
-                id: "b",
-                text: "\u5B9A\u671F\u590D\u76D8"
-              },
-              {
-                id: "c",
-                text: "\u6C38\u8FDC\u4E0D\u5141\u8BB8\u8BA1\u5212\u53D8\u5316"
-              }
-            ],
-            questionType: "multipleChoice",
-            text: "\u54EA\u4E9B\u4E60\u60EF\u6709\u52A9\u4E8E\u4FDD\u6301\u8282\u594F\uFF1F",
-            type: "question"
-          },
-          {
-            explanation: "\u8FD9\u9053\u9898\u6CA1\u6709\u6807\u51C6\u7B54\u6848\u3002\u5199\u4E0B\u81EA\u5DF1\u7684\u60F3\u6CD5\uFF0C\u5C31\u8FC8\u51FA\u4E86\u7B2C\u4E00\u6B65\u3002",
-            id: "8343F80B-F43C-4901-B585-A67647EA0203",
-            input: {
-              kind: "text",
-              maxLines: 5,
-              minLines: 2,
-              placeholder: "\u4F8B\u5982\uFF1A\u8BFB\u5B8C\u4E00\u7AE0\uFF0C\u6216\u6574\u7406\u4ECA\u5929\u7684\u7B14\u8BB0"
-            },
-            questionType: "shortAnswer",
-            text: "\u5199\u4E0B\u4E00\u4EF6\u4ECA\u5929\u60F3\u5B8C\u6210\u7684\u5C0F\u4E8B\u3002",
-            type: "question"
-          }
-        ],
-        id: "8343F80B-F43C-4901-B585-A67647EA9702",
-        title: "\u5EFA\u7ACB\u81EA\u5DF1\u7684\u8282\u594F"
-      },
-      {
-        blocks: [
-          {
-            focusLines: [
-              4,
-              5
-            ],
-            focusSpans: [
-              {
-                line: 4,
-                text: "count"
-              },
-              {
-                line: 5,
-                text: "++"
-              }
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0300",
-            presentation: {
-              kind: "markdown",
-              markdown: {
-                source: "## \u8BA9\u53D8\u91CF\u589E\u52A0\u4E00\u6B21\n`++count` \u4F1A\u628A\u53D8\u91CF\u7684\u503C\u52A0\u4E0A **1**\u3002\u5148\u9884\u6D4B\u8F93\u51FA\uFF0C\u518D\u70B9\u51FB\u4E0B\u65B9\u6F14\u793A\u9A8C\u8BC1\u3002\n\n```cpp\n#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count; // \u8F93\u51FA 1\n}\n```\n\u6BCF\u6B21\u6267\u884C\u9012\u589E\u8BED\u53E5\uFF0C\u90FD\u662F\u5728\u539F\u6765\u7684\u503C\u4E0A\u518D\u52A0\u4E00\u3002"
-              }
-            },
-            text: "\u6574\u6570\u53D8\u91CF count \u4ECE 0 \u5F00\u59CB\u3002\u6267\u884C ++count \u540E\u53D8\u6210 1\uFF0Cstd::cout \u4F1A\u8F93\u51FA 1\u3002",
-            title: "\u4ECE\u4E00\u884C\u4EE3\u7801\u5F00\u59CB",
-            type: "text"
-          },
-          {
-            focusLines: [
-              4,
-              5
-            ],
-            focusSpans: [
-              {
-                line: 4,
-                text: "0"
-              },
-              {
-                line: 5,
-                text: "count"
-              }
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0301",
-            presentation: {
-              kind: "svg",
-              svg: {
-                height: 200,
-                source: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 180" role="img" aria-label="count \u4ECE 0 \u589E\u52A0\u5230 1">\n  <style>text{font-family:system-ui,sans-serif;fill:#24372f}.box{fill:#e7efe8;stroke:#548467;stroke-width:2}.arrow{stroke:#548467;stroke-width:3;fill:none}</style>\n  <rect class="box" x="15" y="35" width="105" height="105" rx="18"/>\n  <text x="67" y="65" text-anchor="middle" font-size="16">count</text><text x="67" y="114" text-anchor="middle" font-size="42">0</text>\n  <path class="arrow" d="M135 90H220M210 80L220 90L210 100"/>\n  <text x="177" y="66" text-anchor="middle" font-size="16">++count</text>\n  <rect class="box" x="240" y="35" width="105" height="105" rx="18"/>\n  <text x="292" y="65" text-anchor="middle" font-size="16">count</text><text x="292" y="114" text-anchor="middle" font-size="42">1</text>\n</svg>'
-              }
-            },
-            text: "\u53D8\u91CF count \u53EF\u4EE5\u770B\u6210\u4E00\u4E2A\u6709\u540D\u79F0\u7684\u76D2\u5B50\u3002\u521D\u59CB\u76D2\u5B50\u91CC\u662F 0\uFF0C\u6267\u884C ++count \u540E\uFF0C\u76D2\u5B50\u91CC\u7684\u503C\u53D8\u6210 1\u3002",
-            title: "\u53D8\u91CF\u5982\u4F55\u53D8\u5316",
-            type: "text"
-          },
-          {
-            focusLines: [
-              5
-            ],
-            focusSpans: [
-              {
-                line: 5,
-                text: "++count"
-              }
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0302",
-            presentation: {
-              html: {
-                height: 280,
-                source: `<!doctype html><html lang="zh-CN"><head><meta name="viewport" content="width=device-width,initial-scale=1"><style>
-:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:20px;font:16px system-ui,sans-serif;color:light-dark(#24372f,#e5eee7);background:transparent}
-.demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}
-.actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}
-@media(prefers-reduced-motion:reduce){.value{transition:none}}
-</style></head><body><section class="demo" aria-label="\u53D8\u91CF\u9012\u589E\u6F14\u793A"><code>int count = <output id="inline">0</output>;</code><output id="value" class="value" aria-live="polite">0</output><div class="actions"><button id="increment">\u6267\u884C ++count</button><button id="reset" class="secondary">\u91CD\u7F6E</button></div><label><input type="checkbox" id="reduce">\u51CF\u5C11\u52A8\u6001</label></section><script>
-(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function show(){value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,9999);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()})})();
-</script></body></html>`
-              },
-              kind: "html"
-            },
-            text: "\u4E92\u52A8\u793A\u4F8B\u4ECE count = 0 \u5F00\u59CB\u3002\u70B9\u51FB\u6267\u884C ++count\uFF0C\u503C\u589E\u52A0 1\uFF1B\u70B9\u51FB\u91CD\u7F6E\uFF0C\u503C\u56DE\u5230 0\u3002\u5F00\u542F\u51CF\u5C11\u52A8\u6001\u540E\uFF0C\u6570\u5B57\u53D8\u5316\u4E0D\u4F7F\u7528\u7F29\u653E\u52A8\u753B\u3002",
-            title: "\u4EB2\u624B\u8FD0\u884C\u4E00\u6B21",
-            type: "callout"
-          }
-        ],
-        estimatedMinutes: 5,
-        id: "8343F80B-F43C-4901-B585-A67647EA9703",
-        objectives: [
-          "\u8BFB\u61C2\u4E00\u4E2A\u5B8C\u6574\u7684 C++ \u9012\u589E\u793A\u4F8B\u3002",
-          "\u7528\u793A\u610F\u56FE\u548C\u4EA4\u4E92\u89C2\u5BDF\u53D8\u91CF\u53D8\u5316\u3002"
-        ],
-        referenceCode: {
-          annotations: [
-            {
-              line: 5,
-              text: "\u524D\u7F6E\u9012\u589E\uFF1A\u5148\u628A count \u589E\u52A0 1\u3002"
-            }
-          ],
-          expectedOutput: "1",
-          filename: "counter.cpp",
-          highlightLines: [
-            5
-          ],
-          highlightSpans: [
-            {
-              line: 5,
-              text: "++"
-            }
-          ],
-          language: "cpp",
-          source: "#include <iostream>\n\nint main() {\n    int count = 0;\n    ++count;\n    std::cout << count;\n}"
-        },
-        title: "\u4EE3\u7801\u4E0E\u4E92\u52A8\u6F14\u793A"
-      },
-      {
-        blocks: [
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0400",
-            presentation: {
-              code: {
-                annotations: [
-                  {
-                    line: 3,
-                    text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
-                  }
-                ],
-                expectedOutput: "6",
-                filename: "sum.js",
-                highlightLines: [
-                  3
-                ],
-                highlightSpans: [
-                  {
-                    line: 3,
-                    occurrence: 2,
-                    text: "total"
-                  }
-                ],
-                language: "javascript",
-                source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
-              },
-              kind: "code"
-            },
-            text: "\u8FD9\u6BB5\u7A0B\u5E8F\u628A 1\u30012\u30013 \u4F9D\u6B21\u52A0\u8FDB total\u3002\u5B8C\u6574\u7A0B\u5E8F\u4F1A\u4E00\u76F4\u4FDD\u7559\u5728\u4E0A\u65B9\uFF1B\u84DD\u8272\u6807\u8BB0\u4F1A\u8DDF\u968F\u8BB2\u89E3\uFF0C\u7CBE\u786E\u5230\u53D8\u91CF\u6216\u8FD0\u7B97\u7B26\u3002",
-            title: "\u5B8C\u6574\u7A0B\u5E8F\u968F\u65F6\u53EF\u770B",
-            type: "text"
-          },
-          {
-            focusLines: [
-              3
-            ],
-            focusSpans: [
-              {
-                line: 3,
-                occurrence: 2,
-                text: "total"
-              }
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0401",
-            text: "total = total + i \u53F3\u4FA7\u5148\u8BA1\u7B97\uFF0C\u5DE6\u4FA7\u540E\u63A5\u6536\u3002\u73B0\u5728\u53EA\u6807\u8BB0\u53F3\u4FA7\u7B2C\u4E8C\u6B21\u51FA\u73B0\u7684 total\uFF0C\u5B83\u8868\u793A\u7D2F\u52A0\u524D\u7684\u65E7\u503C\u3002",
-            title: "\u540C\u4E00\u4E2A\u53D8\u91CF\uFF0C\u4E24\u4E2A\u4F4D\u7F6E",
-            type: "text"
-          },
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0402",
-            presentation: {
-              kind: "trace",
-              trace: {
-                variants: [
-                  {
-                    code: {
-                      annotations: [
-                        {
-                          line: 3,
-                          text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
-                        }
-                      ],
-                      expectedOutput: "6",
-                      filename: "sum.js",
-                      highlightLines: [
-                        3
-                      ],
-                      highlightSpans: [
-                        {
-                          line: 3,
-                          occurrence: 2,
-                          text: "total"
-                        }
-                      ],
-                      language: "javascript",
-                      source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
-                    },
-                    frames: [
-                      {
-                        focusSpans: [
-                          {
-                            line: 1,
-                            text: "0"
-                          }
-                        ],
-                        line: 1,
-                        note: "total \u4ECE 0 \u5F00\u59CB\u3002",
-                        objects: [
-                          {
-                            changed: true,
-                            id: "total",
-                            names: [
-                              "total"
-                            ],
-                            scope: "\u7A0B\u5E8F",
-                            value: "0"
-                          }
-                        ],
-                        title: "\u5148\u51C6\u5907\u4E00\u4E2A\u603B\u6570"
-                      },
-                      {
-                        focusSpans: [
-                          {
-                            line: 2,
-                            text: "i <= 3"
-                          }
-                        ],
-                        line: 2,
-                        note: "i \u53D6 1\uFF0C\u6EE1\u8DB3 i <= 3\uFF0C\u53EF\u4EE5\u8FDB\u5165\u5FAA\u73AF\u4F53\u3002",
-                        objects: [
-                          {
-                            id: "total",
-                            names: [
-                              "total"
-                            ],
-                            value: "0"
-                          },
-                          {
-                            changed: true,
-                            id: "i",
-                            names: [
-                              "i"
-                            ],
-                            value: "1"
-                          }
-                        ],
-                        title: "\u7B2C\u4E00\u6B21\u5FAA\u73AF"
-                      },
-                      {
-                        focusSpans: [
-                          {
-                            line: 3,
-                            text: "total + i"
-                          }
-                        ],
-                        line: 3,
-                        note: "\u53F3\u4FA7\u7B97\u51FA 0 + 1\uFF0C\u518D\u628A\u7ED3\u679C 1 \u5199\u56DE total\u3002",
-                        objects: [
-                          {
-                            changed: true,
-                            id: "total",
-                            names: [
-                              "total"
-                            ],
-                            value: "1"
-                          },
-                          {
-                            id: "i",
-                            names: [
-                              "i"
-                            ],
-                            value: "1"
-                          }
-                        ],
-                        title: "\u7B2C\u4E00\u6B21\u76F8\u52A0"
-                      },
-                      {
-                        focusSpans: [
-                          {
-                            line: 3,
-                            occurrence: 2,
-                            text: "total"
-                          },
-                          {
-                            line: 3,
-                            text: "i"
-                          }
-                        ],
-                        line: 3,
-                        note: "i \u589E\u52A0\u5230 2\u3002\u8FD9\u4E00\u6B21\uFF0C\u65E7\u7684 total \u662F 1\uFF1B1 + 2 \u5F97\u5230 3\u3002",
-                        objects: [
-                          {
-                            changed: true,
-                            id: "total",
-                            names: [
-                              "total"
-                            ],
-                            value: "3"
-                          },
-                          {
-                            changed: true,
-                            id: "i",
-                            names: [
-                              "i"
-                            ],
-                            value: "2"
-                          }
-                        ],
-                        title: "\u7B2C\u4E8C\u6B21\u76F8\u52A0"
-                      },
-                      {
-                        focusSpans: [
-                          {
-                            line: 3,
-                            text: "="
-                          }
-                        ],
-                        line: 3,
-                        note: "i \u589E\u52A0\u5230 3\uFF0Ctotal \u7531 3 + 3 \u53D8\u6210 6\u3002\u4E4B\u540E i \u53D8\u4E3A 4\uFF0C\u5FAA\u73AF\u7ED3\u675F\u3002",
-                        objects: [
-                          {
-                            changed: true,
-                            id: "total",
-                            names: [
-                              "total"
-                            ],
-                            value: "6"
-                          },
-                          {
-                            changed: true,
-                            id: "i",
-                            names: [
-                              "i"
-                            ],
-                            value: "3"
-                          }
-                        ],
-                        title: "\u7B2C\u4E09\u6B21\u76F8\u52A0"
-                      },
-                      {
-                        focusSpans: [
-                          {
-                            line: 5,
-                            text: "total"
-                          }
-                        ],
-                        line: 5,
-                        note: "\u7A0B\u5E8F\u8F93\u51FA total \u7684\u6700\u7EC8\u503C 6\u3002",
-                        objects: [
-                          {
-                            id: "total",
-                            names: [
-                              "total"
-                            ],
-                            value: "6"
-                          }
-                        ],
-                        output: "6",
-                        title: "\u8F93\u51FA\u6700\u7EC8\u7ED3\u679C"
-                      }
-                    ],
-                    id: "sum",
-                    title: "\u7D2F\u52A0 1 \u5230 3"
-                  }
-                ]
-              }
-            },
-            text: "\u70B9\u51FB\u6267\u884C\u4E0B\u4E00\u6B65\uFF0C\u89C2\u5BDF i\u3001total \u4E0E\u8F93\u51FA\u5982\u4F55\u53D8\u5316\uFF1B\u4E5F\u53EF\u4EE5\u9000\u56DE\u4E0A\u4E00\u5E27\u5BF9\u7167\u3002",
-            title: "\u4E00\u6B65\u4E00\u6B65\u89C2\u5BDF",
-            type: "text"
-          },
-          {
-            acceptedAnswers: [
-              "6"
-            ],
-            explanation: "0 + 1 + 2 + 3 = 6\u3002\u8F93\u5165\u540E\u70B9\u7EE7\u7EED\uFF0C\u4E5F\u4F1A\u5148\u68C0\u67E5\u8FD9\u9053\u9898\u3002",
-            focusLines: [
-              5
-            ],
-            focusSpans: [
-              {
-                line: 5,
-                text: "total"
-              }
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0403",
-            input: {
-              kind: "integer",
-              maxLines: 3,
-              minLines: 2,
-              placeholder: "\u6700\u7EC8\u7684 total"
-            },
-            questionType: "shortAnswer",
-            text: "\u56DE\u770B\u4E0A\u65B9\u7A0B\u5E8F\uFF1A\u5FAA\u73AF\u7ED3\u675F\u540E\uFF0Ctotal \u7684\u503C\u662F\u591A\u5C11\uFF1F\u53EA\u8F93\u5165\u4E00\u4E2A\u6574\u6570\u3002",
-            type: "question"
-          }
-        ],
-        estimatedMinutes: 4,
-        id: "8343F80B-F43C-4901-B585-A67647EA9704",
-        objectives: [
-          "\u8BA9\u5B8C\u6574\u7A0B\u5E8F\u4E0E\u5F53\u524D\u8BB2\u89E3\u4FDD\u6301\u5BF9\u5E94\u3002",
-          "\u6309\u53D8\u91CF\u3001\u8868\u8FBE\u5F0F\u548C\u884C\u53F7\u89C2\u5BDF\u72B6\u6001\u53D8\u5316\u3002"
-        ],
-        referenceCode: {
-          annotations: [
-            {
-              line: 3,
-              text: "\u5148\u8BFB\u53D6\u53F3\u8FB9\u7684\u65E7\u503C\uFF0C\u518D\u628A\u76F8\u52A0\u7684\u7ED3\u679C\u5199\u56DE\u5DE6\u8FB9\u3002"
-            }
-          ],
-          expectedOutput: "6",
-          filename: "sum.js",
-          highlightLines: [
-            3
-          ],
-          highlightSpans: [
-            {
-              line: 3,
-              occurrence: 2,
-              text: "total"
-            }
-          ],
-          language: "javascript",
-          source: "let total = 0;\nfor (let i = 1; i <= 3; i++) {\n    total = total + i;\n}\nconsole.log(total);"
-        },
-        title: "\u770B\u7740\u7A0B\u5E8F\uFF0C\u9010\u6B65\u63A8\u6F14"
-      },
-      {
-        blocks: [
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0500",
-            text: "\u8FD9\u91CC\u7684\u7EC3\u4E60\u53EF\u4EE5\u76F4\u63A5\u5728\u672C\u673A\u8FD0\u884C\u3002\u6570\u5B57\u9898\u4F7F\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u7A0B\u5E8F\u9898\u4F7F\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u586B\u5199\u7B54\u6848\u540E\uFF0C\u53EF\u70B9\u8FD0\u884C\u4EE3\u7801\uFF0C\u4E5F\u53EF\u70B9\u5E95\u90E8\u7EE7\u7EED\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
-            title: "\u4ECE\u8F93\u5165\u5230\u7ED3\u679C",
-            type: "callout"
-          },
-          {
-            acceptedAnswers: [
-              "4"
-            ],
-            execution: {
-              expectedOutput: "1\n2\n3",
-              language: "javascript",
-              template: "for (let i = 1; i < {{ANSWER}}; i++) {\n    console.log(i);\n}"
-            },
-            explanation: "\u6761\u4EF6\u662F i < 4\uFF0C\u6240\u4EE5\u5FAA\u73AF\u4F53\u4F1A\u6267\u884C i = 1\u30012\u30013\u3002",
-            focusLines: [
-              1
-            ],
-            focusSpans: [
-              {
-                line: 1,
-                text: "{{ANSWER}}"
-              }
-            ],
-            hints: [
-              "\u6CE8\u610F\u6761\u4EF6\u4E2D\u7684 < \u4E0D\u5305\u542B\u53F3\u4FA7\u7684\u6570\u3002"
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0501",
-            input: {
-              kind: "integer",
-              maxLines: 3,
-              minLines: 2,
-              placeholder: "\u586B\u5165\u7ED3\u675F\u503C"
-            },
-            questionType: "shortAnswer",
-            text: "\u8865\u5168\u5FAA\u73AF\u7684\u7ED3\u675F\u503C\uFF0C\u4F7F\u7A0B\u5E8F\u4F9D\u6B21\u8F93\u51FA 1\u30012\u30013\u3002\u53EA\u586B\u4E00\u4E2A\u6574\u6570\u3002",
-            title: "\u6574\u6570\u586B\u7A7A",
-            type: "question"
-          },
-          {
-            acceptedAnswers: [
-              "0.5"
-            ],
-            execution: {
-              expectedOutput: "1",
-              language: "javascript",
-              template: "console.log(2 * ({{ANSWER}}));"
-            },
-            explanation: "2 \xD7 0.5 = 1\uFF1B\u8BD5\u7740\u8FD0\u884C\uFF0C\u770B\u770B\u5B9E\u9645\u8F93\u51FA\u3002",
-            focusLines: [
-              1
-            ],
-            focusSpans: [
-              {
-                line: 1,
-                text: "{{ANSWER}}"
-              }
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0502",
-            input: {
-              kind: "decimal",
-              maxLines: 3,
-              minLines: 2,
-              placeholder: "\u4F8B\u5982 0.5"
-            },
-            questionType: "shortAnswer",
-            text: "\u4E00\u6761\u7EF3\u5B50\u957F 2 \u7C73\uFF0C\u53D6\u5B83\u7684\u591A\u5C11\u500D\u6070\u597D\u662F 1 \u7C73\uFF1F\u586B\u4E00\u4E2A\u5C0F\u6570\uFF0C\u8BA9\u7A0B\u5E8F\u8F93\u51FA 1\u3002",
-            title: "\u5C0F\u6570\u8F93\u5165",
-            type: "question"
-          },
-          {
-            answerFormat: "code",
-            code: {
-              annotations: [
-                {
-                  line: 2,
-                  text: "\u8FD9\u91CC\u4ECD\u8FD4\u56DE\u539F\u6570\uFF0C\u8BF7\u5728\u4E0B\u9762\u7684\u7F16\u8F91\u5668\u4E2D\u6539\u6210\u8FD4\u56DE\u4E24\u500D\u3002"
-                }
-              ],
-              expectedOutput: "6",
-              filename: "double.js",
-              highlightLines: [
-                2
-              ],
-              highlightSpans: [
-                {
-                  line: 2,
-                  text: "value"
-                }
-              ],
-              language: "javascript",
-              source: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
-              stdin: "3"
-            },
-            execution: {
-              expectedOutput: "6",
-              language: "javascript",
-              stdin: "3"
-            },
-            explanation: "\u628A return value \u6539\u6210 return value * 2\uFF0C\u518D\u8FD0\u884C\u68C0\u67E5\u7ED3\u679C\u3002",
-            hints: [
-              "\u4FDD\u7559\u51FD\u6570\u540D double \u548C\u53C2\u6570 value\u3002",
-              "return \u540E\u5199 value * 2\u3002"
-            ],
-            id: "8343F80B-F43C-4901-B585-A67647EA0503",
-            input: {
-              kind: "code",
-              language: "javascript",
-              maxLines: 12,
-              minLines: 5,
-              placeholder: "\u8865\u5168 double \u51FD\u6570",
-              starterCode: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));"
-            },
-            questionType: "shortAnswer",
-            text: "\u4FEE\u6539 double \u51FD\u6570\uFF0C\u8BA9\u5B83\u8FD4\u56DE\u53C2\u6570\u7684\u4E24\u500D\u3002\u9ED8\u8BA4\u7A0B\u5E8F\u8F93\u5165\u662F 3\uFF0C\u8FD0\u884C\u540E\u5E94\u8F93\u51FA 6\u3002\u4E5F\u53EF\u4EE5\u5C55\u5F00\u7A0B\u5E8F\u8F93\u5165\uFF0C\u6362\u4E2A\u6570\u518D\u8BD5\u3002",
-            title: "\u5728\u4EE3\u7801\u7F16\u8F91\u5668\u4E2D\u5B8C\u6210\u51FD\u6570",
-            type: "question"
-          }
-        ],
-        estimatedMinutes: 5,
-        id: "8343F80B-F43C-4901-B585-A67647EA9705",
-        objectives: [
-          "\u4F53\u9A8C\u9002\u914D\u6574\u6570\u3001\u5C0F\u6570\u4E0E\u6E90\u7801\u7684\u8F93\u5165\u65B9\u5F0F\u3002",
-          "\u4FEE\u6539\u6E90\u7801\u548C\u7A0B\u5E8F\u8F93\u5165\uFF0C\u68C0\u67E5\u771F\u5B9E\u8FD0\u884C\u7ED3\u679C\u3002"
-        ],
-        referenceCode: {
-          annotations: [
-            {
-              line: 2,
-              text: "\u8FD9\u91CC\u4ECD\u8FD4\u56DE\u539F\u6570\uFF0C\u8BF7\u5728\u4E0B\u9762\u7684\u7F16\u8F91\u5668\u4E2D\u6539\u6210\u8FD4\u56DE\u4E24\u500D\u3002"
-            }
-          ],
-          expectedOutput: "6",
-          filename: "double.js",
-          highlightLines: [
-            2
-          ],
-          highlightSpans: [
-            {
-              line: 2,
-              text: "value"
-            }
-          ],
-          language: "javascript",
-          source: "function double(value) {\n    return value;\n}\nconst value = Number(readLine());\nconsole.log(double(value));",
-          stdin: "3"
-        },
-        title: "\u586B\u6570\u5B57\uFF0C\u5199\u4EE3\u7801\uFF0C\u771F\u6B63\u8FD0\u884C"
-      },
-      {
-        blocks: [
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0600",
-            presentation: {
-              kind: "table",
-              table: {
-                columns: [
-                  "\u8F6E\u6B21",
-                  "i",
-                  "total"
-                ],
-                rows: [
-                  [
-                    "\u5F00\u59CB",
-                    "\u2014",
-                    "0"
-                  ],
-                  [
-                    "\u7B2C\u4E00\u8F6E",
-                    "1",
-                    "1"
-                  ],
-                  [
-                    "\u7B2C\u4E8C\u8F6E",
-                    "2",
-                    "3"
-                  ],
-                  [
-                    "\u7B2C\u4E09\u8F6E",
-                    "3",
-                    "6"
-                  ]
-                ]
-              }
-            },
-            text: "\u628A\u53D8\u91CF\u7684\u53D8\u5316\u6574\u7406\u6210\u8868\u683C\uFF1A\u7B2C\u4E00\u8F6E\u540E total \u662F 1\uFF0C\u7B2C\u4E8C\u8F6E\u662F 3\uFF0C\u7B2C\u4E09\u8F6E\u662F 6\u3002",
-            title: "\u7528\u8868\u683C\u5BF9\u7167\u6BCF\u4E00\u8F6E",
-            type: "text"
-          },
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0601",
-            presentation: {
-              kind: "steps",
-              steps: [
-                {
-                  code: {
-                    language: "javascript",
-                    source: "let total = 0;\nlet i = 1;"
-                  },
-                  text: "\u603B\u6570\u4ECE 0 \u5F00\u59CB\uFF0Ci \u4ECE 1 \u5F00\u59CB\u3002",
-                  title: "\u786E\u5B9A\u8D77\u70B9"
-                },
-                {
-                  code: {
-                    language: "javascript",
-                    source: "total = total + i;"
-                  },
-                  text: "i <= 3 \u65F6\uFF0C\u628A\u672C\u8F6E\u7684 i \u52A0\u8FDB total\u3002",
-                  title: "\u5224\u65AD\u5E76\u7D2F\u52A0"
-                },
-                {
-                  code: {
-                    language: "javascript",
-                    source: "i++;"
-                  },
-                  text: "i \u589E\u52A0 1\uFF0C\u91CD\u65B0\u5224\u65AD\u6761\u4EF6\uFF1B\u4E0D\u6EE1\u8DB3\u65F6\u9000\u51FA\u3002",
-                  title: "\u66F4\u65B0\u540E\u518D\u5224\u65AD"
-                }
-              ]
-            },
-            text: "\u8BFB\u5FAA\u73AF\u65F6\uFF0C\u5148\u770B\u8D77\u70B9\uFF0C\u518D\u770B\u6761\u4EF6\uFF0C\u518D\u7B97\u5FAA\u73AF\u4F53\uFF0C\u6700\u540E\u56DE\u5230\u66F4\u65B0\u6B65\u9AA4\u3002",
-            title: "\u628A\u8FC7\u7A0B\u62C6\u6210\u5C0F\u6B65",
-            type: "text"
-          },
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0602",
-            presentation: {
-              items: [
-                {
-                  code: {
-                    language: "javascript",
-                    source: "for (let i = 1; i <= 3; i++) {\n    total += i;\n}"
-                  },
-                  text: "i \u4F9D\u6B21\u53D6 1\u30012\u30013\uFF0C\u603B\u548C\u4E3A 6\u3002",
-                  title: "\u5305\u542B\u8FB9\u754C"
-                },
-                {
-                  code: {
-                    language: "javascript",
-                    source: "for (let i = 1; i < 3; i++) {\n    total += i;\n}"
-                  },
-                  text: "i \u53EA\u53D6 1\u30012\uFF0C\u603B\u548C\u4E3A 3\u3002",
-                  title: "\u4E0D\u5305\u542B\u8FB9\u754C"
-                }
-              ],
-              kind: "comparison"
-            },
-            text: "i <= 3 \u4F1A\u5305\u542B 3\uFF1Bi < 3 \u4E0D\u5305\u542B 3\u3002\u53EA\u5DEE\u4E00\u4E2A\u7B49\u53F7\uFF0C\u5FAA\u73AF\u6B21\u6570\u548C\u7ED3\u679C\u5C31\u4E0D\u540C\u3002",
-            title: "\u5BF9\u7167\u4E24\u79CD\u6761\u4EF6",
-            type: "text"
-          },
-          {
-            id: "8343F80B-F43C-4901-B585-A67647EA0603",
-            presentation: {
-              cards: [
-                {
-                  back: "\u5148\u8BA1\u7B97\u53F3\u4FA7 total + i\uFF0C\u518D\u628A\u7ED3\u679C\u5199\u56DE\u5DE6\u4FA7 total\u3002",
-                  front: "total = total + i \u5148\u8BA1\u7B97\u54EA\u4E00\u8FB9\uFF1F"
-                },
-                {
-                  back: "\u4E0D\u5305\u542B\u3002\u82E5\u4ECE 1 \u5F00\u59CB\uFF0C\u6BCF\u6B21\u52A0 1\uFF0C\u5FAA\u73AF\u4F53\u91CC\u4F1A\u7528\u5230 1\u30012\u30013\u3002",
-                  front: "i < 4 \u5305\u542B 4 \u5417\uFF1F"
-                },
-                {
-                  back: "\u8FD0\u884C\u5B83\uFF0C\u5BF9\u7167\u8F93\u51FA\uFF1B\u518D\u6362\u4E00\u7EC4\u8F93\u5165\uFF0C\u68C0\u67E5\u7ED3\u679C\u662F\u5426\u4ECD\u7B26\u5408\u9884\u671F\u3002",
-                  front: "\u600E\u6837\u786E\u8BA4\u5199\u7684\u7A0B\u5E8F\u771F\u7684\u53EF\u7528\uFF1F"
-                }
-              ],
-              kind: "flashcards"
-            },
-            text: "\u5148\u60F3\u4E00\u60F3\uFF0C\u518D\u7FFB\u5F00\u5361\u7247\u6838\u5BF9\u3002\u80FD\u591F\u4E0D\u770B\u89E3\u6790\u8BF4\u51FA\u7406\u7531\uFF0C\u5C31\u8BF4\u660E\u7406\u89E3\u66F4\u624E\u5B9E\u4E86\u3002",
-            title: "\u7FFB\u5F00\u5361\u7247\uFF0C\u68C0\u67E5\u8BB0\u5FC6",
-            type: "text"
-          }
-        ],
-        estimatedMinutes: 3,
-        id: "8343F80B-F43C-4901-B585-A67647EA9706",
-        objectives: [
-          "\u7528\u8868\u683C\u3001\u5206\u6B65\u548C\u5BF9\u7167\u590D\u4E60\u540C\u4E00\u4E2A\u6982\u5FF5\u3002",
-          "\u901A\u8FC7\u7FFB\u5361\u81EA\u6D4B\uFF0C\u68C0\u67E5\u7406\u89E3\u3002"
-        ],
-        title: "\u6362\u4E00\u79CD\u65B9\u5F0F\uFF0C\u5DE9\u56FA\u7406\u89E3"
-      }
-    ],
-    protocol: "WORKSHOP-COURSE/1",
-    summary: "\u4ECE\u4E00\u5929\u7684\u5B89\u6392\u5230\u4EE3\u7801\u5B9E\u4F5C\uFF1A\u4F53\u9A8C\u56FE\u8868\u3001Markdown\u3001SVG\u3001HTML \u52A8\u753B\u3001\u7A0B\u5E8F\u63A8\u6F14\u3001\u7CBE\u786E\u6807\u8BB0\u548C\u53EF\u8FD0\u884C\u7EC3\u4E60\u3002",
-    title: "\u4ECE\u5BB9\u7684\u4E00\u5929"
-  }
-};
-
-// Server/AppContent/cpp-value-reference.json
-var cpp_value_reference_default = {
-  protocol: "WORKSHOP-CONTENT/1",
-  id: "cpp-value-reference",
-  kind: "course",
-  version: 2,
-  minimumContentVersion: 1,
-  payload: {
-    protocol: "WORKSHOP-COURSE/1",
-    id: "4543387c-55ed-50f7-8803-823439cb4fe6",
-    title: "C++ \xB7 \u4E00\u4E2A &\uFF0C\u4E24\u79CD\u7ED3\u679C",
-    summary: "\u4E00\u884C\u4EE3\u7801\uFF0C\u4E00\u6B21\u53D8\u5316\u3002\u7528\u4E94\u6B65\u770B\u6E05\u526F\u672C\u4E0E\u522B\u540D\u3002",
-    lessons: [
-      {
-        id: "18c3575f-5194-5af9-8cfd-cc78554da7b0",
-        title: "\u6539\u7684\u662F\u526F\u672C\uFF0C\u8FD8\u662F\u539F\u503C\uFF1F",
-        estimatedMinutes: 7,
-        objectives: [
-          "\u5206\u6E05\u72EC\u7ACB\u526F\u672C\u548C\u540C\u4E00\u5BF9\u8C61\u7684\u522B\u540D\u3002",
-          "\u5224\u65AD\u51FD\u6570\u4F1A\u4E0D\u4F1A\u6539\u53D8\u8C03\u7528\u8005\u7684 int \u53D8\u91CF\u3002"
-        ],
-        referenceCode: {
-          language: "cpp",
-          source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
-          filename: "award.cpp"
-        },
-        blocks: [
-          {
-            id: "4ce800ff-75f5-51c7-8621-892f8cd0079e",
-            type: "question",
-            title: "\u5148\u731C\u4E00\u731C",
-            text: "\u8C03\u7528 award \u540E\uFF0Cscore \u662F\u591A\u5C11\uFF1F",
-            questionType: "singleChoice",
-            code: {
-              language: "cpp",
-              source: "void award(int points) {\n    points += 3;\n}\nint main() {\n    int score = 7;\n    award(score);\n    // \u73B0\u5728 score \u662F\u591A\u5C11\uFF1F\n}",
-              filename: "prediction.cpp"
-            },
-            focusLines: [
-              1,
-              2
-            ],
-            focusSpans: [
-              {
-                line: 1,
-                text: "int points"
-              },
-              {
-                line: 2,
-                text: "points"
-              }
-            ],
-            options: [
-              {
-                id: "seven",
-                text: "7"
-              },
-              {
-                id: "ten",
-                text: "10"
-              }
-            ],
-            correctOptionIDs: [
-              "seven"
-            ],
-            hints: [
-              "\u89C2\u5BDF points \u7684\u58F0\u660E\uFF1Aint\uFF0C\u8FD8\u662F int&\uFF1F"
-            ],
-            explanation: "\u662F 7\u3002points \u662F\u72EC\u7ACB\u526F\u672C\u3002\u63A5\u4E0B\u6765\u53EA\u770B\u8FD9\u4E2A\u533A\u522B\u662F\u600E\u6837\u53D1\u751F\u7684\u3002"
-          },
-          {
-            id: "e8501c91-9182-56db-aee9-282b13dd5a85",
-            type: "text",
-            title: "\u8DDF\u7740\u503C\u8D70",
-            text: "\u56FA\u5B9A\u7A0B\u5E8F\u7684\u6559\u5B66\u63A8\u6F14\u3002\u5148\u770B\u503C\u4F20\u9012\uFF0C\u518D\u5207\u6362\u5F15\u7528\u4F20\u9012\uFF1B\u6BCF\u6B21\u53EA\u89C2\u5BDF\u5F53\u524D\u4E00\u6B65\u3002",
-            presentation: {
-              kind: "trace",
-              trace: {
-                variants: [
-                  {
-                    id: "value",
-                    title: "\u503C\u4F20\u9012",
-                    code: {
-                      language: "cpp",
-                      source: "#include <iostream>\n\nvoid award(int points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
-                      filename: "award.cpp",
-                      highlightLines: [
-                        3
-                      ],
-                      highlightSpans: [
-                        {
-                          line: 3,
-                          text: "int points"
-                        }
-                      ]
-                    },
-                    frames: [
-                      {
-                        title: "\u4ECE 7 \u5F00\u59CB",
-                        line: 8,
-                        note: "main \u4E2D\u521B\u5EFA\u4E86 score\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: true
-                          }
-                        ],
-                        focusSpans: [
-                          {
-                            line: 8,
-                            text: "score"
-                          },
-                          {
-                            line: 8,
-                            text: "7"
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u590D\u5236\u4E00\u4EFD",
-                        line: 3,
-                        note: "points \u5F97\u5230\u6570\u503C 7\uFF0C\u662F\u53E6\u4E00\u4E2A\u5BF9\u8C61\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: false
-                          },
-                          {
-                            id: "points",
-                            names: [
-                              "points"
-                            ],
-                            value: "7",
-                            scope: "award",
-                            changed: true
-                          }
-                        ],
-                        focusSpans: [
-                          {
-                            line: 3,
-                            text: "int points"
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u53EA\u6539\u526F\u672C",
-                        line: 4,
-                        note: "\u52A0\u4E0A 3 \u7684\u662F points\uFF0Cscore \u4ECD\u662F 7\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: false
-                          },
-                          {
-                            id: "points",
-                            names: [
-                              "points"
-                            ],
-                            value: "10",
-                            scope: "award",
-                            changed: true
-                          }
-                        ],
-                        focusSpans: [
-                          {
-                            line: 4,
-                            text: "points"
-                          },
-                          {
-                            line: 4,
-                            text: "bonus"
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u51FD\u6570\u8FD4\u56DE",
-                        line: 5,
-                        note: "points \u968F\u51FD\u6570\u7ED3\u675F\uFF0Cscore \u7559\u5728 main\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: false
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u8F93\u51FA 7",
-                        line: 10,
-                        note: "\u8F93\u51FA\u7684\u662F score\uFF0C\u5B83\u4E00\u76F4\u6CA1\u6709\u6539\u53D8\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: false
-                          }
-                        ],
-                        output: "7",
-                        focusSpans: [
-                          {
-                            line: 10,
-                            text: "score"
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    id: "reference",
-                    title: "\u5F15\u7528\u4F20\u9012",
-                    code: {
-                      language: "cpp",
-                      source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    std::cout << score;\n}",
-                      filename: "award.cpp",
-                      highlightLines: [
-                        3
-                      ],
-                      highlightSpans: [
-                        {
-                          line: 3,
-                          text: "int&"
-                        },
-                        {
-                          line: 3,
-                          text: "points"
-                        }
-                      ]
-                    },
-                    frames: [
-                      {
-                        title: "\u4ECE 7 \u5F00\u59CB",
-                        line: 8,
-                        note: "\u4ECD\u7136\u4ECE\u540C\u4E00\u4E2A\u521D\u503C\u5F00\u59CB\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: true
-                          }
-                        ],
-                        focusSpans: [
-                          {
-                            line: 8,
-                            text: "score"
-                          },
-                          {
-                            line: 8,
-                            text: "7"
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u591A\u4E00\u4E2A\u540D\u5B57",
-                        line: 3,
-                        note: "points \u7ED1\u5B9A\u5230 score\uFF0C\u4E24\u4E2A\u540D\u5B57\u6307\u540C\u4E00\u4E2A\u5BF9\u8C61\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score",
-                              "points"
-                            ],
-                            value: "7",
-                            scope: "main",
-                            changed: true
-                          }
-                        ],
-                        focusSpans: [
-                          {
-                            line: 3,
-                            text: "int&"
-                          },
-                          {
-                            line: 3,
-                            text: "points"
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u6539\u5230\u539F\u503C",
-                        line: 4,
-                        note: "\u901A\u8FC7 points \u52A0 3\uFF0Cscore \u4E5F\u5C31\u53D8\u6210 10\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score",
-                              "points"
-                            ],
-                            value: "10",
-                            scope: "main",
-                            changed: true
-                          }
-                        ],
-                        focusSpans: [
-                          {
-                            line: 4,
-                            text: "points"
-                          },
-                          {
-                            line: 4,
-                            text: "bonus"
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u51FD\u6570\u8FD4\u56DE",
-                        line: 5,
-                        note: "\u540D\u5B57 points \u4E0D\u518D\u53EF\u7528\uFF0C\u539F\u5BF9\u8C61\u4ECD\u7136\u5B58\u5728\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "10",
-                            scope: "main",
-                            changed: false
-                          }
-                        ]
-                      },
-                      {
-                        title: "\u8F93\u51FA 10",
-                        line: 10,
-                        note: "score \u7684\u65B0\u503C\u662F 10\u3002",
-                        objects: [
-                          {
-                            id: "score",
-                            names: [
-                              "score"
-                            ],
-                            value: "10",
-                            scope: "main",
-                            changed: false
-                          }
-                        ],
-                        output: "10",
-                        focusSpans: [
-                          {
-                            line: 10,
-                            text: "score"
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            }
-          },
-          {
-            id: "a65cec5b-0762-5f6e-95a5-e91d0c9daa04",
-            type: "question",
-            title: "\u518D\u52A0\u4E00\u6B21\u5462\uFF1F",
-            text: "\u73B0\u5728 points \u662F\u5F15\u7528\u3002\u8FDE\u7EED\u52A0 3\u3001\u518D\u52A0 2\uFF0C\u6700\u540E\u8F93\u51FA\u591A\u5C11\uFF1F",
-            questionType: "shortAnswer",
-            answerFormat: "output",
-            code: {
-              language: "cpp",
-              source: "#include <iostream>\n\nvoid award(int& points, int bonus) {\n    points += bonus;\n}\n\nint main() {\n    int score = 7;\n    award(score, 3);\n    award(score, 2);\n    std::cout << score;\n}",
-              highlightLines: [
-                3,
-                9,
-                10
-              ]
-            },
-            input: {
-              kind: "integer",
-              placeholder: "\u8F93\u5165\u6700\u540E\u8F93\u51FA\u7684\u6574\u6570",
-              minLines: 2,
-              maxLines: 2
-            },
-            focusLines: [
-              3,
-              9,
-              10
-            ],
-            focusSpans: [
-              {
-                line: 3,
-                text: "int&"
-              },
-              {
-                line: 9,
-                text: "3"
-              },
-              {
-                line: 10,
-                text: "2"
-              }
-            ],
-            acceptedAnswers: [
-              "12"
-            ],
-            hints: [
-              "\u4E24\u6B21\u8C03\u7528\u4FEE\u6539\u7684\u90FD\u662F main \u4E2D\u7684\u540C\u4E00\u4E2A score\u3002"
-            ],
-            explanation: "\u8F93\u51FA 12\uFF1A7 + 3 + 2\u3002\u4E24\u6B21\u8C03\u7528\u91CC\u7684 points \u90FD\u662F score \u7684\u522B\u540D\u3002"
-          },
-          {
-            id: "e7926659-025a-5901-b72e-94e8824aa61a",
-            type: "question",
-            title: "\u8F6E\u5230\u4F60\u6539\u539F\u503C",
-            text: "\u5199\u4E00\u4E2A void doubleScore(...)\uFF0C\u8BA9\u4F20\u5165\u7684 int \u53D8\u91CF\u7FFB\u500D\u3002\u53EA\u5199\u51FD\u6570\u5B9A\u4E49\u3002\u63D0\u4EA4\u540E\u81EA\u884C\u6838\u5BF9\u3002",
-            questionType: "shortAnswer",
-            answerFormat: "code",
-            code: {
-              language: "cpp",
-              source: "#include <iostream>\n\nvoid doubleScore(int score) {\n    // \u4FEE\u6539\u5F62\u53C2\uFF0C\u5E76\u8BA9\u4F20\u5165\u7684\u53D8\u91CF\u7FFB\u500D\n}\n\nint main() {\n    int score = 7;\n    doubleScore(score);\n    std::cout << score;\n}",
-              filename: "double-score.cpp"
-            },
-            input: {
-              kind: "code",
-              language: "cpp",
-              placeholder: "\u4FEE\u6539\u51FD\u6570\uFF0C\u8BA9\u5B83\u6539\u53D8\u8C03\u7528\u8005\u7684\u53D8\u91CF",
-              starterCode: "void doubleScore(int score) {\n    // \u4FEE\u6539\u5F62\u53C2\uFF0C\u5E76\u8BA9\u4F20\u5165\u7684\u53D8\u91CF\u7FFB\u500D\n}",
-              minLines: 5,
-              maxLines: 10
-            },
-            focusLines: [
-              3,
-              4
-            ],
-            focusSpans: [
-              {
-                line: 3,
-                text: "int score"
-              }
-            ],
-            hints: [
-              "\u8981\u4FEE\u6539\u8C03\u7528\u8005\u7684\u53D8\u91CF\uFF0C\u5F62\u53C2\u9700\u8981 int&\u3002"
-            ],
-            explanation: "\u53C2\u8003\u5B9E\u73B0\uFF1A\nvoid doubleScore(int& score) {\n    score *= 2;\n}\n\n\u6838\u5BF9\u4E24\u70B9\uFF1A\u5F62\u53C2\u4F7F\u7528 int&\uFF1B\u51FD\u6570\u4F53\u4FEE\u6539\u4E86\u8FD9\u4E2A\u5F62\u53C2\u3002\u53C2\u6570\u540D\u548C\u7B49\u4EF7\u5199\u6CD5\u53EF\u4EE5\u4E0D\u540C\u3002\u672C\u9898\u4E0D\u7F16\u8BD1\uFF0C\u4E5F\u4E0D\u6309\u53C2\u8003\u6587\u672C\u5224\u5BF9\u9519\u3002"
-          },
-          {
-            id: "04147008-fca8-55e3-8352-8d5039ab4c3d",
-            type: "callout",
-            title: "\u53EA\u8BB0\u4F4F\u8FD9\u4E00\u70B9",
-            text: "int points\uFF1A\u53E6\u590D\u5236\u4E00\u4E2A\u503C\u3002\nint& points\uFF1A\u7ED9\u539F\u5BF9\u8C61\u4E00\u4E2A\u522B\u540D\u3002\n\u8981\u77E5\u9053\u6539\u4E86\u8C01\uFF0C\u5148\u770B\u5F62\u53C2\u58F0\u660E\u3002",
-            focusLines: [
-              3
-            ],
-            focusSpans: [
-              {
-                line: 3,
-                text: "int&"
-              },
-              {
-                line: 3,
-                text: "points"
-              }
-            ]
-          }
-        ]
-      }
-    ]
-  }
-};
-
-// Server/AppContent/welcome-tutorial.json
-var welcome_tutorial_default = {
-  protocol: "WORKSHOP-CONTENT/1",
-  id: "welcome-tutorial",
-  kind: "tutorial",
-  version: 1,
-  minimumContentVersion: 1,
-  payload: {
-    pages: [
-      {
-        id: "home",
-        title: "\u628A\u8981\u505A\u7684\u4E8B\uFF0C\n\u653E\u5728\u4E00\u8D77\u3002",
-        subtitle: "\u9996\u9875\u628A\u4E34\u8FD1\u622A\u6B62\u548C\u63A5\u4E0B\u6765\u7684\u5B89\u6392\u653E\u5728\u773C\u524D\u3002\u70B9\u53F3\u4E0A\u89D2 +\uFF0C\u8BB0\u4E0B\u65B0\u7684\u4E8B\u9879\u3002",
-        sectionTitle: "\u9996\u9875",
-        symbol: "house"
-      },
-      {
-        id: "timeline",
-        title: "\u987A\u7740\u65F6\u95F4\uFF0C\n\u770B\u6E05\u6BCF\u4E00\u5929\u3002",
-        subtitle: "\u4E0A\u4E0B\u6D4F\u89C8\u65F6\u95F4\u6BB5\uFF0C\u4E5F\u80FD\u5207\u6362\u6210\u65E5\u5386\u3002\u8BA1\u5212\u4E0E\u622A\u6B62\uFF0C\u6CBF\u65F6\u95F4\u81EA\u7136\u5C55\u5F00\u3002",
-        sectionTitle: "\u65F6\u95F4\u7EBF",
-        symbol: "chart.bar.xaxis"
-      },
-      {
-        id: "projects",
-        title: "\u4ECE\u4E00\u4EF6\u4E8B\uFF0C\n\u5230\u6574\u4E2A\u9879\u76EE\u3002",
-        subtitle: "\u9879\u76EE\u7EC4\u6536\u7EB3\u76F8\u5173\u5185\u5BB9\uFF1B\u5207\u6362\u5230\u4E8B\u9879\u6216\u622A\u6B62\u4E8B\u9879\uFF0C\u5C31\u80FD\u6309\u65F6\u95F4\u96C6\u4E2D\u7BA1\u7406\u3002",
-        sectionTitle: "\u9879\u76EE",
-        symbol: "folder"
-      },
-      {
-        id: "account",
-        title: "\u5728\u4F60\u7684\u8BBE\u5907\u95F4\uFF0C\n\u63A5\u7740\u4F7F\u7528\u3002",
-        subtitle: "\u767B\u5F55\u6216\u6CE8\u518C\uFF0C\u5408\u5E76\u672C\u673A\u4E0E\u4E91\u7AEF\u5185\u5BB9\u3002\u5728 iPhone \u6216 Mac \u4E0A\uFF0C\u90FD\u53EF\u4EE5\u7EE7\u7EED\u3002",
-        sectionTitle: "\u4F60\u7684\u8D26\u6237",
-        symbol: "person.crop.circle"
-      }
-    ]
-  }
-};
-
-// Server/AppContent/course-tutorial.json
-var course_tutorial_default = {
-  protocol: "WORKSHOP-CONTENT/1",
-  id: "course-tutorial",
-  kind: "tutorial",
-  version: 1,
-  minimumContentVersion: 1,
-  payload: {
-    pages: [
-      {
-        id: "import",
-        title: "\u628A\u60F3\u5B66\u7684\uFF0C\u53D8\u6210\u8BFE\u7A0B\u3002",
-        subtitle: "\u8D44\u6599\u3001\u95EE\u9898\u6216\u5B66\u4E60\u76EE\u6807\uFF0C\u90FD\u53EF\u4EE5\u6210\u4E3A\u6709\u56FE\u89E3\u3001\u6F14\u793A\u548C\u7EC3\u4E60\u7684\u4E00\u8282\u8282\u8BFE\u3002",
-        symbol: "sparkles"
-      },
-      {
-        id: "code",
-        title: "\u770B\u7740\u4EE3\u7801\uFF0C\u4E00\u6B65\u6B65\u7406\u89E3\u3002",
-        subtitle: "\u5B8C\u6574\u7A0B\u5E8F\u4F1A\u7559\u5728\u4E0A\u65B9\uFF1B\u8BB2\u5230\u54EA\u91CC\uFF0C\u5C31\u6807\u8BB0\u5BF9\u5E94\u7684\u884C\u3001\u53D8\u91CF\u6216\u5B57\u7B26\u3002",
-        symbol: "curlybraces"
-      },
-      {
-        id: "practice",
-        title: "\u52A8\u624B\u4F5C\u7B54\uFF0C\u8FD0\u884C\u9A8C\u8BC1\u3002",
-        subtitle: "\u6570\u5B57\u9898\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u4EE3\u7801\u9898\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u652F\u6301\u8FD0\u884C\u7684\u7EC3\u4E60\u8FD8\u53EF\u6838\u5BF9\u5B9E\u9645\u8F93\u51FA\uFF1B\u70B9\u7EE7\u7EED\u4F1A\u5148\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
-        symbol: "play.rectangle"
-      },
-      {
-        id: "progress",
-        title: "\u968F\u65F6\u56DE\u6765\uFF0C\u63A5\u7740\u5B66\u3002",
-        subtitle: "\u5B66\u4E60\u8FDB\u5EA6\u4F1A\u81EA\u52A8\u4FDD\u5B58\uFF0C\u661F\u6807\u6536\u85CF\u5E38\u5B66\u7684\u8BFE\u7A0B\u3002\u6F14\u793A\u8BFE\u548C\u6307\u5357\u4E5F\u4F1A\u5728\u540E\u53F0\u83B7\u5F97\u5185\u5BB9\u66F4\u65B0\u3002",
-        symbol: "bookmark"
-      }
-    ]
-  }
-};
-
-// Server/AppContent/announcement.json
-var announcement_default = {
-  protocol: "WORKSHOP-CONTENT/1",
-  id: "announcement",
-  kind: "announcement",
-  version: 1,
-  minimumContentVersion: 1,
-  payload: {
-    id: "announcement",
-    title: "\u6F14\u793A\u8BFE\u7A0B\u5DF2\u6269\u5145",
-    message: "\u65B0\u589E\u9010\u6B65\u63A8\u6F14\u3001\u5B57\u7B26\u6807\u8BB0\u3001\u6570\u5B57\u8F93\u5165\u548C\u53EF\u8FD0\u884C\u7EC3\u4E60\u3002\u4EE5\u540E\u6F14\u793A\u8BFE\u4E0E\u6307\u5357\u7684\u5185\u5BB9\u66F4\u65B0\u4F1A\u81EA\u52A8\u9001\u8FBE\u3002"
-  }
-};
-
-// Server/AppContent/catalog.mjs
-var catalog_default = [demo_course_default, cpp_value_reference_default, welcome_tutorial_default, course_tutorial_default, announcement_default];
-
-// Server/app-content.mjs
 var appContentProtocol = "WORKSHOP-CONTENT/1";
 var appContentPath = "/api/native/v1/app-content";
 var identifier2 = /^[a-z0-9][a-z0-9-]{0,79}$/;
@@ -29495,12 +30108,12 @@ function createNativeServer(configuration) {
   const textEndpoint = passkeyOrigin + textImportPath;
   const textNow = configuration.textNow ?? Date.now;
   const textAttempts = /* @__PURE__ */ new Map();
-  function textRateLimit(key, window, limit2) {
+  function textRateLimit(key, window2, limit2) {
     const now = textNow();
     for (const [entryKey, entry2] of textAttempts) if (now >= entry2.until) textAttempts.delete(entryKey);
     const prior = textAttempts.get(key);
     if (!prior && textAttempts.size >= 1e4) throw new APIError(429, "RATE_LIMITED");
-    const entry = prior ?? { until: now + window, count: 0 };
+    const entry = prior ?? { until: now + window2, count: 0 };
     textAttempts.set(key, entry);
     if (++entry.count > limit2) throw new APIError(429, "RATE_LIMITED");
   }

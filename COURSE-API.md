@@ -2,15 +2,15 @@
 
 课程内容独立于日程快照。服务器保存课程，App 登录后在“课程”页获取并缓存；课程发布不会创建事项、提醒或重复日程。当前提供 JSON 文档协议，同时接受包含相同 JSON 的 UTF-8 纯文本。
 
-`WORKSHOP-COURSE/1` 现提供 `structured-2`：支持原生程序推演 `trace`、课程/课时共享的 `referenceCode`、内容块的 `focusLines/focusSpans` 与 Code 的 `highlightSpans`，以及结构化代码、Markdown、SVG、离线 HTML、表格、分步、对照、记忆卡片与练习。作者提供语义数据，客户端统一布局和交互；新课程不要求旧客户端可读。
+`WORKSHOP-COURSE/1` 现提供 `structured-2`：支持结构化程序推演 `trace`、课程/课时共享的 `referenceCode`、内容块的 `focusLines/focusSpans` 与 Code 的 `highlightSpans`，以及结构化代码、Markdown、SVG、离线 HTML、表格、分步、对照、记忆卡片与练习。作者提供语义数据，服务器托管的 HTML renderer 统一布局和交互；旧版 App 继续使用内建组件，新版 App 可直接接收服务器更新的学习界面。
 
 ## AI 互动教学要求
 
 自动上传版与手动导入版提示词共用一套约定：**每屏一个问题、一个变化，先清楚再丰富**。编程课围绕一个短程序，按“预测 → 单步观察 → 迁移题 → 自行改写”展开，通常 4–6 块即可。保留必要的完整代码区，不为形式丰富而重复铺设源码、参数面板、输出、对照、时间轴、标签与多种练习。
 
-逐步语义优先用原生 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释。同一程序贯穿的课程或课时必须提供 `referenceCode`，App 在讲解、推演与做题时始终保留完整代码区，长程序在区内滚动；不能只露当前一行或要求用户回忆前页源码。解释变量、关键字、运算符或表达式时主动使用 `focusSpans` 精确标记一两处，整行相关时才用 `focusLines`，不逐字标满程序。trace 使用当前 `frame.focusSpans`，省略或空时回退 `frame.line`。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
+逐步语义优先用结构化 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释。同一程序贯穿的课程或课时必须提供 `referenceCode`，App 在讲解、推演与做题时始终保留完整代码区，长程序在区内滚动；不能只露当前一行或要求用户回忆前页源码。解释变量、关键字、运算符或表达式时主动使用 `focusSpans` 精确标记一两处，整行相关时才用 `focusLines`，不逐字标满程序。trace 使用当前 `frame.focusSpans`，省略或空时回退 `frame.line`。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
 
-不再要求前两课或每节课包含 HTML。只有连续拖动等原生结构无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 展示不执行，正式作答与进度使用 `question`。制作练习时必须按答案内容选择 `input.kind`：整数和小数使用数值输入，真正要用户编写源码时使用代码编辑器并声明语言。Python/C++ 代码填空、改错与程序题默认必须增加 `execution`，每个含编程练习的课时至少一道可运行题；纯讲解、预测输出或选择题不强加执行。提示词的唯一完整示例保留紧凑原生 trace 与迁移选择题，并附 Python 数值填空、C++ 表达式填空和两种语言的完整程序题。这些属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
+不再要求前两课或每节课包含 HTML。只有连续拖动等结构化组件无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 展示不执行，正式作答与进度使用 `question`。制作练习时必须按答案内容选择 `input.kind`：整数和小数使用数值输入，真正要用户编写源码时使用代码编辑器并声明语言。Python/C++ 代码填空、改错与程序题默认必须增加 `execution`，每个含编程练习的课时至少一道可运行题；纯讲解、预测输出或选择题不强加执行。提示词的唯一完整示例保留紧凑结构化 trace 与迁移选择题，并附 Python 数值填空、C++ 表达式填空和两种语言的完整程序题。这些属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
 
 ## 身份与账户
 
@@ -350,3 +350,52 @@ Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation`
 服务器提供两种权威提示词，均明确等待用户的下一条学习主题或资料，不把提示词本身当成教学内容。AI 自行推断水平、目标和课时，按概念解释、具体例子或图形、练习、反馈组织课程，受支持块与完整有效 JSON 示例均包含在提示词内。禁止虚构统计、图片地址和参考答案。
 
 `prompt` 面向有 HTTP 工具的 Agent，发布凭据仅放 Authorization；若不能联网，只输出一个完整课程 JSON（建议唯一 json 代码块），不声称已上传。`manualPrompt` 完全不含凭据或网络配置，用户可直接复制给普通 AI；生成的课程通过 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）在当前登录空间保存。获取和复制 manualPrompt 不会创建密钥，注册/登录 session 已有权限即可导入。更新课程时由 App 核对当前版本，不猜测覆盖。
+
+## 服务器托管的学习界面：WORKSHOP-PLAYER/1
+
+新客户端把学习区交给服务器生成的离线 HTML 页面，原生外壳保留账户、课程目录、进度持久化、真实代码运行和上下步按钮。AI 仍上传上述 `WORKSHOP-COURSE/1` 结构化课程；服务器负责可信页面的 HTML/CSS/JavaScript，不允许 AI 上传或替换可信壳。旧客户端继续读取原 JSON，现有上传文档无需迁移。
+
+已登录客户端请求：
+
+```http
+GET /api/native/v1/courses/{courseID}/player?lessonID={lessonUUID}
+Authorization: Bearer {App session token}
+Accept-Encoding: gzip
+X-Workspace-ID: {optional shared workspace ID}
+```
+
+权限与课程读取相同，使用当前有权访问的个人或共享工作空间，不能通过课程发布密钥读取。不接受额外查询参数、重复 `lessonID` 或不存在的课时；课程被撤销共享、删除或课程 ID 不属于当前工作空间时拒绝。成功响应：
+
+```json
+{"data":{"protocol":"WORKSHOP-PLAYER/1","rendererVersion":"2026.10.20.1","courseID":"UUID","lessonID":"UUID","courseRevision":1,"html":"<!doctype html>…"}}
+```
+
+每次进入课时可重新获取当前 renderer；相同课程 revision 的教学内容也可以因 renderer 版本更新而获得新的布局、样式和互动逻辑。HTML 单课时上限 4 MiB，响应支持 gzip；服务端采用总容量 16 MiB 的 LRU，缓存键包含工作空间所有者、课程、课时、课程 revision 与 rendererVersion。HTTP 使用 `private, no-store`，缓存不保存任何人的答案、会话或凭据。客户端离线缓存必须按账户/工作空间/课程/课时/课程 revision 隔离，在线成功后更新，不能把服务端失败的鉴权当作离线展示授权。
+
+当前 renderer 支持 text、callout、chart、question，以及 code、Markdown（代码围栏/标题/列表/引用/基础表格）、table、steps、comparison、flashcards、HTML、SVG、trace。完整参考程序保持可见；按行/按字高亮、trace 变体与逐帧对象/输出、选择题、带输入类型的填空和代码题可用。HTML/SVG 演示在唯一来源 `sandbox="allow-scripts"` iframe 内执行，未授予 same-origin、表单、弹窗、下载或顶层导航能力。外部图片块仅显示说明文字，不自动联网下载。
+
+页面 CSP 禁止网络、外链资源、媒体、表单和对象；所有课程字符串安全序列化，再由 DOM `textContent` 构建。AI HTML/SVG 不得取得原生桥接、凭据或进度。WKWebView 必须额外拒绝所有子 frame 的 script message（`message.frameInfo.isMainFrame`），限制跳转仅为本地可信页面/离线 sandbox，不能只相信 JS 的消息字段。原生还必须校验 blockID 属于本课时、题目类型、消息大小、requestID、答案上限与运行配置；运行接口仍由服务端按原课程 revision 二次验证。
+
+### 学习区与原生壳的桥接
+
+原生调用 `window.WorkshopPlayer.receive(message)`，页面调用 `window.webkit.messageHandlers.workshopPlayer.postMessage(message)`。消息仅传递结构化数据，不能包含任意 JavaScript 求值指令。
+
+原生发给页面：
+
+- `init`: `{type:"init",progress:{answers:[{lessonID,blockID,selectedOptionIDs,text}],completedLessonIDs:[]},theme:"dark"|"light"}`。首次初始化恢复已保存答案，以后同类型消息可更新主题。
+- `next` / `previous`: 请求下一步或上一步。每个 block 一页，trace 内部步骤仍在该页操作。
+- `saved`: `{type:"saved",requestID,ok,error?}`，只能确认对应尚未完成的保存请求。
+- `runResult`: `{type:"runResult",requestID,result?,error?}`，result 为现有课程运行响应。
+
+页面发给原生：
+
+- `ready`：可信 renderer 已挂载，原生可发送 init。
+- `state`：`{type:"state",index,count,canPrevious,canNext}`，index 从 0 开始。
+- `submit`：`{type:"submit",requestID,blockID,selectedOptionIDs,text}`。用户按下一步时，如当前题有未保存答案，先提交并停留当前题，必须收到成功 saved 才显示解析；用户再次按下一步才翻页。保存失败保持草稿，可重试。
+- `complete`：`{type:"complete",requestID,completed:true}`，课时末尾请求完成，收到成功 saved 后才能进入下一课。
+- `navigation`：`{type:"navigation",direction:"nextLesson"|"previousLesson"}`，仅边界请求，外壳决定切换课时/完成课程。
+- `run`：`{type:"run",requestID,blockID,answer,stdin}`，只请求该题已声明的执行方式；原生不得接受页面自定义语言、模板、URL 或额外权限。
+
+HTML 演示的临时实验状态不自动保存为课程答案，持久化作答必须使用标准 question。服务端 renderer 可以持续更新布局、新增兼容的组件表现与教学交互；账户、系统权限、系统通知、原生导航、原生运行授权与桥接能力的新增仍需 App 更新。协议不允许服务端绕过这些边界。
+
+演示模式使用 `GET /api/native/v1/course-player/demo?courseID={UUID}&lessonID={UUID}` 获取同格式页面；这个公开只读通道只接受部署包 `Server/AppContent/catalog.mjs` 中 `kind=course` 的固定课程，不接受文件路径或用户内容，revision 为该发布内容条目的 version。匿名访问不能读取任何私人课程，其他参数与不存在的课程/课时一律拒绝。
