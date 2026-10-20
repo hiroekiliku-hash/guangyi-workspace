@@ -12,7 +12,7 @@ import { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords
 import { createCourseAPI } from './courses.mjs';
 import { createCourseExecutionClient } from './course-execution.mjs';
 import { createAppContentAPI } from './app-content.mjs';
-import { parseCalendarText, calendarTextPrompt, TextImportError, textImportPath, textImportProtocol, textImportLimit } from './text-ingress.mjs';
+import { parseCalendarText, calendarTextPrompt, TextImportError, textImportPath, textImportProtocol, textImportLimit, projectGroupsPath, projectGroupDirectory } from './text-ingress.mjs';
 
 export { effectiveDeadline, formatCountdown, visibleRecord, compareActionRecords, compareDeadlineRecords };
 
@@ -557,6 +557,26 @@ export function createNativeServer(configuration) {
           return respond(response, 200, { data: session });
         } catch (error) { db.exec('ROLLBACK'); throw error; }
       }
+      if (path === projectGroupsPath && request.method === 'GET') {
+        sameWebOrigin(request);
+        textRateLimit('ip:' + textPeer(request), 60000, 60);
+        const credential = textCredential(request), owner = credential.user_id;
+        textRateLimit('account:' + owner, 3600000, 120);
+        const parameters = new URL(request.url, passkeyOrigin).searchParams;
+        for (const [key] of parameters) {
+          if (!['limit', 'cursor', 'revision'].includes(key) || parameters.getAll(key).length !== 1) throw new APIError(400, 'INVALID_PROJECT_DIRECTORY_QUERY');
+        }
+        const limit = parameters.get('limit') ?? '100', cursor = parameters.get('cursor'), revision = parameters.get('revision');
+        if (!/^[1-9]\d{0,2}$/.test(limit) || Number(limit) > 200 || (cursor != null && !uuid.test(cursor)) ||
+            (cursor != null && revision == null) || (revision != null && (!/^\d{1,15}$/.test(revision) || !Number.isSafeInteger(Number(revision))))) {
+          throw new APIError(400, 'INVALID_PROJECT_DIRECTORY_QUERY');
+        }
+        const row = db.prepare('SELECT revision,snapshot FROM workspaces WHERE user_id=?').get(owner);
+        if (revision != null && Number(revision) !== row.revision) throw new APIError(409, 'PROJECT_DIRECTORY_CHANGED');
+        const directory = projectGroupDirectory(JSON.parse(row.snapshot), { limit: Number(limit), cursor: cursor?.toLowerCase() });
+        db.prepare('UPDATE text_tokens SET last_used=? WHERE id=?').run(textNow(), credential.id);
+        return respond(response, 200, { data: { revision: row.revision, ...directory } });
+      }
       if (path === textImportPath && request.method === 'POST') {
         sameWebOrigin(request);
         textRateLimit('ip:' + textPeer(request), 60000, 60);
@@ -663,7 +683,7 @@ export function createNativeServer(configuration) {
       if (path === '/api/native/v1/integrations/text-tokens' && request.method === 'GET') {
         sameWebOrigin(request);
         const credentials = db.prepare('SELECT * FROM text_tokens WHERE user_id=? AND expires>? ORDER BY created,id').all(userID, textNow()).map(textCredentialInfo);
-        return respond(response, 200, { data: { credentials, endpoint: textEndpoint, protocol: textImportProtocol, prompt: calendarTextPrompt(textEndpoint) } });
+        return respond(response, 200, { data: { credentials, endpoint: textEndpoint, protocol: textImportProtocol, projectsEndpoint: passkeyOrigin + projectGroupsPath, prompt: calendarTextPrompt(textEndpoint) } });
       }
       if (path === '/api/native/v1/integrations/text-tokens' && ['POST', 'DELETE'].includes(request.method)) {
         sameWebOrigin(request); requireJSON(request);

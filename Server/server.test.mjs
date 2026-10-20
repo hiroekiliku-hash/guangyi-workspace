@@ -844,6 +844,166 @@ async function withTextIngress(work) {
 }
 const sampleText = 'WORKSHOP/1\n类型: 事项\n标题: API 测试事项\n计划: 2026-10-20T09:00+08:00';
 
+async function projectDirectory(base, auth, query = {}, headers = {}) {
+  const search = new URLSearchParams(query);
+  const response = await fetch(base + '/api/integrations/v1/project-groups' + (search.size ? '?' + search : ''), {
+    headers: { ...(auth ? { Authorization: 'Bearer ' + auth } : {}), ...headers }
+  });
+  return { status: response.status, value: await response.json(), headers: response.headers };
+}
+const directoryFixture = (title, values = {}) => ({ id: randomUUID(), kind: 'PROJECT', status: 'ACTIVE', version: 1,
+  title, body: 'private-project-body-must-not-leak', timezone: 'Asia/Shanghai', projectKind: 'RESEARCH', ...values });
+
+test('project directory exposes only the key owner visible group metadata and honors revocation, expiry and origin checks', async () => {
+  await withTextIngress(async ({ base, native, state, createKey, session, advance }) => {
+    const initial = await state(), area = directoryFixture('生活', { kind: 'AREA', status: 'OPEN', projectKind: 'LIFE' });
+    const child = directoryFixture('生活中的子组', { areaID: area.id, projectKind: '自定义分类' });
+    const archived = directoryFixture('archived-group-must-not-leak', { archivedAt: '2026-10-01T00:00:00.000Z' });
+    const removed = directoryFixture('deleted-group-must-not-leak', { deletedAt: '2026-10-01T00:00:00.000Z' });
+    const hiddenChild = directoryFixture('hidden-child-must-not-leak', { projectID: archived.id });
+    const task = directoryFixture('private-task-must-not-leak', { kind: 'TASK', status: 'TODO', projectID: child.id });
+    initial.snapshot.records = [area, child, archived, removed, hiddenChild, task];
+    initial.snapshot.profile.name = 'private-profile-must-not-leak';
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: initial.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    const key = await createKey();
+    const signup = await native('accounts', { method: 'POST', body: { email: 'directory-other@test.invalid', password } });
+    assert.equal(signup.status, 201);
+    const otherSession = signup.value.data.accessToken, otherKey = await createKey(otherSession);
+    const own = await projectDirectory(base, key.accessToken);
+    assert.equal(own.status, 200); assert.equal(own.value.data.revision, 1);
+    assert.equal(own.value.data.timezone, 'Asia/Shanghai'); assert.equal(own.value.data.total, 2);
+    assert.deepEqual(own.value.data.projects, [
+      { id: area.id, title: area.title, kind: 'AREA', category: 'LIFE' },
+      { id: child.id, title: child.title, kind: 'PROJECT', category: '自定义分类', parentID: area.id }
+    ].sort((left, right) => left.id.localeCompare(right.id)));
+    assert.doesNotMatch(JSON.stringify(own.value), /private-|must-not-leak|@test\.invalid|wsi_/);
+    assert.equal(own.headers.get('cache-control'), 'no-store');
+    const other = await projectDirectory(base, otherKey.accessToken);
+    assert.equal(other.status, 200); assert.deepEqual(other.value.data.projects, []); assert.equal(other.value.data.total, 0);
+    assert.equal((await projectDirectory(base, '')).status, 401);
+    assert.equal((await projectDirectory(base, session)).status, 401);
+    assert.equal((await projectDirectory(base, key.accessToken, {}, { Origin: 'https://evil.test' })).status, 403);
+    assert.equal((await projectDirectory(base, key.accessToken, {}, { 'Sec-Fetch-Site': 'cross-site' })).status, 403);
+    assert.equal((await native('integrations/text-tokens', { method: 'DELETE', auth: session, body: { id: key.credential.id } })).status, 200);
+    assert.equal((await projectDirectory(base, key.accessToken)).status, 401);
+    const expiring = await createKey(); advance(365 * 86400000);
+    assert.equal((await projectDirectory(base, expiring.accessToken)).status, 401);
+    assert.deepEqual((await state()).snapshot, initial.snapshot);
+  });
+});
+
+test('project directory pagination stays ordered and bounded, with revision conflicts instead of inconsistent pages', async () => {
+  await withTextIngress(async ({ base, native, state, text, createKey, session }) => {
+    const initial = await state();
+    initial.snapshot.records = Array.from({ length: 205 }, (_, index) => directoryFixture('目录项目 ' + index, {
+      id: '10000000-0000-4000-8000-' + String(index + 1).padStart(12, '0')
+    })).reverse();
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: initial.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    const key = await createKey(), first = await projectDirectory(base, key.accessToken);
+    assert.equal(first.status, 200); assert.equal(first.value.data.projects.length, 100); assert.equal(first.value.data.total, 205);
+    assert.equal(first.value.data.revision, 1); assert.ok(first.value.data.nextCursor);
+    const unboundCursor = await projectDirectory(base, key.accessToken, { cursor: first.value.data.nextCursor });
+    assert.ok([400, 422].includes(unboundCursor.status), 'A continuation cursor requires its snapshot revision');
+    for (const limit of ['0', '201']) {
+      const invalidLimit = await projectDirectory(base, key.accessToken, { limit });
+      assert.ok([400, 422].includes(invalidLimit.status), 'A page limit must be between 1 and 200');
+    }
+    const largest = await projectDirectory(base, key.accessToken, { limit: '200' });
+    assert.equal(largest.status, 200); assert.equal(largest.value.data.projects.length, 200);
+    const second = await projectDirectory(base, key.accessToken, { cursor: first.value.data.nextCursor, revision: '1' });
+    assert.equal(second.status, 200); assert.equal(second.value.data.projects.length, 100); assert.ok(second.value.data.nextCursor);
+    const last = await projectDirectory(base, key.accessToken, { cursor: second.value.data.nextCursor, revision: '1' });
+    assert.equal(last.status, 200); assert.equal(last.value.data.projects.length, 5); assert.equal(last.value.data.nextCursor, undefined);
+    const ids = [first, second, last].flatMap(page => page.value.data.projects.map(project => project.id));
+    assert.equal(new Set(ids).size, 205); assert.deepEqual(ids, initial.snapshot.records.map(record => record.id).sort());
+    assert.equal((await text('WORKSHOP/1\n类型: 项目组\n标题: 新目录项目', { auth: key.accessToken })).status, 201);
+    const stale = await projectDirectory(base, key.accessToken, { cursor: first.value.data.nextCursor, revision: '1' });
+    assert.equal(stale.status, 409); assert.equal(stale.value.error.code, 'PROJECT_DIRECTORY_CHANGED');
+    const refreshed = await projectDirectory(base, key.accessToken);
+    assert.equal(refreshed.status, 200); assert.equal(refreshed.value.data.revision, 2); assert.equal(refreshed.value.data.total, 206);
+  });
+});
+
+test('text batches create native nested project groups and assign new actions through all group aliases without duplicate retries', async () => {
+  await withTextIngress(async ({ base, native, state, text, createKey, session }) => {
+    const initial = await state(), area = directoryFixture('已有领域', { kind: 'AREA', status: 'OPEN' });
+    initial.snapshot.records.push(area); initial.snapshot.custom = { preserved: 'server-only metadata' };
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: initial.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    const key = await createKey(), operation = randomUUID();
+    const raw = 'WORKSHOP/1\n类型: 项目组\n标题: 编程学习\n分类: 自学\n备注: 主项目说明\n---\n类型: 项目组\n标题: 指针练习\n项目组: 编程学习\n---\n类型: 事项\n标题: 完成第一题\n日程组: 指针练习\n计划: 2026-10-20T09:00+08:00\n---\n类型: 项目组\n标题: 领域子组\n项目: ' + area.id + '\n---\n类型: 提醒\n标题: 领域提醒\n项目组: 已有领域\n提醒: 2026-10-20T08:45+08:00';
+    const added = await text(raw, { auth: key.accessToken, key: operation });
+    assert.equal(added.status, 201); assert.equal(added.value.data.created, 5); assert.deepEqual(added.value.data.seriesIDs, []);
+    const final = await state(), [parent, child, task, areaChild, reminder] = final.snapshot.records.slice(1);
+    assert.equal(final.revision, 2); assert.deepEqual(final.snapshot.records[0], area); assert.deepEqual(final.snapshot.custom, initial.snapshot.custom);
+    assert.equal(parent.kind, 'PROJECT'); assert.equal(parent.status, 'ACTIVE'); assert.equal(parent.projectKind, '自学'); assert.equal(parent.body, '主项目说明');
+    assert.equal(parent.notificationsEnabled, false); assert.equal(parent.projectID, undefined); assert.equal(parent.areaID, undefined);
+    assert.equal(child.kind, 'PROJECT'); assert.equal(child.projectID, parent.id); assert.equal(child.projectKind, 'RESEARCH');
+    assert.equal(task.kind, 'TASK'); assert.equal(task.projectID, child.id); assert.equal(task.areaID, undefined);
+    assert.equal(areaChild.areaID, area.id); assert.equal(areaChild.projectID, undefined);
+    assert.equal(reminder.areaID, area.id); assert.equal(reminder.projectID, undefined);
+    for (const group of [parent, child, areaChild]) {
+      for (const field of ['id', 'kind', 'title', 'version', 'createdAt', 'updatedAt', 'status', 'summary', 'body', 'category', 'tags', 'pinned', 'projectKind', 'dateOnly', 'timezone', 'notificationsEnabled', 'notificationLeadMinutes', 'isException'])
+        assert.notEqual(group[field], undefined, field);
+      for (const field of ['scheduledAt', 'dueDate', 'remindAt', 'recurrenceSeriesID']) assert.equal(group[field], undefined);
+    }
+    const replay = await text(raw, { auth: key.accessToken, key: operation });
+    assert.equal(replay.status, 200); assert.deepEqual(replay.value.data, { ...added.value.data, replayed: true });
+    assert.deepEqual(await state(), final);
+    const directory = await projectDirectory(base, key.accessToken);
+    assert.equal(directory.status, 200); assert.equal(directory.value.data.total, 4);
+    assert.equal(directory.value.data.projects.find(group => group.id === child.id).parentID, parent.id);
+    assert.equal(directory.value.data.projects.find(group => group.id === areaChild.id).parentID, area.id);
+    const metadata = await native('integrations/text-tokens', { auth: session });
+    assert.equal(metadata.status, 200); assert.match(metadata.value.data.prompt, /project-groups/);
+    assert.match(metadata.value.data.prompt, /项目组/); assert.match(metadata.value.data.prompt, /分类/);
+    assert.match(metadata.value.data.prompt, /\{\{API_KEY\}\}/); assert.doesNotMatch(metadata.value.data.prompt, new RegExp(key.accessToken));
+  });
+});
+
+test('text group validation is atomic and rejects duplicate aliases, unsupported fields, future references and same-parent names', async () => {
+  await withTextIngress(async ({ native, state, text, createKey, session, instance }) => {
+    const initial = await state(), parent = directoryFixture('父组'), sibling = directoryFixture('已存在的子组');
+    sibling.projectID = parent.id; initial.snapshot.records = [parent, sibling];
+    assert.equal((await native('workspace', { method: 'PUT', auth: session, body: { snapshot: initial.snapshot }, headers: { 'If-Match': '"0"' } })).status, 200);
+    const key = await createKey(), before = await state();
+    const invalidBlocks = [
+      ['类型: 项目组\n标题: 不支持计划\n计划: 2026-10-20T09:00+08:00', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 项目组\n标题: 不支持截止\n截止: 2026-10-20', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 项目组\n标题: 不支持提醒\n提醒: 2026-10-20T09:00+08:00', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 项目组\n标题: 不支持重复\n重复: 每天', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 项目组\n标题: 不支持星期\n星期: 1', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 项目组\n标题: 不支持周次\n第1周: 2026-10-19', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 项目组\n标题: 不支持重复结束\n重复结束: 2026-12-31', 'TEXT_PROJECT_FIELD_UNSUPPORTED'],
+      ['类型: 事项\n标题: 错误分类\n分类: 不属于事项', 'INVALID_TEXT_CATEGORY'],
+      ['类型: 项目组\n标题: 空分类\n分类: ', 'INVALID_TEXT_CATEGORY'],
+      ['类型: 项目组\n标题: 过长分类\n分类: ' + 'x'.repeat(241), 'INVALID_TEXT_CATEGORY'],
+      ['类型: 事项\n标题: 重复别名\n项目: 父组\n项目组: 父组', 'DUPLICATE_TEXT_FIELD'],
+      ['类型: 事项\n标题: 重复别名二\n项目组: 父组\n日程组: 父组', 'DUPLICATE_TEXT_FIELD'],
+      ['类型: 事项\n标题: 重复别名三\n项目: 父组\n日程组: 父组', 'DUPLICATE_TEXT_FIELD'],
+      ['类型: 项目组\n标题: 已存在的子组\n项目: 父组', 'TEXT_PROJECT_EXISTS'],
+      ['类型: 项目组\n标题: 父组', 'TEXT_PROJECT_EXISTS'],
+      ['类型: 事项\n标题: 未来引用\n项目: 之后才创建\n---\n类型: 项目组\n标题: 之后才创建', 'TEXT_PROJECT_NOT_FOUND']
+    ];
+    for (const [blocks, expected] of invalidBlocks) {
+      // The first valid block must also roll back when any later block fails.
+      const response = await text('WORKSHOP/1\n类型: 项目组\n标题: 原子前置项目\n---\n' + blocks, { auth: key.accessToken });
+      assert.equal(response.status, 422, blocks); assert.equal(response.value.error.code, expected, blocks);
+      assert.deepEqual(await state(), before, blocks);
+      assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM text_imports').get().n, 0);
+    }
+    const sameBatch = await text('WORKSHOP/1\n类型: 项目组\n标题: 批内重复\n---\n类型: 项目组\n标题: 批内重复', { auth: key.accessToken });
+    assert.equal(sameBatch.status, 422); assert.equal(sameBatch.value.error.code, 'TEXT_PROJECT_EXISTS'); assert.deepEqual(await state(), before);
+    const differentParents = await text('WORKSHOP/1\n类型: 项目组\n标题: 另一个父组\n---\n类型: 项目组\n标题: 已存在的子组\n项目: 另一个父组', { auth: key.accessToken });
+    assert.equal(differentParents.status, 201);
+    const after = await state(), duplicate = after.snapshot.records.at(-1);
+    assert.equal(duplicate.projectID, after.snapshot.records.at(-2).id);
+    const ambiguous = await text('WORKSHOP/1\n类型: 事项\n标题: 名称有歧义\n项目: 已存在的子组', { auth: key.accessToken });
+    assert.equal(ambiguous.status, 422); assert.equal(ambiguous.value.error.code, 'AMBIGUOUS_TEXT_PROJECT'); assert.deepEqual(await state(), after);
+    const explicit = await text('WORKSHOP/1\n类型: 事项\n标题: 用 UUID 消除歧义\n日程组: ' + duplicate.id, { auth: key.accessToken });
+    assert.equal(explicit.status, 201); assert.equal((await state()).snapshot.records.at(-1).projectID, duplicate.id);
+  });
+});
+
 test('text integration credentials are hash-only, owner-scoped, expiring and immediately revocable', async () => {
   await withTextIngress(async ({ instance, native, text, state, createKey, session, advance }) => {
     const key = await createKey();
