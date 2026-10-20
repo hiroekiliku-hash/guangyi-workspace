@@ -1,13 +1,16 @@
 // Trusted renderer owned by the service. Course strings are data, never trusted markup.
 export const playerProtocol = 'WORKSHOP-PLAYER/1';
-export const rendererVersion = '2026.10.20.2';
+export const rendererVersion = '2026.10.20.3';
 const json = value => JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 export function renderCoursePlayer(course, lessonID, courseRevision) {
   const lesson = course.lessons.find(item => item.id.toLowerCase() === lessonID.toLowerCase());
   if (!lesson) throw new Error('COURSE_LESSON_NOT_FOUND');
   const data = { courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
+  // A bundler may normalize string escapes inside function source. Escape the entire
+  // serialized runtime at the final HTML boundary, including nested srcdoc scripts.
+  const runtime = playerRuntime.toString().replace(/<\/script/gi, '<' + String.fromCharCode(92) + '/script');
   return { protocol: playerProtocol, rendererVersion, courseID: course.id, lessonID: lesson.id, courseRevision,
-    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${playerRuntime.toString()})(curriculum);</script></body></html>` };
+    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${runtime})(curriculum);</script></body></html>` };
 }
 const playerCSS = `
 :root{color-scheme:light dark;--bg:#f2f2f7;--panel:#fff;--text:#1c1c1e;--muted:#707078;--line:#dedee4;--accent:#52758f;--soft:#e9eff4;--mark:#f6e0a0;--input:#fff;--bottom-space:148px;--corner-margin:0 0 0 auto}

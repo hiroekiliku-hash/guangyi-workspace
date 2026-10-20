@@ -29,6 +29,19 @@ async function call(path, method = 'GET', body, auth = token, revision, sourceDe
     ...(sourceDeviceID ? { 'X-Workspace-Device-ID': sourceDeviceID } : {}) }, body: body ? JSON.stringify(body) : undefined });
   return { status: response.status, value: await response.json() };
 }
+test('bundled course player keeps a single inline script after esbuild serialization', async () => {
+  const response = await fetch(origin + '/api/native/v1/course-player/demo?courseID=4543387c-55ed-50f7-8803-823439cb4fe6&lessonID=18c3575f-5194-5af9-8cfd-cc78554da7b0');
+  assert.equal(response.status, 200);
+  const { data } = await response.json();
+  assert.equal(data.protocol, 'WORKSHOP-PLAYER/1');
+  assert.equal(data.courseRevision, 2);
+  assert.equal((data.html.match(/<\/script/gi) ?? []).length, 1, 'Bundling must not unescape a nested script closing tag into the trusted HTML.');
+  const script = /<script>([\s\S]*)<\/script>/.exec(data.html)?.[1];
+  assert.ok(script);
+  const { Script } = await import('node:vm');
+  assert.doesNotThrow(() => new Script(script));
+  assert.match(script, /window.WorkshopPlayer/);
+});
 test('app-content public manifest has a stable revision and conditional caching', async () => {
   const response = await fetch(origin + '/api/native/v1/app-content');
   assert.equal(response.status, 200);

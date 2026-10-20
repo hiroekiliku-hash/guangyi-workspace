@@ -14,6 +14,7 @@ test('player packages one lesson, static offline shell, safely serialized source
   const course=fixture();course.title='</script><script>globalThis.pwned=true</script>';course.lessons[0].blocks[0].text=course.title;
   course.lessons.push({id:randomUUID(),title:'Other private lesson',blocks:[]});
   const value=renderCoursePlayer(course,course.lessons[0].id.toUpperCase(),2);
+  assert.equal((value.html.match(/<\/script\s*>/gi) ?? []).length,1,'only the trusted outer script closes in raw HTML');
   assert.equal(value.protocol,'WORKSHOP-PLAYER/1');assert.equal(value.rendererVersion,rendererVersion);assert.equal(value.courseRevision,2);
   assert.ok(!value.html.includes('Other private lesson'));assert.ok(!value.html.includes('</script><script>globalThis.pwned'));
   assert.match(value.html,/connect-src 'none'/);assert.match(value.html,/frame.setAttribute\('sandbox', 'allow-scripts'\)/);assert.ok(!value.html.includes('allow-same-origin'));
@@ -65,7 +66,7 @@ test('public demo player accepts only deployment catalog courses and exact query
 });
 test('native-feel renderer keeps full-width content and preference-driven controls and haptics',()=>{
   const course=fixture(),html=renderCoursePlayer(course,course.lessons[0].id,1).html;
-  assert.equal(rendererVersion,'2026.10.20.2');
+  assert.equal(rendererVersion,'2026.10.20.3');
   assert.match(html,/font:17px\/1\.53 -apple-system/);
   assert.match(html,/--bottom-space:148px/);
   assert.match(html,/env\(safe-area-inset-bottom,0px\)/);

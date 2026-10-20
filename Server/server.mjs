@@ -28059,19 +28059,20 @@ import { promisify } from "node:util";
 
 // Server/course-player.mjs
 var playerProtocol = "WORKSHOP-PLAYER/1";
-var rendererVersion = "2026.10.20.2";
+var rendererVersion = "2026.10.20.3";
 var json = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 function renderCoursePlayer(course, lessonID, courseRevision) {
   const lesson = course.lessons.find((item) => item.id.toLowerCase() === lessonID.toLowerCase());
   if (!lesson) throw new Error("COURSE_LESSON_NOT_FOUND");
   const data = { courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
+  const runtime = playerRuntime.toString().replace(/<\/script/gi, "<" + String.fromCharCode(92) + "/script");
   return {
     protocol: playerProtocol,
     rendererVersion,
     courseID: course.id,
     lessonID: lesson.id,
     courseRevision,
-    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${playerRuntime.toString()})(curriculum);</script></body></html>`
+    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${runtime})(curriculum);</script></body></html>`
   };
 }
 var playerCSS = `
