@@ -387,8 +387,11 @@ X-Workspace-ID: {optional shared workspace ID}
 - `saved`: `{type:"saved",requestID,ok,error?}`，只能确认对应尚未完成的保存请求。
 - `runResult`: `{type:"runResult",requestID,result?,error?}`，result 为现有课程运行响应。
 
+原生前后按钮保持原生 Liquid Glass，按用户偏好悬浮在左下或右下，页面占满阅读区，不以底部整行工具栏挤占网页。`init` 还提供 `controlSide:"left"|"right"`、`hapticsEnabled:boolean`；偏好变化只更新环境，不重新载入页面或清空草稿。页面为浮动按钮保留可滚动的底部空间。
+
 页面发给原生：
 
+- `haptic`：`{type:"haptic",style:"selection"|"impact"|"success"|"error"}`。只接受当前可信主框架，遵循 App 触感设置与节流；不能请求任意系统 API。AI HTML/SVG 内的控件仅可由宿主经当前 iframe 来源、随机 token、可见状态与样式白名单校验后转发触感，不得直接调用原生接口或提交答案。
 - `ready`：可信 renderer 已挂载，原生可发送 init。
 - `state`：`{type:"state",index,count,canPrevious,canNext}`，index 从 0 开始。
 - `submit`：`{type:"submit",requestID,blockID,selectedOptionIDs,text}`。用户按下一步时，如当前题有未保存答案，先提交并停留当前题，必须收到成功 saved 才显示解析；用户再次按下一步才翻页。保存失败保持草稿，可重试。

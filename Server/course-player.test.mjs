@@ -63,3 +63,49 @@ test('public demo player accepts only deployment catalog courses and exact query
     assert.equal((await h.request('GET',path.replace(entry.payload.lessons[0].id,randomUUID()))).status,404);
   }finally{h.db.close();}
 });
+test('native-feel renderer keeps full-width content and preference-driven controls and haptics',()=>{
+  const course=fixture(),html=renderCoursePlayer(course,course.lessons[0].id,1).html;
+  assert.equal(rendererVersion,'2026.10.20.2');
+  assert.match(html,/font:17px\/1\.53 -apple-system/);
+  assert.match(html,/--bottom-space:148px/);
+  assert.match(html,/env\(safe-area-inset-bottom,0px\)/);
+  assert.match(html,/article\.card\{background:transparent;padding:0/);
+  assert.match(html,/resize:none/);
+  assert.match(html,/controlSide==='left'/);
+  assert.match(html,/hapticsEnabled = message.hapticsEnabled !== false/);
+  assert.match(html,/post\(\{type:'haptic',style\}\)/);
+  assert.match(html,/haptic\('success'\)/);
+  assert.match(html,/haptic\('error'\)/);
+  assert.ok(!html.includes('`${lesson.title} · ${index+1}'));
+});
+test('iframe tactile proxy rejects forged sources, tokens, capabilities and stale pages',()=>{
+  const messages=[],listeners=new Map(),created=[];
+  class Element {
+    constructor(tag){this.tagName=tag.toUpperCase();this.children=[];this.style={};this.attributes={};this.isConnected=true;this.contentWindow={};this.classList={toggle(){}};created.push(this);}
+    append(...values){this.children.push(...values);}
+    replaceChildren(...values){this.children=values;}
+    setAttribute(key,value){this.attributes[key]=value;}
+    getBoundingClientRect(){return {top:20,left:20,right:320,bottom:220,width:300,height:200};}
+    querySelector(){return null;}
+  }
+  const app=new Element('main'),body=new Element('body');
+  const document={visibilityState:'visible',body,getElementById:()=>app,createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text}),addEventListener(){}};
+  const window={innerWidth:400,innerHeight:800,webkit:{messageHandlers:{workshopPlayer:{postMessage:message=>messages.push(message)}}},addEventListener:(name,handler)=>listeners.set(name,handler),scrollTo(){}};
+  let time=0;
+  const context=vm.createContext({window,document,Element,performance:{now:()=>time+=100},getComputedStyle:()=>({visibility:'visible',display:'block'}),requestAnimationFrame(){},structuredClone});
+  const course={id:randomUUID(),lessons:[{id:randomUUID(),title:'Sandbox',blocks:[{id:randomUUID(),type:'text',text:'Touch',presentation:{kind:'html',html:{source:'<button>Touch</button>'}}},{id:randomUUID(),type:'text',text:'Next page'}]}]};
+  const html=renderCoursePlayer(course,course.lessons[0].id,1).html;
+  vm.runInContext(/<script>([\s\S]*)<\/script>/.exec(html)[1],context);
+  window.WorkshopPlayer.receive({type:'init',progress:{answers:[]},theme:'light'});
+  const frame=created.filter(e=>e.tagName==='IFRAME').at(-1),token=/\)\("([0-9a-f-]+)"\);<\/script>/.exec(frame.srcdoc)[1];
+  const send=(source,data)=>listeners.get('message')({source,data});
+  const feedback=()=>messages.filter(m=>m.type==='haptic');
+  send({}, {type:'workshop-feedback',token,style:'impact'});assert.equal(feedback().length,0);
+  send(frame.contentWindow,{type:'workshop-feedback',token:'wrong',style:'impact'});assert.equal(feedback().length,0);
+  send(frame.contentWindow,{type:'submit',token,style:'impact',blockID:course.lessons[0].blocks[0].id});assert.equal(feedback().length,0);
+  send(frame.contentWindow,{type:'workshop-feedback',token,style:'success'});assert.equal(feedback().length,0);
+  send(frame.contentWindow,{type:'workshop-feedback',token,style:'impact'});assert.equal(feedback().length,1);
+  assert.deepEqual(Object.keys(feedback()[0]).sort(),['style','type']);
+  window.WorkshopPlayer.receive({type:'next'});
+  send(frame.contentWindow,{type:'workshop-feedback',token,style:'selection'});assert.equal(feedback().length,1);
+});
