@@ -1350,16 +1350,16 @@ async function publishCourse(base, accessToken, course, { key = randomUUID(), re
     'Content-Type': 'application/json', 'Idempotency-Key': key, ...(revision === undefined ? {} : { 'If-Match': '"' + revision + '"' }), ...headers }, body: raw ?? JSON.stringify(course) });
   return { status: response.status, value: await response.json() };
 }
-test('course generation prompts prioritize a compact native trace and self-checked code', async () => {
+test('course generation prompts prioritize structured traces and server-owned layout', async () => {
   await withTextIngress(async ({ native, session, instance }) => {
     const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
     let example;
     for (const prompt of [metadata.prompt, metadata.manualPrompt]) {
-      assert.match(prompt, /编程课优先使用原生 trace/);
+      assert.match(prompt, /编程课优先使用结构化 trace/);
       assert.match(prompt, /每屏一个问题、一个变化/);
       assert.match(prompt, /默认每帧最多展示 2 个对象/);
       assert.match(prompt, /默认不超过 60 字/);
-      assert.match(prompt, /由 App 决定布局/);
+      assert.match(prompt, /由服务端渲染器决定布局/);
       assert.match(prompt, /不要求每节课包含 HTML/);
       assert.match(prompt, /开放代码题省略 acceptedAnswers/);
       assert.match(prompt, /不能把代码文本匹配当作通用代码判分/);
