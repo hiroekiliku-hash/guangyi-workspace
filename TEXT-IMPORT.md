@@ -202,12 +202,15 @@ curl --fail-with-body -X POST 'https://workspace.kdfz.com.cn/api/integrations/v1
 
 ## App 的会话专用密钥管理
 
-以下接口仅接受普通已登录会话的 `Authorization: Bearer <session>`，要求同源；POST/DELETE 还要求 `application/json`。写入密钥无法使用。
+以下接口仅接受普通已登录会话的 `Authorization: Bearer <session>`，要求同源；POST/PATCH/DELETE 还要求 `application/json`。写入密钥无法使用。
 
-- `GET /api/native/v1/integrations/text-tokens` → `{data:{credentials:[{id,name,created,expires,lastUsed?}],endpoint,protocol:"WORKSHOP/1",prompt}}`。只列有效密钥，不返回明文。prompt 包含最新完整规范、项目组目录查询与分页流程、创建和归组示例及 `{{API_KEY}}` 占位符。
-- `POST /api/native/v1/integrations/text-tokens`，JSON `{name?}`；默认 `AI日程写入`，trim 后 1–60 个字符，禁止额外字段。返回 201 `{data:{credential:{id,name,created,expires},accessToken,endpoint,protocol:"WORKSHOP/1"}}`，这是唯一返回明文的时机。
+- `GET /api/native/v1/integrations/text-tokens` → `{data:{credentials:[{id,name,created,expires,lastUsed?,enabled}],endpoint,protocol:"WORKSHOP/1",prompt}}`。只列有效密钥，不返回明文。prompt 包含最新完整规范、项目组目录查询与分页流程、创建和归组示例及 `{{API_KEY}}` 占位符。
+- `POST /api/native/v1/integrations/text-tokens`，JSON `{name?}`；默认 `AI日程写入`，trim 后 1–60 个字符，禁止额外字段。返回 201 `{data:{credential:{id,name,created,expires,enabled},accessToken,endpoint,protocol:"WORKSHOP/1"}}`，这是唯一返回明文的时机。
+- `PATCH /api/native/v1/integrations/text-tokens`，JSON `{id,name?,enabled?}`，至少提供一个更新字段，名称限制同创建。仅当前账户可改名、暂停或恢复，返回 `{data:{credential}}`。暂停后原密钥的项目组查询和日程写入均被拒绝，恢复后原密钥可继续使用；旧库密钥迁移后默认启用，不增加任何读取或修改已有日程的权限。
 - `DELETE /api/native/v1/integrations/text-tokens`，JSON `{id}`。仅撤销本账户的 UUID，成功返回 `{data:{revoked:true}}`，不存在或其他账户的 ID 均返回 404。
 
 时间戳为 Unix 毫秒。写入接口在接收正文前验证密钥，并在 SQLite `BEGIN IMMEDIATE` 内重新验证撤销/过期状态，随后重新读取最新快照再追加；没有 await 窗口让旧快照覆盖并发更新。沿用原生 PUT 的 revision/history 保留规则，每个批次只递增一次 revision，推送只发送已有的静默 revision 提示。所有其他记录、资料、附件、活动及未知快照字段保持原值。
 
 构建时 `text-ingress.mjs` 打包进 `server.mjs`。发布仍只有原先白名单中的 `server.mjs`、`server.test.mjs` 和 `REVISION`，不改变网关或部署权限。后端测试通过实际 HTTP 和隔离内存 SQLite 验证格式、账户隔离、撤销、过期、原子性、幂等、并发 PUT 与通知提示。
+
+每个 AI 应创建独立、易识别的连接。名称标记的是工具或用途，并非硬件身份认证。App 可管理其它设备创建的连接，但服务器只保存密钥摘要，不能重新读取明文；本机创建的多个连接分别保存在账户隔离的钥匙串中。删除 App 或丢失本机钥匙串后，可撤销旧连接并重新创建。暂停和撤销不删除已导入的日程。

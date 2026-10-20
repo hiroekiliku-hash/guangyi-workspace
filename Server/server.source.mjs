@@ -154,9 +154,10 @@ export function createNativeServer(configuration) {
     CREATE TABLE IF NOT EXISTS history(user_id INTEGER,revision INTEGER,snapshot TEXT,created INTEGER,PRIMARY KEY(user_id,revision));
     CREATE TABLE IF NOT EXISTS devices(user_id INTEGER,device_id TEXT,token TEXT,platform TEXT,bundle_id TEXT,environment TEXT,created INTEGER,PRIMARY KEY(user_id,device_id));
     CREATE TABLE IF NOT EXISTS deliveries(id TEXT PRIMARY KEY,user_id INTEGER,accepted INTEGER,lease_until INTEGER);
-    CREATE TABLE IF NOT EXISTS text_tokens(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),name TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER);
+    CREATE TABLE IF NOT EXISTS text_tokens(id TEXT PRIMARY KEY,hash TEXT UNIQUE NOT NULL,user_id INTEGER NOT NULL REFERENCES users(id),name TEXT NOT NULL,created INTEGER NOT NULL,expires INTEGER NOT NULL,last_used INTEGER,enabled INTEGER NOT NULL DEFAULT 1);
     CREATE INDEX IF NOT EXISTS text_tokens_user ON text_tokens(user_id);
     CREATE TABLE IF NOT EXISTS text_imports(user_id INTEGER NOT NULL REFERENCES users(id),idempotency_key TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(user_id,idempotency_key));`);
+  if (!db.prepare('PRAGMA table_info(text_tokens)').all().some(column => column.name === 'enabled')) db.exec('ALTER TABLE text_tokens ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1');
   const email = adminEmail.trim().toLowerCase();
   if (!db.prepare('SELECT id FROM users WHERE email=?').get(email)) {
     const salt = randomBytes(16).toString('hex'), hash = scryptSync(adminPassword, salt, 64);
@@ -188,11 +189,11 @@ export function createNativeServer(configuration) {
   function textCredential(request) {
     const header = request.headers.authorization;
     if (typeof header !== 'string' || !/^Bearer wsi_[A-Za-z0-9_-]{43}$/.test(header)) throw new APIError(401, 'INVALID_TEXT_TOKEN');
-    const credential = db.prepare('SELECT * FROM text_tokens WHERE hash=? AND expires>?').get(sha(header.slice(7)), textNow());
+    const credential = db.prepare('SELECT * FROM text_tokens WHERE hash=? AND expires>? AND enabled=1').get(sha(header.slice(7)), textNow());
     if (!credential) throw new APIError(401, 'INVALID_TEXT_TOKEN');
     return credential;
   }
-  const textCredentialInfo = row => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...(row.last_used != null ? { lastUsed: row.last_used } : {}) });
+  const textCredentialInfo = row => ({ id: row.id, name: row.name, enabled: row.enabled === 1, created: row.created, expires: row.expires, ...(row.last_used != null ? { lastUsed: row.last_used } : {}) });
   db.exec(`CREATE TABLE IF NOT EXISTS passkey_users(user_id INTEGER PRIMARY KEY REFERENCES users(id),handle TEXT UNIQUE NOT NULL);
     CREATE TABLE IF NOT EXISTS passkeys(id TEXT PRIMARY KEY,user_id INTEGER NOT NULL REFERENCES users(id),public_key BLOB NOT NULL,counter INTEGER NOT NULL,created INTEGER NOT NULL);
     CREATE TABLE IF NOT EXISTS passkey_challenges(id TEXT PRIMARY KEY,kind TEXT NOT NULL,challenge TEXT NOT NULL,user_id INTEGER,session_hash TEXT,expires INTEGER NOT NULL);`);
@@ -685,14 +686,17 @@ export function createNativeServer(configuration) {
         const credentials = db.prepare('SELECT * FROM text_tokens WHERE user_id=? AND expires>? ORDER BY created,id').all(userID, textNow()).map(textCredentialInfo);
         return respond(response, 200, { data: { credentials, endpoint: textEndpoint, protocol: textImportProtocol, projectsEndpoint: passkeyOrigin + projectGroupsPath, prompt: calendarTextPrompt(textEndpoint) } });
       }
-      if (path === '/api/native/v1/integrations/text-tokens' && ['POST', 'DELETE'].includes(request.method)) {
+      if (path === '/api/native/v1/integrations/text-tokens' && ['POST', 'PATCH', 'DELETE'].includes(request.method)) {
         sameWebOrigin(request); requireJSON(request);
         const value = await body(request, 1024);
         if (!value || Array.isArray(value) || typeof value !== 'object') throw new APIError(422, 'INVALID_TEXT_TOKEN_REQUEST');
-        const creating = request.method === 'POST';
-        if (creating ? Object.keys(value).some(key => key !== 'name') : Object.keys(value).length !== 1 || !uuid.test(value.id)) throw new APIError(422, 'INVALID_TEXT_TOKEN_REQUEST');
+        const creating = request.method === 'POST', updating = request.method === 'PATCH';
+        const keys = Object.keys(value);
+        if (creating ? keys.some(key => key !== 'name') : !uuid.test(value.id) || (updating
+          ? keys.some(key => !['id', 'name', 'enabled'].includes(key)) || keys.length < 2 || (value.enabled !== undefined && typeof value.enabled !== 'boolean')
+          : keys.length !== 1)) throw new APIError(422, 'INVALID_TEXT_TOKEN_REQUEST');
         const name = value.name === undefined ? 'AI日程写入' : typeof value.name === 'string' ? value.name.trim() : '';
-        if (creating && (!name || name.length > 60)) throw new APIError(422, 'INVALID_TEXT_TOKEN_NAME');
+        if ((creating || (updating && value.name !== undefined)) && (!name || name.length > 60)) throw new APIError(422, 'INVALID_TEXT_TOKEN_NAME');
         db.exec('BEGIN IMMEDIATE');
         try {
           const owner = userFor(request);
@@ -701,10 +705,19 @@ export function createNativeServer(configuration) {
             db.prepare('DELETE FROM text_tokens WHERE user_id=? AND expires<=?').run(owner, now);
             if (db.prepare('SELECT COUNT(*) AS total FROM text_tokens WHERE user_id=?').get(owner).total >= 10) throw new APIError(422, 'TEXT_TOKEN_LIMIT');
             const accessToken = 'wsi_' + randomBytes(32).toString('base64url');
-            const credential = { id: randomUUID(), name, created: now, expires: now + 365 * 86400000 };
+            const credential = { id: randomUUID(), name, enabled: true, created: now, expires: now + 365 * 86400000 };
             db.prepare('INSERT INTO text_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)').run(credential.id, sha(accessToken), owner, name, credential.created, credential.expires);
             db.exec('COMMIT');
             return respond(response, 201, { data: { credential, accessToken, endpoint: textEndpoint, protocol: textImportProtocol } });
+          }
+          if (updating) {
+            const credential = db.prepare('SELECT * FROM text_tokens WHERE id=? AND user_id=? AND expires>?').get(value.id.toLowerCase(), owner, textNow());
+            if (!credential) throw new APIError(404, 'TEXT_TOKEN_NOT_FOUND');
+            db.prepare('UPDATE text_tokens SET name=?,enabled=? WHERE id=? AND user_id=?').run(
+              value.name === undefined ? credential.name : name, value.enabled === undefined ? credential.enabled : Number(value.enabled), credential.id, owner);
+            const updated = textCredentialInfo(db.prepare('SELECT * FROM text_tokens WHERE id=?').get(credential.id));
+            db.exec('COMMIT');
+            return respond(response, 200, { data: { credential: updated } });
           }
           const removed = db.prepare('DELETE FROM text_tokens WHERE id=? AND user_id=?').run(value.id.toLowerCase(), owner);
           if (removed.changes !== 1) throw new APIError(404, 'TEXT_TOKEN_NOT_FOUND');

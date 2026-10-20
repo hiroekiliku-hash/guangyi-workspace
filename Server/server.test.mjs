@@ -1037,6 +1037,54 @@ test('text integration credentials are hash-only, owner-scoped, expiring and imm
   });
 });
 
+test('text connection management renames, pauses and resumes only owner credentials', async () => {
+  await withTextIngress(async ({ base, native, text, state, createKey, session }) => {
+    const key = await createKey(session, '我的 AI');
+    assert.equal(key.credential.enabled, true);
+    const other = (await native('accounts', { method: 'POST', body: { email: 'connection-other@test.invalid', password } })).value.data.accessToken;
+    const update = (body, auth = session, headers = {}) => native('integrations/text-tokens', { method: 'PATCH', auth, body, headers });
+    assert.equal((await update({ id: key.credential.id, enabled: false }, other)).status, 404);
+    for (const body of [{ id: key.credential.id }, { id: key.credential.id, enabled: 'false' }, { id: key.credential.id, name: '' }, { id: key.credential.id, scope: 'write' }]) {
+      assert.equal((await update(body)).status, 422);
+    }
+    assert.equal((await update({ id: key.credential.id, enabled: false }, session, { Origin: 'https://evil.test' })).status, 403);
+    const paused = await update({ id: key.credential.id.toUpperCase(), name: '  课程助手  ', enabled: false });
+    assert.equal(paused.status, 200); assert.equal(paused.value.data.credential.name, '课程助手'); assert.equal(paused.value.data.credential.enabled, false);
+    assert.equal((await native('integrations/text-tokens', { auth: session })).value.data.credentials[0].enabled, false);
+    const before = await state();
+    assert.equal((await text(sampleText, { auth: key.accessToken })).status, 401);
+    assert.equal((await projectDirectory(base, key.accessToken)).status, 401);
+    assert.deepEqual(await state(), before);
+    const resumed = await update({ id: key.credential.id, enabled: true });
+    assert.equal(resumed.status, 200); assert.equal(resumed.value.data.credential.enabled, true); assert.equal(resumed.value.data.credential.name, '课程助手');
+    assert.equal((await text(sampleText, { auth: key.accessToken })).status, 201);
+    assert.equal((await projectDirectory(base, key.accessToken)).status, 200);
+    assert.equal((await native('integrations/text-tokens', { method: 'DELETE', auth: session, body: { id: key.credential.id } })).status, 200);
+    assert.equal((await update({ id: key.credential.id, enabled: true })).status, 404);
+  });
+});
+
+test('text connection enabled migration preserves existing keys and defaults to enabled', async () => {
+  const { DatabaseSync } = await import('node:sqlite');
+  const dir = mkdtempSync(join(tmpdir(), 'workshop-connection-migration-'));
+  const databasePath = join(dir, 'workspace.sqlite');
+  const config = { databasePath, adminEmail: 'migration@test.invalid', adminPassword: password };
+  let instance;
+  try {
+    instance = createNativeServer(config);
+    const owner = instance.db.prepare('SELECT id FROM users').get().id;
+    instance.db.prepare('INSERT INTO text_tokens(id,hash,user_id,name,created,expires) VALUES(?,?,?,?,?,?)').run(randomUUID(), 'legacy-hash', owner, '旧连接', Date.now(), Date.now() + 86400000);
+    instance.close(); instance = undefined;
+    const legacy = new DatabaseSync(databasePath);
+    legacy.exec('ALTER TABLE text_tokens DROP COLUMN enabled'); legacy.close();
+    instance = createNativeServer(config);
+    const key = instance.db.prepare('SELECT name,hash,enabled FROM text_tokens').get();
+    assert.equal(key.name, '旧连接'); assert.equal(key.hash, 'legacy-hash'); assert.equal(key.enabled, 1);
+    instance.close(); instance = createNativeServer(config);
+    assert.equal(instance.db.prepare('SELECT COUNT(*) AS n FROM text_tokens').get().n, 1);
+  } finally { instance?.close(); rmSync(dir, { recursive: true, force: true }); }
+});
+
 test('text batches append complete native records and bounded recurrence rules without changing existing metadata', async () => {
   await withTextIngress(async ({ native, state, createKey, text, session, instance, pushes }) => {
     const initial = await state();
