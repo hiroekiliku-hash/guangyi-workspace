@@ -24281,7 +24281,7 @@ var demo_course_default = {
   protocol: "WORKSHOP-CONTENT/1",
   id: "demo-course",
   kind: "course",
-  version: 3,
+  version: 4,
   minimumContentVersion: 1,
   payload: {
     id: "8343F80B-F43C-4901-B585-A67647EA9700",
@@ -24493,8 +24493,8 @@ var demo_course_default = {
 .demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}
 .actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}
 @media(prefers-reduced-motion:reduce){.value{transition:none}}
-</style></head><body><section class="demo" aria-label="\u53D8\u91CF\u9012\u589E\u6F14\u793A"><code>int count = <output id="inline">0</output>;</code><output id="value" class="value" aria-live="polite">0</output><div class="actions"><button id="increment">\u6267\u884C ++count</button><button id="reset" class="secondary">\u91CD\u7F6E</button></div><label><input type="checkbox" id="reduce">\u51CF\u5C11\u52A8\u6001</label></section><script>
-(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function show(){value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,9999);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()})})();
+</style></head><body><section class="demo" aria-label="\u53D8\u91CF\u9012\u589E\u6F14\u793A"><code>int count = <output id="inline">0</output>;</code><output id="value" class="value" aria-live="polite">0</output><div class="actions"><button id="increment" data-workshop-primary="next">\u6267\u884C ++count</button><button id="reset" class="secondary">\u91CD\u7F6E</button></div><label><input type="checkbox" id="reduce">\u51CF\u5C11\u52A8\u6001</label></section><script>
+(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function syncPrimary(){window.WorkshopRuntime?.setPrimaryAction?.({next:()=>{count=Math.min(count+1,3);show()},previous:()=>{count=Math.max(count-1,0);show()},canNext:count<3,canPrevious:count>0})}function show(){syncPrimary();value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,3);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()});syncPrimary()})();
 </script></body></html>`
               },
               kind: "html"
@@ -24781,7 +24781,7 @@ var demo_course_default = {
                 ]
               }
             },
-            text: "\u70B9\u51FB\u6267\u884C\u4E0B\u4E00\u6B65\uFF0C\u89C2\u5BDF i\u3001total \u4E0E\u8F93\u51FA\u5982\u4F55\u53D8\u5316\uFF1B\u4E5F\u53EF\u4EE5\u9000\u56DE\u4E0A\u4E00\u5E27\u5BF9\u7167\u3002",
+            text: "\u70B9\u51FB\u60AC\u6D6E\u7684\u7EE7\u7EED\u6309\u94AE\uFF0C\u89C2\u5BDF i\u3001total \u4E0E\u8F93\u51FA\u5982\u4F55\u53D8\u5316\uFF1B\u4E0A\u4E00\u6B65\u53EF\u9000\u56DE\u4E0A\u4E00\u5E27\u5BF9\u7167\u3002",
             title: "\u4E00\u6B65\u4E00\u6B65\u89C2\u5BDF",
             type: "text"
           },
@@ -24845,7 +24845,7 @@ var demo_course_default = {
         blocks: [
           {
             id: "8343F80B-F43C-4901-B585-A67647EA0500",
-            text: "\u8FD9\u91CC\u7684\u7EC3\u4E60\u53EF\u4EE5\u76F4\u63A5\u5728\u672C\u673A\u8FD0\u884C\u3002\u6570\u5B57\u9898\u4F7F\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u7A0B\u5E8F\u9898\u4F7F\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u586B\u5199\u7B54\u6848\u540E\uFF0C\u53EF\u70B9\u8FD0\u884C\u4EE3\u7801\uFF0C\u4E5F\u53EF\u70B9\u5E95\u90E8\u7EE7\u7EED\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
+            text: "\u8FD9\u91CC\u7684\u7EC3\u4E60\u53EF\u4EE5\u76F4\u63A5\u5728\u672C\u673A\u8FD0\u884C\u3002\u6570\u5B57\u9898\u4F7F\u7528\u6570\u5B57\u952E\u76D8\uFF0C\u7A0B\u5E8F\u9898\u4F7F\u7528\u4EE3\u7801\u7F16\u8F91\u5668\u3002\u586B\u5199\u7B54\u6848\u540E\uFF0C\u53EF\u70B9\u8FD0\u884C\u4EE3\u7801\uFF0C\u4E5F\u53EF\u70B9\u60AC\u6D6E\u7684\u7EE7\u7EED\u6309\u94AE\u63D0\u4EA4\u5F53\u524D\u7B54\u6848\u3002",
             title: "\u4ECE\u8F93\u5165\u5230\u7ED3\u679C",
             type: "callout"
           },
@@ -28059,7 +28059,7 @@ import { promisify } from "node:util";
 
 // Server/course-player.mjs
 var playerProtocol = "WORKSHOP-PLAYER/1";
-var rendererVersion = "2026.10.20.5";
+var rendererVersion = "2026.10.21.1";
 var json = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 function renderCoursePlayer(course, lessonID, courseRevision) {
   const lesson = course.lessons.find((item) => item.id.toLowerCase() === lessonID.toLowerCase());
@@ -28076,15 +28076,15 @@ function renderCoursePlayer(course, lessonID, courseRevision) {
   };
 }
 var playerCSS = `
-:root{color-scheme:light dark;--bg:#f2f2f7;--panel:#fff;--text:#1c1c1e;--muted:#707078;--line:#dedee4;--accent:#52758f;--soft:#e9eff4;--mark:#f6e0a0;--input:#fff;--bottom-space:148px;--corner-margin:0 0 0 auto}
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{scroll-padding-bottom:calc(var(--bottom-space) + env(safe-area-inset-bottom,0px));-webkit-text-size-adjust:100%}body{margin:0;background:var(--bg);color:var(--text);font:17px/1.53 -apple-system,BlinkMacSystemFont,system-ui,sans-serif}body.dark{--bg:#000;--panel:#1c1c1e;--text:#f2f2f7;--muted:#a4a4ad;--line:#38383a;--accent:#9dc3df;--soft:#22333f;--mark:#695221;--input:#1c1c1e}body.control-left{--corner-margin:0 auto 0 0}body.keyboard-visible{--bottom-space:100px}
+:root{color-scheme:light dark;--bg:#f2f2f7;--panel:#fff;--text:#1c1c1e;--muted:#707078;--line:#dedee4;--accent:#52758f;--soft:#e9eff4;--mark:#f6e0a0;--input:#fff;--bottom-space:16px;--control-space:148px;--corner-margin:0 0 0 auto}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}html{scroll-padding-bottom:calc(var(--bottom-space) + env(safe-area-inset-bottom,0px));-webkit-text-size-adjust:100%}body{margin:0;background:var(--bg);color:var(--text);font:17px/1.53 -apple-system,BlinkMacSystemFont,system-ui,sans-serif}body.dark{--bg:#000;--panel:#1c1c1e;--text:#f2f2f7;--muted:#a4a4ad;--line:#38383a;--accent:#9dc3df;--soft:#22333f;--mark:#695221;--input:#1c1c1e}body.control-left{--corner-margin:0 auto 0 0}body.needs-control-space{--bottom-space:var(--control-space)}body.keyboard-visible{--control-space:148px}
 main{max-width:1240px;margin:auto;padding:12px 20px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px));overflow-wrap:anywhere}main:after{content:'';display:block;width:76px;height:1px;margin:var(--corner-margin);pointer-events:none}.heading{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:0 0 18px}.eyebrow,.muted{color:var(--muted);font-size:13px}.eyebrow{font-variant-numeric:tabular-nums;flex-shrink:0}h1{font-size:22px;font-weight:650;letter-spacing:-.4px;line-height:1.3;margin:0}h2{font-size:19px;font-weight:600;line-height:1.4;margin:0 0 10px}p{margin:0 0 18px;white-space:pre-wrap}.workspace{display:grid;gap:20px;align-items:start}.card{background:var(--panel);border:0;border-radius:16px;padding:16px;min-width:0}article.card{background:transparent;padding:0;border:0;border-radius:0}article.card>:last-child{margin-bottom:0}.reference{position:sticky;top:0;max-height:38vh;overflow:auto;padding:12px 8px;box-shadow:0 1px 0 var(--line);z-index:1}.reference>.muted{padding:0 8px 7px}.reference summary{cursor:pointer;font-weight:600}
 .code{font:14px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace;overflow:auto;white-space:pre;padding:0;margin:0;tab-size:4}.code .line{display:block;min-width:max-content;padding:0 8px;border-radius:4px}.code .line.active{background:var(--soft)}.number{display:inline-block;min-width:3ch;margin-right:12px;opacity:.45;user-select:none}mark{background:var(--mark);color:inherit;border-radius:3px}.tok-comment{color:#7b8790}.tok-string{color:#9d6035}.tok-number{color:#975ab2}.tok-keyword{color:#466da6}.dark .tok-string{color:#e2ae7d}.dark .tok-number{color:#d5a2eb}.dark .tok-keyword{color:#8fbaff}.annotation{font:12px/1.5 -apple-system,system-ui;color:var(--muted);margin-left:20px}
 .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0}button,select,input,textarea{font:inherit;color:inherit;-webkit-appearance:none;appearance:none}button,select{min-height:44px;border-radius:13px;border:0;background:var(--soft);padding:10px 15px;cursor:pointer;touch-action:manipulation}button{position:relative;overflow:hidden;transform:translateZ(0)}button:active:not(:disabled),summary:active{filter:brightness(.91);transform:scale(.98)}button[disabled]{opacity:.4;cursor:default}button:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button.selected{background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--accent)}select{padding-right:32px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 20px,calc(100% - 12px) 20px;background-size:5px 5px;background-repeat:no-repeat}
 .option{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel);margin:0;min-height:54px;border-radius:0;padding:14px 16px;box-shadow:inset 0 -1px 0 var(--line)}.option:before{content:'\u25CB';flex:0 0 24px;font-size:24px;line-height:24px;color:var(--muted)}.option.selected:before{content:'\u25CF';color:var(--accent)}.option.selected{background:var(--soft);box-shadow:inset 0 -1px 0 var(--line)}.option:first-of-type{border-radius:15px 15px 0 0}.option:last-of-type{border-radius:0 0 15px 15px;box-shadow:none}.option:only-of-type{border-radius:15px}.option:active:not(:disabled){transform:none;background:var(--soft)}
 textarea,input{display:block;width:100%;resize:none;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:13px 14px;outline:none;min-height:48px;max-height:55vh;caret-color:var(--accent);scroll-margin-bottom:calc(var(--bottom-space) + 12px)}textarea:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}::placeholder{color:var(--muted);opacity:.8}textarea.code-input{font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}.feedback{margin-top:18px;padding:14px 16px;background:var(--soft);border-radius:14px}.error{color:#c83c32;font-size:15px;margin-top:16px}.dark .error{color:#ff746b}.objects,.comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.object{padding:16px;border-radius:14px;background:var(--panel)}.object.changed{box-shadow:inset 0 0 0 1.5px var(--accent)}.object strong{display:block;font-size:32px;line-height:1.4}.output{background:var(--panel);padding:14px;border-radius:14px;white-space:pre-wrap;font:14px/1.6 ui-monospace,monospace}.table-scroll{overflow:auto;border-radius:14px;background:var(--panel)}table{border-collapse:collapse;width:100%;font-size:15px}td,th{text-align:left;border-bottom:1px solid var(--line);padding:11px 13px;min-width:90px}th{font-weight:600}tr:last-child td{border-bottom:0}details{margin:14px 0}summary{display:list-item;cursor:pointer;min-height:44px;padding:10px 0;color:var(--accent)}iframe{display:block;width:100%;border:0;background:transparent;min-height:120px;border-radius:14px}svg.chart{width:100%;height:auto;max-height:360px}.flash{width:100%;padding:24px;white-space:pre-wrap;margin:8px 0;background:var(--panel);min-height:88px}.steps{padding-left:24px}.steps li{padding-left:5px;margin-bottom:20px}.chart-label{font:12px -apple-system,system-ui;fill:var(--muted)}.chart-bar{fill:var(--accent)}blockquote{margin:14px 0;border-left:3px solid var(--accent);padding-left:16px;color:var(--muted)}.markdown code:not(.code){background:var(--soft);padding:2px 5px;border-radius:4px}.markdown pre{overflow:auto;white-space:pre;background:var(--panel);padding:15px;border-radius:14px}.markdown p{white-space:normal}.callout>p:first-child{padding:13px 16px;background:var(--soft);border-radius:14px}.comparison .card{padding:16px}
 @media(min-width:850px){main{padding:18px 28px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.workspace.with-reference{grid-template-columns:minmax(280px,.85fr) minmax(360px,1.15fr);gap:26px}.reference{max-height:calc(100vh - 115px)}.heading{margin-bottom:18px}}
-@media(min-width:600px) and (orientation:landscape) and (max-height:500px){:root{--bottom-space:124px}main{padding:8px 16px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.heading{margin-bottom:10px}h1{font-size:19px}.workspace{gap:14px}.workspace.with-reference{grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr)}.reference{max-height:calc(100vh - 65px)}body.keyboard-visible{--bottom-space:88px}}
+@media(min-width:600px) and (orientation:landscape) and (max-height:500px){:root{--control-space:140px}main{padding:8px 16px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.heading{margin-bottom:10px}h1{font-size:19px}.workspace{gap:14px}.workspace.with-reference{grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr)}.reference{max-height:calc(100vh - 65px)}body.keyboard-visible{--control-space:140px}}
 @media(max-width:599px){body:has(input:focus,textarea:focus) .reference{position:static;max-height:28vh}body:has(input:focus,textarea:focus){--bottom-space:148px}}
 @media(prefers-reduced-motion:no-preference){button,summary{transition:background .12s,filter .12s,transform .12s}}`;
 function playerRuntime(data) {
@@ -28259,7 +28259,7 @@ function playerRuntime(data) {
   }
   function isolated(source, height) {
     const token = requestID(), frame = document.createElement("iframe");
-    feedbackFrames.set(frame, token);
+    feedbackFrames.set(frame, { token, primary: null });
     frame.setAttribute("sandbox", "allow-scripts");
     frame.setAttribute("referrerpolicy", "no-referrer");
     frame.title = "\u79BB\u7EBF\u4E92\u52A8\u6F14\u793A";
@@ -28268,7 +28268,64 @@ function playerRuntime(data) {
     return frame;
   }
   function iframeFeedback(token) {
-    const send = (style) => parent.postMessage({ type: "workshop-feedback", token, style }, "*");
+    let primary = null;
+    const publish = () => parent.postMessage({ type: "workshop-primary", token, canNext: typeof primary?.next === "function" && primary.canNext !== false, canPrevious: typeof primary?.previous === "function" && primary.canPrevious !== false }, "*");
+    const setPrimaryAction = (value) => {
+      primary = value && typeof value === "object" ? value : null;
+      document.documentElement.classList.toggle("workshop-primary-next", typeof primary?.next === "function");
+      document.documentElement.classList.toggle("workshop-primary-previous", typeof primary?.previous === "function");
+      publish();
+    };
+    const invalidations = /* @__PURE__ */ new Map();
+    let drawingFrame = 0;
+    const draw = () => {
+      drawingFrame = 0;
+      if (document.visibilityState === "hidden") return;
+      const callbacks = [...invalidations.values()];
+      invalidations.clear();
+      for (const callback of callbacks) callback();
+    };
+    const schedule = () => {
+      if (!drawingFrame && document.visibilityState !== "hidden") drawingFrame = requestAnimationFrame(draw);
+    };
+    window.WorkshopRuntime = Object.freeze({
+      setPrimaryAction,
+      invalidate(key, callback) {
+        if (typeof callback !== "function") return;
+        invalidations.set(String(key), callback);
+        schedule();
+      },
+      cancelInvalidation(key) {
+        invalidations.delete(String(key));
+      },
+      yield: () => new Promise((resolve) => requestAnimationFrame(resolve)),
+      get active() {
+        return document.visibilityState !== "hidden";
+      }
+    });
+    document.addEventListener("visibilitychange", () => {
+      window.dispatchEvent(new CustomEvent("workshopvisibilitychange", { detail: { active: document.visibilityState !== "hidden" } }));
+      schedule();
+    });
+    const style = document.createElement("style");
+    style.textContent = '.workshop-primary-next [data-workshop-primary="next"],.workshop-primary-previous [data-workshop-primary="previous"]{display:none!important}';
+    document.head.append(style);
+    window.addEventListener("message", async (event) => {
+      const message = event.data;
+      if (event.source !== parent || !message || message.type !== "workshop-primary-action" || message.token !== token || !["next", "previous"].includes(message.direction) || typeof message.requestID !== "string") return;
+      const callback = primary?.[message.direction], allowed = primary?.[message.direction === "next" ? "canNext" : "canPrevious"] !== false;
+      let ok = false;
+      try {
+        if (allowed && typeof callback === "function") {
+          await callback();
+          ok = true;
+        }
+      } catch (_) {
+      }
+      publish();
+      parent.postMessage({ type: "workshop-primary-result", token, requestID: message.requestID, ok }, "*");
+    });
+    const send = (style2) => parent.postMessage({ type: "workshop-feedback", token, style: style2 }, "*");
     document.addEventListener("click", (event) => {
       const target = event.target instanceof Element ? event.target.closest("button,[role=button],summary,input,select,[onclick],svg") : null;
       if (target && !target.disabled) send(target.matches("input,select,summary,svg") ? "selection" : "impact");
@@ -28277,20 +28334,65 @@ function playerRuntime(data) {
       if (event.target instanceof Element && event.target.matches("input,select,textarea")) send("selection");
     }, true);
   }
-  function iframeFeedbackAllowed(event) {
+  function iframeEntry(event, requireVisible = false) {
     const message = event.data;
-    if (!message || message.type !== "workshop-feedback" || !["selection", "impact"].includes(message.style) || document.visibilityState === "hidden") return false;
-    for (const [frame, token] of feedbackFrames) {
-      if (event.source !== frame.contentWindow || message.token !== token || !frame.isConnected) continue;
-      const rect = frame.getBoundingClientRect(), style = getComputedStyle(frame), height = window.visualViewport?.height ?? window.innerHeight;
-      if (style.visibility === "hidden" || style.display === "none" || rect.width <= 0 || rect.height <= 0 || rect.bottom <= 0 || rect.right <= 0 || rect.top >= height || rect.left >= window.innerWidth) return false;
+    if (!message || document.visibilityState === "hidden") return null;
+    for (const [frame, entry] of feedbackFrames) {
+      if (event.source !== frame.contentWindow || message.token !== entry.token || !frame.isConnected) continue;
+      if (requireVisible) {
+        const rect = frame.getBoundingClientRect(), style = getComputedStyle(frame), height = window.visualViewport?.height ?? window.innerHeight;
+        if (style.visibility === "hidden" || style.display === "none" || rect.width <= 0 || rect.height <= 0 || rect.bottom <= 0 || rect.right <= 0 || rect.top >= height || rect.left >= window.innerWidth) return null;
+      }
+      return { frame, entry };
+    }
+    return null;
+  }
+  window.addEventListener("message", (event) => {
+    const message = event.data;
+    if (message?.type === "workshop-feedback" && ["selection", "impact"].includes(message.style) && iframeEntry(event, true)) {
+      haptic(message.style);
+      return;
+    }
+    if (!["workshop-primary", "workshop-primary-result"].includes(message?.type)) return;
+    const match = iframeEntry(event);
+    if (!match) return;
+    if (message.type === "workshop-primary") {
+      if (typeof message.canNext !== "boolean" || typeof message.canPrevious !== "boolean") return;
+      match.entry.primary = { canNext: message.canNext, canPrevious: message.canPrevious };
+      sendState();
+      return;
+    }
+    if (pending?.type !== "frame" || pending.frame !== match.frame || message.requestID !== pending.id || typeof message.ok !== "boolean") return;
+    clearTimeout(pending.timeout);
+    pending = null;
+    if (!message.ok) showError("\u6F14\u793A\u6682\u65F6\u65E0\u6CD5\u7EE7\u7EED\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+    else sendState();
+  });
+  function frameAction(direction) {
+    for (const [frame, entry] of feedbackFrames) {
+      if (!frame.isConnected || !entry.primary?.[direction === "next" ? "canNext" : "canPrevious"]) continue;
+      const id = requestID();
+      const timeout = setTimeout(() => {
+        if (pending?.id !== id || pending.type !== "frame") return;
+        pending = null;
+        showError("\u6F14\u793A\u54CD\u5E94\u8F83\u6162\uFF0C\u8BF7\u91CD\u8BD5\u3002");
+      }, 5e3);
+      pending = { id, type: "frame", frame, timeout };
+      frame.contentWindow.postMessage({ type: "workshop-primary-action", token: entry.token, requestID: id, direction }, "*");
+      sendState();
       return true;
     }
     return false;
   }
-  window.addEventListener("message", (event) => {
-    if (iframeFeedbackAllowed(event)) haptic(event.data.style);
-  });
+  function traceAction(direction) {
+    const block = lesson.blocks[index];
+    if (block.presentation?.kind !== "trace") return false;
+    const state = traceStates.get(block.id), variant = block.presentation.trace.variants[state?.variant ?? 0];
+    if (!state || (direction === "next" ? state.frame >= variant.frames.length - 1 : state.frame <= 0)) return false;
+    state.frame += direction === "next" ? 1 : -1;
+    render();
+    return true;
+  }
   function chart(block) {
     const ns = "http://www.w3.org/2000/svg", svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 640 330");
@@ -28336,17 +28438,15 @@ function playerRuntime(data) {
       toolbar.append(select);
     }
     const variant = value.variants[state.variant], frame = variant.frames[state.frame];
-    const back = button("\u2190", () => {
-      state.frame--;
-      render();
-    });
-    back.disabled = state.frame === 0;
-    const next = button("\u6267\u884C\u4E0B\u4E00\u6B65 \u2192", () => {
-      state.frame++;
-      render();
-    });
-    next.disabled = state.frame === variant.frames.length - 1;
-    toolbar.append(back, node("span", `${state.frame + 1} / ${variant.frames.length}`, "muted"), next);
+    toolbar.append(node("span", `${state.frame + 1} / ${variant.frames.length}`, "muted"));
+    if (variant.frames.length > 1) {
+      const reset = button("\u91CD\u7F6E\u6F14\u793A", () => {
+        state.frame = 0;
+        render();
+      });
+      reset.disabled = state.frame === 0;
+      toolbar.append(reset);
+    }
     box.append(toolbar, node("h2", frame.title));
     reference.replaceChildren(node("div", variant.code.filename ?? variant.code.language, "muted"), codeView(variant.code, frame.focusSpans?.length ? [] : [frame.line], frame.focusSpans ?? []));
     const objects = node("div", void 0, "objects");
@@ -28519,7 +28619,15 @@ function playerRuntime(data) {
     if (committed && equalAnswer(answer, committed)) feedback(block, committed, box);
   }
   function sendState() {
-    post({ type: "state", index, count: lesson.blocks.length, canPrevious: index > 0 || data.lessonIndex > 0, canNext: !pending });
+    const localPrevious = (traceStates.get(lesson.blocks[index].id)?.frame ?? 0) > 0 || [...feedbackFrames.values()].some((entry) => entry.primary?.canPrevious);
+    post({ type: "state", index, count: lesson.blocks.length, canPrevious: !pending && (localPrevious || index > 0 || data.lessonIndex > 0), canNext: !pending });
+  }
+  function fitControls() {
+    const content = root.lastElementChild;
+    if (!content?.getBoundingClientRect) return;
+    const height = window.visualViewport?.height ?? window.innerHeight;
+    const reserve = parseFloat(getComputedStyle(document.body).getPropertyValue("--control-space")) || 148;
+    document.body.classList.toggle("needs-control-space", content.getBoundingClientRect().bottom + (window.scrollY ?? 0) > height - reserve);
   }
   function render() {
     feedbackFrames.clear();
@@ -28545,6 +28653,7 @@ function playerRuntime(data) {
     workspace.append(content);
     root.replaceChildren(heading, workspace);
     sendState();
+    requestAnimationFrame(fitControls);
   }
   function showError(message) {
     haptic("error");
@@ -28570,6 +28679,7 @@ function playerRuntime(data) {
         return;
       }
     }
+    if (traceAction("next") || frameAction("next")) return;
     if (index < lesson.blocks.length - 1) {
       index++;
       render();
@@ -28609,7 +28719,8 @@ function playerRuntime(data) {
       return;
     }
     if (message.type === "previous") {
-      if (pending) return;
+      if (pending || !initialized) return;
+      if (traceAction("previous") || frameAction("previous")) return;
       if (index > 0) {
         index--;
         render();
@@ -28649,11 +28760,11 @@ function playerRuntime(data) {
   const viewport = () => {
     const height = window.visualViewport?.height ?? window.innerHeight;
     document.body.classList.toggle("keyboard-visible", window.innerHeight - height > 120);
+    requestAnimationFrame(fitControls);
   };
   window.visualViewport?.addEventListener("resize", viewport);
   window.addEventListener("resize", viewport);
   viewport();
-  render();
   post({ type: "ready" });
 }
 
@@ -28830,6 +28941,7 @@ function courseTeachingPrompt() {
 trace \u9ED8\u8BA4\u6BCF\u5E27\u6700\u591A\u5C55\u793A 2 \u4E2A\u5BF9\u8C61\uFF0Cnote \u7528\u4E00\u53E5\u8BDD\uFF0C\u9ED8\u8BA4\u4E0D\u8D85\u8FC7 60 \u5B57\uFF1B\u6BCF\u4E00\u6B65\u53EA\u89E3\u91CA\u4E00\u4E2A\u53D8\u5316\u3002\u56F4\u7ED5\u540C\u4E00\u7A0B\u5E8F\u7684\u8BFE\u7A0B\u6216\u8BFE\u65F6\u5FC5\u987B\u901A\u8FC7 referenceCode \u63D0\u4F9B\u5B8C\u6574\u77ED\u7A0B\u5E8F\uFF0C\u5B66\u4E60\u9875\u59CB\u7EC8\u4FDD\u7559\u4E00\u5757\u53EF\u89C1\u7684\u4EE3\u7801\u533A\uFF1B\u8BB2\u89E3\u3001\u63A8\u6F14\u548C\u505A\u9898\u65F6\u90FD\u80FD\u5BF9\u7167\uFF0C\u4E0D\u8981\u6C42\u7528\u6237\u8BB0\u4F4F\u524D\u9875\u6E90\u7801\uFF0C\u4E5F\u4E0D\u80FD\u53EA\u9732\u4E00\u884C\u3001\u628A\u5B8C\u6574\u4EE3\u7801\u85CF\u5728\u5C55\u5F00\u6309\u94AE\u540E\u3002\u8BB2\u89E3\u53D8\u91CF\u3001\u64CD\u4F5C\u7B26\u6216\u8868\u8FBE\u5F0F\u65F6\uFF0C\u7528 focusSpans \u7CBE\u786E\u6807\u8BB0\uFF1B\u53EA\u6709\u6574\u884C\u90FD\u76F8\u5173\u65F6\u624D\u7528 focusLines\uFF0Ctrace \u53EF\u7528 frame.focusSpans \u52A8\u6001\u6807\u8BB0\uFF0C\u672A\u63D0\u4F9B\u7CBE\u786E\u6807\u8BB0\u65F6\u56DE\u9000 frame.line\u3002\u957F\u7A0B\u5E8F\u7531\u4EE3\u7801\u533A\u5185\u90E8\u6EDA\u52A8\uFF0C\u4F5C\u8005\u4E0D\u6307\u5B9A\u9AD8\u5EA6\u6216\u5E03\u5C40\u3002\u9664\u8FD9\u5757\u5FC5\u8981\u4EE3\u7801\u5916\uFF0C\u4E0D\u540C\u65F6\u5806\u53E0\u53C2\u6570\u9762\u677F\u3001\u8F93\u51FA\u9762\u677F\u3001\u5BF9\u7167\u3001\u65F6\u95F4\u8F74\u548C\u91CD\u590D\u6807\u7B7E\u3002\u76F8\u540C\u5BF9\u8C61\u7684\u591A\u4E2A\u540D\u5B57\u5FC5\u987B\u653E\u5728\u540C\u4E00\u4E2A objects \u9879\u7684 names \u6570\u7EC4\uFF1B\u4E0D\u8981\u628A\u5F15\u7528\u753B\u6210\u65B0\u7684\u526F\u672C\u3002\u5BF9\u8C61 id \u5728\u540C\u4E00 variant \u7684\u8FDE\u7EED\u5E27\u4FDD\u6301\u7A33\u5B9A\uFF0C\u79BB\u5F00\u4F5C\u7528\u57DF\u65F6\u79FB\u9664\u540D\u5B57\u6216\u5BF9\u8C61\u3002frame \u8868\u793A\u6267\u884C\u5BF9\u5E94 line \u540E\u7684\u72B6\u6001\uFF0Cline \u5FC5\u987B\u771F\u5B9E\u5B58\u5728\uFF1B\u8FD4\u56DE\u5E27\u53EF\u5B9A\u4F4D\u51FD\u6570\u53F3\u82B1\u62EC\u53F7\u3002output \u4EC5\u5728\u771F\u6B63\u4EA7\u751F\u8F93\u51FA\u7684\u5E27\u63D0\u4F9B\uFF0C\u4E0D\u80FD\u6DF7\u7528\u9884\u671F\u8F93\u51FA\u4E0E\u5DF2\u53D1\u751F\u8F93\u51FA\u3002
 \u3010\u4E92\u52A8\u8FB9\u754C\u3011
 trace \u662F\u4F5C\u8005\u7F16\u5199\u3001\u5BA2\u6237\u7AEF\u9010\u6B65\u5C55\u793A\u7684\u6559\u5B66\u63A8\u6F14\uFF0C\u4E0D\u662F\u5B9E\u9645\u7F16\u8BD1\u6216\u8FD0\u884C C++/Python\u3002\u4F18\u5148\u7ED3\u6784\u5316 trace\u3001question\u3001code\u3002\u4EC5\u5F53\u7ED3\u6784\u5316\u5F62\u5F0F\u65E0\u6CD5\u8868\u8FBE\u6838\u5FC3\u4EA4\u4E92\uFF08\u4F8B\u5982\u8FDE\u7EED\u62D6\u52A8\u7269\u7406\u53C2\u6570\uFF09\u65F6\uFF0C\u624D\u4F7F\u7528\u663E\u5F0F HTML\uFF1B\u4E0D\u8981\u6C42\u6BCF\u8282\u8BFE\u5305\u542B HTML\uFF0C\u4E0D\u7528\u591A\u79CD\u63A7\u4EF6\u5806\u51FA\u5B9E\u9A8C\u53F0\u3002\u666E\u901A\u6B63\u6587\u3001Code\u3001Markdown \u56F4\u680F\u4E0D\u6267\u884C\u3002HTML \u64CD\u4F5C\u5FC5\u987B\u7ED1\u5B9A\u5B9E\u9645\u72B6\u6001\u66F4\u65B0\u5E76\u7ED9\u660E\u786E\u89C2\u5BDF\u4EFB\u52A1\uFF1B\u81F3\u5C11\u63D0\u4F9B\u91CD\u7F6E\uFF0C\u52A8\u753B\u9644\u6682\u505C/\u91CD\u7F6E\u5E76\u5C0A\u91CD prefers-reduced-motion\u3002HTML \u4E34\u65F6\u72B6\u6001\u4E0D\u4FDD\u5B58\u4E3A\u4F5C\u7B54\u6216\u8FDB\u5EA6\uFF0C\u9700\u4FDD\u5B58\u7684\u7EC3\u4E60\u7528 question\u3002
+\u4E0B\u4E00\u6B65/\u7EE7\u7EED/\u63D0\u4EA4\u7EDF\u4E00\u7531 App \u60AC\u6D6E\u7684\u539F\u751F\u4E3B\u6309\u94AE\u627F\u62C5\uFF0C\u4E0D\u5728\u5B66\u4E60\u9875\u9762\u91CD\u590D\u6DFB\u52A0\u63D0\u4EA4\u6216\u524D\u540E\u6B65\u9AA4\u6309\u94AE\uFF1A\u672A\u63D0\u4EA4\u7684 question \u5148\u4FDD\u5B58\u5E76\u663E\u793A\u53CD\u9988\uFF0C\u518D\u6309\u4E00\u6B21\u7EE7\u7EED\u624D\u7FFB\u9875\uFF1Btrace \u5148\u9010\u5E27\u63A8\u8FDB\uFF0C\u6700\u540E\u4E00\u5E27\u540E\u624D\u7FFB\u9875\uFF0C\u4E0A\u4E00\u6B65\u5148\u9000\u4E00\u5E27\u3002HTML/SVG \u82E5\u9700\u8981\u201C\u7EE7\u7EED\u6F14\u793A\u201D\uFF0C\u68C0\u6D4B window.WorkshopRuntime?.setPrimaryAction \u5E76\u6CE8\u518C {next:\u5355\u6B65\u51FD\u6570,previous:\u56DE\u9000\u51FD\u6570,canNext:\u662F\u5426\u5C1A\u6709\u6F14\u793A\u6B65\u9AA4,canPrevious:\u662F\u5426\u53EF\u56DE\u9000}\uFF1B\u72B6\u6001\u53D8\u5316\u540E\u91CD\u65B0\u8C03\u7528 setPrimaryAction \u66F4\u65B0\u8FD9\u4E24\u4E2A\u5E03\u5C14\u503C\uFF0C\u6F14\u793A\u7ED3\u675F\u65F6 canNext:false \u8BA9\u5BBF\u4E3B\u7EE7\u7EED\u7FFB\u9875\u3002\u8FD9\u4E2A\u63A5\u53E3\u53EA\u8C03\u7528\u6C99\u76D2\u5185\u51FD\u6570\uFF0C\u4E0D\u80FD\u63D0\u4EA4\u6301\u4E45\u7B54\u6848\u3001\u8FD0\u884C\u771F\u5B9E\u4EE3\u7801\u6216\u8BBF\u95EE\u539F\u751F\u3002\u65E7\u5BA2\u6237\u7AEF\u517C\u5BB9\u6309\u94AE\u53EF\u6807\u6CE8 data-workshop-primary="next" / "previous"\uFF0C\u65B0\u58F3\u6CE8\u518C\u76F8\u5E94\u56DE\u8C03\u540E\u81EA\u52A8\u9690\u85CF\u8FD9\u4E9B\u91CD\u590D\u6309\u94AE\uFF1B\u4FDD\u7559\u53D8\u91CF\u9009\u62E9\u3001\u6ED1\u5757\u3001\u91CD\u7F6E\u3001\u6682\u505C\u3001\u660E\u786E\u7684\u8FD0\u884C\u4EE3\u7801\u7B49\u6709\u610F\u4E49\u64CD\u4F5C\uFF0C\u4E0D\u6DFB\u52A0\u7B2C\u4E8C\u5957App\u5BFC\u822A\u3002
 \u9ED8\u8BA4\u4E0D\u8981\u4F7F\u7528\u56FE\u7247\uFF1B\u56FE\u89E3\u4F18\u5148 SVG\uFF0C\u56FE\u8868\u53EA\u7528\u771F\u5B9E\u6570\u636E\u3002\u7981\u6B62\u89C6\u9891\u3001\u97F3\u9891\u3001\u56FE\u7247\u6570\u636E\u3001base64\u3002\u65E7 image \u5B57\u6BB5\u4ECD\u53EF\u63A5\u53D7\u6709\u6548 HTTPS \u5730\u5740\uFF0C\u4E0D\u7F16\u9020 URL\u3002
 \u3010\u6587\u6863\u683C\u5F0F structured-2\u3011
 \u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u672A\u77E5\u5B57\u6BB5\u62D2\u7EDD\u3002\u8BFE\u7A0B {protocol,id,title,summary,referenceCode?:Code,lessons:[{id,title,objectives?,estimatedMinutes?,referenceCode?:Code,blocks:[]}]}\u3002\u6574\u95E8\u8BFE\u5171\u7528\u4E00\u4E2A\u7A0B\u5E8F\u5C31\u653E\u8BFE\u7A0B referenceCode\uFF0C\u4EC5\u672C\u8BFE\u65F6\u5171\u7528\u5219\u653E\u8BFE\u65F6 referenceCode\uFF1B\u5207\u6362\u5230\u53E6\u4E00\u4E2A\u7A0B\u5E8F\u65F6\u663E\u5F0F\u63D0\u4F9B\u5F53\u524D code \u6216\u8BFE\u65F6 referenceCode\uFF0C\u4E0D\u9760\u6B63\u6587\u6697\u793A\u3002objectives 0\u20136\u9879\uFF0C\u6BCF\u9879\u6700\u591A500\uFF1BestimatedMinutes 1\u2013180\u6574\u6570\u3002\u8BFE\u7A0B\u3001\u8BFE\u65F6\u3001\u5757 id \u4E3A\u540C\u4E00\u6587\u6863\u5185\u552F\u4E00 UUID\u3002\u65B0\u8BFE\u7A0B\u751F\u6210\u65B0 UUID\uFF0C\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u4FDD\u7559\u7ED3\u6784 ID\u3002\u4E0D\u8981\u628A\u7528\u6237 ID\u3001\u4FEE\u8BA2\u53F7\u6216\u6267\u884C\u6307\u4EE4\u653E\u5165\u6B63\u6587\u3002

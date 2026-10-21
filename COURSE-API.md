@@ -181,7 +181,7 @@ let value = Number(slider.value), pending = false;
 function render() { document.querySelector('output').textContent = String(value); }
 slider.addEventListener('input', () => {
   value = Number(slider.value); // 同步记录最新模型状态
-  if (window.WorkshopRuntime) WorkshopRuntime.invalidate('model', render);
+  if (window.WorkshopRuntime?.invalidate) WorkshopRuntime.invalidate('model', render);
   else if (!pending) {
     pending = true;
     requestAnimationFrame(() => { pending = false; render(); });
@@ -367,7 +367,7 @@ X-Workspace-ID: {optional shared workspace ID}
 权限与课程读取相同，使用当前有权访问的个人或共享工作空间，不能通过课程发布密钥读取。不接受额外查询参数、重复 `lessonID` 或不存在的课时；课程被撤销共享、删除或课程 ID 不属于当前工作空间时拒绝。成功响应：
 
 ```json
-{"data":{"protocol":"WORKSHOP-PLAYER/1","rendererVersion":"2026.10.20.1","courseID":"UUID","lessonID":"UUID","courseRevision":1,"html":"<!doctype html>…"}}
+{"data":{"protocol":"WORKSHOP-PLAYER/1","rendererVersion":"2026.10.21.1","courseID":"UUID","lessonID":"UUID","courseRevision":1,"html":"<!doctype html>…"}}
 ```
 
 每次进入课时可重新获取当前 renderer；相同课程 revision 的教学内容也可以因 renderer 版本更新而获得新的布局、样式和互动逻辑。HTML 单课时上限 4 MiB，响应支持 gzip；服务端采用总容量 16 MiB 的 LRU，缓存键包含工作空间所有者、课程、课时、课程 revision 与 rendererVersion。HTTP 使用 `private, no-store`，缓存不保存任何人的答案、会话或凭据。客户端离线缓存必须按账户/工作空间/课程/课时/课程 revision 隔离，在线成功后更新，不能把服务端失败的鉴权当作离线展示授权。
@@ -383,11 +383,11 @@ X-Workspace-ID: {optional shared workspace ID}
 原生发给页面：
 
 - `init`: `{type:"init",progress:{answers:[{lessonID,blockID,selectedOptionIDs,text}],completedLessonIDs:[]},theme:"dark"|"light"}`。首次初始化恢复已保存答案，以后同类型消息可更新主题。
-- `next` / `previous`: 请求下一步或上一步。每个 block 一页，trace 内部步骤仍在该页操作。
+- `next` / `previous`: 请求继续或上一步。未提交的题目先提交并停留显示反馈；trace 先推进/退回一帧，到帧边界才翻页；HTML/SVG 可按下文注册沙盒内的演示主动作，没有可用动作时才按块翻页。
 - `saved`: `{type:"saved",requestID,ok,error?}`，只能确认对应尚未完成的保存请求。
 - `runResult`: `{type:"runResult",requestID,result?,error?}`，result 为现有课程运行响应。
 
-原生前后按钮保持原生 Liquid Glass，按用户偏好悬浮在左下或右下，页面占满阅读区，不以底部整行工具栏挤占网页。`init` 还提供 `controlSide:"left"|"right"`、`hapticsEnabled:boolean`；偏好变化只更新环境，不重新载入页面或清空草稿。页面为浮动按钮保留可滚动的底部空间。
+原生前后按钮保持原生 Liquid Glass，按用户偏好悬浮在左下或右下，页面占满阅读区，不以底部整行工具栏挤占网页。`init` 还提供 `controlSide:"left"|"right"`、`hapticsEnabled:boolean`；偏好变化只更新环境，不重新载入页面或清空草稿。页面只在实际内容会进入按钮角落时保留可滚动的末尾空间，短页不固定填充整块底部空白。原生继续按钮在上、上一步在下；页面不重复显示题目提交或 trace 前后步骤按钮，重置、变体、变量与真实代码运行操作保留。
 
 页面发给原生：
 
@@ -398,6 +398,35 @@ X-Workspace-ID: {optional shared workspace ID}
 - `complete`：`{type:"complete",requestID,completed:true}`，课时末尾请求完成，收到成功 saved 后才能进入下一课。
 - `navigation`：`{type:"navigation",direction:"nextLesson"|"previousLesson"}`，仅边界请求，外壳决定切换课时/完成课程。
 - `run`：`{type:"run",requestID,blockID,answer,stdin}`，只请求该题已声明的执行方式；原生不得接受页面自定义语言、模板、URL 或额外权限。
+
+### HTML/SVG 演示的统一主动作
+
+服务器托管的新学习页在每个隔离 iframe 内提供可选的 `window.WorkshopRuntime.setPrimaryAction(config)`；这与旧原生富内容读器的绘制调度 API 分开检测，不能假设所有客户端都有。`config` 仅包含沙盒内的 `next` / `previous` 函数与 `canNext` / `canPrevious` 布尔状态。状态变化后重新注册；传 `null` 取消。函数可同步或返回 Promise，宿主等待结果时禁用导航，超时可重试；作者仍应分帧绘制，不能阻塞 JavaScript 主线程。
+
+```html
+<output id="step">0</output>
+<button id="next" data-workshop-primary="next">继续演示</button>
+<button id="reset">重置</button>
+<script>
+let step = 0;
+const paint = () => {
+  document.querySelector('#step').textContent = step;
+  window.WorkshopRuntime?.setPrimaryAction?.({
+    next: () => { step++; paint(); },
+    previous: () => { step--; paint(); },
+    canNext: step < 3,
+    canPrevious: step > 0
+  });
+};
+document.querySelector('#next').onclick = () => { if (step < 3) { step++; paint(); } };
+document.querySelector('#reset').onclick = () => { step = 0; paint(); };
+paint();
+</script>
+```
+
+新 renderer 注册 `next`/`previous` 回调后，只隐藏带相应 `data-workshop-primary` 标记的兼容按钮；不猜测删除任意旧 HTML 按钮，旧内容未注册时仍正常操作。`canNext:false` 表示本地演示结束，下一次继续切到后续课程块；`canPrevious:false` 时上一步按课程边界回退。不要用“始终可继续”的无限演示拦住翻页。选择、拖动、重置、暂停等辅操作继续留在内容区，持久化练习仍必须建 `question`。
+
+原生按钮只向可信主框架发送既有 next/previous；宿主仅向当前已登记的 iframe 下发带随机 token 的方向消息。注册/结果只接受当前 iframe 的 `contentWindow`、token、布尔状态、方向和本次 requestID；离开页面即清除登记。iframe 只执行自己的函数，不得发送持久答案、complete、run、navigation 或获得账户/网络/任意原生能力。原生仍拒绝子 frame 的直接桥接消息。
 
 HTML 演示的临时实验状态不自动保存为课程答案，持久化作答必须使用标准 question。服务端 renderer 可以持续更新布局、新增兼容的组件表现与教学交互；账户、系统权限、系统通知、原生导航、原生运行授权与桥接能力的新增仍需 App 更新。协议不允许服务端绕过这些边界。
 

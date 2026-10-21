@@ -49,7 +49,7 @@ test('authenticated player route enforces workspace, lesson/query boundaries and
 });
 test('both AI prompts preserve structured authoring and explain server renderer boundary',()=>{
   for(const prompt of [courseManualPrompt(),coursePrompt('https://example.invalid/courses')]){
-    assert.match(prompt,/WORKSHOP-PLAYER\/1/);assert.match(prompt,/不能上传整个可信页面/);assert.match(prompt,/持久化的答案必须使用 question/);
+    assert.match(prompt,/WORKSHOP-PLAYER\/1/);assert.match(prompt,/不能上传整个可信页面/);assert.match(prompt,/持久化的答案必须使用 question/);assert.match(prompt,/setPrimaryAction/);assert.match(prompt,/最后一帧后才翻页/);
   }
 });
 test('public demo player accepts only deployment catalog courses and exact query',async()=>{
@@ -66,9 +66,11 @@ test('public demo player accepts only deployment catalog courses and exact query
 });
 test('native-feel renderer keeps full-width content and preference-driven controls and haptics',()=>{
   const course=fixture(),html=renderCoursePlayer(course,course.lessons[0].id,1).html;
-  assert.equal(rendererVersion,'2026.10.20.5');
+  assert.equal(rendererVersion,'2026.10.21.1');
   assert.match(html,/font:17px\/1\.53 -apple-system/);
-  assert.match(html,/--bottom-space:148px/);
+  assert.match(html,/--bottom-space:16px/);
+  assert.match(html,/needs-control-space/);
+  assert.match(html,/function fitControls/);
   assert.match(html,/env\(safe-area-inset-bottom,0px\)/);
   assert.match(html,/article\.card\{background:transparent;padding:0/);
   assert.match(html,/resize:none/);
@@ -79,10 +81,10 @@ test('native-feel renderer keeps full-width content and preference-driven contro
   assert.match(html,/haptic\('error'\)/);
   assert.ok(!html.includes('`${lesson.title} · ${index+1}'));
 });
-test('iframe tactile proxy rejects forged sources, tokens, capabilities and stale pages',()=>{
-  const messages=[],listeners=new Map(),created=[];
+test('ready/init renders once and iframe proxy rejects forged sources, tokens, capabilities and stale pages',()=>{
+  const messages=[],listeners=new Map(),created=[],commands=[];
   class Element {
-    constructor(tag){this.tagName=tag.toUpperCase();this.children=[];this.style={};this.attributes={};this.isConnected=true;this.contentWindow={};this.classList={toggle(){}};created.push(this);}
+    constructor(tag){this.tagName=tag.toUpperCase();this.children=[];this.style={};this.attributes={};this.isConnected=true;this.contentWindow={postMessage:message=>commands.push(message)};this.classList={toggle(){}};created.push(this);}
     append(...values){this.children.push(...values);}
     replaceChildren(...values){this.children=values;}
     setAttribute(key,value){this.attributes[key]=value;}
@@ -93,11 +95,21 @@ test('iframe tactile proxy rejects forged sources, tokens, capabilities and stal
   const document={visibilityState:'visible',body,getElementById:()=>app,createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text}),addEventListener(){}};
   const window={innerWidth:400,innerHeight:800,webkit:{messageHandlers:{workshopPlayer:{postMessage:message=>messages.push(message)}}},addEventListener:(name,handler)=>listeners.set(name,handler),scrollTo(){}};
   let time=0;
-  const context=vm.createContext({window,document,Element,performance:{now:()=>time+=100},getComputedStyle:()=>({visibility:'visible',display:'block'}),requestAnimationFrame(){},structuredClone});
+  const context=vm.createContext({window,document,Element,performance:{now:()=>time+=100},getComputedStyle:()=>({visibility:'visible',display:'block'}),requestAnimationFrame(){},structuredClone,setTimeout,clearTimeout});
   const course={id:randomUUID(),lessons:[{id:randomUUID(),title:'Sandbox',blocks:[{id:randomUUID(),type:'text',text:'Touch',presentation:{kind:'html',html:{source:'<button>Touch</button>'}}},{id:randomUUID(),type:'text',text:'Next page'}]}]};
   const html=renderCoursePlayer(course,course.lessons[0].id,1).html;
   vm.runInContext(/<script>([\s\S]*)<\/script>/.exec(html)[1],context);
+  assert.equal(messages.at(-1).type,'ready','existing native ready/init handshake stays intact');
+  assert.equal(app.children.length,0,'course DOM is not constructed before saved progress arrives');
+  assert.equal(created.filter(e=>e.tagName==='IFRAME').length,0,'pre-init does not start a throwaway sandbox');
+  window.WorkshopPlayer.receive({type:'next'});
+  assert.equal(app.children.length,0,'navigation cannot render before initialization');
   window.WorkshopPlayer.receive({type:'init',progress:{answers:[]},theme:'light'});
+  assert.equal(created.filter(e=>e.tagName==='IFRAME').length,1,'first init builds the course sandbox once');
+  const firstChildren=app.children;
+  window.WorkshopPlayer.receive({type:'init',theme:'dark',controlSide:'left'});
+  assert.equal(app.children,firstChildren,'environment refresh preserves the live course DOM');
+  assert.equal(created.filter(e=>e.tagName==='IFRAME').length,1,'later init does not recreate the sandbox');
   const frame=created.filter(e=>e.tagName==='IFRAME').at(-1),token=/\)\("([0-9a-f-]+)"\);<\/script>/.exec(frame.srcdoc)[1];
   const send=(source,data)=>listeners.get('message')({source,data});
   const feedback=()=>messages.filter(m=>m.type==='haptic');
@@ -107,6 +119,25 @@ test('iframe tactile proxy rejects forged sources, tokens, capabilities and stal
   send(frame.contentWindow,{type:'workshop-feedback',token,style:'success'});assert.equal(feedback().length,0);
   send(frame.contentWindow,{type:'workshop-feedback',token,style:'impact'});assert.equal(feedback().length,1);
   assert.deepEqual(Object.keys(feedback()[0]).sort(),['style','type']);
+  send({}, {type:'workshop-primary',token,canNext:true,canPrevious:false});
+  send(frame.contentWindow,{type:'workshop-primary',token:'wrong',canNext:true,canPrevious:false});
+  send(frame.contentWindow,{type:'workshop-primary',token,canNext:'yes',canPrevious:false});
+  assert.equal(commands.length,0);
+  send(frame.contentWindow,{type:'workshop-primary',token,canNext:true,canPrevious:false});
   window.WorkshopPlayer.receive({type:'next'});
+  assert.equal(commands.length,1);assert.equal(commands[0].direction,'next');
+  assert.equal(messages.filter(m=>m.type==='state').at(-1).canNext,false);
+  window.WorkshopPlayer.receive({type:'next'});assert.equal(commands.length,1,'pending local action cannot run twice');
+  send(frame.contentWindow,{type:'workshop-primary-result',token,requestID:'wrong',ok:true});
+  assert.equal(messages.filter(m=>m.type==='state').at(-1).canNext,false);
+  send(frame.contentWindow,{type:'workshop-primary',token,canNext:false,canPrevious:true});
+  send(frame.contentWindow,{type:'workshop-primary-result',token,requestID:commands[0].requestID,ok:true});
+  assert.equal(messages.filter(m=>m.type==='state').at(-1).canPrevious,true);
+  assert.equal(messages.filter(m=>m.type==='submit'||m.type==='run'||m.type==='complete').length,0);
+  window.WorkshopPlayer.receive({type:'next'});
+  assert.equal(messages.filter(m=>m.type==='state').at(-1).index,1,'finished local demo advances the block');
   send(frame.contentWindow,{type:'workshop-feedback',token,style:'selection'});assert.equal(feedback().length,1);
+  send(frame.contentWindow,{type:'workshop-primary',token,canNext:true,canPrevious:true});
+  assert.equal(messages.filter(m=>m.type==='state').at(-1).canPrevious,true);
+  window.WorkshopPlayer.receive({type:'next'});assert.equal(commands.length,1,'stale iframe cannot capture later navigation');
 });

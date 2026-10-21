@@ -2,7 +2,7 @@
   "protocol": "WORKSHOP-CONTENT/1",
   "id": "demo-course",
   "kind": "course",
-  "version": 3,
+  "version": 4,
   "minimumContentVersion": 1,
   "payload": {
     "id": "8343F80B-F43C-4901-B585-A67647EA9700",
@@ -209,7 +209,7 @@
             "presentation": {
               "html": {
                 "height": 280,
-                "source": "<!doctype html><html lang=\"zh-CN\"><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>\n:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:20px;font:16px system-ui,sans-serif;color:light-dark(#24372f,#e5eee7);background:transparent}\n.demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}\n.actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}\n@media(prefers-reduced-motion:reduce){.value{transition:none}}\n</style></head><body><section class=\"demo\" aria-label=\"变量递增演示\"><code>int count = <output id=\"inline\">0</output>;</code><output id=\"value\" class=\"value\" aria-live=\"polite\">0</output><div class=\"actions\"><button id=\"increment\">执行 ++count</button><button id=\"reset\" class=\"secondary\">重置</button></div><label><input type=\"checkbox\" id=\"reduce\">减少动态</label></section><script>\n(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function show(){value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,9999);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()})})();\n</script></body></html>"
+                "source": "<!doctype html><html lang=\"zh-CN\"><head><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><style>\n:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;padding:20px;font:16px system-ui,sans-serif;color:light-dark(#24372f,#e5eee7);background:transparent}\n.demo{display:grid;gap:16px;text-align:center}code{font-family:ui-monospace,monospace}.value{font:600 52px ui-monospace,monospace;transition:transform .16s ease;color:light-dark(#356747,#a5d5b2)}.value.bump{transform:scale(1.08)}\n.actions{display:flex;gap:10px;justify-content:center}button{border:0;border-radius:99px;padding:12px 18px;font:600 15px system-ui;cursor:pointer;color:light-dark(#fff,#183824);background:light-dark(#356747,#a5d5b2)}button.secondary{background:light-dark(#e3ebe5,#2c3e31);color:inherit}label{font-size:13px;display:flex;gap:6px;align-items:center;justify-content:center}body.reduce .value{transition:none}\n@media(prefers-reduced-motion:reduce){.value{transition:none}}\n</style></head><body><section class=\"demo\" aria-label=\"变量递增演示\"><code>int count = <output id=\"inline\">0</output>;</code><output id=\"value\" class=\"value\" aria-live=\"polite\">0</output><div class=\"actions\"><button id=\"increment\" data-workshop-primary=\"next\">执行 ++count</button><button id=\"reset\" class=\"secondary\">重置</button></div><label><input type=\"checkbox\" id=\"reduce\">减少动态</label></section><script>\n(()=>{let count=0;const value=document.getElementById('value');const inline=document.getElementById('inline');const reduce=document.getElementById('reduce');reduce.checked=matchMedia('(prefers-reduced-motion: reduce)').matches;const setMotion=()=>document.body.classList.toggle('reduce',reduce.checked);setMotion();reduce.addEventListener('change',setMotion);function syncPrimary(){window.WorkshopRuntime?.setPrimaryAction?.({next:()=>{count=Math.min(count+1,3);show()},previous:()=>{count=Math.max(count-1,0);show()},canNext:count<3,canPrevious:count>0})}function show(){syncPrimary();value.textContent=String(count);inline.textContent=String(count);if(!reduce.checked){value.classList.remove('bump');requestAnimationFrame(()=>{value.classList.add('bump');setTimeout(()=>value.classList.remove('bump'),170)})}}document.getElementById('increment').addEventListener('click',()=>{count=Math.min(count+1,3);show()});document.getElementById('reset').addEventListener('click',()=>{count=0;show()});syncPrimary()})();\n</script></body></html>"
               },
               "kind": "html"
             },
@@ -495,7 +495,7 @@
                 ]
               }
             },
-            "text": "点击执行下一步，观察 i、total 与输出如何变化；也可以退回上一帧对照。",
+            "text": "点击悬浮的继续按钮，观察 i、total 与输出如何变化；上一步可退回上一帧对照。",
             "title": "一步一步观察",
             "type": "text"
           },
@@ -559,7 +559,7 @@
         "blocks": [
           {
             "id": "8343F80B-F43C-4901-B585-A67647EA0500",
-            "text": "这里的练习可以直接在本机运行。数字题使用数字键盘，程序题使用代码编辑器。填写答案后，可点运行代码，也可点底部继续提交当前答案。",
+            "text": "这里的练习可以直接在本机运行。数字题使用数字键盘，程序题使用代码编辑器。填写答案后，可点运行代码，也可点悬浮的继续按钮提交当前答案。",
             "title": "从输入到结果",
             "type": "callout"
           },
