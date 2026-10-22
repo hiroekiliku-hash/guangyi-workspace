@@ -1363,11 +1363,17 @@ async function publishCourse(base, accessToken, course, { key = randomUUID(), re
     'Content-Type': 'application/json', 'Idempotency-Key': key, ...(revision === undefined ? {} : { 'If-Match': '"' + revision + '"' }), ...headers }, body: raw ?? JSON.stringify(course) });
   return { status: response.status, value: await response.json() };
 }
-test('course generation prompts prioritize structured traces and server-owned layout', async () => {
-  await withTextIngress(async ({ native, session, instance }) => {
+async function publicCourseGuide(base, mode = 'manual') {
+  const response = await fetch(base + '/api/integrations/v1/courses/guide?mode=' + mode);
+  assert.equal(response.status, 200, 'the complete public guide is readable without a credential');
+  assert.match(response.headers.get('content-type'), /^text\/plain/);
+  return response.text();
+}
+test('course generation guides prioritize structured traces and server-owned layout', async () => {
+  await withTextIngress(async ({ native, base, session, instance }) => {
     const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
     let example;
-    for (const prompt of [metadata.prompt, metadata.manualPrompt]) {
+    for (const prompt of await Promise.all(['automatic', 'manual'].map(mode => publicCourseGuide(base, mode)))) {
       assert.match(prompt, /编程课优先使用结构化 trace/);
       assert.match(prompt, /每屏一个问题、一个变化/);
       assert.match(prompt, /默认每帧最多展示 2 个对象/);
@@ -1419,7 +1425,10 @@ test('course generation prompts prioritize structured traces and server-owned la
 test('course protocol enforces scoped tokens, CAS, strict content validation and revocation', async () => {
   await withTextIngress(async ({ native, base, session, instance, createKey, advance }) => {
     const beforeCredentials = await native('integrations/course-tokens', { auth: session });
-    const manualPrompt = beforeCredentials.value.data.manualPrompt;
+    const shortPrompt = beforeCredentials.value.data.manualPrompt;
+    assert.ok(shortPrompt.length < 800); assert.doesNotMatch(shortPrompt, /```json|\{\{API_KEY\}\}|wsc_|Authorization/);
+    assert.ok(shortPrompt.includes(beforeCredentials.value.data.manualGuideURL));
+    const manualPrompt = await publicCourseGuide(base);
     assert.match(manualPrompt, /下一条学习主题/); assert.match(manualPrompt, /解释概念→具体例子或图形→练习→反馈/);
     assert.match(manualPrompt, /不要声称已上传/); assert.match(manualPrompt, /完整 JSON 文档/);
     assert.doesNotMatch(manualPrompt, /\{\{API_KEY\}\}|wsc_|Authorization/);
@@ -1443,7 +1452,8 @@ test('course protocol enforces scoped tokens, CAS, strict content validation and
     assert.equal(key.endpoint, 'https://text-import.test/api/integrations/v1/courses');
     assert.equal(instance.db.prepare('SELECT hash FROM course_tokens').get().hash, createHash('sha256').update(key.accessToken).digest('hex'));
     const listing = await native('integrations/course-tokens', { auth: session });
-    assert.match(listing.value.data.prompt, /\{\{API_KEY\}\}/); assert.match(listing.value.data.prompt, /没有网络工具/); assert.match(listing.value.data.prompt, /不要假装上传/); assert.equal(listing.value.data.credentials.length, 1);
+    assert.match(listing.value.data.prompt, /\{\{API_KEY\}\}/); assert.ok(listing.value.data.prompt.includes(listing.value.data.guideURL)); assert.equal(listing.value.data.credentials.length, 1);
+    const automaticGuide = await publicCourseGuide(base, 'automatic'); assert.match(automaticGuide, /没有网络工具/); assert.match(automaticGuide, /不要假装上传/);
     const doc = sampleCourse(), mutation = randomUUID();
     assert.equal((await publishCourse(base, session, doc)).status, 401);
     assert.equal((await publishCourse(base, (await createKey()).accessToken, doc)).status, 401);
@@ -1974,11 +1984,15 @@ test('course structured extensions round-trip C++ data and expose a static stric
     const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
     assert.equal(metadata.schemaURL, 'https://text-import.test/api/integrations/v1/courses/schema');
     assert.equal(metadata.extensionVersion, 'structured-2');
-    assert.match(metadata.prompt, /GET https:\/\/text-import\.test\/api\/integrations\/v1\/courses\/schema/);
-    assert.match(metadata.manualPrompt, /#include <iostream>/);
-    assert.match(metadata.manualPrompt, /comparison/); assert.match(metadata.manualPrompt, /flashcards/); assert.match(metadata.manualPrompt, /不编译、不执行/);
+    assert.equal(metadata.guideURL, 'https://text-import.test/course-authoring?mode=automatic');
+    assert.equal(metadata.manualGuideURL, 'https://text-import.test/course-authoring?mode=manual');
+    assert.ok(metadata.prompt.includes(metadata.guideURL)); assert.ok(metadata.manualPrompt.includes(metadata.manualGuideURL));
+    const guide = await publicCourseGuide(base);
+    assert.match(guide, /#include <iostream>/);
+    assert.match(guide, /comparison/); assert.match(guide, /flashcards/); assert.match(guide, /不编译、不执行/);
     const issued = (await native('integrations/course-tokens', { auth: session, method: 'POST', body: {} })).value.data;
     assert.equal(issued.schemaURL, metadata.schemaURL); assert.equal(issued.extensionVersion, metadata.extensionVersion);
+    assert.equal(issued.guideURL, metadata.guideURL); assert.equal(issued.manualGuideURL, metadata.manualGuideURL);
     const doc = programmingCourse();
     const code = doc.lessons[0].blocks[0].presentation.code;
     code.source = '#include <iostream>\r\ntemplate<typename T>\rT identity(T value) { return value; }\n// <script> is a quoted teaching example, not executable markup';
@@ -1999,8 +2013,7 @@ test('course rich presentations preserve offline HTML SVG and Markdown with boun
     const doc = richCourse();
     assert.equal((await publishCourse(base, key.accessToken, doc)).status, 201);
     assert.deepEqual((await native('courses/' + doc.id, { auth: session })).value.data.course, doc);
-    const metadata = (await native('integrations/course-tokens', { auth: session })).value.data;
-    for (const prompt of [metadata.prompt, metadata.manualPrompt]) {
+    for (const prompt of await Promise.all(['automatic', 'manual'].map(mode => publicCourseGuide(base, mode)))) {
       for (const pattern of [/kind:"markdown"/, /kind:"html"/, /kind:"svg"/, /暂停\/重置/, /prefers-reduced-motion/, /1 MiB/, /默认不要使用图片/, /Markdown 围栏/, /CDN/]) assert.match(prompt, pattern);
       assert.doesNotMatch(prompt, /禁止 html\/script\/svg|协议不提供可执行脚本/);
     }

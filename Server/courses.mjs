@@ -5,6 +5,7 @@ import { gzip } from 'node:zlib';
 import { promisify } from 'node:util';
 import { renderCoursePlayer, rendererVersion } from './course-player.mjs';
 import { courseExecutionLanguages, unavailableCourseExecution } from './course-execution.mjs';
+import { authoringGuideURL, createCourseAuthoringAPI } from './course-authoring.mjs';
 
 export const courseProtocol = 'WORKSHOP-COURSE/1';
 export const coursePath = '/api/integrations/v1/courses';
@@ -106,20 +107,35 @@ HTML/SVG 通过显式 presentation 进入离线沙盒；不与普通字符串拼
 ${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
 }
-export function courseManualPrompt() {
+function manualCourseAuthoringGuide() {
   return courseTeachingPrompt() + `
-你在本次流程只负责生成供用户导入的课程，不需要登录或调用网络。先按上述要求等待用户下一条学习内容。课程制作完成后只输出一个完整 JSON 文档，放在一个 json 代码块中；不要在代码块外附加无关说明，不要输出多个片段，不要声称已上传。用户会把文档复制到工作坊的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）并由 App 使用其当前登录账户上传。修改已有课程时，用户需在 App 核对已知课程版本；没有已有文档时创建新 UUID，不猜测或覆盖旧课程。`;
+读取本规范后，你只负责生成供用户导入的课程，不需要登录或调用发布接口。先按上述要求等待用户下一条学习内容。课程制作完成后只输出一个完整 JSON 文档，放在一个 json 代码块中；不要在代码块外附加无关说明，不要输出多个片段，不要声称已上传。用户会把文档复制到工作坊的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）并由 App 使用其当前登录账户上传。修改已有课程时，用户需在 App 核对已知课程版本；没有已有文档时创建新 UUID，不猜测或覆盖旧课程。`;
 }
-export function coursePrompt(endpoint) {
+function automaticCourseAuthoringGuide(endpoint) {
   return courseTeachingPrompt() + `
 用户后续提供学习内容后，如果你有网络请求工具，将制作完成的文档上传到当前课程发布凭据绑定的账户，不询问或提交用户 ID。
 静态 JSON Schema（可选发现，不含账户信息）：GET ${endpoint}/schema
 POST ${endpoint}
-Authorization: Bearer {{API_KEY}}
+Authorization: Bearer 本次用户消息中提供的发布密钥
 Content-Type: application/json; charset=utf-8
 Idempotency-Key: 每次新操作生成的 UUID。密钥只出现在 Authorization 请求头，不能进入正文、日志、课程或公开输出。
 新建课程无需 If-Match；更新已有课程必须提供已知当前修订号 If-Match: "整数"。修订号放在请求头，不放入课程 JSON。重试保留同一 Idempotency-Key、完全相同的字节正文与 If-Match。409 表示冲突，应停止并获取最新课程或请用户核对，不能猜测版本强行覆盖。只有 HTTP 201/200 成功后才可以说已上传，并报告返回的课程标题和修订号。
 如果没有网络工具或无法实际发起 HTTP 请求，不要假装上传：只输出一个完整 WORKSHOP-COURSE/1 JSON 文档，优先放在唯一的 json 代码块内，不附加无关说明，让用户复制到 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）。此退路不需要用户提供其他凭据。`;
+}
+
+
+// Copy a small bootstrap, and keep the complete contract on a public page.
+// Credentials stay in the user's message, never in a URL or the public guide.
+export function courseAuthoringGuide(endpoint, mode = 'manual') {
+  return mode === 'automatic' ? automaticCourseAuthoringGuide(endpoint) : manualCourseAuthoringGuide();
+}
+export function courseManualPrompt(endpoint = 'https://workspace.kdfz.com.cn' + coursePath) {
+  return `请先访问 ${authoringGuideURL(endpoint, 'manual')} ，阅读并遵循工作坊最新课程制作规范。将我接下来发送的学习内容制作成课程，输出完整课程 JSON 供我导入。读完请简短回复准备好了；无法读取时请告知，不要猜测格式。`;
+}
+export function coursePrompt(endpoint) {
+  return `请先访问 ${authoringGuideURL(endpoint, 'automatic')} ，阅读并遵循工作坊最新课程制作规范。将我接下来发送的学习内容制作成课程并上传，读完请简短回复准备好了。无法读取规范时请告知。
+发布密钥：{{API_KEY}}
+密钥仅用于向 ${endpoint} 发送 Authorization: Bearer 请求头，不得放入网址、课程或公开输出。`;
 }
 
 export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError, origin, rateLimit, peer, now = Date.now, runCode = async () => unavailableCourseExecution() }) {
@@ -348,7 +364,8 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     if (!row) fail('INVALID_COURSE_TOKEN', 401); return row;
   }
   const endpoint = origin + coursePath, schemaURL = endpoint + '/schema';
-  const metadata = { endpoint, protocol: courseProtocol, schemaURL, extensionVersion: courseExtensionVersion };
+  const metadata = { endpoint, protocol: courseProtocol, schemaURL, extensionVersion: courseExtensionVersion,
+    guideURL: authoringGuideURL(endpoint, 'automatic'), manualGuideURL: authoringGuideURL(endpoint, 'manual') };
   const info = row => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...(row.last_used != null ? { lastUsed: row.last_used } : {}) });
   async function read(request, max = limit, acceptsText = false) {
     if (request.headers['content-encoding'] != null && request.headers['content-encoding'] !== 'identity') fail('COURSE_ENCODING_UNSUPPORTED', 415);
@@ -436,7 +453,9 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
           'X-Content-Type-Options': 'nosniff', ...(acceptsGzip ? { 'Content-Encoding': 'gzip' } : {}) });
         response.end(body); return;
   }
+  const authoringAPI = createCourseAuthoringAPI({ endpoint, guideFor: mode => courseAuthoringGuide(endpoint, mode), fail });
   return async function handle(request, response, path) {
+    if (authoringAPI(request, response, path)) return true;
     // This static contract carries no credentials, account state or course data.
     if (path === coursePath + '/schema' && request.method === 'GET') { respond(response, 200, courseSchema); return true; }
     if (path === '/api/native/v1/course-player/demo') {
@@ -472,7 +491,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     const user = userFor(request);
     if (tokens) {
       if (request.method === 'GET') {
-        respond(response, 200, { data: { credentials: db.prepare('SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id').all(user, now()).map(info), ...metadata, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt() } }); return true;
+        respond(response, 200, { data: { credentials: db.prepare('SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id').all(user, now()).map(info), ...metadata, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt(endpoint) } }); return true;
       }
       if (['POST', 'DELETE'].includes(request.method)) {
         const { value } = await read(request, 1024); object(value, request.method === 'POST' ? ['name'] : ['id'], 'INVALID_COURSE_TOKEN_REQUEST');

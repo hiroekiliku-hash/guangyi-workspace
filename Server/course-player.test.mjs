@@ -7,7 +7,7 @@ import { Readable } from 'node:stream';
 import { randomUUID } from 'node:crypto';
 import { gunzipSync } from 'node:zlib';
 import { renderCoursePlayer, rendererVersion } from './course-player.mjs';
-import { createCourseAPI, courseManualPrompt, coursePrompt } from './courses.mjs';
+import { createCourseAPI, courseAuthoringGuide } from './courses.mjs';
 const fixture = () => JSON.parse(readFileSync(new URL('./Fixtures/course-rich.json', import.meta.url)));
 
 test('player packages one lesson, static offline shell, safely serialized source and executable runtime', () => {
@@ -47,8 +47,9 @@ test('authenticated player route enforces workspace, lesson/query boundaries and
     h.setOwner(1);h.setAuthorized(false);assert.equal((await h.request('GET',path)).status,401);
   }finally{h.db.close();}
 });
-test('both AI prompts preserve structured authoring and explain server renderer boundary',()=>{
-  for(const prompt of [courseManualPrompt(),coursePrompt('https://example.invalid/courses')]){
+test('both public AI guides preserve structured authoring and explain server renderer boundary',()=>{
+  for(const mode of ['manual','automatic']){
+    const prompt=courseAuthoringGuide('https://example.invalid/api/integrations/v1/courses',mode);
     assert.match(prompt,/WORKSHOP-PLAYER\/1/);assert.match(prompt,/不能上传整个可信页面/);assert.match(prompt,/持久化的答案必须使用 question/);assert.match(prompt,/setPrimaryAction/);assert.match(prompt,/最后一帧后才翻页/);
   }
 });
@@ -66,7 +67,7 @@ test('public demo player accepts only deployment catalog courses and exact query
 });
 test('native-feel renderer keeps full-width content and preference-driven controls and haptics',()=>{
   const course=fixture(),html=renderCoursePlayer(course,course.lessons[0].id,1).html;
-  assert.equal(rendererVersion,'2026.10.21.1');
+  assert.equal(rendererVersion,'2026.10.21.2');
   assert.match(html,/font:17px\/1\.53 -apple-system/);
   assert.match(html,/--bottom-space:16px/);
   assert.match(html,/needs-control-space/);
@@ -77,8 +78,8 @@ test('native-feel renderer keeps full-width content and preference-driven contro
   assert.match(html,/controlSide==='left'/);
   assert.match(html,/hapticsEnabled = message.hapticsEnabled !== false/);
   assert.match(html,/post\(\{type:'haptic',style\}\)/);
-  assert.match(html,/haptic\('success'\)/);
-  assert.match(html,/haptic\('error'\)/);
+  assert.match(html,/haptic\('success',true\)/);
+  assert.match(html,/haptic\('error',true\)/);
   assert.ok(!html.includes('`${lesson.title} · ${index+1}'));
 });
 test('ready/init renders once and iframe proxy rejects forged sources, tokens, capabilities and stale pages',()=>{
@@ -140,4 +141,53 @@ test('ready/init renders once and iframe proxy rejects forged sources, tokens, c
   send(frame.contentWindow,{type:'workshop-primary',token,canNext:true,canPrevious:true});
   assert.equal(messages.filter(m=>m.type==='state').at(-1).canPrevious,true);
   window.WorkshopPlayer.receive({type:'next'});assert.equal(commands.length,1,'stale iframe cannot capture later navigation');
+});
+
+test('course feedback distinguishes answer and execution outcomes without swallowing prompt results',()=>{
+  function mount(block){
+    const messages=[],created=[];let time=1000;
+    class Element {
+      constructor(tag){this.tagName=tag.toUpperCase();this.children=[];this.style={};this.attributes={};this.classList={toggle(){}};created.push(this);}
+      append(...values){this.children.push(...values);}
+      replaceChildren(...values){this.children=values;}
+      setAttribute(key,value){this.attributes[key]=value;}
+      querySelector(){return null;}
+    }
+    const app=new Element('main'),body=new Element('body');
+    const document={visibilityState:'visible',body,getElementById:()=>app,createElement:tag=>new Element(tag),createTextNode:text=>({textContent:text}),addEventListener(){}};
+    const window={innerWidth:400,innerHeight:800,webkit:{messageHandlers:{workshopPlayer:{postMessage:message=>messages.push(message)}}},addEventListener(){},scrollTo(){}};
+    const context=vm.createContext({window,document,Element,performance:{now:()=>time},requestAnimationFrame(){},structuredClone,setTimeout,clearTimeout});
+    const course={id:randomUUID(),lessons:[{id:randomUUID(),title:'Feedback',blocks:[block]}]};
+    vm.runInContext(/<script>([\s\S]*)<\/script>/.exec(renderCoursePlayer(course,course.lessons[0].id,1).html)[1],context);
+    window.WorkshopPlayer.receive({type:'init',progress:{answers:[]},theme:'light'});
+    return {messages,receive:message=>window.WorkshopPlayer.receive(message),at:value=>{time=value;},styles:()=>messages.filter(m=>m.type==='haptic').map(m=>m.style),input:()=>created.findLast(e=>typeof e.oninput==='function'),find:(tag,text)=>created.findLast(e=>e.tagName===tag.toUpperCase()&&(text===undefined||e.textContent===text))};
+  }
+  const choice=(graded=true)=>({id:randomUUID(),type:'question',questionType:'singleChoice',options:[{id:'right',text:'Right'},{id:'wrong',text:'Wrong'}],...(graded?{correctOptionIDs:['right']}:{})});
+  const submit=(h)=>{h.receive({type:'next'});const message=h.messages.findLast(m=>m.type==='submit');assert.ok(message);return message;};
+  for(const [selected,graded,expected] of [['Right',true,'success'],['Wrong',true,'warning'],['Right',false,'impact']]){
+    const h=mount(choice(graded));h.find('button',selected).onclick({});assert.deepEqual(h.styles(),['selection']);
+    h.at(1001);h.find('button',selected).onclick({});assert.deepEqual(h.styles(),['selection'],'same single-choice option has no second feedback');
+    const message=submit(h);h.receive({type:'saved',requestID:message.requestID,ok:true});
+    assert.deepEqual(h.styles(),['selection',expected],'ACK feedback reflects grading even immediately after a tap');
+    h.receive({type:'saved',requestID:message.requestID,ok:true});assert.equal(h.styles().length,2,'duplicate ACK is ignored');
+  }
+  const rapid=mount(choice());rapid.find('button','Right').onclick({});rapid.at(1020);rapid.find('button','Wrong').onclick({});
+  assert.deepEqual(rapid.styles(),['selection'],'ordinary rapid feedback is throttled');
+  const rapidSubmit=submit(rapid);rapid.receive({type:'saved',requestID:rapidSubmit.requestID,ok:true});assert.deepEqual(rapid.styles(),['selection','warning'],'result feedback has an independent throttle');
+  for(const [result,error,expected] of [
+    [{status:'completed',passed:true},undefined,'success'],
+    [{status:'completed',passed:false},undefined,'warning'],
+    [{status:'completed'},undefined,'impact'],
+    [{status:'runtimeError',passed:false},undefined,'error'],
+    [{status:'timeout'},undefined,'error'],
+    [{status:'cancelled'},undefined,undefined],
+    [undefined,'Runner unavailable','error']
+  ]){
+    const h=mount({id:randomUUID(),type:'question',questionType:'shortAnswer',input:{kind:'code'},execution:{language:'python'}});
+    const run=h.find('button','▶ 运行代码');run.onclick({});assert.deepEqual(h.styles(),[],'empty code cannot create feedback or run');
+    const input=h.input();input.value='print(1)';input.oninput();run.onclick({});assert.deepEqual(h.styles(),['impact']);
+    const request=h.messages.findLast(m=>m.type==='run');assert.ok(request);h.at(1001);h.receive({type:'runResult',requestID:request.requestID,result,error});
+    assert.deepEqual(h.styles(),expected?['impact',expected]:['impact'],'execution completion is graded separately from running successfully');
+  }
+  const muted=mount(choice());muted.receive({type:'init',hapticsEnabled:false});muted.find('button','Wrong').onclick({});const request=submit(muted);muted.receive({type:'saved',requestID:request.requestID,ok:true});assert.deepEqual(muted.styles(),[],'preference disables interaction and result feedback together');
 });

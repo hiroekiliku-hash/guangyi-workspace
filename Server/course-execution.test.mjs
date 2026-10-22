@@ -6,7 +6,7 @@ import { randomUUID } from 'node:crypto';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
-import { createCourseAPI, courseManualPrompt } from './courses.mjs';
+import { createCourseAPI, courseAuthoringGuide } from './courses.mjs';
 import { createCourseExecutionClient } from './course-execution.mjs';
 import { createDockerCourseRunner, dockerCourseArguments, cleanupDockerCourseContainers, createCourseRunnerServer } from './CourseRunner/runner.mjs';
 
@@ -41,7 +41,7 @@ test('input controls and explicit execution publish without changing legacy ques
     }
     const legacyRun = question(); delete legacyRun.input;
     assert.equal((await h.publish(document(legacyRun))).status, 201, 'execution without input infers a complete program');
-    const prompt = courseManualPrompt();
+    const prompt = courseAuthoringGuide('https://example.invalid/api/integrations/v1/courses', 'manual');
     for (const fragment of ['两行数字键盘', 'starterCode', '{{ANSWER}}', 'execution', '服务器独立沙盒', '不能宣称已编译通过']) assert.ok(prompt.includes(fragment));
   } finally { h.db.close(); }
 });

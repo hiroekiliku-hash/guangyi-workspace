@@ -4,13 +4,23 @@
 
 `WORKSHOP-COURSE/1` 现提供 `structured-2`：支持结构化程序推演 `trace`、课程/课时共享的 `referenceCode`、内容块的 `focusLines/focusSpans` 与 Code 的 `highlightSpans`，以及结构化代码、Markdown、SVG、离线 HTML、表格、分步、对照、记忆卡片与练习。作者提供语义数据，服务器托管的 HTML renderer 统一布局和交互；旧版 App 继续使用内建组件，新版 App 可直接接收服务器更新的学习界面。
 
+## 复制给 AI 的简短引导与在线规范
+
+App 复制的提示词只保留“访问官方课程制作规范、等待用户学习内容、按规范制作课程”的简短引导。完整协议、教学要求、互动组件用法和可导入 JSON 示例统一在公开规范中维护，后续可由服务器直接更新；不再让用户复制整份长文。
+
+- 手动导入规范：[课程制作规范](https://workspace.kdfz.com.cn/course-authoring?mode=manual)。AI 阅读后制作完整 JSON，由用户粘贴到 App 上传；不需要发布密钥，也不能声称已经上传。
+- 自动发布规范：[课程制作与发布规范](https://workspace.kdfz.com.cn/course-authoring?mode=automatic)。AI 阅读后按用户提供的独立课程密钥上传；密钥仅放在 Authorization 请求头。没有网络请求工具时，退回输出 JSON 供用户导入，不假装完成上传。
+- 机器读取：`GET /api/integrations/v1/courses/guide?mode=manual|automatic` 返回 UTF-8 `text/plain` 完整规范；网页路径 `/course-authoring` 返回 HTML。两者均无需登录或发布密钥，省略 mode 默认 manual，仅接受一个合法 mode 参数，未知参数、重复 mode 或非法值返回 422；仅支持 GET/HEAD，其余方法返回 404。
+
+公共规范不包含账户内容或真实凭据；发布引导中的 `{{API_KEY}}` 是待替换占位符，不会加入公开规范。复制自动发布引导时 App 可在独立正文位置填入当前密钥，不能把密钥、邮箱、用户 ID 等放进规范网址。两个路径均提供 ETag/304、HEAD 与 gzip，让 AI 读取最新规范时减少带宽；JSON Schema 发现地址保持不变。如果 AI 无法访问网页或文本规范，应明确说明并请用户提供规范内容，不依据短引导猜测字段。
+
 ## AI 互动教学要求
 
-自动上传版与手动导入版提示词共用一套约定：**每屏一个问题、一个变化，先清楚再丰富**。编程课围绕一个短程序，按“预测 → 单步观察 → 迁移题 → 自行改写”展开，通常 4–6 块即可。保留必要的完整代码区，不为形式丰富而重复铺设源码、参数面板、输出、对照、时间轴、标签与多种练习。
+自动上传版与手动导入版在线规范共用一套约定：**每屏一个问题、一个变化，先清楚再丰富**。编程课围绕一个短程序，按“预测 → 单步观察 → 迁移题 → 自行改写”展开，通常 4–6 块即可。保留必要的完整代码区，不为形式丰富而重复铺设源码、参数面板、输出、对照、时间轴、标签与多种练习。
 
 逐步语义优先用结构化 `trace`。默认每帧最多两个对象、一句不超过 60 字的解释。同一程序贯穿的课程或课时必须提供 `referenceCode`，App 在讲解、推演与做题时始终保留完整代码区，长程序在区内滚动；不能只露当前一行或要求用户回忆前页源码。解释变量、关键字、运算符或表达式时主动使用 `focusSpans` 精确标记一两处，整行相关时才用 `focusLines`，不逐字标满程序。trace 使用当前 `frame.focusSpans`，省略或空时回退 `frame.line`。作者不指定布局、坐标、配色、按钮。对象身份在帧间稳定；引用的多个名字放在同一个对象的 `names`，不能伪装成副本。开放代码题默认不提供 `acceptedAnswers`，解析给参考实现和检查点，不能用代码文本比对充当通用程序判分。
 
-不再要求前两课或每节课包含 HTML。只有连续拖动等结构化组件无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 展示不执行，正式作答与进度使用 `question`。制作练习时必须按答案内容选择 `input.kind`：整数和小数使用数值输入，真正要用户编写源码时使用代码编辑器并声明语言。Python/C++ 代码填空、改错与程序题默认必须增加 `execution`，每个含编程练习的课时至少一道可运行题；纯讲解、预测输出或选择题不强加执行。提示词的唯一完整示例保留紧凑结构化 trace 与迁移选择题，并附 Python 数值填空、C++ 表达式填空和两种语言的完整程序题。这些属于内容生成要求，不是服务器对教学质量的强制判定。线上生成提示词随服务器部署更新，旧课程不会自动改写。
+不再要求前两课或每节课包含 HTML。只有连续拖动等结构化组件无法表达的核心交互才使用离线 HTML，并明确教学模拟边界。普通正文、Markdown 围栏和 Code 展示不执行，正式作答与进度使用 `question`。制作练习时必须按答案内容选择 `input.kind`：整数和小数使用数值输入，真正要用户编写源码时使用代码编辑器并声明语言。Python/C++ 代码填空、改错与程序题默认必须增加 `execution`，每个含编程练习的课时至少一道可运行题；纯讲解、预测输出或选择题不强加执行。在线规范的唯一完整示例保留紧凑结构化 trace 与迁移选择题，并附 Python 数值填空、C++ 表达式填空和两种语言的完整程序题。这些属于内容生成要求，不是服务器对教学质量的强制判定。线上完整规范随服务器部署更新，复制的短引导持续指向该规范，旧课程不会自动改写。
 
 ## 身份与账户
 
@@ -20,8 +30,8 @@
 
 由登录 session 管理密钥：
 
-- `GET /api/native/v1/integrations/course-tokens`：返回 `credentials`、`endpoint`、`protocol`、`schemaURL`、`extensionVersion`（`structured-2`）、`prompt`（密钥位置为 `{{API_KEY}}`）、`manualPrompt`（纯生成教程提示词，不含凭据，获取时不创建密钥）。
-- `POST` 相同地址，JSON `{ "name": "课程发布" }`（name 可省略）：201 返回 `credential`、`accessToken`、`endpoint`、`protocol`、`schemaURL`、`extensionVersion`。
+- `GET /api/native/v1/integrations/course-tokens`：返回 `credentials`、`endpoint`、`protocol`、`schemaURL`、`guideURL`（自动发布网页）、`manualGuideURL`（手动导入网页）、`extensionVersion`（`structured-2`）、`prompt`（简短自动发布引导，密钥位置为 `{{API_KEY}}`）、`manualPrompt`（简短手动导入引导，不含凭据，获取时不创建密钥）。
+- `POST` 相同地址，JSON `{ "name": "课程发布" }`（name 可省略）：201 返回 `credential`、`accessToken`、`endpoint`、`protocol`、`schemaURL`、`guideURL`、`manualGuideURL`、`extensionVersion`。
 - `DELETE` 相同地址，JSON `{ "id": "密钥 UUID" }`：撤销自己的密钥。
 
 元数据 `created`、`expires`、可选 `lastUsed` 为 Unix 毫秒时间戳。
@@ -290,7 +300,7 @@ slider.addEventListener('input', () => {
 
 未提供 template 时运行用户的完整代码；非 code 输入要运行时必须提供 template。模板使用语言本身的语法组织填空位置，不自动添加引号、不转义成字符串。运行结果与 acceptedAnswers 的文本评分分开呈现，开放程序题不要穷举源码文本作为标准答案。编写 starterCode 时给出可修改的骨架，不直接泄露填空答案；提供确定、轻量的样例输入和输出。
 
-生成提示词要求 Python/C++ 编程练习显式配置 `execution`：数值填空用 `integer/decimal` 加完整模板，表达式/语句填空用对应语言的 `code` 输入加模板，模板恰含一次 `{{ANSWER}}`；完整程序题用 `code` 输入与 `starterCode` 骨架，并省略模板。每道运行题提供 `execution.stdin`（无输入用空字符串）与 `execution.expectedOutput`，后者来自完整参考程序对默认输入的输出，不是填入的片段，也不能只放在展示用 `code` 字段里。Python 兼容 3.11 标准库、C++ 兼容 g++ 12.2 支持的 C++20 标准库并包含完整 `main`，不要求安装依赖、联网或使用图形界面；样例保持轻量且确定。多种正确源码的题目省略 `acceptedAnswers`，只把本组样例输出作为运行反馈，不宣称隐藏测试或通用判题。此要求同时进入自动上传与手动制作提示词，复制时重新获取，无需重建发布密钥。
+在线制作规范要求 Python/C++ 编程练习显式配置 `execution`：数值填空用 `integer/decimal` 加完整模板，表达式/语句填空用对应语言的 `code` 输入加模板，模板恰含一次 `{{ANSWER}}`；完整程序题用 `code` 输入与 `starterCode` 骨架，并省略模板。每道运行题提供 `execution.stdin`（无输入用空字符串）与 `execution.expectedOutput`，后者来自完整参考程序对默认输入的输出，不是填入的片段，也不能只放在展示用 `code` 字段里。Python 兼容 3.11 标准库、C++ 兼容 g++ 12.2 支持的 C++20 标准库并包含完整 `main`，不要求安装依赖、联网或使用图形界面；样例保持轻量且确定。多种正确源码的题目省略 `acceptedAnswers`，只把本组样例输出作为运行反馈，不宣称隐藏测试或通用判题。此要求同时进入自动上传与手动制作规范；AI 访问短引导中的地址时获取最新要求，无需重建发布密钥。
 
 数值代码填空示例：
 
@@ -343,13 +353,13 @@ Swift 类型定义位于 `Shared/Core/CourseModels.swift`：`CoursePresentation`
 
 ## 给 Agent 的约定
 
-优先遵从用户指定；未指定时自行决定课时拆分、块类型和练习形式。优先清楚简短的原生教学序列，逐步程序语义用 trace；按需要补充代码框、Markdown、SVG 和练习，HTML 只用于原生无法表达的特殊交互。图表用于真正有数据的内容，不为装饰填入虚构统计。不得凭空编造参考答案或版权图片来源。发布已获用户请求授权时直接执行；只在无法决定教学目标、目标账户或会覆盖未知版本等实质问题时询问。新建课程生成新 UUID，更新保留已有结构 ID 并使用已知 revision；重试保留原 key、字节正文和 If-Match。只有 HTTP 成功后才报告已发布；把版本冲突解释为需要获取最新课程后再编辑。App 可复制的权威提示词由服务器 `coursePrompt` 输出，自动填入端点，并在本地替换密钥占位符。
+优先遵从用户指定；未指定时自行决定课时拆分、块类型和练习形式。优先清楚简短的原生教学序列，逐步程序语义用 trace；按需要补充代码框、Markdown、SVG 和练习，HTML 只用于原生无法表达的特殊交互。图表用于真正有数据的内容，不为装饰填入虚构统计。不得凭空编造参考答案或版权图片来源。发布已获用户请求授权时直接执行；只在无法决定教学目标、目标账户或会覆盖未知版本等实质问题时询问。新建课程生成新 UUID，更新保留已有结构 ID 并使用已知 revision；重试保留原 key、字节正文和 If-Match。只有 HTTP 成功后才报告已发布；把版本冲突解释为需要获取最新课程后再编辑。App 可复制的短引导由服务器 `coursePrompt` 输出，指向完整在线规范，并在本地替换独立的密钥占位符。
 
-## 教学提示词与无网络导入
+## 教学规范与手动导入
 
-服务器提供两种权威提示词，均明确等待用户的下一条学习主题或资料，不把提示词本身当成教学内容。AI 自行推断水平、目标和课时，按概念解释、具体例子或图形、练习、反馈组织课程，受支持块与完整有效 JSON 示例均包含在提示词内。禁止虚构统计、图片地址和参考答案。
+服务器提供手动导入与自动发布两种在线规范，App 只复制指向对应规范的短引导。两种规范均明确等待用户的下一条学习主题或资料，不把规范本身当成教学内容。AI 自行推断水平、目标和课时，按概念解释、具体例子或图形、练习、反馈组织课程；受支持块与完整有效 JSON 示例均包含在规范网页及纯文本接口内。禁止虚构统计、图片地址和参考答案。
 
-`prompt` 面向有 HTTP 工具的 Agent，发布凭据仅放 Authorization；若不能联网，只输出一个完整课程 JSON（建议唯一 json 代码块），不声称已上传。`manualPrompt` 完全不含凭据或网络配置，用户可直接复制给普通 AI；生成的课程通过 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）在当前登录空间保存。获取和复制 manualPrompt 不会创建密钥，注册/登录 session 已有权限即可导入。更新课程时由 App 核对当前版本，不猜测覆盖。
+`prompt` 面向有 HTTP 工具的 Agent，发布凭据仅放 Authorization；若不能联网，只输出一个完整课程 JSON（建议唯一 json 代码块），不声称已上传。`manualPrompt` 只含公开规范地址和生成要求，不含凭据，用户可直接复制给能读取网页的 AI；生成的课程通过 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）在当前登录空间保存。获取和复制 manualPrompt 不会创建密钥，注册/登录 session 已有权限即可导入。更新课程时由 App 核对当前版本，不猜测覆盖。
 
 ## 服务器托管的学习界面：WORKSHOP-PLAYER/1
 
@@ -367,7 +377,7 @@ X-Workspace-ID: {optional shared workspace ID}
 权限与课程读取相同，使用当前有权访问的个人或共享工作空间，不能通过课程发布密钥读取。不接受额外查询参数、重复 `lessonID` 或不存在的课时；课程被撤销共享、删除或课程 ID 不属于当前工作空间时拒绝。成功响应：
 
 ```json
-{"data":{"protocol":"WORKSHOP-PLAYER/1","rendererVersion":"2026.10.21.1","courseID":"UUID","lessonID":"UUID","courseRevision":1,"html":"<!doctype html>…"}}
+{"data":{"protocol":"WORKSHOP-PLAYER/1","rendererVersion":"2026.10.21.2","courseID":"UUID","lessonID":"UUID","courseRevision":1,"html":"<!doctype html>…"}}
 ```
 
 每次进入课时可重新获取当前 renderer；相同课程 revision 的教学内容也可以因 renderer 版本更新而获得新的布局、样式和互动逻辑。HTML 单课时上限 4 MiB，响应支持 gzip；服务端采用总容量 16 MiB 的 LRU，缓存键包含工作空间所有者、课程、课时、课程 revision 与 rendererVersion。HTTP 使用 `private, no-store`，缓存不保存任何人的答案、会话或凭据。客户端离线缓存必须按账户/工作空间/课程/课时/课程 revision 隔离，在线成功后更新，不能把服务端失败的鉴权当作离线展示授权。
@@ -391,7 +401,7 @@ X-Workspace-ID: {optional shared workspace ID}
 
 页面发给原生：
 
-- `haptic`：`{type:"haptic",style:"selection"|"impact"|"success"|"error"}`。只接受当前可信主框架，遵循 App 触感设置与节流；不能请求任意系统 API。AI HTML/SVG 内的控件仅可由宿主经当前 iframe 来源、随机 token、可见状态与样式白名单校验后转发触感，不得直接调用原生接口或提交答案。
+- `haptic`：`{type:"haptic",style:"selection"|"impact"|"success"|"warning"|"error"}`。只接受当前可信主框架，遵循 App 触感设置与节流；不能请求任意系统 API。普通操作使用轻触 `impact`，选项变更使用 `selection`，重复点选同一单选项不反馈。保存回答后只在判题正确时使用 `success`，错误答案或运行输出不符使用 `warning`，未配置判题的保存/运行完成仅用 `impact`；保存失败、运行异常/超时使用 `error`。普通操作约 70 ms 节流，结果按类型单独去重，紧接点按的结果反馈不会被普通操作吞掉。旧客户端不识别 `warning` 时可静默忽略，不影响保存或运行。AI HTML/SVG 内的控件仅可由宿主经当前 iframe 来源、随机 token、可见状态与样式白名单校验后转发触感，不得直接调用原生接口或提交答案。
 - `ready`：可信 renderer 已挂载，原生可发送 init。
 - `state`：`{type:"state",index,count,canPrevious,canNext}`，index 从 0 开始。
 - `submit`：`{type:"submit",requestID,blockID,selectedOptionIDs,text}`。用户按下一步时，如当前题有未保存答案，先提交并停留当前题，必须收到成功 saved 才显示解析；用户再次按下一步才翻页。保存失败保持草稿，可重试。

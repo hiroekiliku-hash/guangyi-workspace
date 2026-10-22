@@ -1,6 +1,6 @@
 // Trusted renderer owned by the service. Course strings are data, never trusted markup.
 export const playerProtocol = 'WORKSHOP-PLAYER/1';
-export const rendererVersion = '2026.10.21.1';
+export const rendererVersion = '2026.10.21.2';
 const json = value => JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
 export function renderCoursePlayer(course, lessonID, courseRevision) {
   const lesson = course.lessons.find(item => item.id.toLowerCase() === lessonID.toLowerCase());
@@ -28,13 +28,21 @@ textarea,input{display:block;width:100%;resize:none;background:var(--input);bord
 function playerRuntime(data) {
   'use strict';
   const lesson = data.lesson, root = document.getElementById('app');
-  let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastHaptic = -100;
+  let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastInteractionHaptic = -100;
+  const resultHaptics = new Map();
   const drafts = new Map(), saved = new Map(), traceStates = new Map(), runs = new Map(), feedbackFrames = new Map();
   const post = message => window.webkit?.messageHandlers?.workshopPlayer?.postMessage(message);
-  const haptic = style => { const time = performance.now(); if (hapticsEnabled && time - lastHaptic >= 45) { lastHaptic = time; post({type:'haptic',style}); } };
+  const haptic = (style, result = false) => {
+    if (!hapticsEnabled) return;
+    const time = performance.now();
+    // A prompt result may follow its tap immediately; interaction throttling must not swallow it.
+    if (result) { if (time - (resultHaptics.get(style) ?? -Infinity) < 180) return; resultHaptics.set(style, time); }
+    else { if (time - lastInteractionHaptic < 70) return; lastInteractionHaptic = time; }
+    post({type:'haptic',style});
+  };
   const requestID = () => globalThis.crypto?.randomUUID?.() ?? 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => { const r = Math.floor(Math.random() * 16); return (c === 'x' ? r : (r & 3) | 8).toString(16); });
   const node = (tag, text, cls) => { const element = document.createElement(tag); if (text !== undefined) element.textContent = text; if (cls) element.className = cls; return element; };
-  const button = (text, action, cls) => { const value = node('button', text, cls); value.type = 'button'; value.onclick = event => { if (value.disabled) return; haptic(cls?.includes('option') ? 'selection' : 'impact'); action(event); }; return value; };
+  const button = (text, action, cls) => { const value = node('button', text, cls); value.type = 'button'; value.onclick = event => { if (value.disabled || action(event) === false) return; haptic(cls?.includes('option') ? 'selection' : 'impact'); }; return value; };
   const lineArray = source => source.replace(/\r\n|\r/g, '\n').split('\n');
   const ownCode = b => b.code ?? b.presentation?.code ?? b.presentation?.trace?.variants?.[0]?.code ?? (b.execution?.template ? { language: b.execution.language, source: b.execution.template } : undefined);
   function effectiveCode(block) {
@@ -214,7 +222,7 @@ function playerRuntime(data) {
   function trace(block, reference) {
     const value = block.presentation.trace, state = traceStates.get(block.id) ?? { variant: 0, frame: 0 }; traceStates.set(block.id, state);
     const box = node('div'), toolbar = node('div', undefined, 'toolbar');
-    if (value.variants.length > 1) { const select = node('select'); value.variants.forEach((v,i) => { const option=node('option',v.title); option.value=i; select.append(option); }); select.value=state.variant; select.onchange=()=>{haptic('selection');state.variant=Number(select.value);state.frame=0;render();}; toolbar.append(select); }
+    if (value.variants.length > 1) { const select = node('select'); value.variants.forEach((v,i) => { const option=node('option',v.title); option.value=i; select.append(option); }); select.value=state.variant; select.onchange=()=>{const variant=Number(select.value);if(variant===state.variant)return;state.variant=variant;state.frame=0;render();haptic('selection');}; toolbar.append(select); }
     const variant = value.variants[state.variant], frame = variant.frames[state.frame];
     toolbar.append(node('span',`${state.frame+1} / ${variant.frames.length}`,'muted'));
     if (variant.frames.length > 1) { const reset = button('重置演示', () => {state.frame=0;render();}); reset.disabled=state.frame===0; toolbar.append(reset); }
@@ -243,11 +251,13 @@ function playerRuntime(data) {
   function draft(block) {
     if(!drafts.has(block.id))drafts.set(block.id,{selectedOptionIDs:[],text:block.input?.starterCode??''});return drafts.get(block.id);
   }
+  function answerCorrect(block, answer) {
+    if(block.questionType!=='shortAnswer' && block.correctOptionIDs)return [...answer.selectedOptionIDs].sort().join('|')===[...block.correctOptionIDs].sort().join('|');
+    if(block.questionType==='shortAnswer' && block.acceptedAnswers)return block.acceptedAnswers.some(text=>text.trim()===answer.text.trim());
+    return undefined;
+  }
   function feedback(block, answer, box) {
-    const feedback=node('div',undefined,'feedback');
-    let correct;
-    if(block.questionType!=='shortAnswer' && block.correctOptionIDs)correct=[...answer.selectedOptionIDs].sort().join('|')===[...block.correctOptionIDs].sort().join('|');
-    if(block.questionType==='shortAnswer' && block.acceptedAnswers)correct=block.acceptedAnswers.some(text=>text.trim()===answer.text.trim());
+    const feedback=node('div',undefined,'feedback'), correct=answerCorrect(block,answer);
     feedback.append(node('strong',correct===undefined?'回答已保存':correct?'回答正确':'再对照解析想一想'));
     if(block.explanation){const details=node('details'),summary=node('summary','查看解析');details.append(summary,node('p',block.explanation));feedback.append(details);}
     box.append(feedback);
@@ -260,9 +270,9 @@ function playerRuntime(data) {
       if(kind==='code'){input.className='code-input';input.spellcheck=false;input.autocapitalize='off';input.autocorrect='off';input.onkeydown=e=>{if(e.key==='Tab'){e.preventDefault();const a=input.selectionStart,z=input.selectionEnd;input.setRangeText('    ',a,z,'end');input.dispatchEvent(new Event('input'));}};}
       const resize=()=>{if(input.tagName==='TEXTAREA'){input.style.height='auto';input.style.height=Math.min(input.scrollHeight,window.innerHeight*.48)+'px';}};
       input.oninput=()=>{resize();answer.text=input.value;const f=box.querySelector('.feedback');if(f)f.remove();sendState();};box.append(input);requestAnimationFrame(resize);
-      if(block.execution){const tools=node('div',undefined,'toolbar'),run=button('▶ 运行代码',()=>{if(!answer.text.trim()||pending)return;const id=requestID();runs.set(id,{blockID:block.id});run.disabled=true;post({type:'run',requestID:id,blockID:block.id,answer:answer.text,stdin:stdin.value});});
+      if(block.execution){const tools=node('div',undefined,'toolbar'),run=button('▶ 运行代码',()=>{if(!answer.text.trim()||pending)return false;const id=requestID();runs.set(id,{blockID:block.id});run.disabled=true;post({type:'run',requestID:id,blockID:block.id,answer:answer.text,stdin:stdin.value});});
         const details=node('details'),stdin=node('textarea');stdin.rows=2;stdin.maxLength=4000;stdin.value=block.execution.stdin??'';stdin.setAttribute('aria-label','程序输入');details.append(node('summary','程序输入'),stdin);tools.append(run);box.append(details,tools);const result=runs.get(block.id);if(result)box.append(node('pre',result,'output'));}
-    }else for(const option of block.options??[]){const selected=answer.selectedOptionIDs.includes(option.id),b=button(option.text,()=>{if(block.questionType==='multipleChoice')answer.selectedOptionIDs=selected?answer.selectedOptionIDs.filter(id=>id!==option.id):[...answer.selectedOptionIDs,option.id];else answer.selectedOptionIDs=[option.id];render();},'option'+(selected?' selected':''));b.setAttribute('aria-pressed',String(selected));box.append(b);}
+    }else for(const option of block.options??[]){const selected=answer.selectedOptionIDs.includes(option.id),b=button(option.text,()=>{if(selected&&block.questionType!=='multipleChoice')return false;if(block.questionType==='multipleChoice')answer.selectedOptionIDs=selected?answer.selectedOptionIDs.filter(id=>id!==option.id):[...answer.selectedOptionIDs,option.id];else answer.selectedOptionIDs=[option.id];render();},'option'+(selected?' selected':''));b.setAttribute('aria-pressed',String(selected));box.append(b);}
     if(block.hints?.length){const hints=node('details');hints.append(node('summary','提示'));block.hints.forEach(hint=>hints.append(node('p',hint)));box.append(hints);}
     if(committed&&equalAnswer(answer,committed))feedback(block,committed,box);
   }
@@ -290,7 +300,7 @@ function playerRuntime(data) {
     if(pending)content.append(node('p','正在保存…','muted'));
     workspace.append(content);root.replaceChildren(heading,workspace);sendState();requestAnimationFrame(fitControls);
   }
-  function showError(message){haptic('error');const old=root.querySelector('.error');if(old)old.remove();root.append(node('p',message||'保存失败，请重试。','error'));sendState();}
+  function showError(message){haptic('error',true);const old=root.querySelector('.error');if(old)old.remove();root.append(node('p',message||'保存失败，请重试。','error'));sendState();}
   function advance(){
     if(pending||!initialized)return;
     const block=lesson.blocks[index];
@@ -314,8 +324,8 @@ function playerRuntime(data) {
     }
     if(message.type==='next'){advance();return;}
     if(message.type==='previous'){if(pending||!initialized)return;if(traceAction('previous')||frameAction('previous'))return;if(index>0){index--;render();window.scrollTo(0,0);}else post({type:'navigation',direction:'previousLesson'});return;}
-    if(message.type==='saved'&&pending&&message.requestID===pending.id){const action=pending;pending=null;if(!message.ok){showError(message.error);return;}haptic('success');if(action.type==='submit'){saved.set(action.blockID,action.answer);render();}else{post({type:'navigation',direction:'nextLesson'});sendState();}return;}
-    if(message.type==='runResult'&&runs.has(message.requestID)){haptic(message.error||message.result?.passed===false?'error':'success');const run=runs.get(message.requestID);runs.delete(message.requestID);const r=message.result;runs.set(run.blockID,message.error??[r?.stdout,r?.stderr,r?.passed===undefined?'':r.passed?'输出符合预期':'输出与预期不同',r?.status].filter(Boolean).join('\n'));render();}
+    if(message.type==='saved'&&pending&&message.requestID===pending.id){const action=pending;pending=null;if(!message.ok){showError(message.error);return;}if(action.type==='submit'){const block=lesson.blocks.find(b=>b.id===action.blockID),correct=answerCorrect(block,action.answer);haptic(correct===true?'success':correct===false?'warning':'impact',true);saved.set(action.blockID,action.answer);render();}else{haptic('success',true);post({type:'navigation',direction:'nextLesson'});sendState();}return;}
+    if(message.type==='runResult'&&runs.has(message.requestID)){const result=message.result;if(message.error||result?.status!=='cancelled')haptic(message.error||result?.status!=='completed'?'error':result.passed===false?'warning':result.passed===true?'success':'impact',true);const run=runs.get(message.requestID);runs.delete(message.requestID);const r=message.result;runs.set(run.blockID,message.error??[r?.stdout,r?.stderr,r?.passed===undefined?'':r.passed?'输出符合预期':'输出与预期不同',r?.status].filter(Boolean).join('\n'));render();}
   }};
   document.addEventListener('click',event=>{if(event.target instanceof Element&&event.target.closest('summary'))haptic('selection');});
   const viewport=()=>{const height=window.visualViewport?.height??window.innerHeight;document.body.classList.toggle('keyboard-visible',window.innerHeight-height>120);requestAnimationFrame(fitControls);};

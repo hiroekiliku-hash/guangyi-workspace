@@ -23097,7 +23097,7 @@ import http2 from "node:http";
 import { isDeepStrictEqual } from "node:util";
 import http22 from "node:http2";
 import { DatabaseSync } from "node:sqlite";
-import { randomBytes as randomBytes2, randomUUID as randomUUID3, createHash as createHash3, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
+import { randomBytes as randomBytes2, randomUUID as randomUUID3, createHash as createHash4, createHmac, scryptSync, timingSafeEqual, createPrivateKey, sign } from "node:crypto";
 import { readFileSync, mkdirSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -24274,7 +24274,7 @@ function webAsset(path) {
 }
 
 // Server/courses.mjs
-import { randomBytes, randomUUID, createHash } from "node:crypto";
+import { randomBytes, randomUUID, createHash as createHash2 } from "node:crypto";
 
 // Server/AppContent/demo-course.json
 var demo_course_default = {
@@ -28059,7 +28059,7 @@ import { promisify } from "node:util";
 
 // Server/course-player.mjs
 var playerProtocol = "WORKSHOP-PLAYER/1";
-var rendererVersion = "2026.10.21.1";
+var rendererVersion = "2026.10.21.2";
 var json = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 function renderCoursePlayer(course, lessonID, courseRevision) {
   const lesson = course.lessons.find((item) => item.id.toLowerCase() === lessonID.toLowerCase());
@@ -28090,15 +28090,21 @@ textarea,input{display:block;width:100%;resize:none;background:var(--input);bord
 function playerRuntime(data) {
   "use strict";
   const lesson = data.lesson, root = document.getElementById("app");
-  let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastHaptic = -100;
+  let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastInteractionHaptic = -100;
+  const resultHaptics = /* @__PURE__ */ new Map();
   const drafts = /* @__PURE__ */ new Map(), saved = /* @__PURE__ */ new Map(), traceStates = /* @__PURE__ */ new Map(), runs = /* @__PURE__ */ new Map(), feedbackFrames = /* @__PURE__ */ new Map();
   const post = (message) => window.webkit?.messageHandlers?.workshopPlayer?.postMessage(message);
-  const haptic = (style) => {
+  const haptic = (style, result = false) => {
+    if (!hapticsEnabled) return;
     const time = performance.now();
-    if (hapticsEnabled && time - lastHaptic >= 45) {
-      lastHaptic = time;
-      post({ type: "haptic", style });
+    if (result) {
+      if (time - (resultHaptics.get(style) ?? -Infinity) < 180) return;
+      resultHaptics.set(style, time);
+    } else {
+      if (time - lastInteractionHaptic < 70) return;
+      lastInteractionHaptic = time;
     }
+    post({ type: "haptic", style });
   };
   const requestID = () => globalThis.crypto?.randomUUID?.() ?? "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
     const r = Math.floor(Math.random() * 16);
@@ -28114,9 +28120,8 @@ function playerRuntime(data) {
     const value = node("button", text, cls);
     value.type = "button";
     value.onclick = (event) => {
-      if (value.disabled) return;
+      if (value.disabled || action(event) === false) return;
       haptic(cls?.includes("option") ? "selection" : "impact");
-      action(event);
     };
     return value;
   };
@@ -28430,10 +28435,12 @@ function playerRuntime(data) {
       });
       select.value = state.variant;
       select.onchange = () => {
-        haptic("selection");
-        state.variant = Number(select.value);
+        const variant2 = Number(select.value);
+        if (variant2 === state.variant) return;
+        state.variant = variant2;
         state.frame = 0;
         render();
+        haptic("selection");
       };
       toolbar.append(select);
     }
@@ -28525,11 +28532,13 @@ function playerRuntime(data) {
     if (!drafts.has(block.id)) drafts.set(block.id, { selectedOptionIDs: [], text: block.input?.starterCode ?? "" });
     return drafts.get(block.id);
   }
+  function answerCorrect(block, answer) {
+    if (block.questionType !== "shortAnswer" && block.correctOptionIDs) return [...answer.selectedOptionIDs].sort().join("|") === [...block.correctOptionIDs].sort().join("|");
+    if (block.questionType === "shortAnswer" && block.acceptedAnswers) return block.acceptedAnswers.some((text) => text.trim() === answer.text.trim());
+    return void 0;
+  }
   function feedback(block, answer, box) {
-    const feedback2 = node("div", void 0, "feedback");
-    let correct;
-    if (block.questionType !== "shortAnswer" && block.correctOptionIDs) correct = [...answer.selectedOptionIDs].sort().join("|") === [...block.correctOptionIDs].sort().join("|");
-    if (block.questionType === "shortAnswer" && block.acceptedAnswers) correct = block.acceptedAnswers.some((text) => text.trim() === answer.text.trim());
+    const feedback2 = node("div", void 0, "feedback"), correct = answerCorrect(block, answer);
     feedback2.append(node("strong", correct === void 0 ? "\u56DE\u7B54\u5DF2\u4FDD\u5B58" : correct ? "\u56DE\u7B54\u6B63\u786E" : "\u518D\u5BF9\u7167\u89E3\u6790\u60F3\u4E00\u60F3"));
     if (block.explanation) {
       const details = node("details"), summary = node("summary", "\u67E5\u770B\u89E3\u6790");
@@ -28584,7 +28593,7 @@ function playerRuntime(data) {
       requestAnimationFrame(resize);
       if (block.execution) {
         const tools = node("div", void 0, "toolbar"), run = button("\u25B6 \u8FD0\u884C\u4EE3\u7801", () => {
-          if (!answer.text.trim() || pending) return;
+          if (!answer.text.trim() || pending) return false;
           const id = requestID();
           runs.set(id, { blockID: block.id });
           run.disabled = true;
@@ -28603,6 +28612,7 @@ function playerRuntime(data) {
       }
     } else for (const option of block.options ?? []) {
       const selected = answer.selectedOptionIDs.includes(option.id), b = button(option.text, () => {
+        if (selected && block.questionType !== "multipleChoice") return false;
         if (block.questionType === "multipleChoice") answer.selectedOptionIDs = selected ? answer.selectedOptionIDs.filter((id) => id !== option.id) : [...answer.selectedOptionIDs, option.id];
         else answer.selectedOptionIDs = [option.id];
         render();
@@ -28656,7 +28666,7 @@ function playerRuntime(data) {
     requestAnimationFrame(fitControls);
   }
   function showError(message) {
-    haptic("error");
+    haptic("error", true);
     const old = root.querySelector(".error");
     if (old) old.remove();
     root.append(node("p", message || "\u4FDD\u5B58\u5931\u8D25\uFF0C\u8BF7\u91CD\u8BD5\u3002", "error"));
@@ -28735,18 +28745,21 @@ function playerRuntime(data) {
         showError(message.error);
         return;
       }
-      haptic("success");
       if (action.type === "submit") {
+        const block = lesson.blocks.find((b) => b.id === action.blockID), correct = answerCorrect(block, action.answer);
+        haptic(correct === true ? "success" : correct === false ? "warning" : "impact", true);
         saved.set(action.blockID, action.answer);
         render();
       } else {
+        haptic("success", true);
         post({ type: "navigation", direction: "nextLesson" });
         sendState();
       }
       return;
     }
     if (message.type === "runResult" && runs.has(message.requestID)) {
-      haptic(message.error || message.result?.passed === false ? "error" : "success");
+      const result = message.result;
+      if (message.error || result?.status !== "cancelled") haptic(message.error || result?.status !== "completed" ? "error" : result.passed === false ? "warning" : result.passed === true ? "success" : "impact", true);
       const run = runs.get(message.requestID);
       runs.delete(message.requestID);
       const r = message.result;
@@ -28827,13 +28840,84 @@ function createCourseExecutionClient({ socketPath, timeoutMs = 15e3 } = {}) {
   };
 }
 
+// Server/course-authoring.mjs
+import { createHash } from "node:crypto";
+import { gzipSync } from "node:zlib";
+var pagePath = "/course-authoring";
+var modes = /* @__PURE__ */ new Set(["manual", "automatic"]);
+var escapeHTML = (value) => String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+function authoringGuideURL(endpoint, mode) {
+  const url = new URL(pagePath, new URL(endpoint).origin);
+  url.searchParams.set("mode", mode);
+  return url.href;
+}
+function guidePage(endpoint, mode, guide) {
+  const content = guide.split(/(```[\s\S]*?```)/g).map((part) => {
+    if (part.startsWith("```")) return `<pre><code>${escapeHTML(part.replace(/^```[^\n]*\n/, "").replace(/\n```$/, ""))}</code></pre>`;
+    return part.split("\n").filter((line) => line.trim()).map((line) => {
+      const heading = /^【(.+)】$/.exec(line);
+      return heading ? `<h2>${escapeHTML(heading[1])}</h2>` : `<p>${escapeHTML(line)}</p>`;
+    }).join("\n");
+  }).join("\n");
+  const manualURL = authoringGuideURL(endpoint, "manual"), automaticURL = authoringGuideURL(endpoint, "automatic");
+  const textURL = new URL(endpoint + "/guide");
+  textURL.searchParams.set("mode", mode);
+  return `<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>\u5DE5\u4F5C\u574A \xB7 \u8BFE\u7A0B\u5236\u4F5C\u89C4\u8303</title>
+<style>
+:root{color-scheme:light dark;--page:#f4f5f7;--surface:#fff;--ink:#20272d;--muted:#63717d;--accent:#54758d;--line:#dfe4e8}*{box-sizing:border-box}body{margin:0;background:var(--page);color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}main{max-width:940px;margin:auto;padding:44px 24px 72px}header{margin-bottom:28px}.brand{color:var(--accent);font-weight:650;letter-spacing:.05em}h1{font-size:clamp(28px,5vw,38px);line-height:1.3;margin:12px 0}header p{color:var(--muted);margin:8px 0}nav{display:flex;flex-wrap:wrap;gap:10px;margin:22px 0}a{color:var(--accent);text-underline-offset:4px}nav a{border:1px solid var(--line);border-radius:24px;background:var(--surface);padding:7px 16px;text-decoration:none}nav a[aria-current=page]{background:var(--accent);color:white;border-color:var(--accent)}article{padding:26px;background:var(--surface);border:1px solid var(--line);border-radius:22px}h2{font-size:20px;margin:32px 0 12px}p{white-space:pre-wrap;overflow-wrap:anywhere;margin:0 0 16px}pre{margin:20px 0;padding:20px;background:var(--page);border-radius:14px;overflow:auto;tab-size:4;font:13px/1.65 ui-monospace,SFMono-Regular,Menlo,monospace}footer{color:var(--muted);margin-top:24px;font-size:14px}@media(prefers-color-scheme:dark){:root{--page:#11171c;--surface:#1c242b;--ink:#e7edf1;--muted:#a9b7c2;--accent:#9abed7;--line:#35434e}nav a[aria-current=page]{color:#15232e}}@media(max-width:600px){main{padding:28px 16px 48px}article{padding:20px 16px}pre{margin-inline:-4px;padding:14px}}
+</style></head><body><main><header><div class="brand">\u5DE5\u4F5C\u574A / WorkSpace</div><h1>\u8BFE\u7A0B\u5236\u4F5C\u89C4\u8303</h1><p>\u5148\u8BFB\u53D6\u89C4\u8303\uFF0C\u518D\u628A\u7528\u6237\u63A5\u4E0B\u6765\u63D0\u4F9B\u7684\u5B66\u4E60\u5185\u5BB9\u5236\u4F5C\u6210\u53EF\u9605\u8BFB\u3001\u53EF\u4E92\u52A8\u7684\u8BFE\u7A0B\u3002</p><nav aria-label="\u5236\u4F5C\u65B9\u5F0F"><a href="${escapeHTML(manualURL)}"${mode === "manual" ? ' aria-current="page"' : ""}>\u624B\u52A8\u5BFC\u5165</a><a href="${escapeHTML(automaticURL)}"${mode === "automatic" ? ' aria-current="page"' : ""}>\u81EA\u52A8\u4E0A\u4F20</a><a href="${escapeHTML(textURL.href)}">\u7EAF\u6587\u672C\u89C4\u8303</a><a href="${escapeHTML(endpoint + "/schema")}">JSON Schema</a></nav></header><article>${content}</article><footer>\u6B64\u9875\u516C\u5F00\uFF0C\u4E0D\u542B\u8D26\u6237\u4FE1\u606F\u6216\u53D1\u5E03\u5BC6\u94A5\u3002\u89C4\u8303\u4F1A\u968F\u670D\u52A1\u5668\u66F4\u65B0\uFF1B\u8BFE\u7A0B\u4ECD\u6309 WORKSHOP-COURSE/1 \u4E0A\u4F20\u3002</footer></main></body></html>`;
+}
+function createCourseAuthoringAPI({ endpoint, guideFor, fail: fail2 }) {
+  const textPath = new URL(endpoint).pathname + "/guide";
+  const packets = /* @__PURE__ */ new Map();
+  return function courseAuthoringAPI(request, response, path) {
+    if (path !== pagePath && path !== textPath) return false;
+    if (!["GET", "HEAD"].includes(request.method)) fail2("NOT_FOUND", 404);
+    const query = new URL(request.url, endpoint).searchParams;
+    const mode = query.get("mode") ?? "manual";
+    if ([...query.keys()].some((key2) => key2 !== "mode") || query.getAll("mode").length > 1 || !modes.has(mode)) fail2("INVALID_COURSE_GUIDE_QUERY");
+    const format = path === pagePath ? "html" : "plain", key = mode + ":" + format;
+    let packet = packets.get(key);
+    if (!packet) {
+      const guide = guideFor(mode), bytes2 = Buffer.from(format === "html" ? guidePage(endpoint, mode, guide) : guide, "utf8");
+      packet = { bytes: bytes2, zipped: gzipSync(bytes2), etag: `W/"${createHash("sha256").update(bytes2).digest("hex")}"` };
+      packets.set(key, packet);
+    }
+    const headers2 = {
+      "Content-Type": `text/${format}; charset=utf-8`,
+      "Content-Language": "zh-CN",
+      "Cache-Control": "public, max-age=0, must-revalidate",
+      ETag: packet.etag,
+      Vary: "Accept-Encoding",
+      "Referrer-Policy": "no-referrer",
+      "X-Content-Type-Options": "nosniff",
+      "Content-Security-Policy": "default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"
+    };
+    const matches = String(request.headers["if-none-match"] ?? "").split(",").some((value) => value.trim() === "*" || value.trim().replace(/^W\//, "") === packet.etag.replace(/^W\//, ""));
+    if (matches) {
+      response.writeHead(304, headers2);
+      response.end();
+      return true;
+    }
+    const acceptsGzip = String(request.headers["accept-encoding"] ?? "").split(",").some((value) => {
+      const [encoding, ...parameters] = value.trim().split(";");
+      return encoding.toLowerCase() === "gzip" && !parameters.some((value2) => /^\s*q\s*=\s*0(?:\.0*)?\s*$/i.test(value2));
+    });
+    const bytes = acceptsGzip ? packet.zipped : packet.bytes;
+    response.writeHead(200, { ...headers2, "Content-Length": bytes.length, ...acceptsGzip ? { "Content-Encoding": "gzip" } : {} });
+    response.end(request.method === "HEAD" ? void 0 : bytes);
+    return true;
+  };
+}
+
 // Server/courses.mjs
 var courseProtocol = "WORKSHOP-COURSE/1";
 var coursePath = "/api/integrations/v1/courses";
 var courseExtensionVersion = "structured-2";
 var UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 var identifier = /^[A-Za-z0-9_-]{1,40}$/;
-var hash = (value) => createHash("sha256").update(value).digest("hex");
+var hash = (value) => createHash2("sha256").update(value).digest("hex");
 var limit = 1024 * 1024;
 function courseInteractionExample() {
   const source = "#include <iostream>\nint main() {\n    int count = 2;\n    count = count + 1;\n    std::cout << count;\n}";
@@ -28971,20 +29055,31 @@ HTML/SVG \u901A\u8FC7\u663E\u5F0F presentation \u8FDB\u5165\u79BB\u7EBF\u6C99\u7
 ${JSON.stringify(courseInteractionExample(), null, 2)}
 \`\`\``;
 }
-function courseManualPrompt() {
+function manualCourseAuthoringGuide() {
   return courseTeachingPrompt() + `
-\u4F60\u5728\u672C\u6B21\u6D41\u7A0B\u53EA\u8D1F\u8D23\u751F\u6210\u4F9B\u7528\u6237\u5BFC\u5165\u7684\u8BFE\u7A0B\uFF0C\u4E0D\u9700\u8981\u767B\u5F55\u6216\u8C03\u7528\u7F51\u7EDC\u3002\u5148\u6309\u4E0A\u8FF0\u8981\u6C42\u7B49\u5F85\u7528\u6237\u4E0B\u4E00\u6761\u5B66\u4E60\u5185\u5BB9\u3002\u8BFE\u7A0B\u5236\u4F5C\u5B8C\u6210\u540E\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 JSON \u6587\u6863\uFF0C\u653E\u5728\u4E00\u4E2A json \u4EE3\u7801\u5757\u4E2D\uFF1B\u4E0D\u8981\u5728\u4EE3\u7801\u5757\u5916\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u4E0D\u8981\u8F93\u51FA\u591A\u4E2A\u7247\u6BB5\uFF0C\u4E0D\u8981\u58F0\u79F0\u5DF2\u4E0A\u4F20\u3002\u7528\u6237\u4F1A\u628A\u6587\u6863\u590D\u5236\u5230\u5DE5\u4F5C\u574A\u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u5E76\u7531 App \u4F7F\u7528\u5176\u5F53\u524D\u767B\u5F55\u8D26\u6237\u4E0A\u4F20\u3002\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u65F6\uFF0C\u7528\u6237\u9700\u5728 App \u6838\u5BF9\u5DF2\u77E5\u8BFE\u7A0B\u7248\u672C\uFF1B\u6CA1\u6709\u5DF2\u6709\u6587\u6863\u65F6\u521B\u5EFA\u65B0 UUID\uFF0C\u4E0D\u731C\u6D4B\u6216\u8986\u76D6\u65E7\u8BFE\u7A0B\u3002`;
+\u8BFB\u53D6\u672C\u89C4\u8303\u540E\uFF0C\u4F60\u53EA\u8D1F\u8D23\u751F\u6210\u4F9B\u7528\u6237\u5BFC\u5165\u7684\u8BFE\u7A0B\uFF0C\u4E0D\u9700\u8981\u767B\u5F55\u6216\u8C03\u7528\u53D1\u5E03\u63A5\u53E3\u3002\u5148\u6309\u4E0A\u8FF0\u8981\u6C42\u7B49\u5F85\u7528\u6237\u4E0B\u4E00\u6761\u5B66\u4E60\u5185\u5BB9\u3002\u8BFE\u7A0B\u5236\u4F5C\u5B8C\u6210\u540E\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 JSON \u6587\u6863\uFF0C\u653E\u5728\u4E00\u4E2A json \u4EE3\u7801\u5757\u4E2D\uFF1B\u4E0D\u8981\u5728\u4EE3\u7801\u5757\u5916\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u4E0D\u8981\u8F93\u51FA\u591A\u4E2A\u7247\u6BB5\uFF0C\u4E0D\u8981\u58F0\u79F0\u5DF2\u4E0A\u4F20\u3002\u7528\u6237\u4F1A\u628A\u6587\u6863\u590D\u5236\u5230\u5DE5\u4F5C\u574A\u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u5E76\u7531 App \u4F7F\u7528\u5176\u5F53\u524D\u767B\u5F55\u8D26\u6237\u4E0A\u4F20\u3002\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u65F6\uFF0C\u7528\u6237\u9700\u5728 App \u6838\u5BF9\u5DF2\u77E5\u8BFE\u7A0B\u7248\u672C\uFF1B\u6CA1\u6709\u5DF2\u6709\u6587\u6863\u65F6\u521B\u5EFA\u65B0 UUID\uFF0C\u4E0D\u731C\u6D4B\u6216\u8986\u76D6\u65E7\u8BFE\u7A0B\u3002`;
 }
-function coursePrompt(endpoint) {
+function automaticCourseAuthoringGuide(endpoint) {
   return courseTeachingPrompt() + `
 \u7528\u6237\u540E\u7EED\u63D0\u4F9B\u5B66\u4E60\u5185\u5BB9\u540E\uFF0C\u5982\u679C\u4F60\u6709\u7F51\u7EDC\u8BF7\u6C42\u5DE5\u5177\uFF0C\u5C06\u5236\u4F5C\u5B8C\u6210\u7684\u6587\u6863\u4E0A\u4F20\u5230\u5F53\u524D\u8BFE\u7A0B\u53D1\u5E03\u51ED\u636E\u7ED1\u5B9A\u7684\u8D26\u6237\uFF0C\u4E0D\u8BE2\u95EE\u6216\u63D0\u4EA4\u7528\u6237 ID\u3002
 \u9759\u6001 JSON Schema\uFF08\u53EF\u9009\u53D1\u73B0\uFF0C\u4E0D\u542B\u8D26\u6237\u4FE1\u606F\uFF09\uFF1AGET ${endpoint}/schema
 POST ${endpoint}
-Authorization: Bearer {{API_KEY}}
+Authorization: Bearer \u672C\u6B21\u7528\u6237\u6D88\u606F\u4E2D\u63D0\u4F9B\u7684\u53D1\u5E03\u5BC6\u94A5
 Content-Type: application/json; charset=utf-8
 Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u7684 UUID\u3002\u5BC6\u94A5\u53EA\u51FA\u73B0\u5728 Authorization \u8BF7\u6C42\u5934\uFF0C\u4E0D\u80FD\u8FDB\u5165\u6B63\u6587\u3001\u65E5\u5FD7\u3001\u8BFE\u7A0B\u6216\u516C\u5F00\u8F93\u51FA\u3002
 \u65B0\u5EFA\u8BFE\u7A0B\u65E0\u9700 If-Match\uFF1B\u66F4\u65B0\u5DF2\u6709\u8BFE\u7A0B\u5FC5\u987B\u63D0\u4F9B\u5DF2\u77E5\u5F53\u524D\u4FEE\u8BA2\u53F7 If-Match: "\u6574\u6570"\u3002\u4FEE\u8BA2\u53F7\u653E\u5728\u8BF7\u6C42\u5934\uFF0C\u4E0D\u653E\u5165\u8BFE\u7A0B JSON\u3002\u91CD\u8BD5\u4FDD\u7559\u540C\u4E00 Idempotency-Key\u3001\u5B8C\u5168\u76F8\u540C\u7684\u5B57\u8282\u6B63\u6587\u4E0E If-Match\u3002409 \u8868\u793A\u51B2\u7A81\uFF0C\u5E94\u505C\u6B62\u5E76\u83B7\u53D6\u6700\u65B0\u8BFE\u7A0B\u6216\u8BF7\u7528\u6237\u6838\u5BF9\uFF0C\u4E0D\u80FD\u731C\u6D4B\u7248\u672C\u5F3A\u884C\u8986\u76D6\u3002\u53EA\u6709 HTTP 201/200 \u6210\u529F\u540E\u624D\u53EF\u4EE5\u8BF4\u5DF2\u4E0A\u4F20\uFF0C\u5E76\u62A5\u544A\u8FD4\u56DE\u7684\u8BFE\u7A0B\u6807\u9898\u548C\u4FEE\u8BA2\u53F7\u3002
 \u5982\u679C\u6CA1\u6709\u7F51\u7EDC\u5DE5\u5177\u6216\u65E0\u6CD5\u5B9E\u9645\u53D1\u8D77 HTTP \u8BF7\u6C42\uFF0C\u4E0D\u8981\u5047\u88C5\u4E0A\u4F20\uFF1A\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u4F18\u5148\u653E\u5728\u552F\u4E00\u7684 json \u4EE3\u7801\u5757\u5185\uFF0C\u4E0D\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u8BA9\u7528\u6237\u590D\u5236\u5230 App \u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u3002\u6B64\u9000\u8DEF\u4E0D\u9700\u8981\u7528\u6237\u63D0\u4F9B\u5176\u4ED6\u51ED\u636E\u3002`;
+}
+function courseAuthoringGuide(endpoint, mode = "manual") {
+  return mode === "automatic" ? automaticCourseAuthoringGuide(endpoint) : manualCourseAuthoringGuide();
+}
+function courseManualPrompt(endpoint = "https://workspace.kdfz.com.cn" + coursePath) {
+  return `\u8BF7\u5148\u8BBF\u95EE ${authoringGuideURL(endpoint, "manual")} \uFF0C\u9605\u8BFB\u5E76\u9075\u5FAA\u5DE5\u4F5C\u574A\u6700\u65B0\u8BFE\u7A0B\u5236\u4F5C\u89C4\u8303\u3002\u5C06\u6211\u63A5\u4E0B\u6765\u53D1\u9001\u7684\u5B66\u4E60\u5185\u5BB9\u5236\u4F5C\u6210\u8BFE\u7A0B\uFF0C\u8F93\u51FA\u5B8C\u6574\u8BFE\u7A0B JSON \u4F9B\u6211\u5BFC\u5165\u3002\u8BFB\u5B8C\u8BF7\u7B80\u77ED\u56DE\u590D\u51C6\u5907\u597D\u4E86\uFF1B\u65E0\u6CD5\u8BFB\u53D6\u65F6\u8BF7\u544A\u77E5\uFF0C\u4E0D\u8981\u731C\u6D4B\u683C\u5F0F\u3002`;
+}
+function coursePrompt(endpoint) {
+  return `\u8BF7\u5148\u8BBF\u95EE ${authoringGuideURL(endpoint, "automatic")} \uFF0C\u9605\u8BFB\u5E76\u9075\u5FAA\u5DE5\u4F5C\u574A\u6700\u65B0\u8BFE\u7A0B\u5236\u4F5C\u89C4\u8303\u3002\u5C06\u6211\u63A5\u4E0B\u6765\u53D1\u9001\u7684\u5B66\u4E60\u5185\u5BB9\u5236\u4F5C\u6210\u8BFE\u7A0B\u5E76\u4E0A\u4F20\uFF0C\u8BFB\u5B8C\u8BF7\u7B80\u77ED\u56DE\u590D\u51C6\u5907\u597D\u4E86\u3002\u65E0\u6CD5\u8BFB\u53D6\u89C4\u8303\u65F6\u8BF7\u544A\u77E5\u3002
+\u53D1\u5E03\u5BC6\u94A5\uFF1A{{API_KEY}}
+\u5BC6\u94A5\u4EC5\u7528\u4E8E\u5411 ${endpoint} \u53D1\u9001 Authorization: Bearer \u8BF7\u6C42\u5934\uFF0C\u4E0D\u5F97\u653E\u5165\u7F51\u5740\u3001\u8BFE\u7A0B\u6216\u516C\u5F00\u8F93\u51FA\u3002`;
 }
 function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond, APIError: APIError2, origin, rateLimit, peer, now = Date.now, runCode = async () => unavailableCourseExecution() }) {
   const fail2 = (code = "INVALID_COURSE", status = 422) => {
@@ -29287,7 +29382,14 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     return row;
   }
   const endpoint = origin + coursePath, schemaURL = endpoint + "/schema";
-  const metadata = { endpoint, protocol: courseProtocol, schemaURL, extensionVersion: courseExtensionVersion };
+  const metadata = {
+    endpoint,
+    protocol: courseProtocol,
+    schemaURL,
+    extensionVersion: courseExtensionVersion,
+    guideURL: authoringGuideURL(endpoint, "automatic"),
+    manualGuideURL: authoringGuideURL(endpoint, "manual")
+  };
   const info = (row) => ({ id: row.id, name: row.name, created: row.created, expires: row.expires, ...row.last_used != null ? { lastUsed: row.last_used } : {} });
   async function read(request, max = limit, acceptsText = false) {
     if (request.headers["content-encoding"] != null && request.headers["content-encoding"] !== "identity") fail2("COURSE_ENCODING_UNSUPPORTED", 415);
@@ -29421,7 +29523,9 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     response.end(body);
     return;
   }
+  const authoringAPI = createCourseAuthoringAPI({ endpoint, guideFor: (mode) => courseAuthoringGuide(endpoint, mode), fail: fail2 });
   return async function handle(request, response, path) {
+    if (authoringAPI(request, response, path)) return true;
     if (path === coursePath + "/schema" && request.method === "GET") {
       respond(response, 200, course_schema_default);
       return true;
@@ -29462,7 +29566,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     const user = userFor(request);
     if (tokens) {
       if (request.method === "GET") {
-        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), ...metadata, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt() } });
+        respond(response, 200, { data: { credentials: db.prepare("SELECT * FROM course_tokens WHERE user_id=? AND expires>? ORDER BY created,id").all(user, now()).map(info), ...metadata, prompt: coursePrompt(endpoint), manualPrompt: courseManualPrompt(endpoint) } });
         return true;
       }
       if (["POST", "DELETE"].includes(request.method)) {
@@ -29638,12 +29742,12 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
 }
 
 // Server/app-content.mjs
-import { createHash as createHash2 } from "node:crypto";
+import { createHash as createHash3 } from "node:crypto";
 var appContentProtocol = "WORKSHOP-CONTENT/1";
 var appContentPath = "/api/native/v1/app-content";
 var identifier2 = /^[a-z0-9][a-z0-9-]{0,79}$/;
 var kindIdentifier = /^[a-z][a-z0-9-]{0,39}$/;
-var digest2 = (bytes) => createHash2("sha256").update(bytes).digest("hex");
+var digest2 = (bytes) => createHash3("sha256").update(bytes).digest("hex");
 var packageLimit = 1024 * 1024;
 var catalogLimit = 4 * 1024 * 1024;
 function encodedPackage(value) {
@@ -30113,7 +30217,7 @@ try {
 } catch {
 }
 if (!/^[a-f0-9]{40}$/.test(deploymentRevision)) deploymentRevision = "unversioned";
-var sha = (value) => createHash3("sha256").update(value).digest("hex");
+var sha = (value) => createHash4("sha256").update(value).digest("hex");
 var base32Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 function base32Encode(bytes) {
   let bits = 0, value = 0, encoded = "";
@@ -30733,7 +30837,7 @@ function createNativeServer(configuration) {
         db.exec("BEGIN IMMEDIATE");
         try {
           const code = db.prepare("SELECT * FROM web_auth_codes WHERE hash=? AND expires>?").get(hash2, now);
-          const challenge = createHash3("sha256").update(value.codeVerifier).digest("base64url");
+          const challenge = createHash4("sha256").update(value.codeVerifier).digest("base64url");
           if (!code || !timingSafeEqual(Buffer.from(code.challenge), Buffer.from(challenge))) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
           const user = db.prepare("SELECT * FROM users WHERE id=?").get(code.user_id);
           if (!user) throw new APIError(401, "INVALID_AUTHORIZATION_CODE");
