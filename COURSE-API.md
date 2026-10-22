@@ -12,6 +12,8 @@ App 复制的提示词只保留“访问官方课程制作规范、等待用户�
 - 自动发布规范：[课程制作与发布规范](https://workspace.kdfz.com.cn/course-authoring?mode=automatic)。AI 阅读后按用户提供的独立课程密钥上传；密钥仅放在 Authorization 请求头。没有网络请求工具时，退回输出 JSON 供用户导入，不假装完成上传。
 - 机器读取：`GET /api/integrations/v1/courses/guide?mode=manual|automatic` 返回 UTF-8 `text/plain` 完整规范；网页路径 `/course-authoring` 返回 HTML。两者均无需登录或发布密钥，省略 mode 默认 manual，仅接受一个合法 mode 参数，未知参数、重复 mode 或非法值返回 422；仅支持 GET/HEAD，其余方法返回 404。
 
+公开的 `GET/HEAD /robots.txt` 只允许抓取课程规范网页、纯文本规范与 JSON Schema；其他路径继续禁止抓取，账户 API 的鉴权要求保持不变。
+
 公共规范不包含账户内容或真实凭据；发布引导中的 `{{API_KEY}}` 是待替换占位符，不会加入公开规范。复制自动发布引导时 App 可在独立正文位置填入当前密钥，不能把密钥、邮箱、用户 ID 等放进规范网址。两个路径均提供 ETag/304、HEAD 与 gzip，让 AI 读取最新规范时减少带宽；JSON Schema 发现地址保持不变。如果 AI 无法访问网页或文本规范，应明确说明并请用户提供规范内容，不依据短引导猜测字段。
 
 ## AI 互动教学要求

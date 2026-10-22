@@ -103,3 +103,26 @@ test('public guide queries and methods are strict; HEAD, ETag and gzip preserve 
     assert.equal(h.accountReads, 0);
   } finally { h.db.close(); }
 });
+
+test('public robots permits only course-authoring discovery and never reads an account', async () => {
+  const h = harness();
+  try {
+    const response = await h.request('/robots.txt');
+    assert.equal(response.status, 200); assert.match(header(response, 'Content-Type'), /^text\/plain/);
+    const robots = text(response);
+    assert.match(robots, /^User-agent: \*\nDisallow: \/\n/);
+    assert.deepEqual(robots.split('\n').filter(line => line.startsWith('Allow: ')), [
+      'Allow: /course-authoring',
+      'Allow: /api/integrations/v1/courses/guide',
+      'Allow: /api/integrations/v1/courses/schema',
+    ]);
+    assert.doesNotMatch(robots, /Allow: .*native|Allow: .*session|Allow: .*workspace|API_KEY|wsc_/);
+    const head = await h.request('/robots.txt', { method: 'HEAD' });
+    assert.equal(head.status, 200); assert.equal(text(head), '');
+    assert.equal(header(head, 'ETag'), header(response, 'ETag'));
+    assert.equal(Number(header(head, 'Content-Length')), Buffer.byteLength(robots));
+    assert.equal((await h.request('/robots.txt?mode=manual')).status, 422);
+    assert.equal((await h.request('/robots.txt', { method: 'POST' })).status, 404);
+    assert.equal(h.accountReads, 0);
+  } finally { h.db.close(); }
+});

@@ -34,15 +34,19 @@ export function createCourseAuthoringAPI({ endpoint, guideFor, fail }) {
   const textPath = new URL(endpoint).pathname + '/guide';
   const packets = new Map();
   return function courseAuthoringAPI(request, response, path) {
-    if (path !== pagePath && path !== textPath) return false;
+    const isRobots = path === '/robots.txt';
+    if (path !== pagePath && path !== textPath && !isRobots) return false;
     if (!['GET', 'HEAD'].includes(request.method)) fail('NOT_FOUND', 404);
     const query = new URL(request.url, endpoint).searchParams;
     const mode = query.get('mode') ?? 'manual';
-    if ([...query.keys()].some(key => key !== 'mode') || query.getAll('mode').length > 1 || !modes.has(mode)) fail('INVALID_COURSE_GUIDE_QUERY');
-    const format = path === pagePath ? 'html' : 'plain', key = mode + ':' + format;
+    if (isRobots ? query.size !== 0 : [...query.keys()].some(key => key !== 'mode') || query.getAll('mode').length > 1 || !modes.has(mode)) fail('INVALID_COURSE_GUIDE_QUERY');
+    const format = path === pagePath ? 'html' : 'plain', key = isRobots ? 'robots' : mode + ':' + format;
     let packet = packets.get(key);
     if (!packet) {
-      const guide = guideFor(mode), bytes = Buffer.from(format === 'html' ? guidePage(endpoint, mode, guide) : guide, 'utf8');
+      // A 401 robots response can be treated as a full crawl restriction. Only
+      // the public contract is allowlisted; account APIs remain disallowed.
+      const guide = isRobots ? `User-agent: *\nDisallow: /\nAllow: ${pagePath}\nAllow: ${textPath}\nAllow: ${new URL(endpoint).pathname}/schema\n` : guideFor(mode);
+      const bytes = Buffer.from(format === 'html' ? guidePage(endpoint, mode, guide) : guide, 'utf8');
       packet = { bytes, zipped: gzipSync(bytes), etag: `W/"${createHash('sha256').update(bytes).digest('hex')}"` };
       packets.set(key, packet);
     }

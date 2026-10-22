@@ -28872,15 +28872,22 @@ function createCourseAuthoringAPI({ endpoint, guideFor, fail: fail2 }) {
   const textPath = new URL(endpoint).pathname + "/guide";
   const packets = /* @__PURE__ */ new Map();
   return function courseAuthoringAPI(request, response, path) {
-    if (path !== pagePath && path !== textPath) return false;
+    const isRobots = path === "/robots.txt";
+    if (path !== pagePath && path !== textPath && !isRobots) return false;
     if (!["GET", "HEAD"].includes(request.method)) fail2("NOT_FOUND", 404);
     const query = new URL(request.url, endpoint).searchParams;
     const mode = query.get("mode") ?? "manual";
-    if ([...query.keys()].some((key2) => key2 !== "mode") || query.getAll("mode").length > 1 || !modes.has(mode)) fail2("INVALID_COURSE_GUIDE_QUERY");
-    const format = path === pagePath ? "html" : "plain", key = mode + ":" + format;
+    if (isRobots ? query.size !== 0 : [...query.keys()].some((key2) => key2 !== "mode") || query.getAll("mode").length > 1 || !modes.has(mode)) fail2("INVALID_COURSE_GUIDE_QUERY");
+    const format = path === pagePath ? "html" : "plain", key = isRobots ? "robots" : mode + ":" + format;
     let packet = packets.get(key);
     if (!packet) {
-      const guide = guideFor(mode), bytes2 = Buffer.from(format === "html" ? guidePage(endpoint, mode, guide) : guide, "utf8");
+      const guide = isRobots ? `User-agent: *
+Disallow: /
+Allow: ${pagePath}
+Allow: ${textPath}
+Allow: ${new URL(endpoint).pathname}/schema
+` : guideFor(mode);
+      const bytes2 = Buffer.from(format === "html" ? guidePage(endpoint, mode, guide) : guide, "utf8");
       packet = { bytes: bytes2, zipped: gzipSync(bytes2), etag: `W/"${createHash("sha256").update(bytes2).digest("hex")}"` };
       packets.set(key, packet);
     }
