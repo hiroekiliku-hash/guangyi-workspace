@@ -1,0 +1,101 @@
+{
+  "protocol": "WORKSHOP-COURSE/1",
+  "id": "708afd48-2819-46e4-b941-b15a74613e71",
+  "title": "词汇学习 · 主动回忆",
+  "summary": "认词、释义与例句、语境选择、拼写和自主造句。沿用现有课程协议，无需更新 App。",
+  "lessons": [
+    {
+      "id": "5c3c0150-3702-4a87-a658-8bbd8077c7b9",
+      "title": "词汇学习：从认词到主动回忆",
+      "objectives": [
+        "认识三个词的核心含义与常见搭配",
+        "不看词形，从语境中回忆并拼写"
+      ],
+      "estimatedMinutes": 5,
+      "blocks": [
+        {
+          "id": "8ff0d3a3-6886-4eb9-ba3c-536609c2a007",
+          "type": "text",
+          "title": "先想意思，再看释义",
+          "text": "先在心里回忆词义。点卡片或继续揭示，再按继续学习下一个词。",
+          "presentation": {
+            "kind": "flashcards",
+            "cards": [
+              {
+                "front": "adapt\n/əˈdæpt/",
+                "back": "v. 适应；调整\n\nWe adapt our plans when the weather changes.\n天气变化时，我们会调整计划。"
+              },
+              {
+                "front": "consistent\n/kənˈsɪstənt/",
+                "back": "adj. 一致的；持续的\n\nSmall, consistent steps lead to progress.\n持续的小步行动带来进步。"
+              },
+              {
+                "front": "retrieve\n/rɪˈtriːv/",
+                "back": "v. 找回；检索\n\nTry to retrieve the word before looking at the answer.\n看答案前，先尝试回忆这个单词。"
+              }
+            ]
+          }
+        },
+        {
+          "id": "d2eb2328-9fce-4e24-9ee4-b0298b02fec2",
+          "type": "question",
+          "title": "放进语境",
+          "text": "计划需要随天气变化而调整。We need to ____ our plans to the weather.",
+          "questionType": "singleChoice",
+          "options": [
+            {
+              "id": "adapt",
+              "text": "adapt"
+            },
+            {
+              "id": "retrieve",
+              "text": "retrieve"
+            },
+            {
+              "id": "consistent",
+              "text": "consistent"
+            }
+          ],
+          "correctOptionIDs": [
+            "adapt"
+          ],
+          "explanation": "adapt our plans 表示“调整我们的计划”；adapt to 表示“适应”。"
+        },
+        {
+          "id": "a13a9c16-a686-4406-a517-187757ca25b5",
+          "type": "question",
+          "title": "试着拼出来",
+          "text": "“找回；检索”是哪个词？Try to ____ the word from memory. 只填写一个英文单词。",
+          "questionType": "shortAnswer",
+          "input": {
+            "kind": "text",
+            "placeholder": "输入英文单词",
+            "minLines": 2,
+            "maxLines": 3
+          },
+          "acceptedAnswers": [
+            "retrieve"
+          ],
+          "explanation": "retrieve 意为“找回；检索”。retrieve the word from memory：从记忆中提取这个词。",
+          "hints": [
+            "以 re 开头，共 8 个字母。"
+          ]
+        },
+        {
+          "id": "50e07ec0-b96e-40e8-a058-7d3aed56369b",
+          "type": "question",
+          "title": "用自己的例句巩固",
+          "text": "用 consistent 写一句与你日常学习有关的英文句子。开放题会保存回答，解析供自查。",
+          "questionType": "shortAnswer",
+          "input": {
+            "kind": "text",
+            "placeholder": "写一句你自己的例句",
+            "minLines": 2,
+            "maxLines": 5
+          },
+          "explanation": "参考：I make consistent progress by studying a little every day. 自查 consistent 是否用作形容词，句子是否表达了持续或一致的意思。"
+        }
+      ]
+    }
+  ]
+}

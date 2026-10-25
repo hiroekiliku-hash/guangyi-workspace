@@ -67,7 +67,7 @@ test('public demo player accepts only deployment catalog courses and exact query
 });
 test('native-feel renderer keeps full-width content and preference-driven controls and haptics',()=>{
   const course=fixture(),html=renderCoursePlayer(course,course.lessons[0].id,1).html;
-  assert.equal(rendererVersion,'2026.10.21.2');
+  assert.equal(rendererVersion,'2026.10.25.1');
   assert.match(html,/font:17px\/1\.53 -apple-system/);
   assert.match(html,/--bottom-space:16px/);
   assert.match(html,/needs-control-space/);

@@ -24281,7 +24281,7 @@ var demo_course_default = {
   protocol: "WORKSHOP-CONTENT/1",
   id: "demo-course",
   kind: "course",
-  version: 4,
+  version: 5,
   minimumContentVersion: 1,
   payload: {
     id: "8343F80B-F43C-4901-B585-A67647EA9700",
@@ -25126,6 +25126,99 @@ var demo_course_default = {
           "\u901A\u8FC7\u7FFB\u5361\u81EA\u6D4B\uFF0C\u68C0\u67E5\u7406\u89E3\u3002"
         ],
         title: "\u6362\u4E00\u79CD\u65B9\u5F0F\uFF0C\u5DE9\u56FA\u7406\u89E3"
+      },
+      {
+        id: "5c3c0150-3702-4a87-a658-8bbd8077c7b9",
+        title: "\u8BCD\u6C47\u5B66\u4E60\uFF1A\u4ECE\u8BA4\u8BCD\u5230\u4E3B\u52A8\u56DE\u5FC6",
+        objectives: [
+          "\u8BA4\u8BC6\u4E09\u4E2A\u8BCD\u7684\u6838\u5FC3\u542B\u4E49\u4E0E\u5E38\u89C1\u642D\u914D",
+          "\u4E0D\u770B\u8BCD\u5F62\uFF0C\u4ECE\u8BED\u5883\u4E2D\u56DE\u5FC6\u5E76\u62FC\u5199"
+        ],
+        estimatedMinutes: 5,
+        blocks: [
+          {
+            id: "8ff0d3a3-6886-4eb9-ba3c-536609c2a007",
+            type: "text",
+            title: "\u5148\u60F3\u610F\u601D\uFF0C\u518D\u770B\u91CA\u4E49",
+            text: "\u5148\u5728\u5FC3\u91CC\u56DE\u5FC6\u8BCD\u4E49\u3002\u70B9\u5361\u7247\u6216\u7EE7\u7EED\u63ED\u793A\uFF0C\u518D\u6309\u7EE7\u7EED\u5B66\u4E60\u4E0B\u4E00\u4E2A\u8BCD\u3002",
+            presentation: {
+              kind: "flashcards",
+              cards: [
+                {
+                  front: "adapt\n/\u0259\u02C8d\xE6pt/",
+                  back: "v. \u9002\u5E94\uFF1B\u8C03\u6574\n\nWe adapt our plans when the weather changes.\n\u5929\u6C14\u53D8\u5316\u65F6\uFF0C\u6211\u4EEC\u4F1A\u8C03\u6574\u8BA1\u5212\u3002"
+                },
+                {
+                  front: "consistent\n/k\u0259n\u02C8s\u026Ast\u0259nt/",
+                  back: "adj. \u4E00\u81F4\u7684\uFF1B\u6301\u7EED\u7684\n\nSmall, consistent steps lead to progress.\n\u6301\u7EED\u7684\u5C0F\u6B65\u884C\u52A8\u5E26\u6765\u8FDB\u6B65\u3002"
+                },
+                {
+                  front: "retrieve\n/r\u026A\u02C8tri\u02D0v/",
+                  back: "v. \u627E\u56DE\uFF1B\u68C0\u7D22\n\nTry to retrieve the word before looking at the answer.\n\u770B\u7B54\u6848\u524D\uFF0C\u5148\u5C1D\u8BD5\u56DE\u5FC6\u8FD9\u4E2A\u5355\u8BCD\u3002"
+                }
+              ]
+            }
+          },
+          {
+            id: "d2eb2328-9fce-4e24-9ee4-b0298b02fec2",
+            type: "question",
+            title: "\u653E\u8FDB\u8BED\u5883",
+            text: "\u8BA1\u5212\u9700\u8981\u968F\u5929\u6C14\u53D8\u5316\u800C\u8C03\u6574\u3002We need to ____ our plans to the weather.",
+            questionType: "singleChoice",
+            options: [
+              {
+                id: "adapt",
+                text: "adapt"
+              },
+              {
+                id: "retrieve",
+                text: "retrieve"
+              },
+              {
+                id: "consistent",
+                text: "consistent"
+              }
+            ],
+            correctOptionIDs: [
+              "adapt"
+            ],
+            explanation: "adapt our plans \u8868\u793A\u201C\u8C03\u6574\u6211\u4EEC\u7684\u8BA1\u5212\u201D\uFF1Badapt to \u8868\u793A\u201C\u9002\u5E94\u201D\u3002"
+          },
+          {
+            id: "a13a9c16-a686-4406-a517-187757ca25b5",
+            type: "question",
+            title: "\u8BD5\u7740\u62FC\u51FA\u6765",
+            text: "\u201C\u627E\u56DE\uFF1B\u68C0\u7D22\u201D\u662F\u54EA\u4E2A\u8BCD\uFF1FTry to ____ the word from memory. \u53EA\u586B\u5199\u4E00\u4E2A\u82F1\u6587\u5355\u8BCD\u3002",
+            questionType: "shortAnswer",
+            input: {
+              kind: "text",
+              placeholder: "\u8F93\u5165\u82F1\u6587\u5355\u8BCD",
+              minLines: 2,
+              maxLines: 3
+            },
+            acceptedAnswers: [
+              "retrieve"
+            ],
+            explanation: "retrieve \u610F\u4E3A\u201C\u627E\u56DE\uFF1B\u68C0\u7D22\u201D\u3002retrieve the word from memory\uFF1A\u4ECE\u8BB0\u5FC6\u4E2D\u63D0\u53D6\u8FD9\u4E2A\u8BCD\u3002",
+            hints: [
+              "\u4EE5 re \u5F00\u5934\uFF0C\u5171 8 \u4E2A\u5B57\u6BCD\u3002"
+            ]
+          },
+          {
+            id: "50e07ec0-b96e-40e8-a058-7d3aed56369b",
+            type: "question",
+            title: "\u7528\u81EA\u5DF1\u7684\u4F8B\u53E5\u5DE9\u56FA",
+            text: "\u7528 consistent \u5199\u4E00\u53E5\u4E0E\u4F60\u65E5\u5E38\u5B66\u4E60\u6709\u5173\u7684\u82F1\u6587\u53E5\u5B50\u3002\u5F00\u653E\u9898\u4F1A\u4FDD\u5B58\u56DE\u7B54\uFF0C\u89E3\u6790\u4F9B\u81EA\u67E5\u3002",
+            questionType: "shortAnswer",
+            input: {
+              kind: "text",
+              placeholder: "\u5199\u4E00\u53E5\u4F60\u81EA\u5DF1\u7684\u4F8B\u53E5",
+              minLines: 2,
+              maxLines: 5
+            },
+            explanation: "\u53C2\u8003\uFF1AI make consistent progress by studying a little every day. \u81EA\u67E5 consistent \u662F\u5426\u7528\u4F5C\u5F62\u5BB9\u8BCD\uFF0C\u53E5\u5B50\u662F\u5426\u8868\u8FBE\u4E86\u6301\u7EED\u6216\u4E00\u81F4\u7684\u610F\u601D\u3002"
+          }
+        ]
       }
     ],
     protocol: "WORKSHOP-COURSE/1",
@@ -28059,7 +28152,7 @@ import { promisify } from "node:util";
 
 // Server/course-player.mjs
 var playerProtocol = "WORKSHOP-PLAYER/1";
-var rendererVersion = "2026.10.21.2";
+var rendererVersion = "2026.10.25.1";
 var json = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
 function renderCoursePlayer(course, lessonID, courseRevision) {
   const lesson = course.lessons.find((item) => item.id.toLowerCase() === lessonID.toLowerCase());
@@ -28083,6 +28176,8 @@ main{max-width:1240px;margin:auto;padding:12px 20px calc(var(--bottom-space) + e
 .toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:16px 0}button,select,input,textarea{font:inherit;color:inherit;-webkit-appearance:none;appearance:none}button,select{min-height:44px;border-radius:13px;border:0;background:var(--soft);padding:10px 15px;cursor:pointer;touch-action:manipulation}button{position:relative;overflow:hidden;transform:translateZ(0)}button:active:not(:disabled),summary:active{filter:brightness(.91);transform:scale(.98)}button[disabled]{opacity:.4;cursor:default}button:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:3px}button.selected{background:var(--soft);box-shadow:inset 0 0 0 1.5px var(--accent)}select{padding-right:32px;background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 17px) 20px,calc(100% - 12px) 20px;background-size:5px 5px;background-repeat:no-repeat}
 .option{display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:var(--panel);margin:0;min-height:54px;border-radius:0;padding:14px 16px;box-shadow:inset 0 -1px 0 var(--line)}.option:before{content:'\u25CB';flex:0 0 24px;font-size:24px;line-height:24px;color:var(--muted)}.option.selected:before{content:'\u25CF';color:var(--accent)}.option.selected{background:var(--soft);box-shadow:inset 0 -1px 0 var(--line)}.option:first-of-type{border-radius:15px 15px 0 0}.option:last-of-type{border-radius:0 0 15px 15px;box-shadow:none}.option:only-of-type{border-radius:15px}.option:active:not(:disabled){transform:none;background:var(--soft)}
 textarea,input{display:block;width:100%;resize:none;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:13px 14px;outline:none;min-height:48px;max-height:55vh;caret-color:var(--accent);scroll-margin-bottom:calc(var(--bottom-space) + 12px)}textarea:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}::placeholder{color:var(--muted);opacity:.8}textarea.code-input{font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}.feedback{margin-top:18px;padding:14px 16px;background:var(--soft);border-radius:14px}.error{color:#c83c32;font-size:15px;margin-top:16px}.dark .error{color:#ff746b}.objects,.comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.object{padding:16px;border-radius:14px;background:var(--panel)}.object.changed{box-shadow:inset 0 0 0 1.5px var(--accent)}.object strong{display:block;font-size:32px;line-height:1.4}.output{background:var(--panel);padding:14px;border-radius:14px;white-space:pre-wrap;font:14px/1.6 ui-monospace,monospace}.table-scroll{overflow:auto;border-radius:14px;background:var(--panel)}table{border-collapse:collapse;width:100%;font-size:15px}td,th{text-align:left;border-bottom:1px solid var(--line);padding:11px 13px;min-width:90px}th{font-weight:600}tr:last-child td{border-bottom:0}details{margin:14px 0}summary{display:list-item;cursor:pointer;min-height:44px;padding:10px 0;color:var(--accent)}iframe{display:block;width:100%;border:0;background:transparent;min-height:120px;border-radius:14px}svg.chart{width:100%;height:auto;max-height:360px}.flash{width:100%;padding:24px;white-space:pre-wrap;margin:8px 0;background:var(--panel);min-height:88px}.steps{padding-left:24px}.steps li{padding-left:5px;margin-bottom:20px}.chart-label{font:12px -apple-system,system-ui;fill:var(--muted)}.chart-bar{fill:var(--accent)}blockquote{margin:14px 0;border-left:3px solid var(--accent);padding-left:16px;color:var(--muted)}.markdown code:not(.code){background:var(--soft);padding:2px 5px;border-radius:4px}.markdown pre{overflow:auto;white-space:pre;background:var(--panel);padding:15px;border-radius:14px}.markdown p{white-space:normal}.callout>p:first-child{padding:13px 16px;background:var(--soft);border-radius:14px}.comparison .card{padding:16px}
+.vocabulary{max-width:720px;margin:0 auto}.vocabulary-progress{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:0 0 12px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.vocabulary-card{display:block;width:100%;text-align:left;padding:clamp(22px,5vw,36px);background:var(--panel);border:1px solid var(--line);border-radius:24px;cursor:pointer;white-space:pre-wrap;overflow-wrap:anywhere}.vocabulary-card[aria-pressed=true]{cursor:default}.vocabulary-word{display:block;font-size:clamp(32px,9vw,48px);line-height:1.2;font-weight:650;letter-spacing:-.025em}.vocabulary-pronunciation{display:block;color:var(--muted);font-size:17px;line-height:1.6;margin-top:12px}.vocabulary-cue{display:block;margin-top:28px;color:var(--accent);font-size:14px}.vocabulary-answer{display:block;margin-top:24px;padding-top:22px;border-top:1px solid var(--line);font-size:18px;line-height:1.65;white-space:pre-wrap}.vocabulary-card:active:not(:disabled){transform:none;filter:brightness(.98)}
+@media(prefers-reduced-motion:no-preference){.vocabulary-answer{animation:word-reveal .16s ease-out}@keyframes word-reveal{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}}
 @media(min-width:850px){main{padding:18px 28px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.workspace.with-reference{grid-template-columns:minmax(280px,.85fr) minmax(360px,1.15fr);gap:26px}.reference{max-height:calc(100vh - 115px)}.heading{margin-bottom:18px}}
 @media(min-width:600px) and (orientation:landscape) and (max-height:500px){:root{--control-space:140px}main{padding:8px 16px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.heading{margin-bottom:10px}h1{font-size:19px}.workspace{gap:14px}.workspace.with-reference{grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr)}.reference{max-height:calc(100vh - 65px)}body.keyboard-visible{--control-space:140px}}
 @media(max-width:599px){body:has(input:focus,textarea:focus) .reference{position:static;max-height:28vh}body:has(input:focus,textarea:focus){--bottom-space:148px}}
@@ -28092,7 +28187,7 @@ function playerRuntime(data) {
   const lesson = data.lesson, root = document.getElementById("app");
   let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastInteractionHaptic = -100;
   const resultHaptics = /* @__PURE__ */ new Map();
-  const drafts = /* @__PURE__ */ new Map(), saved = /* @__PURE__ */ new Map(), traceStates = /* @__PURE__ */ new Map(), runs = /* @__PURE__ */ new Map(), feedbackFrames = /* @__PURE__ */ new Map();
+  const drafts = /* @__PURE__ */ new Map(), saved = /* @__PURE__ */ new Map(), flashcardStates = /* @__PURE__ */ new Map(), traceStates = /* @__PURE__ */ new Map(), runs = /* @__PURE__ */ new Map(), feedbackFrames = /* @__PURE__ */ new Map();
   const post = (message) => window.webkit?.messageHandlers?.workshopPlayer?.postMessage(message);
   const haptic = (style, result = false) => {
     if (!hapticsEnabled) return;
@@ -28467,6 +28562,53 @@ function playerRuntime(data) {
     if (frame.output !== void 0) box.append(node("pre", frame.output || "\uFF08\u6682\u65E0\u8F93\u51FA\uFF09", "output"));
     return box;
   }
+  function flashcardState(block) {
+    if (!flashcardStates.has(block.id)) flashcardStates.set(block.id, { card: 0, revealed: false });
+    return flashcardStates.get(block.id);
+  }
+  function flashcardAction(direction) {
+    const block = lesson.blocks[index];
+    if (block.presentation?.kind !== "flashcards") return false;
+    const state = flashcardState(block), cards = block.presentation.cards;
+    if (direction === "next") {
+      if (!state.revealed) state.revealed = true;
+      else if (state.card < cards.length - 1) {
+        state.card++;
+        state.revealed = false;
+      } else return false;
+    } else {
+      if (state.revealed) state.revealed = false;
+      else if (state.card > 0) {
+        state.card--;
+        state.revealed = true;
+      } else return false;
+    }
+    haptic("selection");
+    render();
+    return true;
+  }
+  function flashcards(block) {
+    const state = flashcardState(block), cards = block.presentation.cards, card = cards[state.card];
+    const box = node("section", void 0, "vocabulary");
+    const progress = node("div", void 0, "vocabulary-progress");
+    progress.append(node("span", "\u56DE\u5FC6\u5361\u7247"), node("span", `${state.card + 1} / ${cards.length}`));
+    const face = button(void 0, (event) => {
+      if (state.revealed || pending || !initialized) return false;
+      const focused = document.activeElement === event.currentTarget;
+      flashcardAction("next");
+      if (focused) root.querySelector(".vocabulary-card")?.focus({ preventScroll: true });
+      return false;
+    }, "vocabulary-card");
+    face.setAttribute("aria-pressed", String(state.revealed));
+    face.setAttribute("aria-label", state.revealed ? `${card.front}\uFF0C\u91CA\u4E49\u5DF2\u63ED\u793A` : `${card.front}\uFF0C\u63ED\u793A\u91CA\u4E49`);
+    const lines = lineArray(card.front);
+    face.append(node("span", lines[0], "vocabulary-word"));
+    if (lines.length > 1) face.append(node("span", lines.slice(1).join("\n"), "vocabulary-pronunciation"));
+    if (state.revealed) face.append(node("span", card.back, "vocabulary-answer"));
+    else face.append(node("span", "\u70B9\u5361\u7247\u6216\u7EE7\u7EED\uFF0C\u63ED\u793A\u91CA\u4E49", "vocabulary-cue"));
+    box.append(progress, face);
+    return box;
+  }
   function presentation(block, reference) {
     const p = block.presentation, box = node("div");
     if (!p) return box;
@@ -28503,15 +28645,7 @@ function playerRuntime(data) {
         break;
       }
       case "flashcards":
-        p.cards.forEach((card) => {
-          let flipped = false;
-          const b = button(card.front, () => {
-            flipped = !flipped;
-            b.textContent = flipped ? card.back : card.front;
-            b.setAttribute("aria-pressed", String(flipped));
-          }, "flash");
-          box.append(b);
-        });
+        box.append(flashcards(block));
         break;
       case "html":
         box.append(isolated(p.html.source, p.html.height));
@@ -28534,7 +28668,11 @@ function playerRuntime(data) {
   }
   function answerCorrect(block, answer) {
     if (block.questionType !== "shortAnswer" && block.correctOptionIDs) return [...answer.selectedOptionIDs].sort().join("|") === [...block.correctOptionIDs].sort().join("|");
-    if (block.questionType === "shortAnswer" && block.acceptedAnswers) return block.acceptedAnswers.some((text) => text.trim() === answer.text.trim());
+    if (block.questionType === "shortAnswer" && block.acceptedAnswers) {
+      const format = block.answerFormat ?? "text";
+      const normalize = (value) => format === "text" ? value.trim().replace(/\s+/g, " ").toLowerCase() : value.replace(/\r\n|\r/g, "\n").trim();
+      return block.acceptedAnswers.some((text) => normalize(text) === normalize(answer.text));
+    }
     return void 0;
   }
   function feedback(block, answer, box) {
@@ -28629,7 +28767,8 @@ function playerRuntime(data) {
     if (committed && equalAnswer(answer, committed)) feedback(block, committed, box);
   }
   function sendState() {
-    const localPrevious = (traceStates.get(lesson.blocks[index].id)?.frame ?? 0) > 0 || [...feedbackFrames.values()].some((entry) => entry.primary?.canPrevious);
+    const flash = flashcardStates.get(lesson.blocks[index].id);
+    const localPrevious = !!(flash?.revealed || flash?.card > 0) || (traceStates.get(lesson.blocks[index].id)?.frame ?? 0) > 0 || [...feedbackFrames.values()].some((entry) => entry.primary?.canPrevious);
     post({ type: "state", index, count: lesson.blocks.length, canPrevious: !pending && (localPrevious || index > 0 || data.lessonIndex > 0), canNext: !pending });
   }
   function fitControls() {
@@ -28689,7 +28828,7 @@ function playerRuntime(data) {
         return;
       }
     }
-    if (traceAction("next") || frameAction("next")) return;
+    if (flashcardAction("next") || traceAction("next") || frameAction("next")) return;
     if (index < lesson.blocks.length - 1) {
       index++;
       render();
@@ -28730,7 +28869,7 @@ function playerRuntime(data) {
     }
     if (message.type === "previous") {
       if (pending || !initialized) return;
-      if (traceAction("previous") || frameAction("previous")) return;
+      if (flashcardAction("previous") || traceAction("previous") || frameAction("previous")) return;
       if (index > 0) {
         index--;
         render();
@@ -29030,6 +29169,16 @@ function courseTeachingPrompt() {
 \u8BFE\u7A0B\u4ECD\u4E0A\u4F20 WORKSHOP-COURSE/1 \u7ED3\u6784\u5316 JSON\uFF0C\u4E0D\u80FD\u4E0A\u4F20\u6574\u4E2A\u53EF\u4FE1\u9875\u9762\u3001\u6865\u63A5\u811A\u672C\u6216 App \u5916\u58F3\u3002\u65B0\u5BA2\u6237\u7AEF\u4F7F\u7528 WORKSHOP-PLAYER/1\uFF1A\u670D\u52A1\u5668\u5C06\u89C4\u8303\u6570\u636E\u7F16\u6392\u4E3A\u79BB\u7EBF HTML \u5B66\u4E60\u9875\uFF1B\u6392\u7248\u3001\u4EA4\u4E92\u7EC4\u4EF6\u3001\u914D\u8272\u548C\u6559\u5B66\u5C55\u793A\u53EF\u76F4\u63A5\u4ECE\u670D\u52A1\u5668\u66F4\u65B0\u3002App \u53EA\u8D1F\u8D23\u4E0A\u4E0B\u6B65\u5BFC\u822A\u3001\u8D26\u6237\u3001\u8FDB\u5EA6\u4FDD\u5B58\u548C\u660E\u786E\u6388\u6743\u7684\u4EE3\u7801\u8FD0\u884C\u3002AI \u7684 HTML/SVG \u4ECD\u662F\u65E0\u7F51\u7EDC\u3001\u65E0\u540C\u6E90\u6743\u9650\u7684\u5185\u5D4C\u6C99\u76D2\uFF0C\u4E0D\u80FD\u8C03\u7528\u539F\u751F\u6865\u63A5\u3001\u8BBF\u95EE\u8D26\u6237\u6216\u6A21\u62DF\u4E0B\u4E00\u6B65\u63D0\u4EA4\uFF1B\u6240\u6709\u9700\u8981\u6301\u4E45\u5316\u7684\u7B54\u6848\u5FC5\u987B\u4F7F\u7528 question\u3002\u4E0D\u8981\u8981\u6C42\u7528\u6237\u518D\u6B21\u5B89\u88C5 App \u624D\u80FD\u663E\u793A\u65B0\u8BFE\u7A0B\u3002
 \u6BCF\u5C4F\u4E00\u4E2A\u95EE\u9898\u3001\u4E00\u4E2A\u53D8\u5316\u3002\u7F16\u7A0B\u8BFE\u4F18\u5148\u4F7F\u7528\u7ED3\u6784\u5316 trace \u8868\u8FBE\u9010\u6B65\u8BED\u4E49\uFF0C\u4F5C\u8005\u53EA\u63D0\u4F9B\u4EE3\u7801\u3001\u72B6\u6001\u548C\u89E3\u91CA\uFF0C\u7531\u670D\u52A1\u7AEF\u6E32\u67D3\u5668\u51B3\u5B9A\u5E03\u5C40\u3001\u914D\u8272\u3001\u5B57\u53F7\u3001\u52A8\u753B\u548C\u4EA4\u4E92\uFF1B\u4E0D\u8981\u81EA\u9020\u5E03\u5C40\u3001\u5750\u6807\u3001\u989C\u8272\u6216\u6309\u94AE\u5B57\u6BB5\u3002\u6BCF\u8282\u56F4\u7ED5\u4E00\u4E2A\u77ED\u7A0B\u5E8F\u8FDE\u7EED\u5C55\u5F00\uFF1A\u5148\u9884\u6D4B\u2192\u5355\u6B65\u89C2\u5BDF\u2192\u8FC1\u79FB\u4E00\u9053\u9898\u2192\u52A8\u624B\u6539\u5199\u3002\u901A\u5E38 4\u20136 \u5757\u5373\u53EF\uFF0C\u4E0D\u4E3A\u4E86\u5F62\u5F0F\u4E30\u5BCC\u800C\u53E0\u52A0\u5BF9\u7167\u3001\u95EA\u5361\u3001\u4FEE\u590D\u9898\u3001\u672F\u8BED\u8868\u3002\u6CA1\u6709\u65B0\u7684\u6559\u5B66\u4EF7\u503C\u5C31\u5220\u6389\u3002
 trace \u9ED8\u8BA4\u6BCF\u5E27\u6700\u591A\u5C55\u793A 2 \u4E2A\u5BF9\u8C61\uFF0Cnote \u7528\u4E00\u53E5\u8BDD\uFF0C\u9ED8\u8BA4\u4E0D\u8D85\u8FC7 60 \u5B57\uFF1B\u6BCF\u4E00\u6B65\u53EA\u89E3\u91CA\u4E00\u4E2A\u53D8\u5316\u3002\u56F4\u7ED5\u540C\u4E00\u7A0B\u5E8F\u7684\u8BFE\u7A0B\u6216\u8BFE\u65F6\u5FC5\u987B\u901A\u8FC7 referenceCode \u63D0\u4F9B\u5B8C\u6574\u77ED\u7A0B\u5E8F\uFF0C\u5B66\u4E60\u9875\u59CB\u7EC8\u4FDD\u7559\u4E00\u5757\u53EF\u89C1\u7684\u4EE3\u7801\u533A\uFF1B\u8BB2\u89E3\u3001\u63A8\u6F14\u548C\u505A\u9898\u65F6\u90FD\u80FD\u5BF9\u7167\uFF0C\u4E0D\u8981\u6C42\u7528\u6237\u8BB0\u4F4F\u524D\u9875\u6E90\u7801\uFF0C\u4E5F\u4E0D\u80FD\u53EA\u9732\u4E00\u884C\u3001\u628A\u5B8C\u6574\u4EE3\u7801\u85CF\u5728\u5C55\u5F00\u6309\u94AE\u540E\u3002\u8BB2\u89E3\u53D8\u91CF\u3001\u64CD\u4F5C\u7B26\u6216\u8868\u8FBE\u5F0F\u65F6\uFF0C\u7528 focusSpans \u7CBE\u786E\u6807\u8BB0\uFF1B\u53EA\u6709\u6574\u884C\u90FD\u76F8\u5173\u65F6\u624D\u7528 focusLines\uFF0Ctrace \u53EF\u7528 frame.focusSpans \u52A8\u6001\u6807\u8BB0\uFF0C\u672A\u63D0\u4F9B\u7CBE\u786E\u6807\u8BB0\u65F6\u56DE\u9000 frame.line\u3002\u957F\u7A0B\u5E8F\u7531\u4EE3\u7801\u533A\u5185\u90E8\u6EDA\u52A8\uFF0C\u4F5C\u8005\u4E0D\u6307\u5B9A\u9AD8\u5EA6\u6216\u5E03\u5C40\u3002\u9664\u8FD9\u5757\u5FC5\u8981\u4EE3\u7801\u5916\uFF0C\u4E0D\u540C\u65F6\u5806\u53E0\u53C2\u6570\u9762\u677F\u3001\u8F93\u51FA\u9762\u677F\u3001\u5BF9\u7167\u3001\u65F6\u95F4\u8F74\u548C\u91CD\u590D\u6807\u7B7E\u3002\u76F8\u540C\u5BF9\u8C61\u7684\u591A\u4E2A\u540D\u5B57\u5FC5\u987B\u653E\u5728\u540C\u4E00\u4E2A objects \u9879\u7684 names \u6570\u7EC4\uFF1B\u4E0D\u8981\u628A\u5F15\u7528\u753B\u6210\u65B0\u7684\u526F\u672C\u3002\u5BF9\u8C61 id \u5728\u540C\u4E00 variant \u7684\u8FDE\u7EED\u5E27\u4FDD\u6301\u7A33\u5B9A\uFF0C\u79BB\u5F00\u4F5C\u7528\u57DF\u65F6\u79FB\u9664\u540D\u5B57\u6216\u5BF9\u8C61\u3002frame \u8868\u793A\u6267\u884C\u5BF9\u5E94 line \u540E\u7684\u72B6\u6001\uFF0Cline \u5FC5\u987B\u771F\u5B9E\u5B58\u5728\uFF1B\u8FD4\u56DE\u5E27\u53EF\u5B9A\u4F4D\u51FD\u6570\u53F3\u82B1\u62EC\u53F7\u3002output \u4EC5\u5728\u771F\u6B63\u4EA7\u751F\u8F93\u51FA\u7684\u5E27\u63D0\u4F9B\uFF0C\u4E0D\u80FD\u6DF7\u7528\u9884\u671F\u8F93\u51FA\u4E0E\u5DF2\u53D1\u751F\u8F93\u51FA\u3002
+\u3010\u8BCD\u6C47\u5B66\u4E60\u8BFE\u7A0B\u3011
+\u7528\u6237\u63D0\u4F9B\u5355\u8BCD\u8868\u3001\u77ED\u8BED\u6216\u5E0C\u671B\u80CC\u8BCD\u65F6\uFF0C\u5236\u4F5C\u8BCD\u6C47\u5B66\u4E60\u8BFE\u7A0B\uFF0C\u6CBF\u7528\u5DF2\u6709\u534F\u8BAE\uFF0C\u4E0D\u65B0\u589E vocabulary \u7C7B\u578B\u6216\u672A\u77E5\u5B57\u6BB5\u3002\u63A8\u8350\u6BCF\u8BFE 3\u20138 \u4E2A\u8BCD\uFF0C\u6309\u201C\u4E3B\u52A8\u56DE\u5FC6\u8BCD\u4E49 \u2192 \u8BED\u5883\u8FA8\u6790 \u2192 \u62FC\u5199\u63D0\u53D6 \u2192 \u81EA\u4E3B\u9020\u53E5\u201D\u7EC4\u7EC7\uFF1B\u6309\u76EE\u6807\u7CBE\u7B80\uFF0C\u4E0D\u5FC5\u6BCF\u4E2A\u8BCD\u91CD\u590D\u5168\u90E8\u9898\u578B\u3002
+\u8BA4\u8BCD\u4F7F\u7528 text \u5757\u7684 presentation:{kind:"flashcards",cards:[{front,back}]}\uFF0Ccards \u4E0A\u9650\u4ECD\u4E3A20\u3002front \u7B2C\u4E00\u884C\u653E\u5355\u8BCD\u6216\u77ED\u8BED\uFF0C\u7B2C\u4E8C\u884C\u53EF\u653E\u97F3\u6807\uFF1Bback \u653E\u8BCD\u6027\u548C\u6838\u5FC3\u91CA\u4E49\uFF0C\u518D\u7528\u7A7A\u884C\u5206\u9694\u81EA\u7136\u4F8B\u53E5\u4E0E\u8BD1\u6587\uFF0C\u90FD\u662F\u7EAF\u6587\u672C\uFF0C\u4E0D\u542B HTML\u3002\u4E0D\u8981\u628A\u7B54\u6848\u6216\u8BCD\u4E49\u653E\u5728 front \u6216\u8BE5\u5757 text \u4E2D\u3002\u4F8B\u5B50\uFF1Afront \u4E3A adapt
+/\u0259\u02C8d\xE6pt/\uFF0Cback \u4E3A v. \u9002\u5E94\uFF1B\u8C03\u6574
+
+We adapt our plans when the weather changes.
+\u5929\u6C14\u53D8\u5316\u65F6\uFF0C\u6211\u4EEC\u4F1A\u8C03\u6574\u8BA1\u5212\u3002\u65E0\u628A\u63E1\u7684\u97F3\u6807\u6216\u91CA\u4E49\u4E0D\u8981\u7F16\u9020\u3002
+\u65B0\u7248\u670D\u52A1\u5668\u4E00\u6B21\u663E\u793A\u4E00\u5F20\u95EA\u5361\uFF0C\u70B9\u51FB\u5361\u7247\u6216\u539F\u751F\u7EE7\u7EED\u5148\u63ED\u793A\u91CA\u4E49\uFF0C\u518D\u6309\u7EE7\u7EED\u8FDB\u5165\u4E0B\u4E00\u8BCD\uFF1B\u4E0A\u4E00\u6B65\u53EF\u56DE\u770B\u3002\u95EA\u5361\u7FFB\u9762\u4E0E\u4F4D\u7F6E\u4EC5\u4E3A\u5F53\u524D\u9605\u8BFB\u4E34\u65F6\u72B6\u6001\uFF0C\u4E0D\u8868\u793A\u5DF2\u638C\u63E1\uFF0C\u4E5F\u4E0D\u662F\u8DE8\u8BBE\u5907\u4FDD\u5B58\u7684\u8BB0\u5FC6\u6216\u95F4\u9694\u590D\u4E60\u8BB0\u5F55\u3002\u4E0D\u8981\u751F\u6210\u7B2C\u4E8C\u5957\u7FFB\u9875/\u63D0\u4EA4\u6309\u94AE\u6216\u81EA\u5236 HTML \u80CC\u8BCD\u5668\uFF1B\u65E0\u9700\u5A92\u4F53\u3001\u5916\u90E8\u8BCD\u5178\u6216\u8BED\u97F3\u8D44\u6E90\u3002
+\u9700\u8981\u4FDD\u5B58\u7684\u7EC3\u4E60\u5FC5\u987B\u7528 question\uFF1A\u8BED\u5883\u8FA8\u6790\u7528 singleChoice/multipleChoice\uFF0C\u9009\u9879\u5747\u4E3A\u540C\u5C42\u6B21\u4E14\u6709\u533A\u5206\u5EA6\uFF1B\u62FC\u5199\u7528 shortAnswer + input.kind:"text" + acceptedAnswers\uFF0C\u9898\u5E72\u63D0\u4F9B\u91CA\u4E49\u6216\u7559\u7A7A\u7684\u4F8B\u53E5\uFF0C\u9898\u5E72\u3001\u6807\u9898\u548C placeholder \u4E0D\u8981\u6CC4\u9732\u76EE\u6807\u8BCD\u3002\u5141\u8BB8\u591A\u4E2A\u8BCD\u5F62\u65F6\u5728 acceptedAnswers \u4E2D\u660E\u786E\u679A\u4E3E\u3002\u81EA\u4E3B\u9020\u53E5\u7701\u7565 acceptedAnswers\uFF0C\u7ED9 explanation \u81EA\u67E5\u53C2\u8003\uFF0C\u4E0D\u80FD\u4F2A\u79F0 AI \u81EA\u52A8\u6279\u6539\u3002\u7B54\u6848\u4ECD\u7531\u539F\u751F\u7EE7\u7EED\u5148\u63D0\u4EA4\u3001\u663E\u793A\u53CD\u9988\uFF0C\u518D\u6309\u7EE7\u7EED\u7FFB\u9875\u3002\u8BCD\u6C47\u9898\u65E0\u9700 execution\uFF0C\u4E0D\u628A\u62FC\u5199\u5F53\u4F5C\u4EE3\u7801\uFF1B\u4E0D\u4F1A\u64AD\u653E\u97F3\u9891\u6216\u81EA\u52A8\u8DDF\u8E2A\u957F\u671F\u719F\u7EC3\u5EA6\u3002
+\u4E0A\u4F20\u4ECD\u4F7F\u7528\u540C\u4E00\u4E2A\u8BFE\u7A0B\u53D1\u5E03\u63A5\u53E3\u3001\u53D1\u5E03\u5BC6\u94A5\u548C\u4FEE\u8BA2\u89C4\u5219\uFF1B\u624B\u52A8\u5BFC\u5165\u4ECD\u8F93\u51FA\u5B8C\u6574 WORKSHOP-COURSE/1 JSON\u3002\u670D\u52A1\u5668\u5DF2\u66F4\u65B0\u6F14\u793A\u8BFE\u7A0B\u4E2D\u7684\u201C\u8BCD\u6C47\u5B66\u4E60\uFF1A\u4ECE\u8BA4\u8BCD\u5230\u4E3B\u52A8\u56DE\u5FC6\u201D\u8BFE\u65F6\uFF0C\u8BFE\u7A0B\u65E0\u5A92\u4F53\uFF0C\u9002\u5408\u4F4E\u5E26\u5BBD\u3002\u53EA\u6709\u670D\u52A1\u5668\u7F51\u9875\u64AD\u653E\u5668\u6709\u65B0\u7248\u9010\u5F20\u4EA4\u4E92\uFF1B\u65E7\u7248\u79BB\u7EBF\u9605\u8BFB\u5668\u53EF\u6309\u73B0\u6709 flashcards/question \u663E\u793A\u3002
 \u3010\u4E92\u52A8\u8FB9\u754C\u3011
 trace \u662F\u4F5C\u8005\u7F16\u5199\u3001\u5BA2\u6237\u7AEF\u9010\u6B65\u5C55\u793A\u7684\u6559\u5B66\u63A8\u6F14\uFF0C\u4E0D\u662F\u5B9E\u9645\u7F16\u8BD1\u6216\u8FD0\u884C C++/Python\u3002\u4F18\u5148\u7ED3\u6784\u5316 trace\u3001question\u3001code\u3002\u4EC5\u5F53\u7ED3\u6784\u5316\u5F62\u5F0F\u65E0\u6CD5\u8868\u8FBE\u6838\u5FC3\u4EA4\u4E92\uFF08\u4F8B\u5982\u8FDE\u7EED\u62D6\u52A8\u7269\u7406\u53C2\u6570\uFF09\u65F6\uFF0C\u624D\u4F7F\u7528\u663E\u5F0F HTML\uFF1B\u4E0D\u8981\u6C42\u6BCF\u8282\u8BFE\u5305\u542B HTML\uFF0C\u4E0D\u7528\u591A\u79CD\u63A7\u4EF6\u5806\u51FA\u5B9E\u9A8C\u53F0\u3002\u666E\u901A\u6B63\u6587\u3001Code\u3001Markdown \u56F4\u680F\u4E0D\u6267\u884C\u3002HTML \u64CD\u4F5C\u5FC5\u987B\u7ED1\u5B9A\u5B9E\u9645\u72B6\u6001\u66F4\u65B0\u5E76\u7ED9\u660E\u786E\u89C2\u5BDF\u4EFB\u52A1\uFF1B\u81F3\u5C11\u63D0\u4F9B\u91CD\u7F6E\uFF0C\u52A8\u753B\u9644\u6682\u505C/\u91CD\u7F6E\u5E76\u5C0A\u91CD prefers-reduced-motion\u3002HTML \u4E34\u65F6\u72B6\u6001\u4E0D\u4FDD\u5B58\u4E3A\u4F5C\u7B54\u6216\u8FDB\u5EA6\uFF0C\u9700\u4FDD\u5B58\u7684\u7EC3\u4E60\u7528 question\u3002
 \u4E0B\u4E00\u6B65/\u7EE7\u7EED/\u63D0\u4EA4\u7EDF\u4E00\u7531 App \u60AC\u6D6E\u7684\u539F\u751F\u4E3B\u6309\u94AE\u627F\u62C5\uFF0C\u4E0D\u5728\u5B66\u4E60\u9875\u9762\u91CD\u590D\u6DFB\u52A0\u63D0\u4EA4\u6216\u524D\u540E\u6B65\u9AA4\u6309\u94AE\uFF1A\u672A\u63D0\u4EA4\u7684 question \u5148\u4FDD\u5B58\u5E76\u663E\u793A\u53CD\u9988\uFF0C\u518D\u6309\u4E00\u6B21\u7EE7\u7EED\u624D\u7FFB\u9875\uFF1Btrace \u5148\u9010\u5E27\u63A8\u8FDB\uFF0C\u6700\u540E\u4E00\u5E27\u540E\u624D\u7FFB\u9875\uFF0C\u4E0A\u4E00\u6B65\u5148\u9000\u4E00\u5E27\u3002HTML/SVG \u82E5\u9700\u8981\u201C\u7EE7\u7EED\u6F14\u793A\u201D\uFF0C\u68C0\u6D4B window.WorkshopRuntime?.setPrimaryAction \u5E76\u6CE8\u518C {next:\u5355\u6B65\u51FD\u6570,previous:\u56DE\u9000\u51FD\u6570,canNext:\u662F\u5426\u5C1A\u6709\u6F14\u793A\u6B65\u9AA4,canPrevious:\u662F\u5426\u53EF\u56DE\u9000}\uFF1B\u72B6\u6001\u53D8\u5316\u540E\u91CD\u65B0\u8C03\u7528 setPrimaryAction \u66F4\u65B0\u8FD9\u4E24\u4E2A\u5E03\u5C14\u503C\uFF0C\u6F14\u793A\u7ED3\u675F\u65F6 canNext:false \u8BA9\u5BBF\u4E3B\u7EE7\u7EED\u7FFB\u9875\u3002\u8FD9\u4E2A\u63A5\u53E3\u53EA\u8C03\u7528\u6C99\u76D2\u5185\u51FD\u6570\uFF0C\u4E0D\u80FD\u63D0\u4EA4\u6301\u4E45\u7B54\u6848\u3001\u8FD0\u884C\u771F\u5B9E\u4EE3\u7801\u6216\u8BBF\u95EE\u539F\u751F\u3002\u65E7\u5BA2\u6237\u7AEF\u517C\u5BB9\u6309\u94AE\u53EF\u6807\u6CE8 data-workshop-primary="next" / "previous"\uFF0C\u65B0\u58F3\u6CE8\u518C\u76F8\u5E94\u56DE\u8C03\u540E\u81EA\u52A8\u9690\u85CF\u8FD9\u4E9B\u91CD\u590D\u6309\u94AE\uFF1B\u4FDD\u7559\u53D8\u91CF\u9009\u62E9\u3001\u6ED1\u5757\u3001\u91CD\u7F6E\u3001\u6682\u505C\u3001\u660E\u786E\u7684\u8FD0\u884C\u4EE3\u7801\u7B49\u6709\u610F\u4E49\u64CD\u4F5C\uFF0C\u4E0D\u6DFB\u52A0\u7B2C\u4E8C\u5957App\u5BFC\u822A\u3002

@@ -443,3 +443,15 @@ paint();
 HTML 演示的临时实验状态不自动保存为课程答案，持久化作答必须使用标准 question。服务端 renderer 可以持续更新布局、新增兼容的组件表现与教学交互；账户、系统权限、系统通知、原生导航、原生运行授权与桥接能力的新增仍需 App 更新。协议不允许服务端绕过这些边界。
 
 演示模式使用 `GET /api/native/v1/course-player/demo?courseID={UUID}&lessonID={UUID}` 获取同格式页面；这个公开只读通道只接受部署包 `Server/AppContent/catalog.mjs` 中 `kind=course` 的固定课程，不接受文件路径或用户内容，revision 为该发布内容条目的 version。匿名访问不能读取任何私人课程，其他参数与不存在的课程/课时一律拒绝。
+
+
+## 词汇学习（服务器渲染，2026-10-25）
+
+【词汇学习课程】
+用户提供单词表、短语或希望背词时，制作词汇学习课程，沿用已有协议，不新增 vocabulary 类型或未知字段。推荐每课 3–8 个词，按“主动回忆词义 → 语境辨析 → 拼写提取 → 自主造句”组织；按目标精简，不必每个词重复全部题型。
+认词使用 text 块的 presentation:{kind:"flashcards",cards:[{front,back}]}，cards 上限仍为20。front 第一行放单词或短语，第二行可放音标；back 放词性和核心释义，再用空行分隔自然例句与译文，都是纯文本，不含 HTML。不要把答案或词义放在 front 或该块 text 中。例子：front 为 adapt\n/əˈdæpt/，back 为 v. 适应；调整\n\nWe adapt our plans when the weather changes.\n天气变化时，我们会调整计划。无把握的音标或释义不要编造。
+新版服务器一次显示一张闪卡，点击卡片或原生继续先揭示释义，再按继续进入下一词；上一步可回看。闪卡翻面与位置仅为当前阅读临时状态，不表示已掌握，也不是跨设备保存的记忆或间隔复习记录。不要生成第二套翻页/提交按钮或自制 HTML 背词器；无需媒体、外部词典或语音资源。
+需要保存的练习必须用 question：语境辨析用 singleChoice/multipleChoice，选项均为同层次且有区分度；拼写用 shortAnswer + input.kind:"text" + acceptedAnswers，题干提供释义或留空的例句，题干、标题和 placeholder 不要泄露目标词。允许多个词形时在 acceptedAnswers 中明确枚举。自主造句省略 acceptedAnswers，给 explanation 自查参考，不能伪称 AI 自动批改。答案仍由原生继续先提交、显示反馈，再按继续翻页。词汇题无需 execution，不把拼写当作代码；不会播放音频或自动跟踪长期熟练度。
+上传仍使用同一个课程发布接口、发布密钥和修订规则；手动导入仍输出完整 WORKSHOP-COURSE/1 JSON。服务器已更新演示课程中的“词汇学习：从认词到主动回忆”课时，课程无媒体，适合低带宽。只有服务器网页播放器有新版逐张交互；旧版离线阅读器可按现有 flashcards/question 显示。
+
+完整可导入示例：`Server/Fixtures/course-vocabulary.json`。对 AI 复制的简短提示词保持不变；访问公开制作规范时会自动读到上述要求。新内容必须重新读取服务器播放器；已打开页面与旧离线缓存不会被后台强行替换。
