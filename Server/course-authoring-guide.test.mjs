@@ -57,7 +57,7 @@ test('public HTML and plain-text guides preserve complete authoring rules withou
       assert.equal(guide, courseAuthoringGuide(endpoint, mode));
       assert.match(guide, /WORKSHOP-COURSE\/1/); assert.match(guide, /referenceCode/); assert.match(guide, /setPrimaryAction/);
       const examples = [...guide.matchAll(/```json\n([\s\S]+?)\n```/g)];
-      assert.equal(examples.length, 1); assert.ok(JSON.parse(examples[0][1]).lessons.length > 0);
+      assert.equal(examples.length, 2); assert.ok(JSON.parse(examples[0][1]).lessons.length > 0); assert.equal(JSON.parse(examples[1][1]).protocol,'WORKSHOP-CPP-EXAM/1');
       if (mode === 'automatic') { assert.match(guide, /Authorization: Bearer/); assert.doesNotMatch(guide, /API_KEY|wsc_/); assert.match(guide, /POST https:\/\/example\.invalid\/api\/integrations\/v1\/courses/); }
       else { assert.doesNotMatch(guide, /API_KEY|wsc_|Authorization/); assert.match(guide, /不要声称已上传/); }
       const html = await h.request('/course-authoring?mode=' + mode);
@@ -114,7 +114,7 @@ test('public robots permits only course-authoring discovery and never reads an a
     assert.deepEqual(robots.split('\n').filter(line => line.startsWith('Allow: ')), [
       'Allow: /course-authoring',
       'Allow: /api/integrations/v1/courses/guide',
-      'Allow: /api/integrations/v1/courses/schema',
+      'Allow: /api/integrations/v1/courses/schema', 'Allow: /api/integrations/v1/courses/cpp-schema',
     ]);
     assert.doesNotMatch(robots, /Allow: .*native|Allow: .*session|Allow: .*workspace|API_KEY|wsc_/);
     const head = await h.request('/robots.txt', { method: 'HEAD' });

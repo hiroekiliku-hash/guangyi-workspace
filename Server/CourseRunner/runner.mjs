@@ -73,14 +73,16 @@ export function createDockerCourseRunner({ docker = '/usr/bin/docker', image, in
   let running = 0, healthy = true, drain, stopPromise;
   async function run(payload) {
     if (!healthy || running >= concurrency) return unavailable();
-    const keys = ['language', 'source', 'stdin'];
+    const keys = ['language', 'source', 'stdin', 'profile', 'tests'];
     if (!payload || Array.isArray(payload) || Object.keys(payload).some(key => !keys.includes(key)) ||
       !['javascript', 'python', 'cpp'].includes(payload.language) || typeof payload.source !== 'string' || !payload.source.trim() || payload.source.length > 40000 ||
       typeof payload.stdin !== 'string' || payload.stdin.length > 4000 || /\0/.test(payload.source + payload.stdin)) return unavailable();
+    if(payload.profile!==undefined&&(payload.profile!=='cpp-exam-basic'||payload.language!=='cpp'))return unavailable();
+    if(payload.tests!==undefined&&(payload.profile!=='cpp-exam-basic'||payload.language!=='cpp'||!Array.isArray(payload.tests)||payload.tests.length<1||payload.tests.length>8||payload.tests.some(t=>typeof t!=='string'||t.length>4000||t.includes('\0'))))return unavailable();
     running++;
     const name = 'workshop-run-' + randomUUID(), start = performance.now();
     try {
-      const raw = await execute(docker, dockerCourseArguments(image, name, instance), { input: JSON.stringify(payload), timeout: 10000, maxBytes: 256 * 1024 });
+      const raw = await execute(docker, dockerCourseArguments(image, name, instance), { input: JSON.stringify(payload), timeout: payload.tests?12500:10000, maxBytes: 256 * 1024 });
       const durationMs = Math.round(performance.now() - start);
       if (raw.timedOut || raw.overflow) return { status: raw.timedOut ? 'timeout' : 'outputLimit', stdout: '', stderr: raw.timedOut ? '运行超时。' : '输出超过限制。', durationMs };
       if (raw.code !== 0) return unavailable(durationMs);
@@ -89,8 +91,14 @@ export function createDockerCourseRunner({ docker = '/usr/bin/docker', image, in
         typeof result.stdout !== 'string' || typeof result.stderr !== 'string' ||
         Buffer.byteLength(result.stdout) > MAX_OUTPUT || Buffer.byteLength(result.stderr) > MAX_OUTPUT ||
         (result.exitCode !== undefined && (!Number.isSafeInteger(result.exitCode) || Math.abs(result.exitCode) > 255))) return unavailable(durationMs);
+      let cases;
+      if(payload.tests&&result.status==='completed'){
+        if(!Array.isArray(result.cases)||result.cases.length!==payload.tests.length||result.cases.some(c=>!c||!['completed','runtimeError'].includes(c.status)||typeof c.stdout!=='string'||Buffer.byteLength(c.stdout)>MAX_OUTPUT))return unavailable(durationMs);
+        cases=result.cases.map(c=>({status:c.status,stdout:c.stdout,stderr:'',durationMs:0}));
+        if(cases.reduce((n,c)=>n+Buffer.byteLength(c.stdout),0)>64*1024)return unavailable(durationMs);
+      }
       return { status: result.status, stdout: result.stdout, stderr: result.stderr, durationMs,
-        ...(result.exitCode === undefined ? {} : { exitCode: result.exitCode }) };
+        ...(result.exitCode === undefined ? {} : { exitCode: result.exitCode }),...(cases?{cases}:{}) };
     } catch { return unavailable(Math.round(performance.now() - start)); }
     finally {
       // Killing the Docker CLI does not necessarily stop the container. Keep the

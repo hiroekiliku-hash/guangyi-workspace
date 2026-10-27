@@ -30,9 +30,15 @@ export function createCourseExecutionClient({ socketPath, timeoutMs = 15000 } = 
             Buffer.byteLength(value.stdout) > courseExecutionOutputBytes || Buffer.byteLength(value.stderr) > courseExecutionOutputBytes ||
             !Number.isSafeInteger(value.durationMs) || value.durationMs < 0 || value.durationMs > 60000 ||
             (value.exitCode !== undefined && (!Number.isSafeInteger(value.exitCode) || Math.abs(value.exitCode) > 255))) return finish(unavailableCourseExecution());
+          let cases;
+          if(payload.tests&&value.status==='completed'){
+            if(!Array.isArray(value.cases)||value.cases.length!==payload.tests.length||value.cases.some(c=>!c||!['completed','runtimeError'].includes(c.status)||typeof c.stdout!=='string'||Buffer.byteLength(c.stdout)>courseExecutionOutputBytes))return finish(unavailableCourseExecution());
+            cases=value.cases.map(c=>({status:c.status,stdout:c.stdout,stderr:'',durationMs:0}));
+            if(cases.reduce((n,c)=>n+Buffer.byteLength(c.stdout),0)>64*1024)return finish(unavailableCourseExecution());
+          }
           // No runner-supplied grade or extra field reaches the client.
           finish({ status: value.status, stdout: value.stdout, stderr: value.stderr, durationMs: value.durationMs,
-            ...(value.exitCode === undefined ? {} : { exitCode: value.exitCode }) });
+            ...(value.exitCode === undefined ? {} : { exitCode: value.exitCode }),...(cases?{cases}:{}) });
         });
       });
       const timeout = setTimeout(() => { request.destroy(); finish(unavailableCourseExecution()); }, timeoutMs);

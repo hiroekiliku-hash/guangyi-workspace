@@ -1,3 +1,7 @@
+import cppExamSchema from './cpp-exam.schema.json' with { type: 'json' };
+import cppExamExample from './Fixtures/course-cpp-exam.json' with { type: 'json' };
+import { cppExamImportPath, sendCPPExamImport } from './cpp-exam-import.mjs';
+import { cppExamProtocol, validateCPPExam, publicCPPProblem, gradeCPPProblem } from './cpp-exam.mjs';
 import { randomBytes, randomUUID, createHash } from 'node:crypto';
 import publishedContent from './AppContent/catalog.mjs';
 import courseSchema from './course.schema.json' with { type: 'json' };
@@ -99,23 +103,37 @@ question 必填 text、questionType(singleChoice/multipleChoice/shortAnswer)，�
 【作答输入与真实运行】
 shortAnswer 可指定 input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}。数字答案必须用 integer 或 decimal，让 App 使用两行数字键盘；代码练习用 code，让 App 提供有语法颜色的多行编辑器。input.language 仅 code 可用，限定 javascript/python/cpp；starterCode 仅 code 可用、可空最多20000；placeholder 可空最多500。minLines/maxLines 为2–24整数且min≤max；数字输入仍会紧凑显示。integer 仅可带正负号的十进制整数；decimal 可带正负号与小数点、不接受科学记数、逗号、NaN/Infinity。不要把要求输入数字的题目保留成普通长文本框。旧文档省略input仍兼容；execution存在或answerFormat=code时推断为code，其他默认text。
 仅 shortAnswer 可显式添加 execution:{language:"javascript"|"python"|"cpp",template?,stdin?,expectedOutput?}。input.language与execution.language都提供时必须相同。完整程序题可省略template，使用学生提交的完整源码；填空题必须提供template，且完整程序模板中恰好出现一次字面标记{{ANSWER}}，App/服务器只替换这一处。显式input.kind为text/integer/decimal时execution必须带template，不把任意文字或数字误当源码。template非空最多20000；stdin可空最多4000；expectedOutput可空最多8000。真实运行作答/代码输入上限20000。template只提供公开教学程序，不含秘密、密钥或隐藏答案；输入永远不通过shell拼接。比较运行输出会统一换行并去末尾空白；expectedOutput只用于课程默认stdin的一次输出核对，不等于通用判分或隐藏测试，不要把一个示例通过宣称为普遍正确。
+【C++ 设计题框架】
+封装 Schema：GET /api/integrations/v1/courses/cpp-schema。当用户要求大学 C++ 考试、程序理解/填空/程序大题或隐藏测试判题时，使用 WORKSHOP-CPP-EXAM/1 发布封装，POST 地址和课程发布密钥不变。普通 WORKSHOP-COURSE/1 仍兼容；它的 execution.expectedOutput 只验证公开样例，不支持隐藏测试。
+封装为 {protocol:"WORKSHOP-CPP-EXAM/1",course:完整的WORKSHOP-COURSE/1文档,problems:[...]}。每个 problem 引用同一 course 内的 lessonID、blockID；被引用块必须是 question/shortAnswer。kind 为 understanding/fill/program。course 中仅放公开题干和参考代码，不放 acceptedAnswers、隐藏输入输出或参考实现。服务器会生成兼容客户端的 input/execution，并将私有判题配置分表保存；不要把这些私有字段放进 course。更新设计题必须完整重发封装并使用正确 If-Match，不能退回普通课程更新而丢失判题配置。
+程序理解题 understanding：block.code 提供完整 C++ 程序，text 明确要求哪些输出、逐行/空白格式；grading 必须是 compare，用 acceptedAnswers 数组给完整可接受答案。学习者输入输出结果，不运行输入的回答。
+程序填空题 fill：template 提供完整程序，包含1–8个不同的 {{id}} 标记，每个只出现一次；blanks 为 [{id,label}]，id 是小写字母开头、最多24位的小写字母数字下划线。题干明确是否需要分号/缩进；学习者只填写片段。grading 可为 tests，或 compare（acceptedAnswers 是补齐后的完整程序文本，不是单个空格）。不要在公开 code、题干或提示里泄露填空答案。
+程序大题 program：给完整题意、输入输出格式、数据范围和公开样例；学习者必须自己写全部代码，包括 #include、main、读入和输出，不提供完整答案或默认骨架。grading 优先 tests；compare 只作明确告知的源码文字比对，不能判断等价程序。
+grading 为 {kind:"compare",comparison:"exact"|"tokens",acceptedAnswers:[字符串]} 或 {kind:"tests",comparison:"exact"|"tokens",tests:[{stdin,expectedOutput}]}。理解题只用compare。exact统一换行并移除末尾空白，区分大小写；tokens按空白分词比较。tests必须1–8组，覆盖样例、边界、相等、零/负数等适用情况；每组stdin最多4000、expectedOutput最多8000。不要随机数、联网、第三方库或无法核对的答案。sampleInput 可选，是公开的自测输入，不是隐藏测试。全部测试通过只说明通过这组数据，不等于形式证明。
+运行采用 C++17 基础配置，仅允许 iostream、iomanip、string、sstream、vector、array、algorithm、numeric、limits、cmath、cctype、cstring、cstdio、cstdlib、climits、cfloat、cstdint、cstddef、utility。此列表是本框架的练习范围，不冒充任何学校完整考试规定。禁止 bits/stdc++.h、第三方库、文件/线程/网络接口、动态加载、汇编、编译选项和调试；不生成断点、单步或调试器控件。编译/运行出错如实返回诊断，隐藏测试只返回汇总，不输出其输入/预期/实际值。
+学习页提供 C++ 着色、Tab/Shift+Tab 缩进、Enter 自动缩进、Ctrl或Command+Enter检查。原生继续先检查并保存，再继续翻页。可用明确的“运行并检查”和自定义输入试运行，不重复添加提交答案按钮。原生壳兼容约束下，自定义输入与默认样例相同时会执行正式检查。
+手动导入设计题请输出下面这种完整封装，让用户在 /course-cpp-import 页面粘贴，并使用 App 中取得的课程发布密钥；旧版 App 的普通 JSON 导入器只认识 WORKSHOP-COURSE/1，不能导入封装。自动模式可直接按原授权请求头上传，不另索要账户 ID。
 【Python/C++ 编程练习默认可运行】
 工作坊已提供 Python 3.11 与 C++20（g++ 12.2）的服务器独立沙盒运行，代码须兼容这些版本，不要求更新的语法或库。设计 Python/C++ 代码填空、补全表达式/语句、改错或完整程序题时，必须生成 type:"question"、questionType:"shortAnswer" 并显式添加 execution；不能只给 input、code、Markdown 源码或参考答案。每个含编程练习的 Python/C++ 课时至少安排一道可运行题，除非用户明确只需要讲解、预测输出或选择题。仅解释概念、选择答案、预测固定程序输出的题目可以保留为普通题，不为所有内容强加执行。
 数值填空：input.kind 用 integer/decimal，execution.language 用 python/cpp，并提供完整可执行 template，在真正缺少的数值位置恰放一次 {{ANSWER}}。表达式或语句填空：input.kind:"code"、input.language 与 execution.language 相同；template 包含必需的导入或头文件、main/调用、标准输入读取与结果输出，缺口只留一次 {{ANSWER}}。题干明确只填哪个片段；不要让学生重复提交模板。Python 模板须保证替换后的缩进有效，优先单行表达式；多行算法改用完整程序题。
 完整程序题：input.kind:"code"，input.language 与 execution.language 都明确写 python 或 cpp（execution 不写 c++）；设置适量 minLines/maxLines，并给不泄露最终答案的 starterCode 骨架。execution 省略 template，直接运行学生完整源码；Python 含必要 import，C++ 含必要头文件与 main，不能只提交函数却没有调用或输出。
-每道可运行题都提供 execution.stdin 与 execution.expectedOutput：无输入用 stdin:""，有输入给一组确定、轻量、可复现的样例。expectedOutput 是完整参考程序在该组输入下的标准输出，不是填入的数值或表达式本身；不要把这两个字段只写在展示用的 code 对象中。数字输出使用固定格式，浮点数明确精度；不要打印“请输入”等交互提示。仅使用 Python 3.11 标准库或 g++ 12.2 支持的 C++20 标准库，不依赖第三方安装、网络、图形界面、宿主文件或人工交互；样例计算应在 2 秒内完成、C++ 编译在 5 秒内完成，内存不超过 256 MiB，输出各不超过 16 KiB。不要发明 tests/testCases、编译命令、运行主机等协议字段。
+每道可运行题都提供 execution.stdin 与 execution.expectedOutput：无输入用 stdin:""，有输入给一组确定、轻量、可复现的样例。expectedOutput 是完整参考程序在该组输入下的标准输出，不是填入的数值或表达式本身；不要把这两个字段只写在展示用的 code 对象中。数字输出使用固定格式，浮点数明确精度；不要打印“请输入”等交互提示。仅使用 Python 3.11 标准库或 g++ 12.2 支持的 C++20 标准库，不依赖第三方安装、网络、图形界面、宿主文件或人工交互；样例计算应在 2 秒内完成、C++ 编译在 5 秒内完成，内存不超过 256 MiB，输出各不超过 16 KiB。普通 WORKSHOP-COURSE/1 不要发明 tests/testCases、编译命令、运行主机等协议字段。
 开放程序题与允许等价表达式的题目省略 acceptedAnswers，依据这组运行输出反馈并给解析；expectedOutput 不是隐藏测试或完整判题系统。上传课程不会自动编译或运行；没有实际运行证据就不能宣称已编译通过。超时、编译错误或运行服务暂不可用时应如实反馈。trace 仍是人工推演，code/presentation.code 仍是展示；JavaScript 可通过 execution 在 App 本地隔离运行，不能靠普通 text/HTML 冒充真实 Python/C++ 执行。
 HTML/SVG 通过显式 presentation 进入离线沙盒；不与普通字符串拼接。完全内联，不使用 CDN、外链脚本/样式/字体、请求、导航、iframe/object/embed、SVG image/foreignObject、媒体、data/base64 或下载。HTML可运行内联CSS/JavaScript、SVG/canvas；服务器只存储。不要仿制 App 导航、账号或上传控件；适配约320px宽屏幕，控件至少44px高，事件更新先改模型再绘制，避免每次输入替换整个innerHTML，避免无限循环和后台定时器。Markdown可含标题、列表、表格、引用和带语言名的代码围栏，不启用原始HTML或图片。
 限制按 UTF-16 代码单元：JSON UTF-8最多1 MiB；1–40课时，每课1–80块；所有title240、summary2000、text/callout20000、题干和explanation4000、caption2000。图表1–60点，label120，value有限且绝对值≤10^15；选择题2–12项，选项text1000；acceptedAnswers最多20个不重复项，各项上限text500/code20000/output8000，用户答案上限4000/20000/8000；URL2048；禁止控制字符。不要新造 block.type 或把 code/hints/input/execution 放在非 question 块；input/execution仅shortAnswer可用。
 输出前核对：每一步是否只突出一个变化？是否有始终可见的完整参考程序，讲解/提问的 focusLines/focusSpans 与当前代码一致，重复词 occurrence 是否正确，trace 当前行和精确片段是否真实存在？对象身份和引用别名是否一致？代码行号、数值、输出与练习答案是否对应？结构化组件能表达时是否避免了自制 HTML？每道 Python/C++ 编程练习是否有正确的 input 与 execution，填空是否只有一个模板标记且公开代码不泄露答案，完整程序是否省略 template，默认 stdin 与 expectedOutput 是否匹配参考程序？不要把检查清单写进课程，也不逐项索要确认。
-下面是“共享参考程序→结构化单步推演→带行与字符高亮的迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。只有这一个完整 JSON 代码块是格式示例：
+下面是“共享参考程序→结构化单步推演→带行与字符高亮的迁移选择题→Python 数值填空→C++ 表达式填空→两种语言完整程序题”的完整有效示例，含四道可运行题。它展示协议写法，不要求每个课时同时教授两种语言或照搬全部题型；按用户主题设计，不照搬标题、UUID或知识点。下面的通用课程 JSON 是格式示例：
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
+\`\`\`
+C++ 设计题封装示例（新课程必须生成新UUID，测试只作格式示例，勿照搬题目）：
+\`\`\`json
+${JSON.stringify(cppExamExample, null, 2)}
 \`\`\``;
 }
 function manualCourseAuthoringGuide() {
   return courseTeachingPrompt() + `
-读取本规范后，你只负责生成供用户导入的课程，不需要登录或调用发布接口。先按上述要求等待用户下一条学习内容。课程制作完成后只输出一个完整 JSON 文档，放在一个 json 代码块中；不要在代码块外附加无关说明，不要输出多个片段，不要声称已上传。用户会把文档复制到工作坊的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）并由 App 使用其当前登录账户上传。修改已有课程时，用户需在 App 核对已知课程版本；没有已有文档时创建新 UUID，不猜测或覆盖旧课程。`;
+读取本规范后，你只负责生成供用户导入的课程，不需要登录或调用发布接口。先按上述要求等待用户下一条学习内容。课程制作完成后只输出一个完整 JSON 文档，放在一个 json 代码块中；不要在代码块外附加无关说明，不要输出多个片段，不要声称已上传。普通课程用户会把文档复制到工作坊的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）并由 App 使用其当前登录账户上传。修改已有课程时，用户需在 App 核对已知课程版本；没有已有文档时创建新 UUID，不猜测或覆盖旧课程。`;
 }
 function automaticCourseAuthoringGuide(endpoint) {
   return courseTeachingPrompt() + `
@@ -126,7 +144,7 @@ Authorization: Bearer 本次用户消息中提供的发布密钥
 Content-Type: application/json; charset=utf-8
 Idempotency-Key: 每次新操作生成的 UUID。密钥只出现在 Authorization 请求头，不能进入正文、日志、课程或公开输出。
 新建课程无需 If-Match；更新已有课程必须提供已知当前修订号 If-Match: "整数"。修订号放在请求头，不放入课程 JSON。重试保留同一 Idempotency-Key、完全相同的字节正文与 If-Match。409 表示冲突，应停止并获取最新课程或请用户核对，不能猜测版本强行覆盖。只有 HTTP 201/200 成功后才可以说已上传，并报告返回的课程标题和修订号。
-如果没有网络工具或无法实际发起 HTTP 请求，不要假装上传：只输出一个完整 WORKSHOP-COURSE/1 JSON 文档，优先放在唯一的 json 代码块内，不附加无关说明，让用户复制到 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）。此退路不需要用户提供其他凭据。`;
+如果没有网络工具或无法实际发起 HTTP 请求，不要假装上传：只输出一个完整课程 JSON 文档（普通课程用 WORKSHOP-COURSE/1，C++设计题用上述封装），优先放在唯一的 json 代码块内，不附加无关说明，让用户复制到 App 的“粘贴课程并上传”（课程页右上角 + 或课程 API 设置中）。此退路不需要用户提供其他凭据。`;
 }
 
 
@@ -362,6 +380,7 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     CREATE TABLE IF NOT EXISTS course_publications(owner_id INTEGER NOT NULL REFERENCES users(id),mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(owner_id,mutation_id));
     CREATE TABLE IF NOT EXISTS course_stars(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
     CREATE TABLE IF NOT EXISTS course_progress(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,state TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
+    CREATE TABLE IF NOT EXISTS course_cpp_problems(owner_id INTEGER NOT NULL,course_id TEXT NOT NULL,revision INTEGER NOT NULL,lesson_id TEXT NOT NULL,block_id TEXT NOT NULL,spec TEXT NOT NULL,PRIMARY KEY(owner_id,course_id,block_id));
     CREATE TABLE IF NOT EXISTS course_progress_mutations(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id,mutation_id));`);
   function credential(request) {
     const auth = request.headers.authorization;
@@ -414,7 +433,9 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     });
     return state;
   }
-  function publish(owner, key, expected, bytes, doc) {
+  function publication(value) { return value?.protocol === cppExamProtocol ? validateCPPExam(value, validateCourse, fail) : {course:validateCourse(value),problems:null}; }
+  function problem(owner,id,revision,blockID) { const row=db.prepare('SELECT spec FROM course_cpp_problems WHERE owner_id=? AND course_id=? AND revision=? AND block_id=?').get(owner,id,revision,blockID); return row ? JSON.parse(row.spec) : null; }
+  function publish(owner, key, expected, bytes, doc, problems=null) {
     rateLimit('course-owner:' + owner, 3600000, 120);
     const digest = hash(Buffer.concat([Buffer.from(String(expected) + '\n'), bytes]));
     const prior = db.prepare('SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?').get(owner, key);
@@ -423,8 +444,11 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     if (old ? old.deleted || expected !== old.revision : expected !== null) fail('COURSE_REVISION_CONFLICT', 409);
     if (!old && db.prepare('SELECT COUNT(*) AS n FROM courses WHERE owner_id=? AND deleted=0').get(owner).n >= 200) fail('COURSE_LIMIT');
     if (db.prepare('SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?').get(owner).n >= 20000) fail('COURSE_PUBLICATION_LIMIT');
+    if (problems === null && db.prepare('SELECT 1 FROM course_cpp_problems WHERE owner_id=? AND course_id=? LIMIT 1').get(owner,doc.id)) fail('CPP_EXAM_CONFIGURATION_REQUIRED',409);
     const result = { id: doc.id, title: doc.title, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
     db.prepare('INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at').run(owner, doc.id, result.revision, JSON.stringify(doc), result.updatedAt);
+    db.prepare('DELETE FROM course_cpp_problems WHERE owner_id=? AND course_id=?').run(owner,doc.id);
+    for(const spec of problems??[]) db.prepare('INSERT INTO course_cpp_problems VALUES(?,?,?,?,?,?)').run(owner,doc.id,result.revision,spec.lessonID,spec.blockID,JSON.stringify(spec));
     db.prepare('INSERT INTO course_publications VALUES(?,?,?,?,?)').run(owner, key, digest, JSON.stringify(result), now());
     return { ...result, replayed: false };
   }
@@ -435,7 +459,8 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
     const key = `${ownerID}:${row.id}:${row.revision}:${lessonID}:${rendererVersion}`;
     let entry = playerCache.get(key);
     if (entry) { playerCache.delete(key); playerCache.set(key, entry); return entry; }
-    const value = renderCoursePlayer(JSON.parse(row.document), lessonID, row.revision);
+    const cppProblems = Object.fromEntries(db.prepare('SELECT block_id,spec FROM course_cpp_problems WHERE owner_id=? AND course_id=? AND revision=? AND lesson_id=?').all(ownerID,row.id,row.revision,lessonID).map(r=>[r.block_id,publicCPPProblem(JSON.parse(r.spec))]));
+    const value = renderCoursePlayer(JSON.parse(row.document), lessonID, row.revision, cppProblems);
     if (Buffer.byteLength(value.html) > 4 * 1024 * 1024) fail('COURSE_PLAYER_TOO_LARGE', 413);
     const bytes = Buffer.from(JSON.stringify({ data: value })), zipped = await compressPlayer(bytes);
     if (playerCache.has(key)) return playerCache.get(key);
@@ -461,8 +486,10 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
   }
   const authoringAPI = createCourseAuthoringAPI({ endpoint, guideFor: mode => courseAuthoringGuide(endpoint, mode), fail });
   return async function handle(request, response, path) {
+    if(path===cppExamImportPath){sendCPPExamImport(request,response,fail);return true;}
     if (authoringAPI(request, response, path)) return true;
     // This static contract carries no credentials, account state or course data.
+    if(path===coursePath+'/cpp-schema'&&request.method==='GET'){respond(response,200,cppExamSchema);return true;}
     if (path === coursePath + '/schema' && request.method === 'GET') { respond(response, 200, courseSchema); return true; }
     if (path === '/api/native/v1/course-player/demo') {
       if (request.method !== 'GET') fail('NOT_FOUND', 404);
@@ -485,10 +512,10 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
       rateLimit('course-ip:' + peer(request), 60000, 60); credential(request);
       if (request.headers['x-workspace-id'] != null) fail('COURSE_TOKEN_OWNS_PERSONAL_WORKSPACE');
       const key = uuid(request.headers['idempotency-key']), expected = match(request, false);
-      const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
+      const { value, bytes } = await read(request, limit, true), {course:doc,problems} = publication(value);
       const result = transaction(() => {
         const token = credential(request);
-        const result = publish(token.user_id, key, expected, bytes, doc);
+        const result = publish(token.user_id, key, expected, bytes, doc, problems);
         db.prepare('UPDATE course_tokens SET last_used=? WHERE id=?').run(now(), token.id);
         return result;
       });
@@ -545,6 +572,13 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
         const execution = block.execution, source = execution.template === undefined ? value.text : execution.template.replace('{{ANSWER}}', () => value.text);
         runningUsers.add(actor);
         try {
+          const cppProblem=problem(ownerID,id,row.revision,blockID);
+          if(cppProblem){
+            let graded; try { graded=await gradeCPPProblem(cppProblem,value.text,runCode,{stdin:value.stdin}); } catch {graded=unavailableCourseExecution();}
+            // An account/revision revoked while the runner was active gets no result.
+            userFor(request); const access=workspaceAccess(request); if(access.ownerID!==ownerID||course(ownerID,id).revision!==row.revision)fail('COURSE_REVISION_CONFLICT',409);
+            respond(response,200,{data:graded}); return true;
+          }
           let result;
           try { result = await runCode({ language: execution.language, source, stdin: value.stdin ?? execution.stdin ?? '' }); }
           catch { result = unavailableCourseExecution(); }
@@ -559,10 +593,10 @@ export function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, r
         rateLimit('course-ip:' + peer(request), 60000, 60);
         workspaceAccess(request, true);
         const key = uuid(request.headers['idempotency-key']), expected = match(request, false);
-        const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
+        const { value, bytes } = await read(request, limit, true), {course:doc,problems} = publication(value);
         const result = transaction(() => {
           const { ownerID } = workspaceAccess(request, true);
-          return publish(ownerID, key, expected, bytes, doc);
+          return publish(ownerID, key, expected, bytes, doc, problems);
         });
         respond(response, result.replayed || expected !== null ? 200 : 201, { data: result }); return true;
       }

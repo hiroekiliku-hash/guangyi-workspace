@@ -1,0 +1,132 @@
+{
+  "protocol": "WORKSHOP-CPP-EXAM/1",
+  "course": {
+    "protocol": "WORKSHOP-COURSE/1",
+    "id": "ef199e08-2e08-4dd5-af95-b579e4d4ced4",
+    "title": "C++ 设计题 · 基础训练",
+    "summary": "程序理解、多处填空与独立编程；从读代码到完整实现。",
+    "lessons": [
+      {
+        "id": "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+        "title": "循环与数据处理",
+        "blocks": [
+          {
+            "id": "aaef30de-f366-48f7-bfdc-480f05f64fb1",
+            "type": "question",
+            "questionType": "shortAnswer",
+            "title": "程序理解：逐次输出",
+            "text": "阅读完整程序，按输出发生顺序逐行写出三行结果，不要填写变量名。",
+            "code": {
+              "language": "cpp",
+              "source": "#include <iostream>\nint main() {\n    int total = 0;\n    for (int i = 1; i <= 3; ++i) {\n        total += i;\n        std::cout << total << \"\\n\";\n    }\n    return 0;\n}",
+              "filename": "trace.cpp"
+            }
+          },
+          {
+            "id": "66d2ebf0-4dbd-4e34-bbc0-229675f7a4f9",
+            "type": "question",
+            "questionType": "shortAnswer",
+            "title": "程序填空：累加到 n",
+            "text": "补全条件与累加语句，输出 1 到 n 的整数和。0 ≤ n ≤ 100。两处空格都不要填末尾分号。"
+          },
+          {
+            "id": "888d68b4-247a-4ec7-a408-6676f8e15c10",
+            "type": "question",
+            "questionType": "shortAnswer",
+            "title": "程序大题：较大的数",
+            "text": "输入两个整数 a 和 b（-1000000 ≤ a,b ≤ 1000000），输出较大的一个整数。\n\n输入：两个空白分隔的整数。\n输出：一个整数。\n\n样例输入：3 8\n样例输出：8\n\n请自行编写完整程序，包括 #include、main、输入与输出，不提供代码骨架。"
+          }
+        ]
+      }
+    ]
+  },
+  "problems": [
+    {
+      "lessonID": "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+      "blockID": "aaef30de-f366-48f7-bfdc-480f05f64fb1",
+      "kind": "understanding",
+      "grading": {
+        "kind": "compare",
+        "comparison": "exact",
+        "acceptedAnswers": [
+          "1\n3\n6"
+        ]
+      }
+    },
+    {
+      "lessonID": "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+      "blockID": "66d2ebf0-4dbd-4e34-bbc0-229675f7a4f9",
+      "kind": "fill",
+      "template": "#include <iostream>\nint main() {\n    int n;\n    std::cin >> n;\n    int sum = 0;\n    for (int i = 1; {{condition}}; ++i) {\n        {{update}};\n    }\n    std::cout << sum << \"\\n\";\n    return 0;\n}",
+      "blanks": [
+        {
+          "id": "condition",
+          "label": "① 循环条件"
+        },
+        {
+          "id": "update",
+          "label": "② 累加语句"
+        }
+      ],
+      "sampleInput": "5\n",
+      "grading": {
+        "kind": "tests",
+        "comparison": "tokens",
+        "tests": [
+          {
+            "stdin": "0\n",
+            "expectedOutput": "0\n"
+          },
+          {
+            "stdin": "1\n",
+            "expectedOutput": "1\n"
+          },
+          {
+            "stdin": "5\n",
+            "expectedOutput": "15\n"
+          },
+          {
+            "stdin": "10\n",
+            "expectedOutput": "55\n"
+          },
+          {
+            "stdin": "100\n",
+            "expectedOutput": "5050\n"
+          }
+        ]
+      }
+    },
+    {
+      "lessonID": "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+      "blockID": "888d68b4-247a-4ec7-a408-6676f8e15c10",
+      "kind": "program",
+      "sampleInput": "3 8\n",
+      "grading": {
+        "kind": "tests",
+        "comparison": "tokens",
+        "tests": [
+          {
+            "stdin": "3 8\n",
+            "expectedOutput": "8\n"
+          },
+          {
+            "stdin": "-10 -3\n",
+            "expectedOutput": "-3\n"
+          },
+          {
+            "stdin": "5 5\n",
+            "expectedOutput": "5\n"
+          },
+          {
+            "stdin": "0 -1\n",
+            "expectedOutput": "0\n"
+          },
+          {
+            "stdin": "1000000 -1000000\n",
+            "expectedOutput": "1000000\n"
+          }
+        ]
+      }
+    }
+  ]
+}

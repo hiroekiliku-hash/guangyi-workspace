@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workspace.kdfz.com.cn/api/integrations/v1/courses/cpp-schema",
+  "title": "WORKSHOP-CPP-EXAM/1",
+  "description": "Private authoring envelope. The server projects course to the existing native protocol and stores tests separately; never hand this envelope to learners. Server additionally checks cross-references, blank markers, UTF16 and the basic C++ header profile.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "protocol",
+    "course",
+    "problems"
+  ],
+  "properties": {
+    "protocol": {
+      "const": "WORKSHOP-CPP-EXAM/1"
+    },
+    "course": {
+      "$ref": "./schema"
+    },
+    "problems": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 80,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "lessonID",
+          "blockID",
+          "kind",
+          "grading"
+        ],
+        "properties": {
+          "lessonID": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "blockID": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          "kind": {
+            "enum": [
+              "understanding",
+              "fill",
+              "program"
+            ]
+          },
+          "grading": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "acceptedAnswers"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "compare"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "exact",
+                      "tokens"
+                    ]
+                  },
+                  "acceptedAnswers": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 20000
+                    }
+                  }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "kind",
+                  "tests"
+                ],
+                "properties": {
+                  "kind": {
+                    "const": "tests"
+                  },
+                  "comparison": {
+                    "enum": [
+                      "exact",
+                      "tokens"
+                    ]
+                  },
+                  "tests": {
+                    "type": "array",
+                    "minItems": 1,
+                    "maxItems": 8,
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": [
+                        "stdin",
+                        "expectedOutput"
+                      ],
+                      "properties": {
+                        "stdin": {
+                          "type": "string",
+                          "maxLength": 4000
+                        },
+                        "expectedOutput": {
+                          "type": "string",
+                          "maxLength": 8000
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          "template": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 20000
+          },
+          "blanks": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 8,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "label"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z][a-z0-9_]{0,23}$"
+                },
+                "label": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 120
+                }
+              }
+            }
+          },
+          "sampleInput": {
+            "type": "string",
+            "maxLength": 4000
+          }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "fill"
+                }
+              }
+            },
+            "then": {
+              "required": [
+                "template",
+                "blanks"
+              ]
+            },
+            "else": {
+              "not": {
+                "anyOf": [
+                  {
+                    "required": [
+                      "template"
+                    ]
+                  },
+                  {
+                    "required": [
+                      "blanks"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "kind": {
+                  "const": "understanding"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "grading": {
+                  "properties": {
+                    "kind": {
+                      "const": "compare"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+}

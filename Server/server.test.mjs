@@ -1388,7 +1388,8 @@ test('course generation guides prioritize structured traces and server-owned lay
       assert.match(prompt, /互不重叠的出现次数/); assert.match(prompt, /不必把整行涂亮/);
       assert.doesNotMatch(prompt, /完整代码按需展开|前两个实质课时内安排至少一个|每个实验必须落到.*kind:"html"/);
       const fences = [...prompt.matchAll(/```json\n([\s\S]+?)\n```/g)];
-      assert.equal(fences.length, 1, 'each workflow includes one complete JSON example');
+      assert.equal(fences.length, 2, 'each workflow includes a normal course and a C++ exam example');
+      assert.equal(JSON.parse(fences[1][1]).protocol,'WORKSHOP-CPP-EXAM/1');
       const parsed = JSON.parse(fences[0][1]);
       if (example) assert.deepEqual(parsed, example);
       else example = parsed;

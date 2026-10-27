@@ -24273,6 +24273,554 @@ function webAsset(path) {
   return asset ? { body: asset.body, headers: { ...headers, "Content-Type": asset.type } } : void 0;
 }
 
+// Server/cpp-exam.schema.json
+var cpp_exam_schema_default = {
+  $schema: "https://json-schema.org/draft/2020-12/schema",
+  $id: "https://workspace.kdfz.com.cn/api/integrations/v1/courses/cpp-schema",
+  title: "WORKSHOP-CPP-EXAM/1",
+  description: "Private authoring envelope. The server projects course to the existing native protocol and stores tests separately; never hand this envelope to learners. Server additionally checks cross-references, blank markers, UTF16 and the basic C++ header profile.",
+  type: "object",
+  additionalProperties: false,
+  required: [
+    "protocol",
+    "course",
+    "problems"
+  ],
+  properties: {
+    protocol: {
+      const: "WORKSHOP-CPP-EXAM/1"
+    },
+    course: {
+      $ref: "./schema"
+    },
+    problems: {
+      type: "array",
+      minItems: 1,
+      maxItems: 80,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: [
+          "lessonID",
+          "blockID",
+          "kind",
+          "grading"
+        ],
+        properties: {
+          lessonID: {
+            type: "string",
+            pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          blockID: {
+            type: "string",
+            pattern: "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+          },
+          kind: {
+            enum: [
+              "understanding",
+              "fill",
+              "program"
+            ]
+          },
+          grading: {
+            oneOf: [
+              {
+                type: "object",
+                additionalProperties: false,
+                required: [
+                  "kind",
+                  "acceptedAnswers"
+                ],
+                properties: {
+                  kind: {
+                    const: "compare"
+                  },
+                  comparison: {
+                    enum: [
+                      "exact",
+                      "tokens"
+                    ]
+                  },
+                  acceptedAnswers: {
+                    type: "array",
+                    minItems: 1,
+                    maxItems: 20,
+                    items: {
+                      type: "string",
+                      minLength: 1,
+                      maxLength: 2e4
+                    }
+                  }
+                }
+              },
+              {
+                type: "object",
+                additionalProperties: false,
+                required: [
+                  "kind",
+                  "tests"
+                ],
+                properties: {
+                  kind: {
+                    const: "tests"
+                  },
+                  comparison: {
+                    enum: [
+                      "exact",
+                      "tokens"
+                    ]
+                  },
+                  tests: {
+                    type: "array",
+                    minItems: 1,
+                    maxItems: 8,
+                    items: {
+                      type: "object",
+                      additionalProperties: false,
+                      required: [
+                        "stdin",
+                        "expectedOutput"
+                      ],
+                      properties: {
+                        stdin: {
+                          type: "string",
+                          maxLength: 4e3
+                        },
+                        expectedOutput: {
+                          type: "string",
+                          maxLength: 8e3
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            ]
+          },
+          template: {
+            type: "string",
+            minLength: 1,
+            maxLength: 2e4
+          },
+          blanks: {
+            type: "array",
+            minItems: 1,
+            maxItems: 8,
+            items: {
+              type: "object",
+              additionalProperties: false,
+              required: [
+                "id",
+                "label"
+              ],
+              properties: {
+                id: {
+                  type: "string",
+                  pattern: "^[a-z][a-z0-9_]{0,23}$"
+                },
+                label: {
+                  type: "string",
+                  minLength: 1,
+                  maxLength: 120
+                }
+              }
+            }
+          },
+          sampleInput: {
+            type: "string",
+            maxLength: 4e3
+          }
+        },
+        allOf: [
+          {
+            if: {
+              properties: {
+                kind: {
+                  const: "fill"
+                }
+              }
+            },
+            then: {
+              required: [
+                "template",
+                "blanks"
+              ]
+            },
+            else: {
+              not: {
+                anyOf: [
+                  {
+                    required: [
+                      "template"
+                    ]
+                  },
+                  {
+                    required: [
+                      "blanks"
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+          {
+            if: {
+              properties: {
+                kind: {
+                  const: "understanding"
+                }
+              }
+            },
+            then: {
+              properties: {
+                grading: {
+                  properties: {
+                    kind: {
+                      const: "compare"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  }
+};
+
+// Server/Fixtures/course-cpp-exam.json
+var course_cpp_exam_default = {
+  protocol: "WORKSHOP-CPP-EXAM/1",
+  course: {
+    protocol: "WORKSHOP-COURSE/1",
+    id: "ef199e08-2e08-4dd5-af95-b579e4d4ced4",
+    title: "C++ \u8BBE\u8BA1\u9898 \xB7 \u57FA\u7840\u8BAD\u7EC3",
+    summary: "\u7A0B\u5E8F\u7406\u89E3\u3001\u591A\u5904\u586B\u7A7A\u4E0E\u72EC\u7ACB\u7F16\u7A0B\uFF1B\u4ECE\u8BFB\u4EE3\u7801\u5230\u5B8C\u6574\u5B9E\u73B0\u3002",
+    lessons: [
+      {
+        id: "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+        title: "\u5FAA\u73AF\u4E0E\u6570\u636E\u5904\u7406",
+        blocks: [
+          {
+            id: "aaef30de-f366-48f7-bfdc-480f05f64fb1",
+            type: "question",
+            questionType: "shortAnswer",
+            title: "\u7A0B\u5E8F\u7406\u89E3\uFF1A\u9010\u6B21\u8F93\u51FA",
+            text: "\u9605\u8BFB\u5B8C\u6574\u7A0B\u5E8F\uFF0C\u6309\u8F93\u51FA\u53D1\u751F\u987A\u5E8F\u9010\u884C\u5199\u51FA\u4E09\u884C\u7ED3\u679C\uFF0C\u4E0D\u8981\u586B\u5199\u53D8\u91CF\u540D\u3002",
+            code: {
+              language: "cpp",
+              source: '#include <iostream>\nint main() {\n    int total = 0;\n    for (int i = 1; i <= 3; ++i) {\n        total += i;\n        std::cout << total << "\\n";\n    }\n    return 0;\n}',
+              filename: "trace.cpp"
+            }
+          },
+          {
+            id: "66d2ebf0-4dbd-4e34-bbc0-229675f7a4f9",
+            type: "question",
+            questionType: "shortAnswer",
+            title: "\u7A0B\u5E8F\u586B\u7A7A\uFF1A\u7D2F\u52A0\u5230 n",
+            text: "\u8865\u5168\u6761\u4EF6\u4E0E\u7D2F\u52A0\u8BED\u53E5\uFF0C\u8F93\u51FA 1 \u5230 n \u7684\u6574\u6570\u548C\u30020 \u2264 n \u2264 100\u3002\u4E24\u5904\u7A7A\u683C\u90FD\u4E0D\u8981\u586B\u672B\u5C3E\u5206\u53F7\u3002"
+          },
+          {
+            id: "888d68b4-247a-4ec7-a408-6676f8e15c10",
+            type: "question",
+            questionType: "shortAnswer",
+            title: "\u7A0B\u5E8F\u5927\u9898\uFF1A\u8F83\u5927\u7684\u6570",
+            text: "\u8F93\u5165\u4E24\u4E2A\u6574\u6570 a \u548C b\uFF08-1000000 \u2264 a,b \u2264 1000000\uFF09\uFF0C\u8F93\u51FA\u8F83\u5927\u7684\u4E00\u4E2A\u6574\u6570\u3002\n\n\u8F93\u5165\uFF1A\u4E24\u4E2A\u7A7A\u767D\u5206\u9694\u7684\u6574\u6570\u3002\n\u8F93\u51FA\uFF1A\u4E00\u4E2A\u6574\u6570\u3002\n\n\u6837\u4F8B\u8F93\u5165\uFF1A3 8\n\u6837\u4F8B\u8F93\u51FA\uFF1A8\n\n\u8BF7\u81EA\u884C\u7F16\u5199\u5B8C\u6574\u7A0B\u5E8F\uFF0C\u5305\u62EC #include\u3001main\u3001\u8F93\u5165\u4E0E\u8F93\u51FA\uFF0C\u4E0D\u63D0\u4F9B\u4EE3\u7801\u9AA8\u67B6\u3002"
+          }
+        ]
+      }
+    ]
+  },
+  problems: [
+    {
+      lessonID: "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+      blockID: "aaef30de-f366-48f7-bfdc-480f05f64fb1",
+      kind: "understanding",
+      grading: {
+        kind: "compare",
+        comparison: "exact",
+        acceptedAnswers: [
+          "1\n3\n6"
+        ]
+      }
+    },
+    {
+      lessonID: "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+      blockID: "66d2ebf0-4dbd-4e34-bbc0-229675f7a4f9",
+      kind: "fill",
+      template: '#include <iostream>\nint main() {\n    int n;\n    std::cin >> n;\n    int sum = 0;\n    for (int i = 1; {{condition}}; ++i) {\n        {{update}};\n    }\n    std::cout << sum << "\\n";\n    return 0;\n}',
+      blanks: [
+        {
+          id: "condition",
+          label: "\u2460 \u5FAA\u73AF\u6761\u4EF6"
+        },
+        {
+          id: "update",
+          label: "\u2461 \u7D2F\u52A0\u8BED\u53E5"
+        }
+      ],
+      sampleInput: "5\n",
+      grading: {
+        kind: "tests",
+        comparison: "tokens",
+        tests: [
+          {
+            stdin: "0\n",
+            expectedOutput: "0\n"
+          },
+          {
+            stdin: "1\n",
+            expectedOutput: "1\n"
+          },
+          {
+            stdin: "5\n",
+            expectedOutput: "15\n"
+          },
+          {
+            stdin: "10\n",
+            expectedOutput: "55\n"
+          },
+          {
+            stdin: "100\n",
+            expectedOutput: "5050\n"
+          }
+        ]
+      }
+    },
+    {
+      lessonID: "9bc59af6-9324-46ca-9aae-4b71ad08083f",
+      blockID: "888d68b4-247a-4ec7-a408-6676f8e15c10",
+      kind: "program",
+      sampleInput: "3 8\n",
+      grading: {
+        kind: "tests",
+        comparison: "tokens",
+        tests: [
+          {
+            stdin: "3 8\n",
+            expectedOutput: "8\n"
+          },
+          {
+            stdin: "-10 -3\n",
+            expectedOutput: "-3\n"
+          },
+          {
+            stdin: "5 5\n",
+            expectedOutput: "5\n"
+          },
+          {
+            stdin: "0 -1\n",
+            expectedOutput: "0\n"
+          },
+          {
+            stdin: "1000000 -1000000\n",
+            expectedOutput: "1000000\n"
+          }
+        ]
+      }
+    }
+  ]
+};
+
+// Server/cpp-exam-import.mjs
+var cppExamImportPath = "/course-cpp-import";
+function sendCPPExamImport(request, response, fail2) {
+  if (new URL(request.url, "https://example.invalid").search) fail2("INVALID_QUERY");
+  if (!["GET", "HEAD"].includes(request.method)) fail2("NOT_FOUND", 404);
+  const html = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>WorkSpace \xB7 \u5BFC\u5165 C++ \u8BBE\u8BA1\u9898</title><style>:root{color-scheme:light dark;--bg:#f2f2f7;--panel:white;--ink:#20252b;--muted:#697681;--accent:#52758f;--line:#d8dfe5}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.65 system-ui,-apple-system,sans-serif}main{max-width:920px;padding:36px 20px 70px;margin:auto}h1{font-size:28px}p{color:var(--muted)}section{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:24px}label{display:block;margin:16px 0 6px}input,textarea,button{font:inherit;color:inherit}input,textarea{width:100%;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px}textarea{min-height:330px;font:14px/1.6 ui-monospace,monospace;tab-size:4;resize:vertical}button{border:0;border-radius:24px;background:var(--accent);color:white;padding:12px 24px;min-height:44px;cursor:pointer}button:disabled{opacity:.5}a{color:var(--accent)}output{display:block;white-space:pre-wrap;margin-top:16px}@media(prefers-color-scheme:dark){:root{--bg:#101316;--panel:#1c2227;--ink:#e8edf2;--muted:#a1aeb9;--accent:#96bbd5;--line:#35424b}button{color:#101316}}</style></head><body><main><h1>C++ \u8BBE\u8BA1\u9898\u5BFC\u5165</h1><p>\u7C98\u8D34 AI \u6309<a href="/course-authoring?mode=manual">\u8BFE\u7A0B\u89C4\u8303</a>\u751F\u6210\u7684\u8BBE\u8BA1\u9898\u6587\u6863\u3002\u6B64\u5904\u4F7F\u7528\u8BFE\u7A0B\u53D1\u5E03\u5BC6\u94A5\uFF0C\u5C06\u8BFE\u7A0B\u548C\u79C1\u6709\u5224\u9898\u914D\u7F6E\u4E00\u8D77\u53D1\u5E03\u5230\u5BC6\u94A5\u7ED1\u5B9A\u7684\u8D26\u6237\u3002</p><section><label for="key">\u8BFE\u7A0B\u53D1\u5E03\u5BC6\u94A5</label><input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="\u5728 App \u7684\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\u53D6\u5F97"><label for="revision">\u5F53\u524D\u4FEE\u8BA2\u53F7\uFF08\u65B0\u8BFE\u7A0B\u7559\u7A7A\uFF09</label><input id="revision" inputmode="numeric" autocomplete="off"><label for="document">WORKSHOP-CPP-EXAM/1 \u6587\u6863</label><textarea id="document" spellcheck="false" autocapitalize="off" aria-label="\u8BFE\u7A0B JSON"></textarea><p>\u79C1\u6709\u6D4B\u8BD5\u4E0D\u4F1A\u53D1\u7ED9\u5B66\u4E60\u8005\uFF1B\u8BF7\u52FF\u5C06\u53D1\u5E03\u5BC6\u94A5\u5199\u8FDB\u8BFE\u7A0B\u3002\u5BFC\u5165\u524D\u68C0\u67E5\u8BFE\u7A0B\u6807\u9898\u548C\u5185\u5BB9\u3002</p><button id="upload">\u53D1\u5E03\u8BFE\u7A0B</button><output id="result" role="status"></output></section></main><script>
+const el=id=>document.getElementById(id);let retry;
+el('upload').onclick=async()=>{const token=el('key').value.trim(),body=el('document').value,revision=el('revision').value.trim(),out=el('result');let value;try{value=JSON.parse(body);if(value.protocol!=='WORKSHOP-CPP-EXAM/1'||!value.course?.title)throw Error();}catch{out.textContent='\u8BF7\u7C98\u8D34\u5B8C\u6574\u3001\u6709\u6548\u7684 C++ \u8BBE\u8BA1\u9898 JSON\u3002';return;}if(!/^wsc_[A-Za-z0-9_-]{40,}$/.test(token)||revision&&!/^[1-9][0-9]{0,9}$/.test(revision)){out.textContent='\u8BF7\u68C0\u67E5\u8BFE\u7A0B\u53D1\u5E03\u5BC6\u94A5\u4E0E\u4FEE\u8BA2\u53F7\u3002';return;}const signature=JSON.stringify([body,revision]);if(retry?.signature!==signature)retry={signature,id:crypto.randomUUID()};el('upload').disabled=true;out.textContent='\u6B63\u5728\u53D1\u5E03 '+value.course.title+'\u2026';try{const headers={'Content-Type':'application/json','Authorization':'Bearer '+token,'Idempotency-Key':retry.id};if(revision)headers['If-Match']='"'+revision+'"';const response=await fetch('/api/integrations/v1/courses',{method:'POST',headers,body,credentials:'omit',redirect:'error'});const result=await response.json();if(!response.ok)throw Error(response.status===409?'\u7248\u672C\u51B2\u7A81\uFF0C\u8BF7\u6838\u5BF9\u5F53\u524D\u4FEE\u8BA2\u53F7\u540E\u518D\u8BD5\u3002':'\u53D1\u5E03\u5931\u8D25\uFF1A'+(result.error?.code??response.status));out.textContent='\u5DF2\u53D1\u5E03\uFF1A'+result.data.title+' \xB7 \u4FEE\u8BA2 '+result.data.revision;el('key').value='';retry=null;}catch(error){out.textContent=error.message||'\u7F51\u7EDC\u9519\u8BEF\uFF0C\u8BF7\u91CD\u8BD5\u3002';}finally{el('upload').disabled=false;}};
+</script></body></html>`;
+  const bytes = Buffer.from(html);
+  response.writeHead(200, { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store", "Content-Length": bytes.length, "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "Content-Security-Policy": "default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'" });
+  response.end(request.method === "HEAD" ? void 0 : bytes);
+}
+
+// Server/CourseRunner/cpp-basic-policy.mjs
+var cppBasicHeaders = Object.freeze(["iostream", "iomanip", "string", "sstream", "vector", "array", "algorithm", "numeric", "limits", "cmath", "cctype", "cstring", "cstdio", "cstdlib", "climits", "cfloat", "cstdint", "cstddef", "utility"]);
+function checkCPPBasicSource(source) {
+  if (typeof source !== "string" || !source.trim() || source.length > 4e4) return "\u6E90\u7801\u4E3A\u7A7A\u6216\u8D85\u8FC7\u957F\u5EA6\u9650\u5236\u3002";
+  const input = source.replace(/\\\r?\n/g, ""), out = [], visible = [];
+  let i = 0;
+  const mask = (text) => text.replace(/[^\r\n]/g, " ");
+  while (i < input.length) {
+    const rest = input.slice(i);
+    if (rest.startsWith("//")) {
+      const end = input.indexOf("\n", i);
+      const j = end < 0 ? input.length : end;
+      out.push(mask(input.slice(i, j)));
+      visible.push(mask(input.slice(i, j)));
+      i = j;
+      continue;
+    }
+    if (rest.startsWith("/*")) {
+      const end = input.indexOf("*/", i + 2);
+      const j = end < 0 ? input.length : end + 2;
+      out.push(mask(input.slice(i, j)));
+      visible.push(mask(input.slice(i, j)));
+      i = j;
+      continue;
+    }
+    const raw = /^(?:u8|u|U|L)?R"([^ ()\\\t\r\n]{0,16})\(/.exec(rest);
+    if (raw) {
+      const end = input.indexOf(")" + raw[1] + '"', i + raw[0].length);
+      const j = end < 0 ? input.length : end + raw[1].length + 2;
+      out.push(mask(input.slice(i, j)));
+      visible.push(input.slice(i, j));
+      i = j;
+      continue;
+    }
+    if (/[0-9]/.test(input[i])) {
+      const start = i++;
+      while (i < input.length && /[A-Za-z0-9_'.]/.test(input[i])) i++;
+      out.push(input.slice(start, i));
+      visible.push(input.slice(start, i));
+      continue;
+    }
+    if (input[i] === '"' || input[i] === "'") {
+      const quote = input[i], start = i++;
+      while (i < input.length) {
+        if (input[i] === "\\") {
+          i += 2;
+          continue;
+        }
+        if (input[i++] === quote) break;
+      }
+      out.push(mask(input.slice(start, i)));
+      visible.push(input.slice(start, i));
+      continue;
+    }
+    visible.push(input[i]);
+    out.push(input[i++]);
+  }
+  const code = out.join("");
+  if (/%:|\?\?=|##|\\[uU][0-9a-fA-F]/.test(code)) return "\u4E0D\u652F\u6301\u66FF\u4EE3\u9884\u5904\u7406\u7B26\u53F7\u3001\u6807\u8BC6\u7B26\u8F6C\u4E49\u6216\u5B8F\u62FC\u63A5\u3002";
+  const lines = code.split(/\r\n|\r|\n/), original = visible.join("").split(/\r\n|\r|\n/);
+  for (let n = 0; n < lines.length; n++) {
+    const directive = /^\s*#\s*([A-Za-z_][A-Za-z_0-9]*)\b/.exec(lines[n]);
+    if (!directive) {
+      if (/^\s*#/.test(lines[n])) return "\u4E0D\u652F\u6301\u6B64\u9884\u5904\u7406\u6307\u4EE4\u3002";
+      continue;
+    }
+    if (directive[1] === "include") {
+      const header = /^\s*#\s*include\s*<([a-z0-9]+)>\s*$/.exec(original[n]);
+      if (!header || !cppBasicHeaders.includes(header[1])) return "\u4EC5\u5141\u8BB8\u516C\u5E03\u7684\u57FA\u7840\u6807\u51C6\u5E93\u5934\u6587\u4EF6\uFF1B\u8BF7\u4F7F\u7528 #include <iostream> \u7B49\u5B57\u9762\u5F62\u5F0F\u3002";
+    } else if (!["define", "undef", "if", "ifdef", "ifndef", "elif", "else", "endif", "error"].includes(directive[1])) return "\u4E0D\u652F\u6301\u6B64\u9884\u5904\u7406\u6307\u4EE4\u3002";
+  }
+  if (/\b(?:asm|__asm|__asm__|system|popen|fork|vfork|exec[lv][pe]?|execve|dlopen|dlsym|ptrace|syscall|_Pragma|__has_include|__has_include_next)\b/.test(code)) return "\u8003\u8BD5\u7EC3\u4E60\u4E0D\u5F00\u653E\u6C47\u7F16\u3001\u8FDB\u7A0B\u3001\u52A8\u6001\u52A0\u8F7D\u3001\u7CFB\u7EDF\u8C03\u7528\u6216\u8C03\u8BD5\u529F\u80FD\u3002";
+  return null;
+}
+
+// Server/cpp-exam.mjs
+var cppExamProtocol = "WORKSHOP-CPP-EXAM/1";
+var normalizeCPPOutput = (s, mode = "exact") => mode === "tokens" ? JSON.stringify(s.trim().split(/\s+/u).filter(Boolean)) : s.replace(/\r\n|\r/g, "\n").trimEnd();
+function validateCPPExam(value, validateCourse, fail2) {
+  const object = (v, keys) => {
+    if (!v || Array.isArray(v) || typeof v !== "object" || Object.keys(v).some((k) => !keys.includes(k))) fail2("INVALID_CPP_EXAM");
+  };
+  const text = (s, max, empty = false) => {
+    if (typeof s !== "string" || s.length > max || !empty && !s.trim() || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(s)) fail2("INVALID_CPP_EXAM");
+  };
+  object(value, ["protocol", "course", "problems"]);
+  if (value.protocol !== cppExamProtocol || !Array.isArray(value.problems) || value.problems.length < 1 || value.problems.length > 80) fail2("INVALID_CPP_EXAM");
+  const course = validateCourse(structuredClone(value.course)), problems = [], ids = /* @__PURE__ */ new Set();
+  for (const input of value.problems) {
+    object(input, ["lessonID", "blockID", "kind", "grading", "template", "blanks", "sampleInput"]);
+    if (typeof input.lessonID !== "string" || typeof input.blockID !== "string" || !["understanding", "fill", "program"].includes(input.kind)) fail2("INVALID_CPP_EXAM");
+    const lesson = course?.lessons?.find((l) => String(l.id).toLowerCase() === input.lessonID.toLowerCase()), block = lesson?.blocks?.find((b) => String(b.id).toLowerCase() === input.blockID.toLowerCase());
+    if (!block || block.type !== "question" || block.questionType !== "shortAnswer" || ids.has(input.blockID.toLowerCase())) fail2("INVALID_CPP_EXAM");
+    ids.add(input.blockID.toLowerCase());
+    const spec = structuredClone(input);
+    spec.lessonID = input.lessonID.toLowerCase();
+    spec.blockID = input.blockID.toLowerCase();
+    object(spec.grading, ["kind", "comparison", "acceptedAnswers", "tests"]);
+    if (!["exact", "tokens"].includes(spec.grading.comparison ?? "exact")) fail2("INVALID_CPP_EXAM");
+    spec.grading.comparison ??= "exact";
+    if (spec.grading.kind === "compare") {
+      if (spec.grading.tests !== void 0 || !Array.isArray(spec.grading.acceptedAnswers) || spec.grading.acceptedAnswers.length < 1 || spec.grading.acceptedAnswers.length > 20) fail2("INVALID_CPP_EXAM");
+      spec.grading.acceptedAnswers.forEach((s) => text(s, 2e4));
+    } else if (spec.grading.kind === "tests") {
+      if (spec.kind === "understanding" || spec.grading.acceptedAnswers !== void 0 || !Array.isArray(spec.grading.tests) || spec.grading.tests.length < 1 || spec.grading.tests.length > 8) fail2("INVALID_CPP_EXAM");
+      for (const test of spec.grading.tests) {
+        object(test, ["stdin", "expectedOutput"]);
+        text(test.stdin, 4e3, true);
+        text(test.expectedOutput, 8e3, true);
+      }
+    } else fail2("INVALID_CPP_EXAM");
+    if (spec.kind === "understanding") {
+      if (!block.code || !["cpp", "c++"].includes(block.code.language) || checkCPPBasicSource(block.code.source)) fail2("INVALID_CPP_EXAM_CODE");
+      if (spec.template !== void 0 || spec.blanks !== void 0) fail2("INVALID_CPP_EXAM");
+    } else if (spec.kind === "fill") {
+      text(spec.template, 2e4);
+      if (!Array.isArray(spec.blanks) || spec.blanks.length < 1 || spec.blanks.length > 8) fail2("INVALID_CPP_EXAM");
+      const used = /* @__PURE__ */ new Set();
+      for (const blank of spec.blanks) {
+        object(blank, ["id", "label"]);
+        if (!/^[a-z][a-z0-9_]{0,23}$/.test(blank.id) || used.has(blank.id)) fail2("INVALID_CPP_EXAM");
+        used.add(blank.id);
+        text(blank.label, 120);
+        if (spec.template.split("{{" + blank.id + "}}").length !== 2) fail2("INVALID_CPP_EXAM");
+      }
+      const markers = [...spec.template.matchAll(/\{\{([^{}]+)\}\}/g)];
+      if (markers.length !== used.size || markers.some((m) => !used.has(m[1]))) fail2("INVALID_CPP_EXAM");
+      if (checkCPPBasicSource(spec.template.replace(/\{\{[^{}]+\}\}/g, "0"))) fail2("INVALID_CPP_EXAM_CODE");
+      block.code = { language: "cpp", source: spec.template, filename: "question.cpp" };
+    } else if (spec.template !== void 0 || spec.blanks !== void 0) fail2("INVALID_CPP_EXAM");
+    if (spec.sampleInput !== void 0) text(spec.sampleInput, 4e3, true);
+    delete block.acceptedAnswers;
+    delete block.options;
+    delete block.correctOptionIDs;
+    block.answerFormat = spec.kind === "understanding" ? "output" : "code";
+    block.input = { kind: "code", language: "cpp", placeholder: spec.kind === "understanding" ? "\u9010\u884C\u586B\u5199\u8F93\u51FA\u7ED3\u679C" : spec.kind === "fill" ? "\u586B\u5199\u5404\u5904\u4EE3\u7801" : "\u4ECE #include \u5F00\u59CB\u7F16\u5199\u5B8C\u6574\u7A0B\u5E8F", minLines: 2, maxLines: 24 };
+    block.execution = { language: "cpp", stdin: spec.sampleInput ?? "" };
+    problems.push(spec);
+  }
+  return { course: validateCourse(course), problems };
+}
+function publicCPPProblem(spec) {
+  return { kind: spec.kind, grading: spec.grading.kind, comparison: spec.grading.comparison, headers: cppBasicHeaders, ...spec.kind === "fill" ? { template: spec.template, blanks: spec.blanks } : {}, ...spec.grading.kind === "tests" ? { testCount: spec.grading.tests.length } : {} };
+}
+function cppSubmission(spec, answer) {
+  if (spec.kind !== "fill") return answer;
+  let blanks;
+  try {
+    blanks = JSON.parse(answer);
+  } catch {
+    throw new Error("\u8BF7\u586B\u5199\u6240\u6709\u4EE3\u7801\u7A7A\u683C\u3002");
+  }
+  if (!blanks || Array.isArray(blanks) || Object.keys(blanks).length !== spec.blanks.length || Object.keys(blanks).some((k) => !spec.blanks.some((b) => b.id === k))) throw new Error("\u586B\u7A7A\u5185\u5BB9\u683C\u5F0F\u65E0\u6548\u3002");
+  for (const b of spec.blanks) if (typeof blanks[b.id] !== "string" || !blanks[b.id].trim() || blanks[b.id].length > 4e3 || /[\u0000-\u0008\u000b\u000c\u000e-\u001f]/.test(blanks[b.id])) throw new Error("\u8BF7\u586B\u5199\u6240\u6709\u4EE3\u7801\u7A7A\u683C\u3002");
+  return spec.template.replace(/\{\{([^{}]+)\}\}/g, (_, id) => blanks[id]);
+}
+async function gradeCPPProblem(spec, answer, runCode, { stdin } = {}) {
+  const start = performance.now();
+  let source;
+  const result = (status, stdout, stderr, passed2) => ({ status, stdout, stderr, durationMs: Math.round(performance.now() - start), ...passed2 === void 0 ? {} : { passed: passed2 } });
+  try {
+    source = cppSubmission(spec, answer);
+  } catch (e) {
+    return result("compileError", "", e.message, false);
+  }
+  if (spec.kind !== "understanding") {
+    const policy = checkCPPBasicSource(source);
+    if (policy) return result("compileError", "", policy, false);
+  }
+  if (spec.grading.kind === "compare" && stdin === void 0) {
+    const actual = spec.kind === "fill" ? source : answer;
+    const pass = spec.grading.acceptedAnswers.some((s) => normalizeCPPOutput(s, spec.grading.comparison) === normalizeCPPOutput(actual, spec.grading.comparison));
+    return result("completed", pass ? "\u7B54\u6848\u5339\u914D\u3002" : "\u7B54\u6848\u672A\u5339\u914D\uFF0C\u8BF7\u91CD\u65B0\u68C0\u67E5\u3002", "", pass);
+  }
+  if (spec.kind === "understanding") return result("unavailable", "", "\u7A0B\u5E8F\u7406\u89E3\u9898\u4F7F\u7528\u8F93\u51FA\u6BD4\u5BF9\uFF0C\u4E0D\u6267\u884C\u8F93\u5165\u7684\u7B54\u6848\u3002");
+  if (stdin !== void 0) return runCode({ language: "cpp", source, stdin, profile: "cpp-exam-basic" });
+  const run = await runCode({ language: "cpp", source, stdin: "", profile: "cpp-exam-basic", tests: spec.grading.tests.map((t) => t.stdin) });
+  if (run.status !== "completed") return result(run.status, "", run.status === "compileError" ? run.stderr : run.status === "unavailable" ? "\u5224\u9898\u670D\u52A1\u6682\u4E0D\u53EF\u7528\u3002" : "\u7A0B\u5E8F\u672A\u5B8C\u6210\u5168\u90E8\u6D4B\u8BD5\uFF1B\u9690\u85CF\u6D4B\u8BD5\u7684\u8F93\u5165\u548C\u8F93\u51FA\u4E0D\u516C\u5F00\u3002", false);
+  if (!Array.isArray(run.cases) || run.cases.length !== spec.grading.tests.length) return result("unavailable", "", "\u5F53\u524D\u8FD0\u884C\u670D\u52A1\u5C1A\u4E0D\u652F\u6301\u6D4B\u8BD5\u96C6\u5224\u9898\u3002");
+  const passed = run.cases.filter((c, i) => c.status === "completed" && normalizeCPPOutput(c.stdout, spec.grading.comparison) === normalizeCPPOutput(spec.grading.tests[i].expectedOutput, spec.grading.comparison)).length;
+  const runtimeError = run.cases.some((c) => c.status === "runtimeError");
+  return result(runtimeError ? "runtimeError" : "completed", `\u901A\u8FC7 ${passed} / ${spec.grading.tests.length} \u4E2A\u9690\u85CF\u6D4B\u8BD5\u3002`, runtimeError ? "\u7A0B\u5E8F\u5728\u9690\u85CF\u6D4B\u8BD5\u4E2D\u53D1\u751F\u8FD0\u884C\u9519\u8BEF\uFF1B\u8F93\u5165\u4E0E\u9519\u8BEF\u6D41\u4E0D\u516C\u5F00\u3002" : passed === spec.grading.tests.length ? "" : "\u8BF7\u68C0\u67E5\u8FB9\u754C\u3001\u8F93\u5165\u8BFB\u53D6\u4E0E\u8F93\u51FA\u683C\u5F0F\u3002\u9690\u85CF\u6D4B\u8BD5\u6570\u636E\u4E0D\u516C\u5F00\u3002", passed === spec.grading.tests.length);
+}
+
 // Server/courses.mjs
 import { randomBytes, randomUUID, createHash as createHash2 } from "node:crypto";
 
@@ -28150,14 +28698,352 @@ var course_schema_default = {
 import { gzip } from "node:zlib";
 import { promisify } from "node:util";
 
+// Server/cpp-highlight.mjs
+function tokenizeCPP(source) {
+  const MAX_SOURCE = 2e4;
+  const KEYWORDS = /* @__PURE__ */ new Set([
+    "alignas",
+    "alignof",
+    "and",
+    "and_eq",
+    "asm",
+    "auto",
+    "bitand",
+    "bitor",
+    "bool",
+    "break",
+    "case",
+    "catch",
+    "char",
+    "char8_t",
+    "char16_t",
+    "char32_t",
+    "class",
+    "compl",
+    "concept",
+    "const",
+    "consteval",
+    "constexpr",
+    "constinit",
+    "const_cast",
+    "continue",
+    "co_await",
+    "co_return",
+    "co_yield",
+    "decltype",
+    "default",
+    "delete",
+    "do",
+    "double",
+    "dynamic_cast",
+    "else",
+    "enum",
+    "explicit",
+    "export",
+    "extern",
+    "false",
+    "float",
+    "for",
+    "friend",
+    "goto",
+    "if",
+    "inline",
+    "int",
+    "long",
+    "mutable",
+    "namespace",
+    "new",
+    "noexcept",
+    "not",
+    "not_eq",
+    "nullptr",
+    "operator",
+    "or",
+    "or_eq",
+    "private",
+    "protected",
+    "public",
+    "register",
+    "reinterpret_cast",
+    "requires",
+    "return",
+    "short",
+    "signed",
+    "sizeof",
+    "static",
+    "static_assert",
+    "static_cast",
+    "struct",
+    "switch",
+    "template",
+    "this",
+    "thread_local",
+    "throw",
+    "true",
+    "try",
+    "typedef",
+    "typeid",
+    "typename",
+    "union",
+    "unsigned",
+    "using",
+    "virtual",
+    "void",
+    "volatile",
+    "wchar_t",
+    "while",
+    "xor",
+    "xor_eq",
+    "override",
+    "final"
+  ]);
+  function isAsciiLetter(ch) {
+    return ch >= "A" && ch <= "Z" || ch >= "a" && ch <= "z";
+  }
+  function isIdentStart(ch) {
+    return isAsciiLetter(ch) || ch === "_";
+  }
+  function isIdentPart(ch) {
+    return isIdentStart(ch) || ch >= "0" && ch <= "9";
+  }
+  function isDigit(ch) {
+    return ch >= "0" && ch <= "9";
+  }
+  function isHex(ch) {
+    return isDigit(ch) || ch >= "a" && ch <= "f" || ch >= "A" && ch <= "F";
+  }
+  function isBin(ch) {
+    return ch === "0" || ch === "1";
+  }
+  function isWsNoNl(ch) {
+    return ch === " " || ch === "	" || ch === "\r" || ch === "\f" || ch === "\v";
+  }
+  function isRawDelimChar(ch) {
+    if (!ch) return false;
+    const code = ch.charCodeAt(0);
+    if (code <= 32) return false;
+    if (ch === "(" || ch === ")" || ch === "\\" || ch === '"') return false;
+    return true;
+  }
+  function rawPrefixLength(source2, i2) {
+    const n2 = source2.length;
+    let k = i2;
+    if (k + 1 < n2 && source2[k] === "u" && source2[k + 1] === "8") k += 2;
+    else if (k < n2 && (source2[k] === "u" || source2[k] === "U" || source2[k] === "L")) k += 1;
+    if (k < n2 && source2[k] === "R" && k + 1 < n2 && source2[k + 1] === '"') return k + 2 - i2;
+    return 0;
+  }
+  function scanNumber(source2, i2) {
+    const n2 = source2.length;
+    let j = i2;
+    const c0 = source2[j];
+    if (c0 === ".") {
+      if (j + 1 >= n2 || !isDigit(source2[j + 1])) return i2;
+      j += 1;
+      while (j < n2 && (isDigit(source2[j]) || source2[j] === "'")) j += 1;
+      if (j < n2 && (source2[j] === "e" || source2[j] === "E")) {
+        j += 1;
+        if (j < n2 && (source2[j] === "+" || source2[j] === "-")) j += 1;
+        while (j < n2 && (isDigit(source2[j]) || source2[j] === "'")) j += 1;
+      }
+      while (j < n2 && isAsciiLetter(source2[j])) j += 1;
+      return j;
+    }
+    if (!isDigit(c0)) return i2;
+    if (c0 === "0" && j + 1 < n2 && (source2[j + 1] === "x" || source2[j + 1] === "X")) {
+      j += 2;
+      while (j < n2 && (isHex(source2[j]) || source2[j] === "'")) j += 1;
+      if (j < n2 && source2[j] === ".") {
+        j += 1;
+        while (j < n2 && (isHex(source2[j]) || source2[j] === "'")) j += 1;
+      }
+      if (j < n2 && (source2[j] === "p" || source2[j] === "P")) {
+        j += 1;
+        if (j < n2 && (source2[j] === "+" || source2[j] === "-")) j += 1;
+        while (j < n2 && (isDigit(source2[j]) || source2[j] === "'")) j += 1;
+      }
+      while (j < n2 && isAsciiLetter(source2[j])) j += 1;
+      return j;
+    }
+    if (c0 === "0" && j + 1 < n2 && (source2[j + 1] === "b" || source2[j + 1] === "B")) {
+      j += 2;
+      while (j < n2 && (isBin(source2[j]) || source2[j] === "'")) j += 1;
+      while (j < n2 && isAsciiLetter(source2[j])) j += 1;
+      return j;
+    }
+    while (j < n2 && (isDigit(source2[j]) || source2[j] === "'")) j += 1;
+    if (j < n2 && source2[j] === ".") {
+      if (j + 1 < n2 && source2[j + 1] === ".") return j;
+      j += 1;
+      while (j < n2 && (isDigit(source2[j]) || source2[j] === "'")) j += 1;
+    }
+    if (j < n2 && (source2[j] === "e" || source2[j] === "E")) {
+      j += 1;
+      if (j < n2 && (source2[j] === "+" || source2[j] === "-")) j += 1;
+      while (j < n2 && (isDigit(source2[j]) || source2[j] === "'")) j += 1;
+    }
+    while (j < n2 && isAsciiLetter(source2[j])) j += 1;
+    return j;
+  }
+  function scanQuoted(source2, i2, quote) {
+    const n2 = source2.length;
+    let j = i2 + 1;
+    while (j < n2) {
+      const ch = source2[j];
+      if (ch === "\\") {
+        j += 1;
+        if (j < n2) j += 1;
+        continue;
+      }
+      if (ch === quote) {
+        j += 1;
+        break;
+      }
+      j += 1;
+    }
+    return j;
+  }
+  function scanRawString(source2, i2, prefixLen) {
+    const n2 = source2.length;
+    let j = i2 + prefixLen;
+    let delim = "";
+    while (j < n2 && isRawDelimChar(source2[j]) && delim.length < 16) {
+      delim += source2[j];
+      j += 1;
+    }
+    if (j >= n2 || source2[j] !== "(") {
+      return n2;
+    }
+    j += 1;
+    const closer = ")" + delim + '"';
+    while (j < n2) {
+      if (source2.startsWith(closer, j)) return j + closer.length;
+      j += 1;
+    }
+    return n2;
+  }
+  function scanLineComment(source2, i2) {
+    const n2 = source2.length;
+    let j = i2 + 2;
+    while (j < n2 && source2[j] !== "\n") j += 1;
+    return j;
+  }
+  function scanBlockComment(source2, i2) {
+    const n2 = source2.length;
+    let j = i2 + 2;
+    while (j < n2) {
+      if (source2[j] === "*" && j + 1 < n2 && source2[j + 1] === "/") {
+        return j + 2;
+      }
+      j += 1;
+    }
+    return n2;
+  }
+  if (typeof source !== "string") {
+    throw new TypeError("tokenizeCPP expects a string");
+  }
+  if (source.length > MAX_SOURCE) {
+    throw new TypeError("tokenizeCPP source exceeds 20000 UTF16 units");
+  }
+  const tokens = [];
+  const emit = (text, kind) => {
+    if (!text) return;
+    const last = tokens[tokens.length - 1];
+    if (last && last.kind === kind) last.text += text;
+    else tokens.push({ text, kind });
+  };
+  const n = source.length;
+  let i = 0;
+  let atLineStart = true;
+  while (i < n) {
+    const ch = source[i];
+    if (ch === "\n") {
+      emit(ch, "plain");
+      i += 1;
+      atLineStart = true;
+      continue;
+    }
+    if (atLineStart && isWsNoNl(ch)) {
+      let j = i;
+      while (j < n && isWsNoNl(source[j])) j += 1;
+      emit(source.slice(i, j), "plain");
+      i = j;
+      continue;
+    }
+    if (atLineStart && ch === "#") {
+      let j = i + 1;
+      while (j < n && isWsNoNl(source[j])) j += 1;
+      while (j < n && isIdentPart(source[j])) j += 1;
+      emit(source.slice(i, j), "preprocessor");
+      i = j;
+      atLineStart = false;
+      continue;
+    }
+    atLineStart = false;
+    if (ch === "/" && i + 1 < n && source[i + 1] === "/") {
+      const j = scanLineComment(source, i);
+      emit(source.slice(i, j), "comment");
+      i = j;
+      continue;
+    }
+    if (ch === "/" && i + 1 < n && source[i + 1] === "*") {
+      const j = scanBlockComment(source, i);
+      emit(source.slice(i, j), "comment");
+      i = j;
+      continue;
+    }
+    const rp = rawPrefixLength(source, i);
+    if (rp) {
+      const j = scanRawString(source, i, rp);
+      emit(source.slice(i, j), "string");
+      i = j;
+      continue;
+    }
+    let quoteStart = i;
+    if (ch === "u" && i + 2 < n && source[i + 1] === "8" && (source[i + 2] === '"' || source[i + 2] === "'")) {
+      quoteStart = i;
+      i += 2;
+    } else if ((ch === "L" || ch === "u" || ch === "U") && i + 1 < n && (source[i + 1] === '"' || source[i + 1] === "'")) {
+      quoteStart = i;
+      i += 1;
+    }
+    const quoteCh = source[i];
+    if (quoteCh === '"' || quoteCh === "'") {
+      const j = scanQuoted(source, i, quoteCh);
+      emit(source.slice(quoteStart, j), "string");
+      i = j;
+      continue;
+    }
+    i = quoteStart;
+    const numEnd = scanNumber(source, i);
+    if (numEnd > i) {
+      emit(source.slice(i, numEnd), "number");
+      i = numEnd;
+      continue;
+    }
+    if (isIdentStart(ch)) {
+      let j = i + 1;
+      while (j < n && isIdentPart(source[j])) j += 1;
+      const word = source.slice(i, j);
+      emit(word, KEYWORDS.has(word) ? "keyword" : "plain");
+      i = j;
+      continue;
+    }
+    emit(ch, "plain");
+    i += 1;
+  }
+  return tokens;
+}
+
 // Server/course-player.mjs
 var playerProtocol = "WORKSHOP-PLAYER/1";
-var rendererVersion = "2026.10.25.1";
+var rendererVersion = "2026.10.27.1";
 var json = (value) => JSON.stringify(value).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
-function renderCoursePlayer(course, lessonID, courseRevision) {
+function renderCoursePlayer(course, lessonID, courseRevision, cppProblems = {}) {
   const lesson = course.lessons.find((item) => item.id.toLowerCase() === lessonID.toLowerCase());
   if (!lesson) throw new Error("COURSE_LESSON_NOT_FOUND");
-  const data = { courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
+  const data = { cppProblems, courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
+  const tokenizer = tokenizeCPP.toString().replace(/<\/script/gi, "<" + String.fromCharCode(92) + "/script");
   const runtime = playerRuntime.toString().replace(/<\/script/gi, "<" + String.fromCharCode(92) + "/script");
   return {
     protocol: playerProtocol,
@@ -28165,7 +29051,7 @@ function renderCoursePlayer(course, lessonID, courseRevision) {
     courseID: course.id,
     lessonID: lesson.id,
     courseRevision,
-    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${runtime})(curriculum);</script></body></html>`
+    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const tokenizeCPP=${tokenizer};const curriculum=${json(data)};(${runtime})(curriculum);</script></body></html>`
   };
 }
 var playerCSS = `
@@ -28178,6 +29064,8 @@ main{max-width:1240px;margin:auto;padding:12px 20px calc(var(--bottom-space) + e
 textarea,input{display:block;width:100%;resize:none;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:13px 14px;outline:none;min-height:48px;max-height:55vh;caret-color:var(--accent);scroll-margin-bottom:calc(var(--bottom-space) + 12px)}textarea:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}::placeholder{color:var(--muted);opacity:.8}textarea.code-input{font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}.feedback{margin-top:18px;padding:14px 16px;background:var(--soft);border-radius:14px}.error{color:#c83c32;font-size:15px;margin-top:16px}.dark .error{color:#ff746b}.objects,.comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.object{padding:16px;border-radius:14px;background:var(--panel)}.object.changed{box-shadow:inset 0 0 0 1.5px var(--accent)}.object strong{display:block;font-size:32px;line-height:1.4}.output{background:var(--panel);padding:14px;border-radius:14px;white-space:pre-wrap;font:14px/1.6 ui-monospace,monospace}.table-scroll{overflow:auto;border-radius:14px;background:var(--panel)}table{border-collapse:collapse;width:100%;font-size:15px}td,th{text-align:left;border-bottom:1px solid var(--line);padding:11px 13px;min-width:90px}th{font-weight:600}tr:last-child td{border-bottom:0}details{margin:14px 0}summary{display:list-item;cursor:pointer;min-height:44px;padding:10px 0;color:var(--accent)}iframe{display:block;width:100%;border:0;background:transparent;min-height:120px;border-radius:14px}svg.chart{width:100%;height:auto;max-height:360px}.flash{width:100%;padding:24px;white-space:pre-wrap;margin:8px 0;background:var(--panel);min-height:88px}.steps{padding-left:24px}.steps li{padding-left:5px;margin-bottom:20px}.chart-label{font:12px -apple-system,system-ui;fill:var(--muted)}.chart-bar{fill:var(--accent)}blockquote{margin:14px 0;border-left:3px solid var(--accent);padding-left:16px;color:var(--muted)}.markdown code:not(.code){background:var(--soft);padding:2px 5px;border-radius:4px}.markdown pre{overflow:auto;white-space:pre;background:var(--panel);padding:15px;border-radius:14px}.markdown p{white-space:normal}.callout>p:first-child{padding:13px 16px;background:var(--soft);border-radius:14px}.comparison .card{padding:16px}
 .vocabulary{max-width:720px;margin:0 auto}.vocabulary-progress{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:0 0 12px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.vocabulary-card{display:block;width:100%;text-align:left;padding:clamp(22px,5vw,36px);background:var(--panel);border:1px solid var(--line);border-radius:24px;cursor:pointer;white-space:pre-wrap;overflow-wrap:anywhere}.vocabulary-card[aria-pressed=true]{cursor:default}.vocabulary-word{display:block;font-size:clamp(32px,9vw,48px);line-height:1.2;font-weight:650;letter-spacing:-.025em}.vocabulary-pronunciation{display:block;color:var(--muted);font-size:17px;line-height:1.6;margin-top:12px}.vocabulary-cue{display:block;margin-top:28px;color:var(--accent);font-size:14px}.vocabulary-answer{display:block;margin-top:24px;padding-top:22px;border-top:1px solid var(--line);font-size:18px;line-height:1.65;white-space:pre-wrap}.vocabulary-card:active:not(:disabled){transform:none;filter:brightness(.98)}
 @media(prefers-reduced-motion:no-preference){.vocabulary-answer{animation:word-reveal .16s ease-out}@keyframes word-reveal{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}}
+.cpp-editor{position:relative;background:var(--input);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:8px 0 16px}.cpp-editor:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.cpp-editor .cpp-ink,.cpp-editor .cpp-source{font:15px/24px ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow-wrap:normal;padding:14px;margin:0;border:0;border-radius:0;letter-spacing:normal;text-align:left;box-sizing:border-box}.cpp-editor .cpp-ink,.cpp-editor .cpp-source{padding-left:52px}.cpp-gutter{position:absolute;left:0;top:0;width:40px;padding:14px 8px 14px 0;margin:0;color:var(--muted);text-align:right;font:12px/24px ui-monospace,monospace;white-space:pre;pointer-events:none;border-right:1px solid var(--line)}.cpp-ink{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:var(--text)}textarea.cpp-source{position:relative;display:block;width:100%;min-height:72px;max-height:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:var(--text);resize:none;outline:none;box-shadow:none}textarea.cpp-source::selection{background:color-mix(in srgb,var(--accent) 28%,transparent)}.cpp-ink .tok-preprocessor{color:var(--accent)}.cpp-caption{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin:14px 0 6px}.cpp-kind{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--soft);color:var(--accent);font-size:12px;margin:0 0 12px}.cpp-rules{font-size:13px;color:var(--muted)}.cpp-console{max-height:45vh;overflow:auto;white-space:pre-wrap}.cpp-exam .question-statement{white-space:pre-wrap}.cpp-exam .reference{max-height:calc(100vh - 120px)}
+@media(min-width:850px){.workspace.cpp-exam{grid-template-columns:minmax(280px,.85fr) minmax(420px,1.3fr);gap:28px}.cpp-assignment{position:sticky;top:10px}.cpp-exam .reference{position:sticky}}@media(max-width:599px){.cpp-exam .reference{position:static;max-height:32vh}}
 @media(min-width:850px){main{padding:18px 28px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.workspace.with-reference{grid-template-columns:minmax(280px,.85fr) minmax(360px,1.15fr);gap:26px}.reference{max-height:calc(100vh - 115px)}.heading{margin-bottom:18px}}
 @media(min-width:600px) and (orientation:landscape) and (max-height:500px){:root{--control-space:140px}main{padding:8px 16px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.heading{margin-bottom:10px}h1{font-size:19px}.workspace{gap:14px}.workspace.with-reference{grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr)}.reference{max-height:calc(100vh - 65px)}body.keyboard-visible{--control-space:140px}}
 @media(max-width:599px){body:has(input:focus,textarea:focus) .reference{position:static;max-height:28vh}body:has(input:focus,textarea:focus){--bottom-space:148px}}
@@ -28187,6 +29075,7 @@ function playerRuntime(data) {
   const lesson = data.lesson, root = document.getElementById("app");
   let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastInteractionHaptic = -100;
   const resultHaptics = /* @__PURE__ */ new Map();
+  const cppChecks = /* @__PURE__ */ new Map();
   const drafts = /* @__PURE__ */ new Map(), saved = /* @__PURE__ */ new Map(), flashcardStates = /* @__PURE__ */ new Map(), traceStates = /* @__PURE__ */ new Map(), runs = /* @__PURE__ */ new Map(), feedbackFrames = /* @__PURE__ */ new Map();
   const post = (message) => window.webkit?.messageHandlers?.workshopPlayer?.postMessage(message);
   const haptic = (style, result = false) => {
@@ -28223,6 +29112,7 @@ function playerRuntime(data) {
   const lineArray = (source) => source.replace(/\r\n|\r/g, "\n").split("\n");
   const ownCode = (b) => b.code ?? b.presentation?.code ?? b.presentation?.trace?.variants?.[0]?.code ?? (b.execution?.template ? { language: b.execution.language, source: b.execution.template } : void 0);
   function effectiveCode(block) {
+    if (data.cppProblems?.[block.id]) return { code: block.code, inherited: false };
     const direct = ownCode(block) ?? lesson.referenceCode ?? data.referenceCode;
     if (direct) return { code: direct, inherited: false };
     const before = lesson.blocks.slice(0, index).reverse().map(ownCode).find(Boolean), after = lesson.blocks.slice(index + 1).map(ownCode).find(Boolean);
@@ -28685,7 +29575,187 @@ function playerRuntime(data) {
     }
     box.append(feedback2);
   }
+  function cppEditor(value, onChange, { label = "C++ \u6E90\u7801", program = false } = {}) {
+    const group = node("div"), caption = node("div", void 0, "cpp-caption"), count = node("span");
+    caption.append(node("span", label), count);
+    const wrap = node("div", void 0, "cpp-editor"), gutter = node("pre", void 0, "cpp-gutter"), ink = node("pre", void 0, "cpp-ink"), input = node("textarea", void 0, "cpp-source");
+    gutter.setAttribute("aria-hidden", "true");
+    ink.setAttribute("aria-hidden", "true");
+    input.setAttribute("aria-label", label);
+    input.setAttribute("wrap", "off");
+    input.value = value;
+    input.maxLength = 2e4;
+    input.spellcheck = false;
+    input.autocapitalize = "off";
+    input.autocorrect = "off";
+    input.readOnly = !!pending;
+    input.rows = program ? 14 : 2;
+    const paint = () => {
+      const fragment = document.createDocumentFragment();
+      for (const token of tokenizeCPP(input.value)) {
+        fragment.append(node("span", token.text, token.kind === "plain" ? void 0 : "tok-" + token.kind));
+      }
+      fragment.append(document.createTextNode("\n"));
+      ink.replaceChildren(fragment);
+      const lines = lineArray(input.value).length;
+      count.textContent = `${lines} \u884C`;
+      gutter.textContent = Array.from({ length: lines }, (_, i) => i + 1).join("\n");
+    };
+    const resize = () => {
+      input.style.height = "auto";
+      const viewport2 = window.visualViewport?.height ?? window.innerHeight;
+      input.style.height = Math.min(Math.max(input.scrollHeight, program ? Math.min(336, viewport2 * 0.52) : 76), Math.max(96, viewport2 * 0.58)) + "px";
+    };
+    input.cppResize = resize;
+    let scheduled = false;
+    input.oninput = () => {
+      onChange(input.value);
+      sendState();
+      if (!scheduled) {
+        scheduled = true;
+        requestAnimationFrame(() => {
+          scheduled = false;
+          paint();
+          resize();
+        });
+      }
+    };
+    input.onscroll = () => {
+      ink.scrollTop = input.scrollTop;
+      ink.scrollLeft = input.scrollLeft;
+      gutter.style.transform = `translateY(${-input.scrollTop}px)`;
+    };
+    input.onkeydown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+        e.preventDefault();
+        runCPPExam(lesson.blocks[index], true);
+        return;
+      }
+      if (e.key === "Tab") {
+        e.preventDefault();
+        const a = input.selectionStart, z = input.selectionEnd;
+        if (e.shiftKey) {
+          const start = input.value.lastIndexOf("\n", a - 1) + 1, end = z > a ? z : a, part = input.value.slice(start, end), changed = part.replace(/^(?: {1,4}|\t)/gm, "");
+          input.setRangeText(changed, start, end, "end");
+        } else if (a !== z && input.value.slice(a, z).includes("\n")) {
+          const start = input.value.lastIndexOf("\n", a - 1) + 1;
+          input.setRangeText(input.value.slice(start, z).replace(/^/gm, "    "), start, z, "end");
+        } else input.setRangeText("    ", a, z, "end");
+        input.dispatchEvent(new Event("input"));
+        return;
+      }
+      if (e.key === "Enter" && !e.isComposing) {
+        e.preventDefault();
+        const a = input.selectionStart, z = input.selectionEnd, line = input.value.slice(input.value.lastIndexOf("\n", a - 1) + 1, a), indent = /^[ \t]*/.exec(line)[0] + (line.trimEnd().endsWith("{") ? "    " : "");
+        input.setRangeText("\n" + indent, a, z, "end");
+        input.dispatchEvent(new Event("input"));
+      }
+    };
+    wrap.append(gutter, ink, input);
+    group.append(caption, wrap);
+    paint();
+    requestAnimationFrame(resize);
+    return group;
+  }
+  function submitAnswer(block, answer) {
+    const id = requestID();
+    pending = { id, type: "submit", blockID: block.id, answer: structuredClone(answer) };
+    post({ type: "submit", requestID: id, blockID: block.id, ...answer });
+    sendState();
+  }
+  function runCPPExam(block, autoSubmit = false, stdin) {
+    if (pending) return false;
+    const answer = draft(block), meta = data.cppProblems[block.id];
+    if (!answer.text.trim()) {
+      showError("\u8BF7\u5148\u586B\u5199\u56DE\u7B54\u3002");
+      return false;
+    }
+    if (meta.kind === "fill") {
+      let values;
+      try {
+        values = JSON.parse(answer.text);
+      } catch {
+      }
+      if (!values || meta.blanks.some((b) => typeof values[b.id] !== "string" || !values[b.id].trim())) {
+        showError("\u8BF7\u586B\u5199\u6240\u6709\u4EE3\u7801\u7A7A\u683C\u3002");
+        return false;
+      }
+    }
+    const id = requestID();
+    runs.set(id, { blockID: block.id, exam: true, autoSubmit, formal: stdin === void 0 || stdin === (block.execution.stdin ?? ""), answer: structuredClone(answer) });
+    pending = { id, type: "exam-run", blockID: block.id };
+    post({ type: "run", requestID: id, blockID: block.id, answer: answer.text, stdin: stdin ?? block.execution.stdin ?? "" });
+    render();
+    return true;
+  }
+  function cppQuestion(block, box) {
+    const meta = data.cppProblems[block.id], answer = draft(block);
+    const edited = () => {
+      runs.delete(block.id);
+      cppChecks.delete(block.id);
+      box.querySelector(".feedback")?.remove();
+      box.querySelector(".cpp-console")?.remove();
+    };
+    box.append(node("div", { understanding: "\u7A0B\u5E8F\u7406\u89E3\u9898", fill: "\u7A0B\u5E8F\u586B\u7A7A\u9898", program: "\u7A0B\u5E8F\u5927\u9898" }[meta.kind], "cpp-kind"));
+    if (meta.kind === "fill") {
+      let values;
+      try {
+        values = JSON.parse(answer.text);
+      } catch {
+      }
+      values = Object.assign(/* @__PURE__ */ Object.create(null), values && typeof values === "object" && !Array.isArray(values) ? values : {});
+      for (const blank of meta.blanks) box.append(cppEditor(typeof values[blank.id] === "string" ? values[blank.id] : "", (value) => {
+        values[blank.id] = value;
+        answer.text = JSON.stringify(Object.fromEntries(meta.blanks.map((b) => [b.id, values[b.id] ?? ""])));
+        edited();
+      }, { label: blank.label }));
+    } else if (meta.kind === "understanding") {
+      const input = node("textarea");
+      input.rows = 3;
+      input.value = answer.text;
+      input.maxLength = 8e3;
+      input.placeholder = "\u6309\u9898\u76EE\u8981\u6C42\u9010\u884C\u586B\u5199\u8F93\u51FA";
+      input.setAttribute("aria-label", "\u7A0B\u5E8F\u8F93\u51FA\u7B54\u6848");
+      input.spellcheck = false;
+      input.readOnly = !!pending;
+      input.oninput = () => {
+        answer.text = input.value;
+        edited();
+        sendState();
+      };
+      input.onkeydown = (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+          e.preventDefault();
+          runCPPExam(block, true);
+        }
+      };
+      box.append(input);
+    } else box.append(cppEditor(answer.text, (value) => {
+      answer.text = value;
+      edited();
+    }, { label: "\u5B8C\u6574\u7A0B\u5E8F \xB7 C++17", program: true }));
+    const tools = node("div", void 0, "toolbar");
+    if (meta.kind !== "understanding") tools.append(button("\u8FD0\u884C\u5E76\u68C0\u67E5", () => runCPPExam(block), ""));
+    box.append(tools, node("p", meta.kind === "understanding" ? "\u586B\u5199\u8F93\u51FA\u540E\u6309\u7EE7\u7EED\u68C0\u67E5\u3002" : `Tab \u7F29\u8FDB \xB7 Shift+Tab \u9000\u683C\u7F29\u8FDB \xB7 Ctrl/\u2318+Enter \u68C0\u67E5${meta.testCount ? " \xB7 " + meta.testCount + " \u7EC4\u9690\u85CF\u6D4B\u8BD5" : ""}`, "muted"));
+    if (meta.kind !== "understanding") {
+      const custom = node("details"), stdin = node("textarea");
+      stdin.rows = 2;
+      stdin.maxLength = 4e3;
+      stdin.value = block.execution.stdin ?? "";
+      stdin.setAttribute("aria-label", "\u81EA\u5B9A\u4E49\u6807\u51C6\u8F93\u5165");
+      custom.append(node("summary", "\u81EA\u5B9A\u4E49\u8F93\u5165\u8BD5\u8FD0\u884C"), stdin, button("\u7528\u6B64\u8F93\u5165\u8FD0\u884C", () => runCPPExam(block, false, stdin.value)));
+      box.append(custom);
+    }
+    const output = runs.get(block.id);
+    if (output) box.append(node("pre", output, "output cpp-console"));
+    const committed = saved.get(block.id);
+    if (committed && equalAnswer(answer, committed)) feedback(block, committed, box);
+  }
   function question(block, box) {
+    if (data.cppProblems?.[block.id]) {
+      cppQuestion(block, box);
+      return;
+    }
     const answer = draft(block), committed = saved.get(block.id);
     if (block.questionType === "shortAnswer") {
       const kind = block.input?.kind ?? "text", input = node(kind === "integer" || kind === "decimal" ? "input" : "textarea");
@@ -28783,14 +29853,23 @@ function playerRuntime(data) {
     const block = lesson.blocks[index], heading = node("header", void 0, "heading");
     if (block.title) heading.append(node("h1", block.title));
     heading.append(node("div", `${index + 1} / ${lesson.blocks.length}`, "eyebrow"));
-    const context = effectiveCode(block), workspace = node("div", void 0, "workspace" + (context.code ? " with-reference" : "")), reference = node("aside", void 0, "card reference");
+    const exam = data.cppProblems?.[block.id], context = effectiveCode(block), workspace = node("div", void 0, "workspace" + (context.code ? " with-reference" : "") + (exam ? " cpp-exam" : "")), reference = node("aside", void 0, "card reference");
     if (context.code) {
       const explicit = block.focusLines !== void 0 || block.focusSpans !== void 0;
       reference.append(node("div", context.code.filename ?? `\u672C\u8282\u7A0B\u5E8F \xB7 ${context.code.language}`, "muted"), codeView(context.code, explicit ? block.focusLines ?? [] : context.inherited ? [] : context.code.highlightLines ?? [], explicit ? block.focusSpans ?? [] : context.inherited ? [] : context.code.highlightSpans ?? []));
       workspace.append(reference);
     }
     const content = node("article", void 0, "card" + (block.type === "callout" ? " callout" : ""));
-    if (block.text) content.append(node("p", block.text));
+    if (exam && !context.code) {
+      const assignment = node("aside", void 0, "cpp-assignment");
+      assignment.append(node("p", block.text, "question-statement"));
+      workspace.append(assignment);
+    } else if (block.text) content.append(node("p", block.text));
+    if (exam) {
+      const rules = node("details", void 0, "cpp-rules");
+      rules.append(node("summary", "\u53EF\u7528\u6807\u51C6\u5E93\u4E0E\u8FD0\u884C\u9650\u5236"), node("p", exam.headers.map((h) => "<" + h + ">").join(" \xB7 ")), node("p", "C++17 \u57FA\u7840\u6807\u51C6\u5E93\uFF1B\u7981\u6B62\u8C03\u8BD5\u4E0E\u7CFB\u7EDF\u63A5\u53E3\u3002\u7F16\u8BD1\u5931\u8D25\u4F1A\u7ED9\u51FA\u8BCA\u65AD\uFF0C\u9690\u85CF\u6D4B\u8BD5\u53EA\u663E\u793A\u6C47\u603B\u7ED3\u679C\u3002"));
+      content.append(rules);
+    }
     if (block.presentation) content.append(presentation(block, context.code ? reference : null));
     if (block.type === "question") question(block, content);
     if (block.type === "chart") {
@@ -28798,7 +29877,7 @@ function playerRuntime(data) {
       if (block.caption) content.append(node("p", block.caption, "muted"));
     }
     if (block.type === "image") content.append(node("p", block.caption ?? "\u672C\u8BFE\u7A0B\u7684\u5916\u90E8\u56FE\u7247\u672A\u52A0\u8F7D\u3002", "muted"));
-    if (pending) content.append(node("p", "\u6B63\u5728\u4FDD\u5B58\u2026", "muted"));
+    if (pending) content.append(node("p", pending.type === "exam-run" ? "\u6B63\u5728\u68C0\u67E5\u2026" : "\u6B63\u5728\u4FDD\u5B58\u2026", "muted"));
     workspace.append(content);
     root.replaceChildren(heading, workspace);
     sendState();
@@ -28821,10 +29900,15 @@ function playerRuntime(data) {
           showError("\u8BF7\u5148\u586B\u5199\u56DE\u7B54\u3002");
           return;
         }
-        const id = requestID();
-        pending = { id, type: "submit", blockID: block.id, answer: structuredClone(answer) };
-        post({ type: "submit", requestID: id, blockID: block.id, ...answer });
-        sendState();
+        if (data.cppProblems?.[block.id]) {
+          const checked = cppChecks.get(block.id);
+          if (checked && equalAnswer(answer, checked)) {
+            submitAnswer(block, answer);
+            render();
+          } else runCPPExam(block, true);
+          return;
+        }
+        submitAnswer(block, answer);
         return;
       }
     }
@@ -28896,6 +29980,18 @@ function playerRuntime(data) {
       }
       return;
     }
+    if (message.type === "runResult" && runs.get(message.requestID)?.exam) {
+      const run = runs.get(message.requestID), result = message.result;
+      runs.delete(message.requestID);
+      if (pending?.id === message.requestID) pending = null;
+      runs.set(run.blockID, message.error ?? [result?.stdout, result?.stderr, result?.status === "compileError" ? "\u7F16\u8BD1\u9519\u8BEF" : result?.status === "timeout" ? "\u8FD0\u884C\u8D85\u65F6" : result?.status === "runtimeError" ? "\u8FD0\u884C\u9519\u8BEF" : ""].filter(Boolean).join("\n"));
+      haptic(message.error || result?.status === "unavailable" ? "error" : result?.passed === true ? "success" : result?.passed === false ? "warning" : "impact", true);
+      const block = lesson.blocks.find((b) => b.id === run.blockID);
+      if (run.formal && !message.error && result && result.status !== "unavailable") cppChecks.set(block.id, run.answer);
+      if (run.autoSubmit && !message.error && result && result.status !== "unavailable" && equalAnswer(draft(block), run.answer)) submitAnswer(block, run.answer);
+      render();
+      return;
+    }
     if (message.type === "runResult" && runs.has(message.requestID)) {
       const result = message.result;
       if (message.error || result?.status !== "cancelled") haptic(message.error || result?.status !== "completed" ? "error" : result.passed === false ? "warning" : result.passed === true ? "success" : "impact", true);
@@ -28912,6 +30008,7 @@ function playerRuntime(data) {
   const viewport = () => {
     const height = window.visualViewport?.height ?? window.innerHeight;
     document.body.classList.toggle("keyboard-visible", window.innerHeight - height > 120);
+    for (const editor of root.querySelectorAll?.(".cpp-source") ?? []) editor.cppResize?.();
     requestAnimationFrame(fitControls);
   };
   window.visualViewport?.addEventListener("resize", viewport);
@@ -28958,12 +30055,19 @@ function createCourseExecutionClient({ socketPath, timeoutMs = 15e3 } = {}) {
             return finish(unavailableCourseExecution());
           }
           if (response.statusCode !== 200 || !value || !courseExecutionStatuses.includes(value.status) || typeof value.stdout !== "string" || typeof value.stderr !== "string" || Buffer.byteLength(value.stdout) > courseExecutionOutputBytes || Buffer.byteLength(value.stderr) > courseExecutionOutputBytes || !Number.isSafeInteger(value.durationMs) || value.durationMs < 0 || value.durationMs > 6e4 || value.exitCode !== void 0 && (!Number.isSafeInteger(value.exitCode) || Math.abs(value.exitCode) > 255)) return finish(unavailableCourseExecution());
+          let cases;
+          if (payload.tests && value.status === "completed") {
+            if (!Array.isArray(value.cases) || value.cases.length !== payload.tests.length || value.cases.some((c) => !c || !["completed", "runtimeError"].includes(c.status) || typeof c.stdout !== "string" || Buffer.byteLength(c.stdout) > courseExecutionOutputBytes)) return finish(unavailableCourseExecution());
+            cases = value.cases.map((c) => ({ status: c.status, stdout: c.stdout, stderr: "", durationMs: 0 }));
+            if (cases.reduce((n, c) => n + Buffer.byteLength(c.stdout), 0) > 64 * 1024) return finish(unavailableCourseExecution());
+          }
           finish({
             status: value.status,
             stdout: value.stdout,
             stderr: value.stderr,
             durationMs: value.durationMs,
-            ...value.exitCode === void 0 ? {} : { exitCode: value.exitCode }
+            ...value.exitCode === void 0 ? {} : { exitCode: value.exitCode },
+            ...cases ? { cases } : {}
           });
         });
       });
@@ -29025,6 +30129,7 @@ Disallow: /
 Allow: ${pagePath}
 Allow: ${textPath}
 Allow: ${new URL(endpoint).pathname}/schema
+Allow: ${new URL(endpoint).pathname}/cpp-schema
 ` : guideFor(mode);
       const bytes2 = Buffer.from(format === "html" ? guidePage(endpoint, mode, guide) : guide, "utf8");
       packet = { bytes: bytes2, zipped: gzipSync(bytes2), etag: `W/"${createHash("sha256").update(bytes2).digest("hex")}"` };
@@ -29197,23 +30302,37 @@ question \u5FC5\u586B text\u3001questionType(singleChoice/multipleChoice/shortAn
 \u3010\u4F5C\u7B54\u8F93\u5165\u4E0E\u771F\u5B9E\u8FD0\u884C\u3011
 shortAnswer \u53EF\u6307\u5B9A input:{kind:"text"|"integer"|"decimal"|"code",language?,placeholder?,starterCode?,minLines?,maxLines?}\u3002\u6570\u5B57\u7B54\u6848\u5FC5\u987B\u7528 integer \u6216 decimal\uFF0C\u8BA9 App \u4F7F\u7528\u4E24\u884C\u6570\u5B57\u952E\u76D8\uFF1B\u4EE3\u7801\u7EC3\u4E60\u7528 code\uFF0C\u8BA9 App \u63D0\u4F9B\u6709\u8BED\u6CD5\u989C\u8272\u7684\u591A\u884C\u7F16\u8F91\u5668\u3002input.language \u4EC5 code \u53EF\u7528\uFF0C\u9650\u5B9A javascript/python/cpp\uFF1BstarterCode \u4EC5 code \u53EF\u7528\u3001\u53EF\u7A7A\u6700\u591A20000\uFF1Bplaceholder \u53EF\u7A7A\u6700\u591A500\u3002minLines/maxLines \u4E3A2\u201324\u6574\u6570\u4E14min\u2264max\uFF1B\u6570\u5B57\u8F93\u5165\u4ECD\u4F1A\u7D27\u51D1\u663E\u793A\u3002integer \u4EC5\u53EF\u5E26\u6B63\u8D1F\u53F7\u7684\u5341\u8FDB\u5236\u6574\u6570\uFF1Bdecimal \u53EF\u5E26\u6B63\u8D1F\u53F7\u4E0E\u5C0F\u6570\u70B9\u3001\u4E0D\u63A5\u53D7\u79D1\u5B66\u8BB0\u6570\u3001\u9017\u53F7\u3001NaN/Infinity\u3002\u4E0D\u8981\u628A\u8981\u6C42\u8F93\u5165\u6570\u5B57\u7684\u9898\u76EE\u4FDD\u7559\u6210\u666E\u901A\u957F\u6587\u672C\u6846\u3002\u65E7\u6587\u6863\u7701\u7565input\u4ECD\u517C\u5BB9\uFF1Bexecution\u5B58\u5728\u6216answerFormat=code\u65F6\u63A8\u65AD\u4E3Acode\uFF0C\u5176\u4ED6\u9ED8\u8BA4text\u3002
 \u4EC5 shortAnswer \u53EF\u663E\u5F0F\u6DFB\u52A0 execution:{language:"javascript"|"python"|"cpp",template?,stdin?,expectedOutput?}\u3002input.language\u4E0Eexecution.language\u90FD\u63D0\u4F9B\u65F6\u5FC5\u987B\u76F8\u540C\u3002\u5B8C\u6574\u7A0B\u5E8F\u9898\u53EF\u7701\u7565template\uFF0C\u4F7F\u7528\u5B66\u751F\u63D0\u4EA4\u7684\u5B8C\u6574\u6E90\u7801\uFF1B\u586B\u7A7A\u9898\u5FC5\u987B\u63D0\u4F9Btemplate\uFF0C\u4E14\u5B8C\u6574\u7A0B\u5E8F\u6A21\u677F\u4E2D\u6070\u597D\u51FA\u73B0\u4E00\u6B21\u5B57\u9762\u6807\u8BB0{{ANSWER}}\uFF0CApp/\u670D\u52A1\u5668\u53EA\u66FF\u6362\u8FD9\u4E00\u5904\u3002\u663E\u5F0Finput.kind\u4E3Atext/integer/decimal\u65F6execution\u5FC5\u987B\u5E26template\uFF0C\u4E0D\u628A\u4EFB\u610F\u6587\u5B57\u6216\u6570\u5B57\u8BEF\u5F53\u6E90\u7801\u3002template\u975E\u7A7A\u6700\u591A20000\uFF1Bstdin\u53EF\u7A7A\u6700\u591A4000\uFF1BexpectedOutput\u53EF\u7A7A\u6700\u591A8000\u3002\u771F\u5B9E\u8FD0\u884C\u4F5C\u7B54/\u4EE3\u7801\u8F93\u5165\u4E0A\u965020000\u3002template\u53EA\u63D0\u4F9B\u516C\u5F00\u6559\u5B66\u7A0B\u5E8F\uFF0C\u4E0D\u542B\u79D8\u5BC6\u3001\u5BC6\u94A5\u6216\u9690\u85CF\u7B54\u6848\uFF1B\u8F93\u5165\u6C38\u8FDC\u4E0D\u901A\u8FC7shell\u62FC\u63A5\u3002\u6BD4\u8F83\u8FD0\u884C\u8F93\u51FA\u4F1A\u7EDF\u4E00\u6362\u884C\u5E76\u53BB\u672B\u5C3E\u7A7A\u767D\uFF1BexpectedOutput\u53EA\u7528\u4E8E\u8BFE\u7A0B\u9ED8\u8BA4stdin\u7684\u4E00\u6B21\u8F93\u51FA\u6838\u5BF9\uFF0C\u4E0D\u7B49\u4E8E\u901A\u7528\u5224\u5206\u6216\u9690\u85CF\u6D4B\u8BD5\uFF0C\u4E0D\u8981\u628A\u4E00\u4E2A\u793A\u4F8B\u901A\u8FC7\u5BA3\u79F0\u4E3A\u666E\u904D\u6B63\u786E\u3002
+\u3010C++ \u8BBE\u8BA1\u9898\u6846\u67B6\u3011
+\u5C01\u88C5 Schema\uFF1AGET /api/integrations/v1/courses/cpp-schema\u3002\u5F53\u7528\u6237\u8981\u6C42\u5927\u5B66 C++ \u8003\u8BD5\u3001\u7A0B\u5E8F\u7406\u89E3/\u586B\u7A7A/\u7A0B\u5E8F\u5927\u9898\u6216\u9690\u85CF\u6D4B\u8BD5\u5224\u9898\u65F6\uFF0C\u4F7F\u7528 WORKSHOP-CPP-EXAM/1 \u53D1\u5E03\u5C01\u88C5\uFF0CPOST \u5730\u5740\u548C\u8BFE\u7A0B\u53D1\u5E03\u5BC6\u94A5\u4E0D\u53D8\u3002\u666E\u901A WORKSHOP-COURSE/1 \u4ECD\u517C\u5BB9\uFF1B\u5B83\u7684 execution.expectedOutput \u53EA\u9A8C\u8BC1\u516C\u5F00\u6837\u4F8B\uFF0C\u4E0D\u652F\u6301\u9690\u85CF\u6D4B\u8BD5\u3002
+\u5C01\u88C5\u4E3A {protocol:"WORKSHOP-CPP-EXAM/1",course:\u5B8C\u6574\u7684WORKSHOP-COURSE/1\u6587\u6863,problems:[...]}\u3002\u6BCF\u4E2A problem \u5F15\u7528\u540C\u4E00 course \u5185\u7684 lessonID\u3001blockID\uFF1B\u88AB\u5F15\u7528\u5757\u5FC5\u987B\u662F question/shortAnswer\u3002kind \u4E3A understanding/fill/program\u3002course \u4E2D\u4EC5\u653E\u516C\u5F00\u9898\u5E72\u548C\u53C2\u8003\u4EE3\u7801\uFF0C\u4E0D\u653E acceptedAnswers\u3001\u9690\u85CF\u8F93\u5165\u8F93\u51FA\u6216\u53C2\u8003\u5B9E\u73B0\u3002\u670D\u52A1\u5668\u4F1A\u751F\u6210\u517C\u5BB9\u5BA2\u6237\u7AEF\u7684 input/execution\uFF0C\u5E76\u5C06\u79C1\u6709\u5224\u9898\u914D\u7F6E\u5206\u8868\u4FDD\u5B58\uFF1B\u4E0D\u8981\u628A\u8FD9\u4E9B\u79C1\u6709\u5B57\u6BB5\u653E\u8FDB course\u3002\u66F4\u65B0\u8BBE\u8BA1\u9898\u5FC5\u987B\u5B8C\u6574\u91CD\u53D1\u5C01\u88C5\u5E76\u4F7F\u7528\u6B63\u786E If-Match\uFF0C\u4E0D\u80FD\u9000\u56DE\u666E\u901A\u8BFE\u7A0B\u66F4\u65B0\u800C\u4E22\u5931\u5224\u9898\u914D\u7F6E\u3002
+\u7A0B\u5E8F\u7406\u89E3\u9898 understanding\uFF1Ablock.code \u63D0\u4F9B\u5B8C\u6574 C++ \u7A0B\u5E8F\uFF0Ctext \u660E\u786E\u8981\u6C42\u54EA\u4E9B\u8F93\u51FA\u3001\u9010\u884C/\u7A7A\u767D\u683C\u5F0F\uFF1Bgrading \u5FC5\u987B\u662F compare\uFF0C\u7528 acceptedAnswers \u6570\u7EC4\u7ED9\u5B8C\u6574\u53EF\u63A5\u53D7\u7B54\u6848\u3002\u5B66\u4E60\u8005\u8F93\u5165\u8F93\u51FA\u7ED3\u679C\uFF0C\u4E0D\u8FD0\u884C\u8F93\u5165\u7684\u56DE\u7B54\u3002
+\u7A0B\u5E8F\u586B\u7A7A\u9898 fill\uFF1Atemplate \u63D0\u4F9B\u5B8C\u6574\u7A0B\u5E8F\uFF0C\u5305\u542B1\u20138\u4E2A\u4E0D\u540C\u7684 {{id}} \u6807\u8BB0\uFF0C\u6BCF\u4E2A\u53EA\u51FA\u73B0\u4E00\u6B21\uFF1Bblanks \u4E3A [{id,label}]\uFF0Cid \u662F\u5C0F\u5199\u5B57\u6BCD\u5F00\u5934\u3001\u6700\u591A24\u4F4D\u7684\u5C0F\u5199\u5B57\u6BCD\u6570\u5B57\u4E0B\u5212\u7EBF\u3002\u9898\u5E72\u660E\u786E\u662F\u5426\u9700\u8981\u5206\u53F7/\u7F29\u8FDB\uFF1B\u5B66\u4E60\u8005\u53EA\u586B\u5199\u7247\u6BB5\u3002grading \u53EF\u4E3A tests\uFF0C\u6216 compare\uFF08acceptedAnswers \u662F\u8865\u9F50\u540E\u7684\u5B8C\u6574\u7A0B\u5E8F\u6587\u672C\uFF0C\u4E0D\u662F\u5355\u4E2A\u7A7A\u683C\uFF09\u3002\u4E0D\u8981\u5728\u516C\u5F00 code\u3001\u9898\u5E72\u6216\u63D0\u793A\u91CC\u6CC4\u9732\u586B\u7A7A\u7B54\u6848\u3002
+\u7A0B\u5E8F\u5927\u9898 program\uFF1A\u7ED9\u5B8C\u6574\u9898\u610F\u3001\u8F93\u5165\u8F93\u51FA\u683C\u5F0F\u3001\u6570\u636E\u8303\u56F4\u548C\u516C\u5F00\u6837\u4F8B\uFF1B\u5B66\u4E60\u8005\u5FC5\u987B\u81EA\u5DF1\u5199\u5168\u90E8\u4EE3\u7801\uFF0C\u5305\u62EC #include\u3001main\u3001\u8BFB\u5165\u548C\u8F93\u51FA\uFF0C\u4E0D\u63D0\u4F9B\u5B8C\u6574\u7B54\u6848\u6216\u9ED8\u8BA4\u9AA8\u67B6\u3002grading \u4F18\u5148 tests\uFF1Bcompare \u53EA\u4F5C\u660E\u786E\u544A\u77E5\u7684\u6E90\u7801\u6587\u5B57\u6BD4\u5BF9\uFF0C\u4E0D\u80FD\u5224\u65AD\u7B49\u4EF7\u7A0B\u5E8F\u3002
+grading \u4E3A {kind:"compare",comparison:"exact"|"tokens",acceptedAnswers:[\u5B57\u7B26\u4E32]} \u6216 {kind:"tests",comparison:"exact"|"tokens",tests:[{stdin,expectedOutput}]}\u3002\u7406\u89E3\u9898\u53EA\u7528compare\u3002exact\u7EDF\u4E00\u6362\u884C\u5E76\u79FB\u9664\u672B\u5C3E\u7A7A\u767D\uFF0C\u533A\u5206\u5927\u5C0F\u5199\uFF1Btokens\u6309\u7A7A\u767D\u5206\u8BCD\u6BD4\u8F83\u3002tests\u5FC5\u987B1\u20138\u7EC4\uFF0C\u8986\u76D6\u6837\u4F8B\u3001\u8FB9\u754C\u3001\u76F8\u7B49\u3001\u96F6/\u8D1F\u6570\u7B49\u9002\u7528\u60C5\u51B5\uFF1B\u6BCF\u7EC4stdin\u6700\u591A4000\u3001expectedOutput\u6700\u591A8000\u3002\u4E0D\u8981\u968F\u673A\u6570\u3001\u8054\u7F51\u3001\u7B2C\u4E09\u65B9\u5E93\u6216\u65E0\u6CD5\u6838\u5BF9\u7684\u7B54\u6848\u3002sampleInput \u53EF\u9009\uFF0C\u662F\u516C\u5F00\u7684\u81EA\u6D4B\u8F93\u5165\uFF0C\u4E0D\u662F\u9690\u85CF\u6D4B\u8BD5\u3002\u5168\u90E8\u6D4B\u8BD5\u901A\u8FC7\u53EA\u8BF4\u660E\u901A\u8FC7\u8FD9\u7EC4\u6570\u636E\uFF0C\u4E0D\u7B49\u4E8E\u5F62\u5F0F\u8BC1\u660E\u3002
+\u8FD0\u884C\u91C7\u7528 C++17 \u57FA\u7840\u914D\u7F6E\uFF0C\u4EC5\u5141\u8BB8 iostream\u3001iomanip\u3001string\u3001sstream\u3001vector\u3001array\u3001algorithm\u3001numeric\u3001limits\u3001cmath\u3001cctype\u3001cstring\u3001cstdio\u3001cstdlib\u3001climits\u3001cfloat\u3001cstdint\u3001cstddef\u3001utility\u3002\u6B64\u5217\u8868\u662F\u672C\u6846\u67B6\u7684\u7EC3\u4E60\u8303\u56F4\uFF0C\u4E0D\u5192\u5145\u4EFB\u4F55\u5B66\u6821\u5B8C\u6574\u8003\u8BD5\u89C4\u5B9A\u3002\u7981\u6B62 bits/stdc++.h\u3001\u7B2C\u4E09\u65B9\u5E93\u3001\u6587\u4EF6/\u7EBF\u7A0B/\u7F51\u7EDC\u63A5\u53E3\u3001\u52A8\u6001\u52A0\u8F7D\u3001\u6C47\u7F16\u3001\u7F16\u8BD1\u9009\u9879\u548C\u8C03\u8BD5\uFF1B\u4E0D\u751F\u6210\u65AD\u70B9\u3001\u5355\u6B65\u6216\u8C03\u8BD5\u5668\u63A7\u4EF6\u3002\u7F16\u8BD1/\u8FD0\u884C\u51FA\u9519\u5982\u5B9E\u8FD4\u56DE\u8BCA\u65AD\uFF0C\u9690\u85CF\u6D4B\u8BD5\u53EA\u8FD4\u56DE\u6C47\u603B\uFF0C\u4E0D\u8F93\u51FA\u5176\u8F93\u5165/\u9884\u671F/\u5B9E\u9645\u503C\u3002
+\u5B66\u4E60\u9875\u63D0\u4F9B C++ \u7740\u8272\u3001Tab/Shift+Tab \u7F29\u8FDB\u3001Enter \u81EA\u52A8\u7F29\u8FDB\u3001Ctrl\u6216Command+Enter\u68C0\u67E5\u3002\u539F\u751F\u7EE7\u7EED\u5148\u68C0\u67E5\u5E76\u4FDD\u5B58\uFF0C\u518D\u7EE7\u7EED\u7FFB\u9875\u3002\u53EF\u7528\u660E\u786E\u7684\u201C\u8FD0\u884C\u5E76\u68C0\u67E5\u201D\u548C\u81EA\u5B9A\u4E49\u8F93\u5165\u8BD5\u8FD0\u884C\uFF0C\u4E0D\u91CD\u590D\u6DFB\u52A0\u63D0\u4EA4\u7B54\u6848\u6309\u94AE\u3002\u539F\u751F\u58F3\u517C\u5BB9\u7EA6\u675F\u4E0B\uFF0C\u81EA\u5B9A\u4E49\u8F93\u5165\u4E0E\u9ED8\u8BA4\u6837\u4F8B\u76F8\u540C\u65F6\u4F1A\u6267\u884C\u6B63\u5F0F\u68C0\u67E5\u3002
+\u624B\u52A8\u5BFC\u5165\u8BBE\u8BA1\u9898\u8BF7\u8F93\u51FA\u4E0B\u9762\u8FD9\u79CD\u5B8C\u6574\u5C01\u88C5\uFF0C\u8BA9\u7528\u6237\u5728 /course-cpp-import \u9875\u9762\u7C98\u8D34\uFF0C\u5E76\u4F7F\u7528 App \u4E2D\u53D6\u5F97\u7684\u8BFE\u7A0B\u53D1\u5E03\u5BC6\u94A5\uFF1B\u65E7\u7248 App \u7684\u666E\u901A JSON \u5BFC\u5165\u5668\u53EA\u8BA4\u8BC6 WORKSHOP-COURSE/1\uFF0C\u4E0D\u80FD\u5BFC\u5165\u5C01\u88C5\u3002\u81EA\u52A8\u6A21\u5F0F\u53EF\u76F4\u63A5\u6309\u539F\u6388\u6743\u8BF7\u6C42\u5934\u4E0A\u4F20\uFF0C\u4E0D\u53E6\u7D22\u8981\u8D26\u6237 ID\u3002
 \u3010Python/C++ \u7F16\u7A0B\u7EC3\u4E60\u9ED8\u8BA4\u53EF\u8FD0\u884C\u3011
 \u5DE5\u4F5C\u574A\u5DF2\u63D0\u4F9B Python 3.11 \u4E0E C++20\uFF08g++ 12.2\uFF09\u7684\u670D\u52A1\u5668\u72EC\u7ACB\u6C99\u76D2\u8FD0\u884C\uFF0C\u4EE3\u7801\u987B\u517C\u5BB9\u8FD9\u4E9B\u7248\u672C\uFF0C\u4E0D\u8981\u6C42\u66F4\u65B0\u7684\u8BED\u6CD5\u6216\u5E93\u3002\u8BBE\u8BA1 Python/C++ \u4EE3\u7801\u586B\u7A7A\u3001\u8865\u5168\u8868\u8FBE\u5F0F/\u8BED\u53E5\u3001\u6539\u9519\u6216\u5B8C\u6574\u7A0B\u5E8F\u9898\u65F6\uFF0C\u5FC5\u987B\u751F\u6210 type:"question"\u3001questionType:"shortAnswer" \u5E76\u663E\u5F0F\u6DFB\u52A0 execution\uFF1B\u4E0D\u80FD\u53EA\u7ED9 input\u3001code\u3001Markdown \u6E90\u7801\u6216\u53C2\u8003\u7B54\u6848\u3002\u6BCF\u4E2A\u542B\u7F16\u7A0B\u7EC3\u4E60\u7684 Python/C++ \u8BFE\u65F6\u81F3\u5C11\u5B89\u6392\u4E00\u9053\u53EF\u8FD0\u884C\u9898\uFF0C\u9664\u975E\u7528\u6237\u660E\u786E\u53EA\u9700\u8981\u8BB2\u89E3\u3001\u9884\u6D4B\u8F93\u51FA\u6216\u9009\u62E9\u9898\u3002\u4EC5\u89E3\u91CA\u6982\u5FF5\u3001\u9009\u62E9\u7B54\u6848\u3001\u9884\u6D4B\u56FA\u5B9A\u7A0B\u5E8F\u8F93\u51FA\u7684\u9898\u76EE\u53EF\u4EE5\u4FDD\u7559\u4E3A\u666E\u901A\u9898\uFF0C\u4E0D\u4E3A\u6240\u6709\u5185\u5BB9\u5F3A\u52A0\u6267\u884C\u3002
 \u6570\u503C\u586B\u7A7A\uFF1Ainput.kind \u7528 integer/decimal\uFF0Cexecution.language \u7528 python/cpp\uFF0C\u5E76\u63D0\u4F9B\u5B8C\u6574\u53EF\u6267\u884C template\uFF0C\u5728\u771F\u6B63\u7F3A\u5C11\u7684\u6570\u503C\u4F4D\u7F6E\u6070\u653E\u4E00\u6B21 {{ANSWER}}\u3002\u8868\u8FBE\u5F0F\u6216\u8BED\u53E5\u586B\u7A7A\uFF1Ainput.kind:"code"\u3001input.language \u4E0E execution.language \u76F8\u540C\uFF1Btemplate \u5305\u542B\u5FC5\u9700\u7684\u5BFC\u5165\u6216\u5934\u6587\u4EF6\u3001main/\u8C03\u7528\u3001\u6807\u51C6\u8F93\u5165\u8BFB\u53D6\u4E0E\u7ED3\u679C\u8F93\u51FA\uFF0C\u7F3A\u53E3\u53EA\u7559\u4E00\u6B21 {{ANSWER}}\u3002\u9898\u5E72\u660E\u786E\u53EA\u586B\u54EA\u4E2A\u7247\u6BB5\uFF1B\u4E0D\u8981\u8BA9\u5B66\u751F\u91CD\u590D\u63D0\u4EA4\u6A21\u677F\u3002Python \u6A21\u677F\u987B\u4FDD\u8BC1\u66FF\u6362\u540E\u7684\u7F29\u8FDB\u6709\u6548\uFF0C\u4F18\u5148\u5355\u884C\u8868\u8FBE\u5F0F\uFF1B\u591A\u884C\u7B97\u6CD5\u6539\u7528\u5B8C\u6574\u7A0B\u5E8F\u9898\u3002
 \u5B8C\u6574\u7A0B\u5E8F\u9898\uFF1Ainput.kind:"code"\uFF0Cinput.language \u4E0E execution.language \u90FD\u660E\u786E\u5199 python \u6216 cpp\uFF08execution \u4E0D\u5199 c++\uFF09\uFF1B\u8BBE\u7F6E\u9002\u91CF minLines/maxLines\uFF0C\u5E76\u7ED9\u4E0D\u6CC4\u9732\u6700\u7EC8\u7B54\u6848\u7684 starterCode \u9AA8\u67B6\u3002execution \u7701\u7565 template\uFF0C\u76F4\u63A5\u8FD0\u884C\u5B66\u751F\u5B8C\u6574\u6E90\u7801\uFF1BPython \u542B\u5FC5\u8981 import\uFF0CC++ \u542B\u5FC5\u8981\u5934\u6587\u4EF6\u4E0E main\uFF0C\u4E0D\u80FD\u53EA\u63D0\u4EA4\u51FD\u6570\u5374\u6CA1\u6709\u8C03\u7528\u6216\u8F93\u51FA\u3002
-\u6BCF\u9053\u53EF\u8FD0\u884C\u9898\u90FD\u63D0\u4F9B execution.stdin \u4E0E execution.expectedOutput\uFF1A\u65E0\u8F93\u5165\u7528 stdin:""\uFF0C\u6709\u8F93\u5165\u7ED9\u4E00\u7EC4\u786E\u5B9A\u3001\u8F7B\u91CF\u3001\u53EF\u590D\u73B0\u7684\u6837\u4F8B\u3002expectedOutput \u662F\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\u5728\u8BE5\u7EC4\u8F93\u5165\u4E0B\u7684\u6807\u51C6\u8F93\u51FA\uFF0C\u4E0D\u662F\u586B\u5165\u7684\u6570\u503C\u6216\u8868\u8FBE\u5F0F\u672C\u8EAB\uFF1B\u4E0D\u8981\u628A\u8FD9\u4E24\u4E2A\u5B57\u6BB5\u53EA\u5199\u5728\u5C55\u793A\u7528\u7684 code \u5BF9\u8C61\u4E2D\u3002\u6570\u5B57\u8F93\u51FA\u4F7F\u7528\u56FA\u5B9A\u683C\u5F0F\uFF0C\u6D6E\u70B9\u6570\u660E\u786E\u7CBE\u5EA6\uFF1B\u4E0D\u8981\u6253\u5370\u201C\u8BF7\u8F93\u5165\u201D\u7B49\u4EA4\u4E92\u63D0\u793A\u3002\u4EC5\u4F7F\u7528 Python 3.11 \u6807\u51C6\u5E93\u6216 g++ 12.2 \u652F\u6301\u7684 C++20 \u6807\u51C6\u5E93\uFF0C\u4E0D\u4F9D\u8D56\u7B2C\u4E09\u65B9\u5B89\u88C5\u3001\u7F51\u7EDC\u3001\u56FE\u5F62\u754C\u9762\u3001\u5BBF\u4E3B\u6587\u4EF6\u6216\u4EBA\u5DE5\u4EA4\u4E92\uFF1B\u6837\u4F8B\u8BA1\u7B97\u5E94\u5728 2 \u79D2\u5185\u5B8C\u6210\u3001C++ \u7F16\u8BD1\u5728 5 \u79D2\u5185\u5B8C\u6210\uFF0C\u5185\u5B58\u4E0D\u8D85\u8FC7 256 MiB\uFF0C\u8F93\u51FA\u5404\u4E0D\u8D85\u8FC7 16 KiB\u3002\u4E0D\u8981\u53D1\u660E tests/testCases\u3001\u7F16\u8BD1\u547D\u4EE4\u3001\u8FD0\u884C\u4E3B\u673A\u7B49\u534F\u8BAE\u5B57\u6BB5\u3002
+\u6BCF\u9053\u53EF\u8FD0\u884C\u9898\u90FD\u63D0\u4F9B execution.stdin \u4E0E execution.expectedOutput\uFF1A\u65E0\u8F93\u5165\u7528 stdin:""\uFF0C\u6709\u8F93\u5165\u7ED9\u4E00\u7EC4\u786E\u5B9A\u3001\u8F7B\u91CF\u3001\u53EF\u590D\u73B0\u7684\u6837\u4F8B\u3002expectedOutput \u662F\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\u5728\u8BE5\u7EC4\u8F93\u5165\u4E0B\u7684\u6807\u51C6\u8F93\u51FA\uFF0C\u4E0D\u662F\u586B\u5165\u7684\u6570\u503C\u6216\u8868\u8FBE\u5F0F\u672C\u8EAB\uFF1B\u4E0D\u8981\u628A\u8FD9\u4E24\u4E2A\u5B57\u6BB5\u53EA\u5199\u5728\u5C55\u793A\u7528\u7684 code \u5BF9\u8C61\u4E2D\u3002\u6570\u5B57\u8F93\u51FA\u4F7F\u7528\u56FA\u5B9A\u683C\u5F0F\uFF0C\u6D6E\u70B9\u6570\u660E\u786E\u7CBE\u5EA6\uFF1B\u4E0D\u8981\u6253\u5370\u201C\u8BF7\u8F93\u5165\u201D\u7B49\u4EA4\u4E92\u63D0\u793A\u3002\u4EC5\u4F7F\u7528 Python 3.11 \u6807\u51C6\u5E93\u6216 g++ 12.2 \u652F\u6301\u7684 C++20 \u6807\u51C6\u5E93\uFF0C\u4E0D\u4F9D\u8D56\u7B2C\u4E09\u65B9\u5B89\u88C5\u3001\u7F51\u7EDC\u3001\u56FE\u5F62\u754C\u9762\u3001\u5BBF\u4E3B\u6587\u4EF6\u6216\u4EBA\u5DE5\u4EA4\u4E92\uFF1B\u6837\u4F8B\u8BA1\u7B97\u5E94\u5728 2 \u79D2\u5185\u5B8C\u6210\u3001C++ \u7F16\u8BD1\u5728 5 \u79D2\u5185\u5B8C\u6210\uFF0C\u5185\u5B58\u4E0D\u8D85\u8FC7 256 MiB\uFF0C\u8F93\u51FA\u5404\u4E0D\u8D85\u8FC7 16 KiB\u3002\u666E\u901A WORKSHOP-COURSE/1 \u4E0D\u8981\u53D1\u660E tests/testCases\u3001\u7F16\u8BD1\u547D\u4EE4\u3001\u8FD0\u884C\u4E3B\u673A\u7B49\u534F\u8BAE\u5B57\u6BB5\u3002
 \u5F00\u653E\u7A0B\u5E8F\u9898\u4E0E\u5141\u8BB8\u7B49\u4EF7\u8868\u8FBE\u5F0F\u7684\u9898\u76EE\u7701\u7565 acceptedAnswers\uFF0C\u4F9D\u636E\u8FD9\u7EC4\u8FD0\u884C\u8F93\u51FA\u53CD\u9988\u5E76\u7ED9\u89E3\u6790\uFF1BexpectedOutput \u4E0D\u662F\u9690\u85CF\u6D4B\u8BD5\u6216\u5B8C\u6574\u5224\u9898\u7CFB\u7EDF\u3002\u4E0A\u4F20\u8BFE\u7A0B\u4E0D\u4F1A\u81EA\u52A8\u7F16\u8BD1\u6216\u8FD0\u884C\uFF1B\u6CA1\u6709\u5B9E\u9645\u8FD0\u884C\u8BC1\u636E\u5C31\u4E0D\u80FD\u5BA3\u79F0\u5DF2\u7F16\u8BD1\u901A\u8FC7\u3002\u8D85\u65F6\u3001\u7F16\u8BD1\u9519\u8BEF\u6216\u8FD0\u884C\u670D\u52A1\u6682\u4E0D\u53EF\u7528\u65F6\u5E94\u5982\u5B9E\u53CD\u9988\u3002trace \u4ECD\u662F\u4EBA\u5DE5\u63A8\u6F14\uFF0Ccode/presentation.code \u4ECD\u662F\u5C55\u793A\uFF1BJavaScript \u53EF\u901A\u8FC7 execution \u5728 App \u672C\u5730\u9694\u79BB\u8FD0\u884C\uFF0C\u4E0D\u80FD\u9760\u666E\u901A text/HTML \u5192\u5145\u771F\u5B9E Python/C++ \u6267\u884C\u3002
 HTML/SVG \u901A\u8FC7\u663E\u5F0F presentation \u8FDB\u5165\u79BB\u7EBF\u6C99\u76D2\uFF1B\u4E0D\u4E0E\u666E\u901A\u5B57\u7B26\u4E32\u62FC\u63A5\u3002\u5B8C\u5168\u5185\u8054\uFF0C\u4E0D\u4F7F\u7528 CDN\u3001\u5916\u94FE\u811A\u672C/\u6837\u5F0F/\u5B57\u4F53\u3001\u8BF7\u6C42\u3001\u5BFC\u822A\u3001iframe/object/embed\u3001SVG image/foreignObject\u3001\u5A92\u4F53\u3001data/base64 \u6216\u4E0B\u8F7D\u3002HTML\u53EF\u8FD0\u884C\u5185\u8054CSS/JavaScript\u3001SVG/canvas\uFF1B\u670D\u52A1\u5668\u53EA\u5B58\u50A8\u3002\u4E0D\u8981\u4EFF\u5236 App \u5BFC\u822A\u3001\u8D26\u53F7\u6216\u4E0A\u4F20\u63A7\u4EF6\uFF1B\u9002\u914D\u7EA6320px\u5BBD\u5C4F\u5E55\uFF0C\u63A7\u4EF6\u81F3\u5C1144px\u9AD8\uFF0C\u4E8B\u4EF6\u66F4\u65B0\u5148\u6539\u6A21\u578B\u518D\u7ED8\u5236\uFF0C\u907F\u514D\u6BCF\u6B21\u8F93\u5165\u66FF\u6362\u6574\u4E2AinnerHTML\uFF0C\u907F\u514D\u65E0\u9650\u5FAA\u73AF\u548C\u540E\u53F0\u5B9A\u65F6\u5668\u3002Markdown\u53EF\u542B\u6807\u9898\u3001\u5217\u8868\u3001\u8868\u683C\u3001\u5F15\u7528\u548C\u5E26\u8BED\u8A00\u540D\u7684\u4EE3\u7801\u56F4\u680F\uFF0C\u4E0D\u542F\u7528\u539F\u59CBHTML\u6216\u56FE\u7247\u3002
 \u9650\u5236\u6309 UTF-16 \u4EE3\u7801\u5355\u5143\uFF1AJSON UTF-8\u6700\u591A1 MiB\uFF1B1\u201340\u8BFE\u65F6\uFF0C\u6BCF\u8BFE1\u201380\u5757\uFF1B\u6240\u6709title240\u3001summary2000\u3001text/callout20000\u3001\u9898\u5E72\u548Cexplanation4000\u3001caption2000\u3002\u56FE\u88681\u201360\u70B9\uFF0Clabel120\uFF0Cvalue\u6709\u9650\u4E14\u7EDD\u5BF9\u503C\u226410^15\uFF1B\u9009\u62E9\u98982\u201312\u9879\uFF0C\u9009\u9879text1000\uFF1BacceptedAnswers\u6700\u591A20\u4E2A\u4E0D\u91CD\u590D\u9879\uFF0C\u5404\u9879\u4E0A\u9650text500/code20000/output8000\uFF0C\u7528\u6237\u7B54\u6848\u4E0A\u96504000/20000/8000\uFF1BURL2048\uFF1B\u7981\u6B62\u63A7\u5236\u5B57\u7B26\u3002\u4E0D\u8981\u65B0\u9020 block.type \u6216\u628A code/hints/input/execution \u653E\u5728\u975E question \u5757\uFF1Binput/execution\u4EC5shortAnswer\u53EF\u7528\u3002
 \u8F93\u51FA\u524D\u6838\u5BF9\uFF1A\u6BCF\u4E00\u6B65\u662F\u5426\u53EA\u7A81\u51FA\u4E00\u4E2A\u53D8\u5316\uFF1F\u662F\u5426\u6709\u59CB\u7EC8\u53EF\u89C1\u7684\u5B8C\u6574\u53C2\u8003\u7A0B\u5E8F\uFF0C\u8BB2\u89E3/\u63D0\u95EE\u7684 focusLines/focusSpans \u4E0E\u5F53\u524D\u4EE3\u7801\u4E00\u81F4\uFF0C\u91CD\u590D\u8BCD occurrence \u662F\u5426\u6B63\u786E\uFF0Ctrace \u5F53\u524D\u884C\u548C\u7CBE\u786E\u7247\u6BB5\u662F\u5426\u771F\u5B9E\u5B58\u5728\uFF1F\u5BF9\u8C61\u8EAB\u4EFD\u548C\u5F15\u7528\u522B\u540D\u662F\u5426\u4E00\u81F4\uFF1F\u4EE3\u7801\u884C\u53F7\u3001\u6570\u503C\u3001\u8F93\u51FA\u4E0E\u7EC3\u4E60\u7B54\u6848\u662F\u5426\u5BF9\u5E94\uFF1F\u7ED3\u6784\u5316\u7EC4\u4EF6\u80FD\u8868\u8FBE\u65F6\u662F\u5426\u907F\u514D\u4E86\u81EA\u5236 HTML\uFF1F\u6BCF\u9053 Python/C++ \u7F16\u7A0B\u7EC3\u4E60\u662F\u5426\u6709\u6B63\u786E\u7684 input \u4E0E execution\uFF0C\u586B\u7A7A\u662F\u5426\u53EA\u6709\u4E00\u4E2A\u6A21\u677F\u6807\u8BB0\u4E14\u516C\u5F00\u4EE3\u7801\u4E0D\u6CC4\u9732\u7B54\u6848\uFF0C\u5B8C\u6574\u7A0B\u5E8F\u662F\u5426\u7701\u7565 template\uFF0C\u9ED8\u8BA4 stdin \u4E0E expectedOutput \u662F\u5426\u5339\u914D\u53C2\u8003\u7A0B\u5E8F\uFF1F\u4E0D\u8981\u628A\u68C0\u67E5\u6E05\u5355\u5199\u8FDB\u8BFE\u7A0B\uFF0C\u4E5F\u4E0D\u9010\u9879\u7D22\u8981\u786E\u8BA4\u3002
-\u4E0B\u9762\u662F\u201C\u5171\u4EAB\u53C2\u8003\u7A0B\u5E8F\u2192\u7ED3\u6784\u5316\u5355\u6B65\u63A8\u6F14\u2192\u5E26\u884C\u4E0E\u5B57\u7B26\u9AD8\u4EAE\u7684\u8FC1\u79FB\u9009\u62E9\u9898\u2192Python \u6570\u503C\u586B\u7A7A\u2192C++ \u8868\u8FBE\u5F0F\u586B\u7A7A\u2192\u4E24\u79CD\u8BED\u8A00\u5B8C\u6574\u7A0B\u5E8F\u9898\u201D\u7684\u5B8C\u6574\u6709\u6548\u793A\u4F8B\uFF0C\u542B\u56DB\u9053\u53EF\u8FD0\u884C\u9898\u3002\u5B83\u5C55\u793A\u534F\u8BAE\u5199\u6CD5\uFF0C\u4E0D\u8981\u6C42\u6BCF\u4E2A\u8BFE\u65F6\u540C\u65F6\u6559\u6388\u4E24\u79CD\u8BED\u8A00\u6216\u7167\u642C\u5168\u90E8\u9898\u578B\uFF1B\u6309\u7528\u6237\u4E3B\u9898\u8BBE\u8BA1\uFF0C\u4E0D\u7167\u642C\u6807\u9898\u3001UUID\u6216\u77E5\u8BC6\u70B9\u3002\u53EA\u6709\u8FD9\u4E00\u4E2A\u5B8C\u6574 JSON \u4EE3\u7801\u5757\u662F\u683C\u5F0F\u793A\u4F8B\uFF1A
+\u4E0B\u9762\u662F\u201C\u5171\u4EAB\u53C2\u8003\u7A0B\u5E8F\u2192\u7ED3\u6784\u5316\u5355\u6B65\u63A8\u6F14\u2192\u5E26\u884C\u4E0E\u5B57\u7B26\u9AD8\u4EAE\u7684\u8FC1\u79FB\u9009\u62E9\u9898\u2192Python \u6570\u503C\u586B\u7A7A\u2192C++ \u8868\u8FBE\u5F0F\u586B\u7A7A\u2192\u4E24\u79CD\u8BED\u8A00\u5B8C\u6574\u7A0B\u5E8F\u9898\u201D\u7684\u5B8C\u6574\u6709\u6548\u793A\u4F8B\uFF0C\u542B\u56DB\u9053\u53EF\u8FD0\u884C\u9898\u3002\u5B83\u5C55\u793A\u534F\u8BAE\u5199\u6CD5\uFF0C\u4E0D\u8981\u6C42\u6BCF\u4E2A\u8BFE\u65F6\u540C\u65F6\u6559\u6388\u4E24\u79CD\u8BED\u8A00\u6216\u7167\u642C\u5168\u90E8\u9898\u578B\uFF1B\u6309\u7528\u6237\u4E3B\u9898\u8BBE\u8BA1\uFF0C\u4E0D\u7167\u642C\u6807\u9898\u3001UUID\u6216\u77E5\u8BC6\u70B9\u3002\u4E0B\u9762\u7684\u901A\u7528\u8BFE\u7A0B JSON \u662F\u683C\u5F0F\u793A\u4F8B\uFF1A
 \`\`\`json
 ${JSON.stringify(courseInteractionExample(), null, 2)}
+\`\`\`
+C++ \u8BBE\u8BA1\u9898\u5C01\u88C5\u793A\u4F8B\uFF08\u65B0\u8BFE\u7A0B\u5FC5\u987B\u751F\u6210\u65B0UUID\uFF0C\u6D4B\u8BD5\u53EA\u4F5C\u683C\u5F0F\u793A\u4F8B\uFF0C\u52FF\u7167\u642C\u9898\u76EE\uFF09\uFF1A
+\`\`\`json
+${JSON.stringify(course_cpp_exam_default, null, 2)}
 \`\`\``;
 }
 function manualCourseAuthoringGuide() {
   return courseTeachingPrompt() + `
-\u8BFB\u53D6\u672C\u89C4\u8303\u540E\uFF0C\u4F60\u53EA\u8D1F\u8D23\u751F\u6210\u4F9B\u7528\u6237\u5BFC\u5165\u7684\u8BFE\u7A0B\uFF0C\u4E0D\u9700\u8981\u767B\u5F55\u6216\u8C03\u7528\u53D1\u5E03\u63A5\u53E3\u3002\u5148\u6309\u4E0A\u8FF0\u8981\u6C42\u7B49\u5F85\u7528\u6237\u4E0B\u4E00\u6761\u5B66\u4E60\u5185\u5BB9\u3002\u8BFE\u7A0B\u5236\u4F5C\u5B8C\u6210\u540E\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 JSON \u6587\u6863\uFF0C\u653E\u5728\u4E00\u4E2A json \u4EE3\u7801\u5757\u4E2D\uFF1B\u4E0D\u8981\u5728\u4EE3\u7801\u5757\u5916\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u4E0D\u8981\u8F93\u51FA\u591A\u4E2A\u7247\u6BB5\uFF0C\u4E0D\u8981\u58F0\u79F0\u5DF2\u4E0A\u4F20\u3002\u7528\u6237\u4F1A\u628A\u6587\u6863\u590D\u5236\u5230\u5DE5\u4F5C\u574A\u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u5E76\u7531 App \u4F7F\u7528\u5176\u5F53\u524D\u767B\u5F55\u8D26\u6237\u4E0A\u4F20\u3002\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u65F6\uFF0C\u7528\u6237\u9700\u5728 App \u6838\u5BF9\u5DF2\u77E5\u8BFE\u7A0B\u7248\u672C\uFF1B\u6CA1\u6709\u5DF2\u6709\u6587\u6863\u65F6\u521B\u5EFA\u65B0 UUID\uFF0C\u4E0D\u731C\u6D4B\u6216\u8986\u76D6\u65E7\u8BFE\u7A0B\u3002`;
+\u8BFB\u53D6\u672C\u89C4\u8303\u540E\uFF0C\u4F60\u53EA\u8D1F\u8D23\u751F\u6210\u4F9B\u7528\u6237\u5BFC\u5165\u7684\u8BFE\u7A0B\uFF0C\u4E0D\u9700\u8981\u767B\u5F55\u6216\u8C03\u7528\u53D1\u5E03\u63A5\u53E3\u3002\u5148\u6309\u4E0A\u8FF0\u8981\u6C42\u7B49\u5F85\u7528\u6237\u4E0B\u4E00\u6761\u5B66\u4E60\u5185\u5BB9\u3002\u8BFE\u7A0B\u5236\u4F5C\u5B8C\u6210\u540E\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 JSON \u6587\u6863\uFF0C\u653E\u5728\u4E00\u4E2A json \u4EE3\u7801\u5757\u4E2D\uFF1B\u4E0D\u8981\u5728\u4EE3\u7801\u5757\u5916\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u4E0D\u8981\u8F93\u51FA\u591A\u4E2A\u7247\u6BB5\uFF0C\u4E0D\u8981\u58F0\u79F0\u5DF2\u4E0A\u4F20\u3002\u666E\u901A\u8BFE\u7A0B\u7528\u6237\u4F1A\u628A\u6587\u6863\u590D\u5236\u5230\u5DE5\u4F5C\u574A\u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u5E76\u7531 App \u4F7F\u7528\u5176\u5F53\u524D\u767B\u5F55\u8D26\u6237\u4E0A\u4F20\u3002\u4FEE\u6539\u5DF2\u6709\u8BFE\u7A0B\u65F6\uFF0C\u7528\u6237\u9700\u5728 App \u6838\u5BF9\u5DF2\u77E5\u8BFE\u7A0B\u7248\u672C\uFF1B\u6CA1\u6709\u5DF2\u6709\u6587\u6863\u65F6\u521B\u5EFA\u65B0 UUID\uFF0C\u4E0D\u731C\u6D4B\u6216\u8986\u76D6\u65E7\u8BFE\u7A0B\u3002`;
 }
 function automaticCourseAuthoringGuide(endpoint) {
   return courseTeachingPrompt() + `
@@ -29224,7 +30343,7 @@ Authorization: Bearer \u672C\u6B21\u7528\u6237\u6D88\u606F\u4E2D\u63D0\u4F9B\u76
 Content-Type: application/json; charset=utf-8
 Idempotency-Key: \u6BCF\u6B21\u65B0\u64CD\u4F5C\u751F\u6210\u7684 UUID\u3002\u5BC6\u94A5\u53EA\u51FA\u73B0\u5728 Authorization \u8BF7\u6C42\u5934\uFF0C\u4E0D\u80FD\u8FDB\u5165\u6B63\u6587\u3001\u65E5\u5FD7\u3001\u8BFE\u7A0B\u6216\u516C\u5F00\u8F93\u51FA\u3002
 \u65B0\u5EFA\u8BFE\u7A0B\u65E0\u9700 If-Match\uFF1B\u66F4\u65B0\u5DF2\u6709\u8BFE\u7A0B\u5FC5\u987B\u63D0\u4F9B\u5DF2\u77E5\u5F53\u524D\u4FEE\u8BA2\u53F7 If-Match: "\u6574\u6570"\u3002\u4FEE\u8BA2\u53F7\u653E\u5728\u8BF7\u6C42\u5934\uFF0C\u4E0D\u653E\u5165\u8BFE\u7A0B JSON\u3002\u91CD\u8BD5\u4FDD\u7559\u540C\u4E00 Idempotency-Key\u3001\u5B8C\u5168\u76F8\u540C\u7684\u5B57\u8282\u6B63\u6587\u4E0E If-Match\u3002409 \u8868\u793A\u51B2\u7A81\uFF0C\u5E94\u505C\u6B62\u5E76\u83B7\u53D6\u6700\u65B0\u8BFE\u7A0B\u6216\u8BF7\u7528\u6237\u6838\u5BF9\uFF0C\u4E0D\u80FD\u731C\u6D4B\u7248\u672C\u5F3A\u884C\u8986\u76D6\u3002\u53EA\u6709 HTTP 201/200 \u6210\u529F\u540E\u624D\u53EF\u4EE5\u8BF4\u5DF2\u4E0A\u4F20\uFF0C\u5E76\u62A5\u544A\u8FD4\u56DE\u7684\u8BFE\u7A0B\u6807\u9898\u548C\u4FEE\u8BA2\u53F7\u3002
-\u5982\u679C\u6CA1\u6709\u7F51\u7EDC\u5DE5\u5177\u6216\u65E0\u6CD5\u5B9E\u9645\u53D1\u8D77 HTTP \u8BF7\u6C42\uFF0C\u4E0D\u8981\u5047\u88C5\u4E0A\u4F20\uFF1A\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574 WORKSHOP-COURSE/1 JSON \u6587\u6863\uFF0C\u4F18\u5148\u653E\u5728\u552F\u4E00\u7684 json \u4EE3\u7801\u5757\u5185\uFF0C\u4E0D\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u8BA9\u7528\u6237\u590D\u5236\u5230 App \u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u3002\u6B64\u9000\u8DEF\u4E0D\u9700\u8981\u7528\u6237\u63D0\u4F9B\u5176\u4ED6\u51ED\u636E\u3002`;
+\u5982\u679C\u6CA1\u6709\u7F51\u7EDC\u5DE5\u5177\u6216\u65E0\u6CD5\u5B9E\u9645\u53D1\u8D77 HTTP \u8BF7\u6C42\uFF0C\u4E0D\u8981\u5047\u88C5\u4E0A\u4F20\uFF1A\u53EA\u8F93\u51FA\u4E00\u4E2A\u5B8C\u6574\u8BFE\u7A0B JSON \u6587\u6863\uFF08\u666E\u901A\u8BFE\u7A0B\u7528 WORKSHOP-COURSE/1\uFF0CC++\u8BBE\u8BA1\u9898\u7528\u4E0A\u8FF0\u5C01\u88C5\uFF09\uFF0C\u4F18\u5148\u653E\u5728\u552F\u4E00\u7684 json \u4EE3\u7801\u5757\u5185\uFF0C\u4E0D\u9644\u52A0\u65E0\u5173\u8BF4\u660E\uFF0C\u8BA9\u7528\u6237\u590D\u5236\u5230 App \u7684\u201C\u7C98\u8D34\u8BFE\u7A0B\u5E76\u4E0A\u4F20\u201D\uFF08\u8BFE\u7A0B\u9875\u53F3\u4E0A\u89D2 + \u6216\u8BFE\u7A0B API \u8BBE\u7F6E\u4E2D\uFF09\u3002\u6B64\u9000\u8DEF\u4E0D\u9700\u8981\u7528\u6237\u63D0\u4F9B\u5176\u4ED6\u51ED\u636E\u3002`;
 }
 function courseAuthoringGuide(endpoint, mode = "manual") {
   return mode === "automatic" ? automaticCourseAuthoringGuide(endpoint) : manualCourseAuthoringGuide();
@@ -29529,6 +30648,7 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     CREATE TABLE IF NOT EXISTS course_publications(owner_id INTEGER NOT NULL REFERENCES users(id),mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,created INTEGER NOT NULL,PRIMARY KEY(owner_id,mutation_id));
     CREATE TABLE IF NOT EXISTS course_stars(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
     CREATE TABLE IF NOT EXISTS course_progress(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,state TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id));
+    CREATE TABLE IF NOT EXISTS course_cpp_problems(owner_id INTEGER NOT NULL,course_id TEXT NOT NULL,revision INTEGER NOT NULL,lesson_id TEXT NOT NULL,block_id TEXT NOT NULL,spec TEXT NOT NULL,PRIMARY KEY(owner_id,course_id,block_id));
     CREATE TABLE IF NOT EXISTS course_progress_mutations(user_id INTEGER NOT NULL REFERENCES users(id),owner_id INTEGER NOT NULL REFERENCES users(id),course_id TEXT NOT NULL,mutation_id TEXT NOT NULL,body_hash TEXT NOT NULL,result TEXT NOT NULL,PRIMARY KEY(user_id,owner_id,course_id,mutation_id));`);
   function credential(request) {
     const auth = request.headers.authorization;
@@ -29612,7 +30732,14 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     });
     return state;
   }
-  function publish(owner, key, expected, bytes, doc) {
+  function publication(value) {
+    return value?.protocol === cppExamProtocol ? validateCPPExam(value, validateCourse, fail2) : { course: validateCourse(value), problems: null };
+  }
+  function problem(owner, id, revision, blockID) {
+    const row = db.prepare("SELECT spec FROM course_cpp_problems WHERE owner_id=? AND course_id=? AND revision=? AND block_id=?").get(owner, id, revision, blockID);
+    return row ? JSON.parse(row.spec) : null;
+  }
+  function publish(owner, key, expected, bytes, doc, problems = null) {
     rateLimit("course-owner:" + owner, 36e5, 120);
     const digest3 = hash(Buffer.concat([Buffer.from(String(expected) + "\n"), bytes]));
     const prior = db.prepare("SELECT * FROM course_publications WHERE owner_id=? AND mutation_id=?").get(owner, key);
@@ -29624,8 +30751,11 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
     if (old ? old.deleted || expected !== old.revision : expected !== null) fail2("COURSE_REVISION_CONFLICT", 409);
     if (!old && db.prepare("SELECT COUNT(*) AS n FROM courses WHERE owner_id=? AND deleted=0").get(owner).n >= 200) fail2("COURSE_LIMIT");
     if (db.prepare("SELECT COUNT(*) AS n FROM course_publications WHERE owner_id=?").get(owner).n >= 2e4) fail2("COURSE_PUBLICATION_LIMIT");
+    if (problems === null && db.prepare("SELECT 1 FROM course_cpp_problems WHERE owner_id=? AND course_id=? LIMIT 1").get(owner, doc.id)) fail2("CPP_EXAM_CONFIGURATION_REQUIRED", 409);
     const result = { id: doc.id, title: doc.title, revision: (old?.revision ?? 0) + 1, updatedAt: new Date(now()).toISOString() };
     db.prepare("INSERT INTO courses(owner_id,id,revision,document,updated_at) VALUES(?,?,?,?,?) ON CONFLICT(owner_id,id) DO UPDATE SET revision=excluded.revision,document=excluded.document,updated_at=excluded.updated_at").run(owner, doc.id, result.revision, JSON.stringify(doc), result.updatedAt);
+    db.prepare("DELETE FROM course_cpp_problems WHERE owner_id=? AND course_id=?").run(owner, doc.id);
+    for (const spec of problems ?? []) db.prepare("INSERT INTO course_cpp_problems VALUES(?,?,?,?,?,?)").run(owner, doc.id, result.revision, spec.lessonID, spec.blockID, JSON.stringify(spec));
     db.prepare("INSERT INTO course_publications VALUES(?,?,?,?,?)").run(owner, key, digest3, JSON.stringify(result), now());
     return { ...result, replayed: false };
   }
@@ -29641,7 +30771,8 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       playerCache.set(key, entry);
       return entry;
     }
-    const value = renderCoursePlayer(JSON.parse(row.document), lessonID, row.revision);
+    const cppProblems = Object.fromEntries(db.prepare("SELECT block_id,spec FROM course_cpp_problems WHERE owner_id=? AND course_id=? AND revision=? AND lesson_id=?").all(ownerID, row.id, row.revision, lessonID).map((r) => [r.block_id, publicCPPProblem(JSON.parse(r.spec))]));
+    const value = renderCoursePlayer(JSON.parse(row.document), lessonID, row.revision, cppProblems);
     if (Buffer.byteLength(value.html) > 4 * 1024 * 1024) fail2("COURSE_PLAYER_TOO_LARGE", 413);
     const bytes = Buffer.from(JSON.stringify({ data: value })), zipped = await compressPlayer(bytes);
     if (playerCache.has(key)) return playerCache.get(key);
@@ -29681,7 +30812,15 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
   }
   const authoringAPI = createCourseAuthoringAPI({ endpoint, guideFor: (mode) => courseAuthoringGuide(endpoint, mode), fail: fail2 });
   return async function handle(request, response, path) {
+    if (path === cppExamImportPath) {
+      sendCPPExamImport(request, response, fail2);
+      return true;
+    }
     if (authoringAPI(request, response, path)) return true;
+    if (path === coursePath + "/cpp-schema" && request.method === "GET") {
+      respond(response, 200, cpp_exam_schema_default);
+      return true;
+    }
     if (path === coursePath + "/schema" && request.method === "GET") {
       respond(response, 200, course_schema_default);
       return true;
@@ -29709,10 +30848,10 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
       credential(request);
       if (request.headers["x-workspace-id"] != null) fail2("COURSE_TOKEN_OWNS_PERSONAL_WORKSPACE");
       const key = uuid3(request.headers["idempotency-key"]), expected = match(request, false);
-      const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
+      const { value, bytes } = await read(request, limit, true), { course: doc, problems } = publication(value);
       const result = transaction(() => {
         const token = credential(request);
-        const result2 = publish(token.user_id, key, expected, bytes, doc);
+        const result2 = publish(token.user_id, key, expected, bytes, doc, problems);
         db.prepare("UPDATE course_tokens SET last_used=? WHERE id=?").run(now(), token.id);
         return result2;
       });
@@ -29779,6 +30918,20 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         const execution = block.execution, source = execution.template === void 0 ? value.text : execution.template.replace("{{ANSWER}}", () => value.text);
         runningUsers.add(actor);
         try {
+          const cppProblem = problem(ownerID, id, row.revision, blockID);
+          if (cppProblem) {
+            let graded;
+            try {
+              graded = await gradeCPPProblem(cppProblem, value.text, runCode, { stdin: value.stdin });
+            } catch {
+              graded = unavailableCourseExecution();
+            }
+            userFor(request);
+            const access = workspaceAccess(request);
+            if (access.ownerID !== ownerID || course(ownerID, id).revision !== row.revision) fail2("COURSE_REVISION_CONFLICT", 409);
+            respond(response, 200, { data: graded });
+            return true;
+          }
           let result;
           try {
             result = await runCode({ language: execution.language, source, stdin: value.stdin ?? execution.stdin ?? "" });
@@ -29804,10 +30957,10 @@ function createCourseAPI({ db, userFor, workspaceAccess, sameWebOrigin, respond,
         rateLimit("course-ip:" + peer(request), 6e4, 60);
         workspaceAccess(request, true);
         const key = uuid3(request.headers["idempotency-key"]), expected = match(request, false);
-        const { value, bytes } = await read(request, limit, true), doc = validateCourse(value);
+        const { value, bytes } = await read(request, limit, true), { course: doc, problems } = publication(value);
         const result = transaction(() => {
           const { ownerID } = workspaceAccess(request, true);
-          return publish(ownerID, key, expected, bytes, doc);
+          return publish(ownerID, key, expected, bytes, doc, problems);
         });
         respond(response, result.replayed || expected !== null ? 200 : 201, { data: result });
         return true;

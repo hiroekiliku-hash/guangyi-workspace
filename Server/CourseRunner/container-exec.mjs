@@ -1,4 +1,5 @@
 // Runs only inside the disposable container; no account data or credentials enter it.
+import { checkCPPBasicSource } from './cpp-basic-policy.mjs';
 import { writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
@@ -63,16 +64,34 @@ async function main() {
   const payload = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)));
   if (!['javascript', 'python', 'cpp'].includes(payload.language) || typeof payload.source !== 'string' || payload.source.length > 40000 ||
     typeof payload.stdin !== 'string' || payload.stdin.length > 4000) return result('runtimeError', '', '无效代码提交。');
+  const batch=payload.tests!==undefined;
+  if((payload.profile!==undefined&&(payload.profile!=='cpp-exam-basic'||payload.language!=='cpp'))||(batch&&(payload.language!=='cpp'||payload.profile!=='cpp-exam-basic'||!Array.isArray(payload.tests)||payload.tests.length<1||payload.tests.length>8||payload.tests.some(t=>typeof t!=='string'||t.length>4000||t.includes('\0')))))return result('runtimeError','','无效测试请求。');
+  if(payload.profile==='cpp-exam-basic'){const error=checkCPPBasicSource(payload.source);if(error)return result('compileError','',error);}
   const file = { javascript: 'answer.cjs', python: 'answer.py', cpp: 'answer.cpp' }[payload.language];
   await writeFile('/workspace/' + file, payload.source, { mode: 0o600 });
   if (payload.language === 'cpp') {
-    const compile = await executeCourseProcess('/usr/bin/g++', ['-std=c++20', '-O0', '-pipe', '/workspace/answer.cpp', '-o', '/workspace/answer'], '', 5000);
+    const compile = await executeCourseProcess('/usr/bin/g++', [payload.profile==='cpp-exam-basic'?'-std=c++17':'-std=c++20', '-O0', '-pipe', ...(payload.profile==='cpp-exam-basic'?['-pedantic-errors']:[]), '/workspace/answer.cpp', '-o', '/workspace/answer'], '', 5000);
     if (compile.timedOut) return result('timeout', compile.stdout, compile.stderr || '编译超时。');
     if (compile.overflow) return result('outputLimit', compile.stdout, compile.stderr);
     if (compile.code !== 0) return result('compileError', compile.stdout, compile.stderr, compile.code ?? undefined);
   }
   const binary = { javascript: '/usr/local/bin/node', python: '/usr/bin/python3', cpp: '/workspace/answer' }[payload.language];
   const args = { javascript: ['--max-old-space-size=96', '/workspace/answer.cjs'], python: ['-I', '-B', '/workspace/answer.py'], cpp: [] }[payload.language];
+  if(batch){
+    const cases=[], started=performance.now();
+    for(const input of payload.tests){
+      const budget=Math.min(1500,4500-(performance.now()-started));
+      if(budget<=0)return result('timeout','','测试集运行超时。');
+      const run=await executeCourseProcess(binary,args,input,budget);
+      if(run.timedOut)return result('timeout','','测试集运行超时。');
+      if(run.overflow)return result('outputLimit','','输出超过限制。');
+      // Never expose runtime stderr produced under hidden input. Expected answers
+      // are never transmitted to this container, only bounded input strings.
+      cases.push({status:run.code===0?'completed':'runtimeError',stdout:run.stdout,stderr:'',durationMs:0});
+      if(cases.reduce((n,c)=>n+Buffer.byteLength(c.stdout),0)>64*1024)return result('outputLimit','','测试集输出超过限制。');
+    }
+    return {...result('completed'),cases};
+  }
   const run = await executeCourseProcess(binary, args, payload.stdin, 2000);
   if (run.timedOut) return result('timeout', run.stdout, run.stderr || '运行超时。');
   if (run.overflow) return result('outputLimit', run.stdout, run.stderr);

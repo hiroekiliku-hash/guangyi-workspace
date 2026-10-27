@@ -7,7 +7,7 @@ RUN if [ -n "$DEBIAN_MIRROR" ]; then sed -i "s|http://deb.debian.org|$DEBIAN_MIR
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /workspace /opt/course-runner \
     && chown 10001:10001 /workspace
-COPY container-exec.mjs /opt/course-runner/container-exec.mjs
+COPY container-exec.mjs cpp-basic-policy.mjs /opt/course-runner/
 USER 10001:10001
 WORKDIR /workspace
 ENTRYPOINT ["/usr/local/bin/node", "/opt/course-runner/container-exec.mjs"]

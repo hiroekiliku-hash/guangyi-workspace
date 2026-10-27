@@ -1,16 +1,18 @@
+import { tokenizeCPP } from './cpp-highlight.mjs';
 // Trusted renderer owned by the service. Course strings are data, never trusted markup.
 export const playerProtocol = 'WORKSHOP-PLAYER/1';
-export const rendererVersion = '2026.10.25.1';
+export const rendererVersion = '2026.10.27.1';
 const json = value => JSON.stringify(value).replace(/</g, '\\u003c').replace(/\u2028/g, '\\u2028').replace(/\u2029/g, '\\u2029');
-export function renderCoursePlayer(course, lessonID, courseRevision) {
+export function renderCoursePlayer(course, lessonID, courseRevision, cppProblems = {}) {
   const lesson = course.lessons.find(item => item.id.toLowerCase() === lessonID.toLowerCase());
   if (!lesson) throw new Error('COURSE_LESSON_NOT_FOUND');
-  const data = { courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
+  const data = { cppProblems, courseID: course.id, courseRevision, referenceCode: course.referenceCode, lessonIndex: course.lessons.indexOf(lesson), lesson };
   // A bundler may normalize string escapes inside function source. Escape the entire
   // serialized runtime at the final HTML boundary, including nested srcdoc scripts.
+  const tokenizer = tokenizeCPP.toString().replace(/<\/script/gi, '<' + String.fromCharCode(92) + '/script');
   const runtime = playerRuntime.toString().replace(/<\/script/gi, '<' + String.fromCharCode(92) + '/script');
   return { protocol: playerProtocol, rendererVersion, courseID: course.id, lessonID: lesson.id, courseRevision,
-    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const curriculum=${json(data)};(${runtime})(curriculum);</script></body></html>` };
+    html: `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; frame-src about:; img-src 'none'; connect-src 'none'; font-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'"><style>${playerCSS}</style></head><body><main id="app" aria-live="polite"></main><script>const tokenizeCPP=${tokenizer};const curriculum=${json(data)};(${runtime})(curriculum);</script></body></html>` };
 }
 const playerCSS = `
 :root{color-scheme:light dark;--bg:#f2f2f7;--panel:#fff;--text:#1c1c1e;--muted:#707078;--line:#dedee4;--accent:#52758f;--soft:#e9eff4;--mark:#f6e0a0;--input:#fff;--bottom-space:16px;--control-space:148px;--corner-margin:0 0 0 auto}
@@ -22,6 +24,8 @@ main{max-width:1240px;margin:auto;padding:12px 20px calc(var(--bottom-space) + e
 textarea,input{display:block;width:100%;resize:none;background:var(--input);border:1px solid var(--line);border-radius:14px;padding:13px 14px;outline:none;min-height:48px;max-height:55vh;caret-color:var(--accent);scroll-margin-bottom:calc(var(--bottom-space) + 12px)}textarea:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 14%,transparent)}::placeholder{color:var(--muted);opacity:.8}textarea.code-input{font:15px/1.6 ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow:auto}.feedback{margin-top:18px;padding:14px 16px;background:var(--soft);border-radius:14px}.error{color:#c83c32;font-size:15px;margin-top:16px}.dark .error{color:#ff746b}.objects,.comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px}.object{padding:16px;border-radius:14px;background:var(--panel)}.object.changed{box-shadow:inset 0 0 0 1.5px var(--accent)}.object strong{display:block;font-size:32px;line-height:1.4}.output{background:var(--panel);padding:14px;border-radius:14px;white-space:pre-wrap;font:14px/1.6 ui-monospace,monospace}.table-scroll{overflow:auto;border-radius:14px;background:var(--panel)}table{border-collapse:collapse;width:100%;font-size:15px}td,th{text-align:left;border-bottom:1px solid var(--line);padding:11px 13px;min-width:90px}th{font-weight:600}tr:last-child td{border-bottom:0}details{margin:14px 0}summary{display:list-item;cursor:pointer;min-height:44px;padding:10px 0;color:var(--accent)}iframe{display:block;width:100%;border:0;background:transparent;min-height:120px;border-radius:14px}svg.chart{width:100%;height:auto;max-height:360px}.flash{width:100%;padding:24px;white-space:pre-wrap;margin:8px 0;background:var(--panel);min-height:88px}.steps{padding-left:24px}.steps li{padding-left:5px;margin-bottom:20px}.chart-label{font:12px -apple-system,system-ui;fill:var(--muted)}.chart-bar{fill:var(--accent)}blockquote{margin:14px 0;border-left:3px solid var(--accent);padding-left:16px;color:var(--muted)}.markdown code:not(.code){background:var(--soft);padding:2px 5px;border-radius:4px}.markdown pre{overflow:auto;white-space:pre;background:var(--panel);padding:15px;border-radius:14px}.markdown p{white-space:normal}.callout>p:first-child{padding:13px 16px;background:var(--soft);border-radius:14px}.comparison .card{padding:16px}
 .vocabulary{max-width:720px;margin:0 auto}.vocabulary-progress{display:flex;justify-content:space-between;gap:12px;align-items:center;margin:0 0 12px;font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}.vocabulary-card{display:block;width:100%;text-align:left;padding:clamp(22px,5vw,36px);background:var(--panel);border:1px solid var(--line);border-radius:24px;cursor:pointer;white-space:pre-wrap;overflow-wrap:anywhere}.vocabulary-card[aria-pressed=true]{cursor:default}.vocabulary-word{display:block;font-size:clamp(32px,9vw,48px);line-height:1.2;font-weight:650;letter-spacing:-.025em}.vocabulary-pronunciation{display:block;color:var(--muted);font-size:17px;line-height:1.6;margin-top:12px}.vocabulary-cue{display:block;margin-top:28px;color:var(--accent);font-size:14px}.vocabulary-answer{display:block;margin-top:24px;padding-top:22px;border-top:1px solid var(--line);font-size:18px;line-height:1.65;white-space:pre-wrap}.vocabulary-card:active:not(:disabled){transform:none;filter:brightness(.98)}
 @media(prefers-reduced-motion:no-preference){.vocabulary-answer{animation:word-reveal .16s ease-out}@keyframes word-reveal{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:translateY(0)}}}
+.cpp-editor{position:relative;background:var(--input);border:1px solid var(--line);border-radius:14px;overflow:hidden;margin:8px 0 16px}.cpp-editor:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 15%,transparent)}.cpp-editor .cpp-ink,.cpp-editor .cpp-source{font:15px/24px ui-monospace,SFMono-Regular,Menlo,monospace;tab-size:4;white-space:pre;overflow-wrap:normal;padding:14px;margin:0;border:0;border-radius:0;letter-spacing:normal;text-align:left;box-sizing:border-box}.cpp-editor .cpp-ink,.cpp-editor .cpp-source{padding-left:52px}.cpp-gutter{position:absolute;left:0;top:0;width:40px;padding:14px 8px 14px 0;margin:0;color:var(--muted);text-align:right;font:12px/24px ui-monospace,monospace;white-space:pre;pointer-events:none;border-right:1px solid var(--line)}.cpp-ink{position:absolute;inset:0;overflow:hidden;pointer-events:none;color:var(--text)}textarea.cpp-source{position:relative;display:block;width:100%;min-height:72px;max-height:none;background:transparent;color:transparent;-webkit-text-fill-color:transparent;caret-color:var(--text);resize:none;outline:none;box-shadow:none}textarea.cpp-source::selection{background:color-mix(in srgb,var(--accent) 28%,transparent)}.cpp-ink .tok-preprocessor{color:var(--accent)}.cpp-caption{display:flex;justify-content:space-between;gap:12px;color:var(--muted);font-size:12px;margin:14px 0 6px}.cpp-kind{display:inline-block;padding:4px 10px;border-radius:20px;background:var(--soft);color:var(--accent);font-size:12px;margin:0 0 12px}.cpp-rules{font-size:13px;color:var(--muted)}.cpp-console{max-height:45vh;overflow:auto;white-space:pre-wrap}.cpp-exam .question-statement{white-space:pre-wrap}.cpp-exam .reference{max-height:calc(100vh - 120px)}
+@media(min-width:850px){.workspace.cpp-exam{grid-template-columns:minmax(280px,.85fr) minmax(420px,1.3fr);gap:28px}.cpp-assignment{position:sticky;top:10px}.cpp-exam .reference{position:sticky}}@media(max-width:599px){.cpp-exam .reference{position:static;max-height:32vh}}
 @media(min-width:850px){main{padding:18px 28px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.workspace.with-reference{grid-template-columns:minmax(280px,.85fr) minmax(360px,1.15fr);gap:26px}.reference{max-height:calc(100vh - 115px)}.heading{margin-bottom:18px}}
 @media(min-width:600px) and (orientation:landscape) and (max-height:500px){:root{--control-space:140px}main{padding:8px 16px calc(var(--bottom-space) + env(safe-area-inset-bottom,0px))}.heading{margin-bottom:10px}h1{font-size:19px}.workspace{gap:14px}.workspace.with-reference{grid-template-columns:minmax(220px,.8fr) minmax(260px,1.2fr)}.reference{max-height:calc(100vh - 65px)}body.keyboard-visible{--control-space:140px}}
 @media(max-width:599px){body:has(input:focus,textarea:focus) .reference{position:static;max-height:28vh}body:has(input:focus,textarea:focus){--bottom-space:148px}}
@@ -32,6 +36,7 @@ function playerRuntime(data) {
   const lesson = data.lesson, root = document.getElementById('app');
   let index = 0, pending = null, initialized = false, hapticsEnabled = true, lastInteractionHaptic = -100;
   const resultHaptics = new Map();
+  const cppChecks = new Map();
   const drafts = new Map(), saved = new Map(), flashcardStates = new Map(), traceStates = new Map(), runs = new Map(), feedbackFrames = new Map();
   const post = message => window.webkit?.messageHandlers?.workshopPlayer?.postMessage(message);
   const haptic = (style, result = false) => {
@@ -48,6 +53,7 @@ function playerRuntime(data) {
   const lineArray = source => source.replace(/\r\n|\r/g, '\n').split('\n');
   const ownCode = b => b.code ?? b.presentation?.code ?? b.presentation?.trace?.variants?.[0]?.code ?? (b.execution?.template ? { language: b.execution.language, source: b.execution.template } : undefined);
   function effectiveCode(block) {
+    if(data.cppProblems?.[block.id])return {code:block.code,inherited:false};
     const direct = ownCode(block) ?? lesson.referenceCode ?? data.referenceCode;
     if (direct) return { code: direct, inherited: false };
     const before = lesson.blocks.slice(0, index).reverse().map(ownCode).find(Boolean), after = lesson.blocks.slice(index + 1).map(ownCode).find(Boolean);
@@ -308,7 +314,57 @@ function playerRuntime(data) {
     if(block.explanation){const details=node('details'),summary=node('summary','查看解析');details.append(summary,node('p',block.explanation));feedback.append(details);}
     box.append(feedback);
   }
+  function cppEditor(value, onChange, { label = 'C++ 源码', program = false } = {}) {
+    const group=node('div'),caption=node('div',undefined,'cpp-caption'),count=node('span');caption.append(node('span',label),count);
+    const wrap=node('div',undefined,'cpp-editor'),gutter=node('pre',undefined,'cpp-gutter'),ink=node('pre',undefined,'cpp-ink'),input=node('textarea',undefined,'cpp-source');
+    gutter.setAttribute('aria-hidden','true');ink.setAttribute('aria-hidden','true');input.setAttribute('aria-label',label);input.setAttribute('wrap','off');input.value=value;input.maxLength=20000;
+    input.spellcheck=false;input.autocapitalize='off';input.autocorrect='off';input.readOnly=!!pending;input.rows=program?14:2;
+    const paint=()=>{const fragment=document.createDocumentFragment();for(const token of tokenizeCPP(input.value)){fragment.append(node('span',token.text,token.kind==='plain'?undefined:'tok-'+token.kind));}fragment.append(document.createTextNode('\n'));ink.replaceChildren(fragment);const lines=lineArray(input.value).length;count.textContent=`${lines} 行`;gutter.textContent=Array.from({length:lines},(_,i)=>i+1).join('\n');};
+    const resize=()=>{input.style.height='auto';const viewport=window.visualViewport?.height??window.innerHeight;input.style.height=Math.min(Math.max(input.scrollHeight,program?Math.min(336,viewport*.52):76),Math.max(96,viewport*.58))+'px';};input.cppResize=resize;
+    let scheduled=false;input.oninput=()=>{onChange(input.value);sendState();if(!scheduled){scheduled=true;requestAnimationFrame(()=>{scheduled=false;paint();resize();});}};
+    input.onscroll=()=>{ink.scrollTop=input.scrollTop;ink.scrollLeft=input.scrollLeft;gutter.style.transform=`translateY(${-input.scrollTop}px)`;};
+    input.onkeydown=e=>{
+      if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCPPExam(lesson.blocks[index],true);return;}
+      if(e.key==='Tab'){
+        e.preventDefault();const a=input.selectionStart,z=input.selectionEnd;
+        if(e.shiftKey){const start=input.value.lastIndexOf('\n',a-1)+1,end=z>a?z:a,part=input.value.slice(start,end),changed=part.replace(/^(?: {1,4}|\t)/gm,'');input.setRangeText(changed,start,end,'end');}
+        else if(a!==z&&input.value.slice(a,z).includes('\n')){const start=input.value.lastIndexOf('\n',a-1)+1;input.setRangeText(input.value.slice(start,z).replace(/^/gm,'    '),start,z,'end');}
+        else input.setRangeText('    ',a,z,'end');
+        input.dispatchEvent(new Event('input'));return;
+      }
+      if(e.key==='Enter'&&!e.isComposing){e.preventDefault();const a=input.selectionStart,z=input.selectionEnd,line=input.value.slice(input.value.lastIndexOf('\n',a-1)+1,a),indent=/^[ \t]*/.exec(line)[0]+(line.trimEnd().endsWith('{')?'    ':'');input.setRangeText('\n'+indent,a,z,'end');input.dispatchEvent(new Event('input'));}
+    };
+    wrap.append(gutter,ink,input);group.append(caption,wrap);paint();requestAnimationFrame(resize);return group;
+  }
+  function submitAnswer(block,answer){const id=requestID();pending={id,type:'submit',blockID:block.id,answer:structuredClone(answer)};post({type:'submit',requestID:id,blockID:block.id,...answer});sendState();}
+  function runCPPExam(block,autoSubmit=false,stdin){
+    if(pending)return false;const answer=draft(block),meta=data.cppProblems[block.id];
+    if(!answer.text.trim()){showError('请先填写回答。');return false;}
+    if(meta.kind==='fill'){let values;try{values=JSON.parse(answer.text);}catch{}if(!values||meta.blanks.some(b=>typeof values[b.id]!=='string'||!values[b.id].trim())){showError('请填写所有代码空格。');return false;}}
+    const id=requestID();runs.set(id,{blockID:block.id,exam:true,autoSubmit,formal:stdin===undefined||stdin===(block.execution.stdin??''),answer:structuredClone(answer)});pending={id,type:'exam-run',blockID:block.id};
+    post({type:'run',requestID:id,blockID:block.id,answer:answer.text,stdin:stdin??block.execution.stdin??''});render();return true;
+  }
+  function cppQuestion(block,box){
+    const meta=data.cppProblems[block.id],answer=draft(block);
+    const edited=()=>{runs.delete(block.id);cppChecks.delete(block.id);box.querySelector('.feedback')?.remove();box.querySelector('.cpp-console')?.remove();};
+    box.append(node('div',({understanding:'程序理解题',fill:'程序填空题',program:'程序大题'})[meta.kind],'cpp-kind'));
+    if(meta.kind==='fill'){
+      let values;try{values=JSON.parse(answer.text);}catch{}values=Object.assign(Object.create(null),values&&typeof values==='object'&&!Array.isArray(values)?values:{});
+      for(const blank of meta.blanks)box.append(cppEditor(typeof values[blank.id]==='string'?values[blank.id]:'',value=>{values[blank.id]=value;answer.text=JSON.stringify(Object.fromEntries(meta.blanks.map(b=>[b.id,values[b.id]??''])));edited();},{label:blank.label}));
+    }else if(meta.kind==='understanding'){
+      const input=node('textarea');input.rows=3;input.value=answer.text;input.maxLength=8000;input.placeholder='按题目要求逐行填写输出';input.setAttribute('aria-label','程序输出答案');input.spellcheck=false;input.readOnly=!!pending;input.oninput=()=>{answer.text=input.value;edited();sendState();};input.onkeydown=e=>{if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCPPExam(block,true);}};box.append(input);
+    }else box.append(cppEditor(answer.text,value=>{answer.text=value;edited();},{label:'完整程序 · C++17',program:true}));
+    const tools=node('div',undefined,'toolbar');
+    if(meta.kind!=='understanding')tools.append(button('运行并检查',()=>runCPPExam(block),''));
+    box.append(tools,node('p',meta.kind==='understanding'?'填写输出后按继续检查。':`Tab 缩进 · Shift+Tab 退格缩进 · Ctrl/⌘+Enter 检查${meta.testCount?' · '+meta.testCount+' 组隐藏测试':''}`,'muted'));
+    if(meta.kind!=='understanding'){
+      const custom=node('details'),stdin=node('textarea');stdin.rows=2;stdin.maxLength=4000;stdin.value=block.execution.stdin??'';stdin.setAttribute('aria-label','自定义标准输入');custom.append(node('summary','自定义输入试运行'),stdin,button('用此输入运行',()=>runCPPExam(block,false,stdin.value)));box.append(custom);
+    }
+    const output=runs.get(block.id);if(output)box.append(node('pre',output,'output cpp-console'));
+    const committed=saved.get(block.id);if(committed&&equalAnswer(answer,committed))feedback(block,committed,box);
+  }
   function question(block, box) {
+    if(data.cppProblems?.[block.id]){cppQuestion(block,box);return;}
     const answer=draft(block), committed=saved.get(block.id);
     if(block.questionType==='shortAnswer'){
       const kind=block.input?.kind??'text', input=node(kind==='integer'||kind==='decimal'?'input':'textarea');input.setAttribute('aria-label',block.input?.placeholder??'你的回答');input.placeholder=block.input?.placeholder??'填写你的回答';input.value=answer.text;input.maxLength=20000;
@@ -336,15 +392,17 @@ function playerRuntime(data) {
   function render(){
     feedbackFrames.clear();
     const block=lesson.blocks[index],heading=node('header',undefined,'heading');if(block.title)heading.append(node('h1',block.title));heading.append(node('div',`${index+1} / ${lesson.blocks.length}`,'eyebrow'));
-    const context=effectiveCode(block),workspace=node('div',undefined,'workspace'+(context.code?' with-reference':'')),reference=node('aside',undefined,'card reference');
+    const exam=data.cppProblems?.[block.id],context=effectiveCode(block),workspace=node('div',undefined,'workspace'+(context.code?' with-reference':'')+(exam?' cpp-exam':'')),reference=node('aside',undefined,'card reference');
     if(context.code){const explicit=block.focusLines!==undefined||block.focusSpans!==undefined;reference.append(node('div',context.code.filename??`本节程序 · ${context.code.language}`,'muted'),codeView(context.code,explicit?block.focusLines??[]:context.inherited?[]:context.code.highlightLines??[],explicit?block.focusSpans??[]:context.inherited?[]:context.code.highlightSpans??[]));workspace.append(reference);}
     const content=node('article',undefined,'card'+(block.type==='callout'?' callout':''));
-    if(block.text)content.append(node('p',block.text));
+    if(exam&&!context.code){const assignment=node('aside',undefined,'cpp-assignment');assignment.append(node('p',block.text,'question-statement'));workspace.append(assignment);}
+    else if(block.text)content.append(node('p',block.text));
+    if(exam){const rules=node('details',undefined,'cpp-rules');rules.append(node('summary','可用标准库与运行限制'),node('p',exam.headers.map(h=>'<'+h+'>').join(' · ')),node('p','C++17 基础标准库；禁止调试与系统接口。编译失败会给出诊断，隐藏测试只显示汇总结果。'));content.append(rules);}
     if(block.presentation)content.append(presentation(block,context.code?reference:null));
     if(block.type==='question')question(block,content);
     if(block.type==='chart'){content.append(chart(block));if(block.caption)content.append(node('p',block.caption,'muted'));}
     if(block.type==='image')content.append(node('p',block.caption??'本课程的外部图片未加载。','muted'));
-    if(pending)content.append(node('p','正在保存…','muted'));
+    if(pending)content.append(node('p',pending.type==='exam-run'?'正在检查…':'正在保存…','muted'));
     workspace.append(content);root.replaceChildren(heading,workspace);sendState();requestAnimationFrame(fitControls);
   }
   function showError(message){haptic('error',true);const old=root.querySelector('.error');if(old)old.remove();root.append(node('p',message||'保存失败，请重试。','error'));sendState();}
@@ -354,7 +412,8 @@ function playerRuntime(data) {
     if(block.type==='question'){
       const answer=draft(block);if(!equalAnswer(answer,saved.get(block.id))||!saved.has(block.id)){
         if(block.questionType==='shortAnswer'?!answer.text.trim():!answer.selectedOptionIDs.length){showError('请先填写回答。');return;}
-        const id=requestID();pending={id,type:'submit',blockID:block.id,answer:structuredClone(answer)};post({type:'submit',requestID:id,blockID:block.id,...answer});sendState();return;
+        if(data.cppProblems?.[block.id]){const checked=cppChecks.get(block.id);if(checked&&equalAnswer(answer,checked)){submitAnswer(block,answer);render();}else runCPPExam(block,true);return;}
+        submitAnswer(block,answer);return;
       }
     }
     if(flashcardAction('next')||traceAction('next')||frameAction('next'))return;
@@ -372,10 +431,19 @@ function playerRuntime(data) {
     if(message.type==='next'){advance();return;}
     if(message.type==='previous'){if(pending||!initialized)return;if(flashcardAction('previous')||traceAction('previous')||frameAction('previous'))return;if(index>0){index--;render();window.scrollTo(0,0);}else post({type:'navigation',direction:'previousLesson'});return;}
     if(message.type==='saved'&&pending&&message.requestID===pending.id){const action=pending;pending=null;if(!message.ok){showError(message.error);return;}if(action.type==='submit'){const block=lesson.blocks.find(b=>b.id===action.blockID),correct=answerCorrect(block,action.answer);haptic(correct===true?'success':correct===false?'warning':'impact',true);saved.set(action.blockID,action.answer);render();}else{haptic('success',true);post({type:'navigation',direction:'nextLesson'});sendState();}return;}
+    if(message.type==='runResult'&&runs.get(message.requestID)?.exam){
+      const run=runs.get(message.requestID),result=message.result; runs.delete(message.requestID); if(pending?.id===message.requestID)pending=null;
+      runs.set(run.blockID,message.error??[result?.stdout,result?.stderr,result?.status==='compileError'?'编译错误':result?.status==='timeout'?'运行超时':result?.status==='runtimeError'?'运行错误':''].filter(Boolean).join('\n'));
+      haptic(message.error||result?.status==='unavailable'?'error':result?.passed===true?'success':result?.passed===false?'warning':'impact',true);
+      const block=lesson.blocks.find(b=>b.id===run.blockID);
+      if(run.formal&&!message.error&&result&&result.status!=='unavailable')cppChecks.set(block.id,run.answer);
+      if(run.autoSubmit&&!message.error&&result&&result.status!=='unavailable'&&equalAnswer(draft(block),run.answer))submitAnswer(block,run.answer);
+      render();return;
+    }
     if(message.type==='runResult'&&runs.has(message.requestID)){const result=message.result;if(message.error||result?.status!=='cancelled')haptic(message.error||result?.status!=='completed'?'error':result.passed===false?'warning':result.passed===true?'success':'impact',true);const run=runs.get(message.requestID);runs.delete(message.requestID);const r=message.result;runs.set(run.blockID,message.error??[r?.stdout,r?.stderr,r?.passed===undefined?'':r.passed?'输出符合预期':'输出与预期不同',r?.status].filter(Boolean).join('\n'));render();}
   }};
   document.addEventListener('click',event=>{if(event.target instanceof Element&&event.target.closest('summary'))haptic('selection');});
-  const viewport=()=>{const height=window.visualViewport?.height??window.innerHeight;document.body.classList.toggle('keyboard-visible',window.innerHeight-height>120);requestAnimationFrame(fitControls);};
+  const viewport=()=>{const height=window.visualViewport?.height??window.innerHeight;document.body.classList.toggle('keyboard-visible',window.innerHeight-height>120);for(const editor of root.querySelectorAll?.('.cpp-source')??[])editor.cppResize?.();requestAnimationFrame(fitControls);};
   window.visualViewport?.addEventListener('resize',viewport);window.addEventListener('resize',viewport);viewport();
   // Native sends saved progress/theme after ready; render once with that state.
   post({type:'ready'});
